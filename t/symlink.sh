@@ -35,6 +35,6 @@ AUTOMAKE_fails --add-missing
 grep '^configure\.ac:3: .*missing.*error while making link' stderr
 grep '^configure\.ac:3: .*install-sh.*error while making link' stderr
 
-test `$FGREP -c 'error while making link' stderr` -eq 2
+test $(grep -c 'error while making link' stderr) -eq 2
 
 :

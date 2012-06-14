@@ -47,7 +47,7 @@ $ACLOCAL
 $AUTOCONF
 $AUTOMAKE
 
-cwd=`pwd` || fatal_ "cannot get current directory"
+cwd=$(pwd) || fatal_ "cannot get current directory"
 mkdir nowhere
 chmod a-w nowhere
 

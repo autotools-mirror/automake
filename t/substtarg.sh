@@ -46,5 +46,6 @@ $ACLOCAL
 AUTOMAKE_fails
 grep 'overrid.*libfake@SUBST@.a' stderr
 $AUTOMAKE -Wno-override
-num=`grep '^libfake@SUBST@.a:' Makefile.in | wc -l`
-test $num -eq 1
+test $(grep -c '^libfake@SUBST@.a:' Makefile.in) -eq 1
+
+:

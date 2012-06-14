@@ -254,7 +254,7 @@ cross_compiling ()
 # Resolve ties in favor of FILE.
 is_newest ()
 {
-  is_newest_files=`find "$@" -prune -newer "$1"`
+  is_newest_files=$(find "$@" -prune -newer "$1")
   test -z "$is_newest_files"
 }
 
@@ -344,7 +344,7 @@ extract_configure_help ()
   am__opt_re='' am__var_re=''
   case $1 in
     --*'=')   am__opt_re="^  $1";;
-    --*'[=]') am__opt_re='^  '`printf '%s\n' "$1" | sed 's/...$//'`'\[=';;
+    --*'[=]') am__opt_re='^  '$(printf '%s\n' "$1" | sed 's/...$//')'\[=';;
     --*)      am__opt_re="^  $1( .*|$)";;
       *)      am__var_re="^  $1( .*|$)";;
   esac
@@ -507,24 +507,10 @@ seq_ ()
     3) seq_first=$1 seq_incr=$2 seq_last=$3;;
     *) fatal_ "seq_: too many arguments";;
   esac
-  # Try to avoid forks if possible.
-  case "$BASH_VERSION" in
-    ""|[12].*)
-      : Not bash, or a too old bash version. ;;
-    *)
-      # Use eval to protect dumber shells from parsing errors.
-      eval 'for ((i = seq_first; i <= seq_last; i += seq_incr)); do
-              echo $i
-            done'
-      return 0;;
-  esac
-  # Else, use GNU seq if available.
-  seq "$@" && return 0
-  # Otherwise revert to a slower loop using expr(1).
   i=$seq_first
   while test $i -le $seq_last; do
     echo $i
-    i=`expr $i + $seq_incr`
+    i=$(($i + $seq_incr))
   done
 }
 
@@ -561,12 +547,12 @@ count_test_results ()
     # Avoid spurious failures with shells with "overly sensible"
     # errexit shell flag, such as e.g., Solaris /bin/sh.
     set +e
-    test `grep -c '^PASS:'  stdout` -eq $pass  || rc=1
-    test `grep -c '^XFAIL:' stdout` -eq $xfail || rc=1
-    test `grep -c '^SKIP:'  stdout` -eq $skip  || rc=1
-    test `grep -c '^FAIL:'  stdout` -eq $fail  || rc=1
-    test `grep -c '^XPASS:' stdout` -eq $xpass || rc=1
-    test `grep -c '^ERROR:' stdout` -eq $error || rc=1
+    test $(grep -c '^PASS:'  stdout) -eq $pass  || rc=1
+    test $(grep -c '^XFAIL:' stdout) -eq $xfail || rc=1
+    test $(grep -c '^SKIP:'  stdout) -eq $skip  || rc=1
+    test $(grep -c '^FAIL:'  stdout) -eq $fail  || rc=1
+    test $(grep -c '^XPASS:' stdout) -eq $xpass || rc=1
+    test $(grep -c '^ERROR:' stdout) -eq $error || rc=1
     grep "^# TOTAL:  *$total$" stdout || rc=1
     grep "^# PASS:  *$pass$"   stdout || rc=1
     grep "^# XFAIL:  *$xfail$" stdout || rc=1
@@ -602,7 +588,8 @@ commented_sed_unindent_prog='
 unindent ()
 {
   if test x"$sed_unindent_prog" = x; then
-    sed_unindent_prog=`printf '%s\n' "$commented_sed_unindent_prog" | sed -e "s/  *# .*//"`
+    sed_unindent_prog=$(printf '%s\n' "$commented_sed_unindent_prog" \
+                          | sed -e "s/  *# .*//")
   fi
   sed "$sed_unindent_prog" ${1+"$@"}
 }
@@ -787,10 +774,8 @@ do
         MAKE=$make_ am__using_gmake=''
         test "$MAKE" =  : && break
         echo "$me: determine whether $MAKE is GNU make"
-        # Don't use "&&" here, or a bug of 'set -e' present in some
-        # versions of the BSD shell will be triggered.  We add the
-        # dummy "else" branch for extra safety.
-        if using_gmake; then break; else :; fi
+        using_gmake && break
+        : For shells with busted 'set -e'.
       done
       test "$MAKE" = : && skip_all_ "this test requires GNU make"
       export MAKE
@@ -862,12 +847,13 @@ do
                      "the '--html' option"
       ;;
     mingw)
-      uname_s=`uname -s || echo UNKNOWN`
+      uname_s=$(uname -s || echo UNKNOWN)
       echo "$me: system name: $uname_s"
       case $uname_s in
         MINGW*) ;;
         *) skip_all_ "this test requires MSYS in MinGW mode" ;;
       esac
+      unset uname_s
       ;;
     non-root)
       # Skip this test case if the user is root.
@@ -894,9 +880,7 @@ do
       # Don't use "&&" here, to avoid a bug of 'set -e' present in
       # some (even relatively recent) versions of the BSD shell.
       # We add the dummy "else" branch for extra safety.
-      if cross_compiling; then
-        skip_all_ "doesn't work in cross-compile mode"
-      else :; fi
+      ! cross_compiling || skip_all_ "doesn't work in cross-compile mode"
       ;;
     python)
       # Python doesn't support --version, it has -V

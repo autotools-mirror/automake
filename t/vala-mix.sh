@@ -36,7 +36,7 @@ mu_CFLAGS = -DHAVE_MU
 baz_SOURCES = baz.c
 END
 
-if cross_compiling; then :; else
+if ! cross_compiling; then
   unindent >> Makefile.am <<'END'
     check-local:
 	./zardoz

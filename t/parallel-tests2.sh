@@ -26,10 +26,8 @@
 while :; do
   for r2h in $RST2HTML rst2html rst2html.py; do
     echo "$me: running $r2h --version"
-    # Don't use "&&" here, or a bug of 'set -e' present in some
-    # versions of the BSD shell will be triggered.  We add the
-    # dummy "else" branch for extra safety.
-    if $r2h --version; then break 2; else :; fi
+    $r2h --version && break 2
+    : For shells with busted 'set -e'.
   done
   skip_all_ "no proper rst2html program found"
 done

@@ -30,5 +30,7 @@ EOF
 $ACLOCAL
 $AUTOMAKE
 
-grep '[^(/]MKDIR_P' Makefile.in > out
-test `wc -l < out` -eq 1
+grep 'MKDIR_P' Makefile.in # For debugging.
+test $(grep -c '[^(/]MKDIR_P' Makefile.in) -eq 1
+
+:

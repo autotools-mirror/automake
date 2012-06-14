@@ -57,16 +57,16 @@ $
 >
 END
 
-n=`wc -l <prefixes`
+n=$(wc -l <prefixes)
 
 # See the loop below to understand this initialization.
-pass=`expr $n '*' 3`
+pass=$(($n * 3))
 fail=$pass
-skip=`expr $pass - 3`
+skip=$(($pass - 3))
 xfail=$skip
 xpass=$xfail
 error=0
-total=`expr $pass + $fail + $skip + $xfail + $xpass`
+total=$(($pass + $fail + $skip + $xfail + $xpass))
 
 echo 1..$total > all.test
 
@@ -86,8 +86,10 @@ done >> all.test
 cat all.test # For debugging.
 
 # Sanity checks.
-grep '#.*#' all.test && framework_failure_ "creating all.test"
-test `wc -l <all.test` -lt $highno || framework_failure_ "creating all.test"
+grep '#.*#' all.test \
+  && framework_failure_ "creating all.test"
+test $(wc -l <all.test) -lt $highno \
+  || framework_failure_ "creating all.test"
 
 $MAKE check >stdout || :
 cat stdout

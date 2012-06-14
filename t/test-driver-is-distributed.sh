@@ -21,7 +21,7 @@
 am_create_testdir=empty
 . ./defs || Exit 1
 
-ocwd=`pwd` || fatal_ "getting current working directory"
+ocwd=$(pwd) || fatal_ "getting current working directory"
 
 do_check ()
 {

@@ -30,7 +30,11 @@ END
 $ACLOCAL
 $AUTOCONF
 $AUTOMAKE
-./configure --prefix "`pwd`/sub"
+./configure --prefix "$(pwd)/sub"
 
 $MAKE installdirs
 test ! -d sub/man
+$MAKE install
+test ! -d sub/man
+
+:

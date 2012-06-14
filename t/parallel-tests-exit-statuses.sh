@@ -25,15 +25,15 @@ END
 
 # $failure_statuses should be defined to the list of all integers between
 # 1 and 255 (inclusive), excluded 77 and 99.
-failure_statuses=`seq_ 1 255 | $EGREP -v '^(77|99)$' | tr "$nl" ' '`
+failure_statuses=$(seq_ 1 255 | $EGREP -v '^(77|99)$' | tr "$nl" ' ')
 # For debugging.
 echo "failure_statuses: $failure_statuses"
 # Sanity check.
-test `for st in $failure_statuses; do echo $st; done | wc -l` -eq 253 \
+test $(for st in $failure_statuses; do echo $st; done | wc -l) -eq 253 \
   || fatal_ "initializing list of exit statuses for simple failures"
 
 cat > Makefile.am <<END
-LOG_COMPILER = ./do-exit
+LOG_COMPILER = $AM_TEST_RUNNER_SHELL ./do-exit
 fail_tests = $failure_statuses
 TESTS = 0 77 99 $failure_statuses
 \$(TESTS):
@@ -44,7 +44,7 @@ cat > do-exit <<'END'
 echo "$0: $1"
 case $1 in
   [0-9]|[0-9][0-9]|[0-9][0-9][0-9]) st=$1;;
-  */[0-9]|*/[0-9][0-9]|*/[0-9][0-9][0-9]) st=`echo x"$1" | sed 's|.*/||'`;;
+  */[0-9]|*/[0-9][0-9]|*/[0-9][0-9][0-9]) st=${1##*/};;
   *) st=99;;
 esac
 exit $st

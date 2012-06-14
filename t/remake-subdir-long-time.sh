@@ -38,7 +38,7 @@ mkdir sub
 # Both aclocal and automake are expected to run one and just one time.
 # Create and use wrappers that will verify that.
 
-ocwd=`pwd` || fatal_ "cannot get current working directory"
+ocwd=$(pwd) || fatal_ "cannot get current working directory"
 
 mkdir bin
 

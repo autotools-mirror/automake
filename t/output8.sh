@@ -42,11 +42,13 @@ $AUTOMAKE --add-missing
 
 ./configure
 $MAKE
-test "`cat a/foo.sh`" = foo
+test "$(cat a/foo.sh)" = foo
 
 $sleep
 echo 'bar' >a/foo.sh.in
 
 cd a
 $MAKE foo.sh
-test "`cat foo.sh`" = bar
+test "$(cat foo.sh)" = bar
+
+:

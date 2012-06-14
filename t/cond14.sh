@@ -46,6 +46,6 @@ $ACLOCAL
 $AUTOMAKE
 
 $FGREP helldl Makefile.in # For debugging.
-test `$FGREP -c 'helldl$(EXEEXT):' Makefile.in` -eq 2
+test $($FGREP -c 'helldl$(EXEEXT):' Makefile.in) -eq 2
 
 :

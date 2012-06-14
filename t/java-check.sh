@@ -41,7 +41,7 @@ $ACLOCAL
 $AUTOCONF
 $AUTOMAKE
 
-inst=`pwd`/_inst
+inst=$(pwd)/_inst
 
 ./configure --prefix="$inst"
 

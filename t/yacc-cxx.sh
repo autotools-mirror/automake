@@ -89,7 +89,7 @@ test -f foo4-parse4.cpp
 test -f foo3-parse3.output
 test -f foo4-parse4.output
 
-if cross_compiling; then :; else
+if ! cross_compiling; then
   for i in 1 2 3 4; do
     echo a | ./foo$i
     echo b | ./foo$i && Exit 1

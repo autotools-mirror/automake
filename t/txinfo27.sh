@@ -41,6 +41,8 @@ $ACLOCAL
 $AUTOMAKE --add-missing
 $AUTOCONF
 
-./configure "--prefix=`pwd`/inst" "--infodir=`pwd`/inst/info"
+./configure --prefix="$(pwd)/inst" --infodir="$(pwd)/inst/info"
 $MAKE install-info
 test -f inst/info/main.info
+
+:

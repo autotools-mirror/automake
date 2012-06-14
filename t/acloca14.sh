@@ -91,7 +91,7 @@ EOF
 $MAKE
 
 # Because c.m4 has changed, aclocal.m4 must have been rebuilt.
-test `ls -1t aclocal.m4 stamp | sed 1q` = aclocal.m4
+test $(ls -1t aclocal.m4 stamp | sed 1q) = aclocal.m4
 # However, since FOO is not used, f.m4 should not be included
 # and the contents of aclocal.m4 should remain the same
 diff aclocal.m4 stamp

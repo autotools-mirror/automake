@@ -34,72 +34,74 @@ chmod +x ./cl
 # -l and -L options and their respective arguments.  Traditionally,
 # this should work also without a space.  Try both usages.
 for sp in '' ' '; do
+
   rm -rf lib lib2 syslib "sys  lib2"
 
   mkdir syslib
-  :> syslib/foo.lib
+  : > syslib/foo.lib
 
-  syslib=`pwd`/syslib
+  syslib=$(pwd)/syslib
   LIB=$syslib
   export LIB
 
   mkdir lib
-  :> lib/bar.lib
-  :> lib/bar.dll.lib
+  : > lib/bar.lib
+  : > lib/bar.dll.lib
 
   # Check if compile library search correctly
-  opts=`./compile ./cl foo.c -o foo -L${sp}lib -l${sp}bar -l${sp}foo`
+  opts=$(./compile ./cl foo.c -o foo -L${sp}lib -l${sp}bar -l${sp}foo)
   test x"$opts" = x"foo.c -Fefoo lib/bar.dll.lib $syslib/foo.lib -link -LIBPATH:lib"
 
   # Check if -static makes compile avoid bar.dll.lib
-  opts=`./compile ./cl foo.c -o foo -L${sp}lib -static -l${sp}bar -l${sp}foo`
+  opts=$(./compile ./cl foo.c -o foo -L${sp}lib -static -l${sp}bar -l${sp}foo)
   test x"$opts" = x"foo.c -Fefoo lib/bar.lib $syslib/foo.lib -link -LIBPATH:lib"
 
-  :> syslib/bar.lib
-  :> syslib/bar.dll.lib
+  : > syslib/bar.lib
+  : > syslib/bar.dll.lib
 
   # Check if compile finds bar.dll.lib in syslib
-  opts=`./compile ./cl foo.c -o foo -l${sp}bar -l${sp}foo`
+  opts=$(./compile ./cl foo.c -o foo -l${sp}bar -l${sp}foo)
   test x"$opts" = x"foo.c -Fefoo $syslib/bar.dll.lib $syslib/foo.lib"
 
   # Check if compile prefers -L over $LIB
-  opts=`./compile ./cl foo.c -o foo -L${sp}lib -l${sp}bar -l${sp}foo`
+  opts=$(./compile ./cl foo.c -o foo -L${sp}lib -l${sp}bar -l${sp}foo)
   test x"$opts" = x"foo.c -Fefoo lib/bar.dll.lib $syslib/foo.lib -link -LIBPATH:lib"
 
   mkdir lib2
-  :> lib2/bar.dll.lib
+  : > lib2/bar.dll.lib
 
   # Check if compile avoids bar.dll.lib in lib2 when -static
-  opts=`./compile ./cl foo.c -o foo -L${sp}lib2 -static -l${sp}bar -l${sp}foo`
+  opts=$(./compile ./cl foo.c -o foo -L${sp}lib2 -static -l${sp}bar -l${sp}foo)
   test x"$opts" = x"foo.c -Fefoo $syslib/bar.lib $syslib/foo.lib -link -LIBPATH:lib2"
 
   # Check if compile gets two different bar libraries when -static
   # is added in the middle
-  opts=`./compile ./cl foo.c -o foo -L${sp}lib2 -L${sp}lib -l${sp}bar -static -l${sp}bar`
+  opts=$(./compile ./cl foo.c -o foo -L${sp}lib2 -L${sp}lib -l${sp}bar -static -l${sp}bar)
   test x"$opts" = x"foo.c -Fefoo lib2/bar.dll.lib lib/bar.lib -link -LIBPATH:lib2 -LIBPATH:lib"
 
   # Check if compile gets the correct bar.dll.lib
-  opts=`./compile ./cl foo.c -o foo -L${sp}lib -L${sp}lib2 -l${sp}bar -l${sp}foo`
+  opts=$(./compile ./cl foo.c -o foo -L${sp}lib -L${sp}lib2 -l${sp}bar -l${sp}foo)
   test x"$opts" = x"foo.c -Fefoo lib/bar.dll.lib $syslib/foo.lib -link -LIBPATH:lib -LIBPATH:lib2"
 
   # Check if compile gets the correct bar.dll.lib
-  opts=`./compile ./cl foo.c -o foo -L${sp}lib2 -L${sp}lib -l${sp}bar -l${sp}foo`
+  opts=$(./compile ./cl foo.c -o foo -L${sp}lib2 -L${sp}lib -l${sp}bar -l${sp}foo)
   test x"$opts" = x"foo.c -Fefoo lib2/bar.dll.lib $syslib/foo.lib -link -LIBPATH:lib2 -LIBPATH:lib"
 
   mkdir "sys  lib2"
-  :> "sys  lib2/foo.dll.lib"
+  : > "sys  lib2/foo.dll.lib"
 
-  syslib2="`pwd`/sys  lib2"
+  syslib2="$(pwd)/sys  lib2"
   LIB="$syslib2;$LIB"
 
   # Check if compile handles spaces in $LIB and that it prefers the order
   # in a multi-component $LIB.
-  opts=`./compile ./cl foo.c -o foo -l${sp}foo`
+  opts=$(./compile ./cl foo.c -o foo -l${sp}foo)
   test x"$opts" = x"foo.c -Fefoo $syslib2/foo.dll.lib"
 
   # Check if compile handles the 2nd directory in a multi-component $LIB.
-  opts=`./compile ./cl foo.c -o foo -static -l${sp}foo`
+  opts=$(./compile ./cl foo.c -o foo -static -l${sp}foo)
   test x"$opts" = x"foo.c -Fefoo $syslib/foo.lib"
+
 done
 
 :

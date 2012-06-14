@@ -71,7 +71,7 @@ chmod a-x execute
 $MAKE distdir
 ls -l $distdir $distdir/doc
 cd $distdir
-test "`cat write`" = "all is ok"
+test "$(cat write)" = "all is ok"
 test ! -f removed
 test ! -r removed
 test -f doc/README
@@ -81,7 +81,6 @@ test ! -r doc/HACING
 ./execute
 ./execute | grep 'I run successfully'
 cd ..
-
 
 $MAKE distcheck
 test -f distcheck-run

@@ -19,7 +19,7 @@
 am_create_testdir=empty
 . ./defs || Exit 1
 
-libdir=`$AUTOMAKE --print-libdir` || Exit 1
+libdir=$($AUTOMAKE --print-libdir) || Exit 1
 case $libdir in /*);; *) Exit 1;; esac
 test -d "$libdir"
 test "$libdir" = "$am_pkgvdatadir"

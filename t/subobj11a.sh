@@ -57,7 +57,7 @@ $AUTOMAKE -a
 
 ./configure --enable-dependency-tracking
 
-depdir=`sed -n 's/^ *DEPDIR *= *//p' Makefile`
+depdir=$(sed -n 's/^ *DEPDIR *= *//p' Makefile)
 if test x"$depdir" != x; then
   depdir=src/$depdir
 else

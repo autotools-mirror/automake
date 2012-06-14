@@ -15,7 +15,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Ensure install-strip works when STRIP consists of more than one word.
-# This test needs GNU binutils strip.  Libtool variant.
+# This test needs GNU binutils strip.  Libtool variant.  See sister
+# test 'strip2.sh'.
 
 required='cc libtoolize strip'
 . ./defs || Exit 1
@@ -32,21 +33,15 @@ bin_PROGRAMS = foo
 lib_LTLIBRARIES = libfoo.la
 END
 
-cat > foo.c << 'END'
-int main () { return 0; }
-END
-
-cat > libfoo.c << 'END'
-int foo () { return 0; }
-END
+echo 'int main (void) { return 0; }' > foo.c
+echo 'int foo (void) { return 0; }' > libfoo.c
 
 libtoolize
 $ACLOCAL
 $AUTOCONF
 $AUTOMAKE -a
 
-prefix=`pwd`/inst
-./configure --prefix="$prefix" STRIP='strip --verbose'
+./configure --prefix="$(pwd)/inst" STRIP='strip --verbose'
 $MAKE
 $MAKE install-strip
 

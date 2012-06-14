@@ -55,8 +55,7 @@ libtoolize
 $EGREP 'LT_(INIT|PREREQ)' configure && Exit 1 # Sanity check.
 $AUTOMAKE -a
 
-cwd=`pwd`
-./configure --prefix="$cwd/inst" >stdout || { cat stdout; Exit 1; }
+./configure --prefix="$(pwd)/inst" >stdout || { cat stdout; Exit 1; }
 cat stdout
 grep '^checking.*dlfcn\.h.* no$' stdout || grep '^checking.*dlopen' stdout
 

@@ -40,7 +40,7 @@ $ACLOCAL
 $AUTOMAKE
 $AUTOCONF
 
-./configure --prefix="`pwd`/inst"
+./configure --prefix="$(pwd)/inst"
 
 $MAKE uninstall
 test ! -d inst

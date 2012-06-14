@@ -42,7 +42,7 @@ $ACLOCAL
 $AUTOMAKE
 $AUTOCONF
 
-./configure --prefix="`pwd`/inst"
+./configure --prefix="$(pwd)/inst"
 
 # Sanity checks.
 $MAKE install

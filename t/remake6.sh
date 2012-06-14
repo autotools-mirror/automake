@@ -35,30 +35,29 @@ $AUTOCONF
 ./configure
 $MAKE
 
+do_check ()
+{
+  $MAKE >stdout || { cat stdout; Exit 1; }
+  cat stdout
+  test $(grep -c " --run " stdout) -eq 1
+}
+
 # Now, we are set up.  Ensure that, for either missing Makefile.in,
 # or updated Makefile.am, rebuild rules are run, and run exactly once
 # only.
 
 rm -f Makefile.in
-$MAKE >stdout || { cat stdout; Exit 1; }
-cat stdout
-test `grep -c " --run " stdout` -eq 1
+do_check
 
 rm -f sub/Makefile.in
-$MAKE >stdout || { cat stdout; Exit 1; }
-cat stdout
-test `grep -c " --run " stdout` -eq 1
+do_check
 
 $sleep  # Let touched files appear newer.
 
 touch Makefile.am
-$MAKE >stdout || { cat stdout; Exit 1; }
-cat stdout
-test `grep -c " --run " stdout` -eq 1
+do_check
 
 touch sub/Makefile.am
-$MAKE >stdout || { cat stdout; Exit 1; }
-cat stdout
-test `grep -c " --run " stdout` -eq 1
+do_check
 
 :

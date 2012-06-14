@@ -78,7 +78,7 @@ extract_distcommon tests/Makefile.in > inner.txt
 cat top.txt
 cat inner.txt
 
-test 0 = `grep tests top.txt | wc -l`
-test 1 = `grep wrapper inner.txt | wc -l`
+test 0 -eq $(grep -c tests top.txt)
+test 1 -eq $(grep -c wrapper inner.txt)
 
 :

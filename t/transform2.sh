@@ -66,17 +66,20 @@ $ACLOCAL
 $AUTOCONF
 $AUTOMAKE
 
-./configure --program-transform-name='s/[12]//' --prefix "`pwd`/inst" --mandir "`pwd`/inst/man"
+cwd=$(pwd) || fatal_ "getting current working directory"
+
+./configure --program-transform-name='s/[12]//' --prefix "$cwd/inst" \
+                                                --mandir "$cwd/inst/man"
 $MAKE
 $MAKE test-install
 $MAKE uninstall
-test `find inst -type f -print | wc -l` = 0
+test $(find inst -type f -print | wc -l) -eq 0
 
 # Also squash all file types in question.
 
 # On newer Cygwin versions, that won't work, likely due to overly
 # aggressive appending of '.exe' suffix when copying/renaming Windows
-# executables).  So let's skip this part of the test if we detect the
+# executables.  So let's skip this part of the test if we detect the
 # faulty heuristic is present.  See also:
 # <http://lists.gnu.org/archive/html/automake-patches/2010-08/msg00153.html>
 # <http://thread.gmane.org/gmane.os.cygwin/119380>
@@ -86,10 +89,11 @@ chmod a+x foo bar.exe
 cp foo bar && cmp foo bar \
   || skip_ "your Cygwin is too aggressive in tweaking '.exe' suffixes"
 
-./configure --program-transform-name='s/.*/foo/' --prefix "`pwd`/inst" --mandir "`pwd`/inst/man"
+./configure --program-transform-name='s/.*/foo/' --prefix "$cwd/inst" \
+                                                 --mandir "$cwd/inst/man"
 $MAKE
 $MAKE test-install-foo
 $MAKE uninstall
-test `find inst -type f -print | wc -l` = 0
+test $(find inst -type f -print | wc -l) -eq 0
 
 :

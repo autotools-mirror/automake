@@ -36,9 +36,11 @@ EOF
 $ACLOCAL
 $AUTOMAKE
 
+$FGREP '@COND' Makefile.in # For debugging, mostly.
+
 # The VAR definition appears once for each condition.
-test `grep '@COND_TRUE@VAR' Makefile.in | wc -l` = 1
-test `grep '@COND_FALSE@VAR' Makefile.in | wc -l` = 1
+test $(grep -c '@COND_TRUE@VAR' Makefile.in) = 1
+test $(grep -c '@COND_FALSE@VAR' Makefile.in) = 1
 
 # Make sure the right definition follows each comment.
 sed -n '/^#.*VAR.*COND_TRUE/ {
@@ -51,3 +53,5 @@ sed -n '/^#.*VAR.*COND_FALSE/ {
           p
         }' Makefile.in |
   grep '@COND_FALSE@VAR = bar'
+
+: 

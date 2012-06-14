@@ -56,7 +56,7 @@ for target in dist distcheck; do
     $MAKE -n $target | grep stamp-sub-dist-hook || Exit 1
   fi
   $MAKE test-no-distdir
-  test `ls -1t | sed 1q` = stampfile
+  test $(ls -1t | sed 1q) = stampfile
 done
 
-Exit 0
+:

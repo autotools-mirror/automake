@@ -109,7 +109,7 @@ cat > n-100 <<END
 :recheck: no
 END
 
-rechecked=`echo y-[0-9]*`
+rechecked=$(echo y-[0-9]*)
 
 for t in [yn]-[0-9]*; do echo $t; done \
   | sed 's/.*/TESTS += &/' >> Makefile.am

@@ -31,7 +31,6 @@ END
 $ACLOCAL
 $AUTOMAKE
 
-num=`grep depcomp Makefile.in | wc -l`
-test $num -gt 1
+test $($FGREP -c depcomp Makefile.in) -gt 1
 
 :

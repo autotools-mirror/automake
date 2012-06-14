@@ -45,5 +45,7 @@ $AUTOCONF
 $AUTOMAKE
 # Use --srcdir with an absolute path because it's harder
 # to support in 'distdir'.
-./configure --srcdir "`pwd`"
+./configure --srcdir "$(pwd)"
 $MAKE test
+
+:

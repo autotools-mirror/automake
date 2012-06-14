@@ -52,7 +52,7 @@ touch foo.lisp mu1.lisp mu2.lisp
 $MAKE all
 cat foo
 cat zardoz
-test "`cat foo`"    = "Linked foo from foo.fasl"
-test "`cat zardoz`" = "Linked zardoz from mu1.fasl mu2.fasl"
+test "$(cat foo)"    = "Linked foo from foo.fasl"
+test "$(cat zardoz)" = "Linked zardoz from mu1.fasl mu2.fasl"
 
 :

@@ -58,7 +58,7 @@ $MAKE
 ./true | grep true
 ./false | grep false
 
-objext=`sed -n -e 's/^OBJEXT = //p' < Makefile`
+objext=$(sed -n -e 's/^OBJEXT = //p' < Makefile)
 test -f ./t-false.$objext
 test -f ./f-false.$objext
 

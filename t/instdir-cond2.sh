@@ -43,7 +43,7 @@ $ACLOCAL
 $AUTOMAKE
 $AUTOCONF
 
-./configure --prefix="`pwd`/inst"
+./configure --prefix="$(pwd)/inst"
 
 $MAKE installdirs
 test ! -d inst || { find inst; Exit 1; }

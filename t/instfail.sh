@@ -60,7 +60,7 @@ $ACLOCAL
 $AUTOCONF
 $AUTOMAKE --add-missing
 
-instdir=`pwd`/inst
+instdir=$(pwd)/inst || fatal_ "getting current working directory"
 ./configure --prefix="$instdir"
 $MAKE
 
@@ -83,9 +83,8 @@ $MAKE unreadable-progn
 $MAKE install-exec && Exit 1
 $MAKE readable-progn
 
-if grep "^EMACS = no" Makefile; then :; else
-  for file in lisp1.el lisp1.elc
-  do
+if ! grep "^EMACS = no" Makefile; then
+  for file in lisp1.el lisp1.elc; do
     chmod a-r $file
     $MAKE install-data && Exit 1
     chmod u+r $file

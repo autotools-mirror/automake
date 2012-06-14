@@ -30,7 +30,7 @@ for header in one.h two.h three.h four.h five.h six.h; do
     fred_SOURCES = fred1.c $headers
 END
   $AUTOMAKE
-  test 1 = `grep '^@AMDEP_TRUE@@am__include@' Makefile.in | wc -l`
+  test 1 -eq $(grep -c '^@AMDEP_TRUE@@am__include@' Makefile.in)
 done
 
 :

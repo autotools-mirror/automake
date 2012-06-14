@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Test to make sure _OBJECTS only generated once.  Bug reported by
+# Test to make sure _OBJECTS is only generated once.  Bug reported by
 # Joerg-Martin Schwarz.
 
 . ./defs || Exit 1
@@ -31,7 +31,6 @@ $ACLOCAL
 $AUTOMAKE
 
 grep '^zardoz_OBJECTS' Makefile.in
-count=`grep -c '^zardoz_OBJECTS' Makefile.in`
-test $count -eq 1
+test $(grep -c '^zardoz_OBJECTS' Makefile.in) -eq 1
 
 :

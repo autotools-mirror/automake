@@ -78,7 +78,7 @@ $ACLOCAL
 $AUTOCONF
 $AUTOMAKE --add-missing --copy
 
-./configure "--prefix=`pwd`/_inst"
+./configure "--prefix=$(pwd)/_inst"
 env LIBTOOLFLAGS=--silent $MAKE print >output 2>&1 || {
   cat output
   Exit 1
@@ -87,7 +87,7 @@ cat output
 grep '1BEG: libmod1.la mod2.la :END1' output
 grep '2BEG: mod2.la :END2' output
 grep '3BEG: .*silent.*silent.* :END3' output
-test 2 -le `grep mod2_la_LIBTOOLFLAGS Makefile | wc -l`
+test 2 -le $(grep mod2_la_LIBTOOLFLAGS Makefile | wc -l)
 $MAKE
 
 env LIBTOOLFLAGS=--silent $MAKE install >output 2>&1 || {

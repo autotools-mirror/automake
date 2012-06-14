@@ -60,7 +60,7 @@ mkdir build
 cd build
 ../configure
 $MAKE
-if cross_compiling; then :; else
+if ! cross_compiling; then
   ./foo
   ./bar
 fi
@@ -68,7 +68,7 @@ cd ..
 
 ./configure
 $MAKE
-if cross_compiling; then :; else
+if ! cross_compiling; then
   ./foo
   ./bar
 fi

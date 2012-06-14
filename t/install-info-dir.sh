@@ -24,7 +24,7 @@
 required=makeinfo
 . ./defs || Exit 1
 
-cwd=`pwd` || fatal_ "cannot get current working directory"
+cwd=$(pwd) || fatal_ "cannot get current working directory"
 
 mkdir bin
 saved_PATH=$PATH; export saved_PATH

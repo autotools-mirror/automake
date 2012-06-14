@@ -45,8 +45,8 @@ $ACLOCAL
 $AUTOMAKE 2>stderr &
 pid=$!
 
-# MSYS bash seems to have a bug in kill, so don't try to kill too soon;
-# and avoid maintainer-check test.
+# MSYS bash seems to have a bug in kill, so don't try to kill too soon.
+# The extra quoting avoids a maintainer-check failure.
 sleep '2'
 
 # Make at most 30 tries, one every 10 seconds (= 300 seconds = 5 min).
@@ -55,7 +55,7 @@ while test $try -le 30; do
   if kill -0 $pid; then
     : process $pid is still alive, wait and retry
     sleep '10'
-    try=`expr $try + 1`
+    try=$(($try + 1))
   else
     cat stderr >&2
     # Automake must fail with a proper error message.

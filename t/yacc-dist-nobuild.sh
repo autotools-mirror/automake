@@ -65,7 +65,7 @@ exit 1
 END
 cp bin/yacc bin/bison
 chmod a+x bin/yacc bin/bison
-PATH=`pwd`/bin$PATH_SEPARATOR$PATH
+PATH=$(pwd)/bin$PATH_SEPARATOR$PATH
 
 YACC=yacc BISON=bison
 export YACC BISON

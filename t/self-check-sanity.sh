@@ -62,7 +62,7 @@ fi
 
 # We still need a little hack to make ./defs work outside automake's
 # tree 'tests' subdirectory.  Not a big deal.
-sed "s|^am_top_builddir=.*|am_top_builddir='`pwd`'|" \
+sed "s|^am_top_builddir=.*|am_top_builddir='$(pwd)'|" \
   "$am_top_builddir"/defs-static > defs-static
 # Redefining *srcdir and *builddir variables in the environment shouldn't
 # cause problems

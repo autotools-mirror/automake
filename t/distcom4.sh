@@ -69,7 +69,7 @@ sed -n -e '/^DIST_COMMON =.*\\$/ {
 
 cat dc.txt # For debugging.
 
-test 1 = `grep tests dc.txt | wc -l`
+test 1 -eq $(grep -c tests dc.txt)
 grep configure dc.txt
 # README must come first.
 grep 'DIST_COMMON = README' Makefile.in

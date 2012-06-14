@@ -36,9 +36,9 @@ END
 $ACLOCAL
 $AUTOMAKE
 
-test `grep installdirs-local Makefile.in | wc -l` -eq 4
+test $(grep -c installdirs-local Makefile.in) -eq 4
 
-cwd=`pwd` || fatal_ "getting current working directory"
+cwd=$(pwd) || fatal_ "getting current working directory"
 
 $AUTOCONF
 ./configure --prefix="$cwd/inst"

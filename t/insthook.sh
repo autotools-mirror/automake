@@ -56,7 +56,7 @@ test -f ok
 # second version will overwrite 'foo'.  Hopefully 'install' and 'install-sh'
 # are smart enough to erase the 'foo' symlink before installing the new
 # version.)
-./configure "--bindir=`pwd`/bin"
+./configure "--bindir=$(pwd)/bin"
 $MAKE install
 echo 2 > foo
 VERSION=2.0 $MAKE -e install

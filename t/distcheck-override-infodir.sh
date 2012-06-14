@@ -55,7 +55,7 @@ $AUTOCONF
 $MAKE
 
 $MAKE distcheck
-infodir="`pwd`"/_info $MAKE -e distcheck
+infodir="$(pwd)/_info" $MAKE -e distcheck
 test -f _info/dir || Exit 99 # Sanity check.
 
 :

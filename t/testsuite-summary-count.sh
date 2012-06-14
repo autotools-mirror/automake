@@ -110,12 +110,12 @@ xpass_count=23
 error_count=17
 tests_count=120
 
-pass=` seq_ 1 $pass_count  | sed 's/.*/pass-&.t/'`
-skip=` seq_ 1 $skip_count  | sed 's/.*/skip-&.t/'`
-xfail=`seq_ 1 $xfail_count | sed 's/.*/xfail-&.t/'`
-fail=` seq_ 1 $fail_count  | sed 's/.*/fail-&.t/'`
-xpass=`seq_ 1 $xpass_count | sed 's/.*/xpass-&.t/'`
-error=`seq_ 1 $error_count | sed 's/.*/error-&.t/'`
+ pass=$(seq_ 1 $pass_count  | sed 's/.*/pass-&.t/')
+ skip=$(seq_ 1 $skip_count  | sed 's/.*/skip-&.t/')
+xfail=$(seq_ 1 $xfail_count | sed 's/.*/xfail-&.t/')
+ fail=$(seq_ 1 $fail_count  | sed 's/.*/fail-&.t/')
+xpass=$(seq_ 1 $xpass_count | sed 's/.*/xpass-&.t/')
+error=$(seq_ 1 $error_count | sed 's/.*/error-&.t/')
 
 do_check $pass $skip $xfail $fail $xpass $error <<END
 $header
@@ -139,12 +139,12 @@ fail_count=126
 xpass_count=17
 error_count=9
 
-pass=` seq_ 1 $pass_count  | sed 's/.*/pass-&.t/'`
-skip=` seq_ 1 $skip_count  | sed 's/.*/skip-&.t/'`
-xfail=`seq_ 1 $xfail_count | sed 's/.*/xfail-&.t/'`
-fail=` seq_ 1 $fail_count  | sed 's/.*/fail-&.t/'`
-xpass=`seq_ 1 $xpass_count | sed 's/.*/xpass-&.t/'`
-error=`seq_ 1 $error_count | sed 's/.*/error-&.t/'`
+ pass=$(seq_ 1 $pass_count  | sed 's/.*/pass-&.t/')
+ skip=$(seq_ 1 $skip_count  | sed 's/.*/skip-&.t/')
+xfail=$(seq_ 1 $xfail_count | sed 's/.*/xfail-&.t/')
+ fail=$(seq_ 1 $fail_count  | sed 's/.*/fail-&.t/')
+xpass=$(seq_ 1 $xpass_count | sed 's/.*/xpass-&.t/')
+error=$(seq_ 1 $error_count | sed 's/.*/error-&.t/')
 
 do_check $pass $skip $xfail $fail $xpass $error <<END
 $header

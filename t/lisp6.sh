@@ -38,6 +38,9 @@ AM_PATH_LISPDIR
 AC_OUTPUT
 EOF
 
+# Avoid possible spurious influences from the environment.
+want_two=; unset want_two
+
 echo "(provide 'am-one)" > am-one.el
 echo "(require 'am-one)" > am-two.el
 echo "(require 'am-one)" > am-three.el
@@ -46,7 +49,9 @@ $ACLOCAL
 $AUTOCONF
 $AUTOMAKE --add-missing
 
-./configure "--with-lispdir=`pwd`/lisp"
+cwd=$(pwd) || fatal_ "getting current working directory"
+
+./configure --with-lispdir="$cwd/lisp"
 
 $MAKE
 test -f am-one.elc
@@ -70,7 +75,7 @@ test ! -f am-two.elc
 test ! -f am-three.elc
 test ! -f elc-stamp
 
-./configure "--with-lispdir=`pwd`/lisp" want_two=1
+./configure --with-lispdir="$cwd/lisp" want_two=1
 
 $MAKE
 test -f am-one.elc

@@ -169,7 +169,7 @@ if ! cross_compiling && ! grep "[ $tab]depmode=none" Makefile; then
   mv -f t lib/bar.h
   $MAKE
   ./src/zardoz
-  test "`./src/zardoz`" = 'Foo, Zap!'
+  test "$(./src/zardoz)" = 'Foo, Zap!'
 fi
 
 $MAKE clean

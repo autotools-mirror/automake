@@ -34,7 +34,7 @@ grep 'overrides Automake variable.*INFO_DEPS' stderr
 $AUTOMAKE -Wno-override
 
 # There is only one definition of INFO_DEPS ...
-test 1 = `grep '^INFO_DEPS.*=' Makefile.in | wc -l`
+test 1 -eq $(grep -c '^INFO_DEPS.*=' Makefile.in)
 # ... and it is the right one.
 grep '^INFO_DEPS *= *foo.info *$' Makefile.in
 
@@ -55,7 +55,7 @@ grep 'overrides Automake variable.*INFO_DEPS' stderr
 $AUTOMAKE -Wno-override
 
 # There is only one definition of INFO_DEPS ...
-test 1 = `grep '^INFO_DEPS.*=' Makefile.in | wc -l`
+test 1 -eq $(grep -c '^INFO_DEPS.*=' Makefile.in)
 # ... and it is the right one.
 grep '^INFO_DEPS *= *@INFO_DEPS@ *$' Makefile.in
 

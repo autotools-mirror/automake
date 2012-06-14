@@ -27,4 +27,6 @@ done) > Makefile.am
 
 $ACLOCAL
 $AUTOMAKE
-test 80 -ge `grep DUMMY Makefile.in | wc -c`
+test 80 -ge $(grep DUMMY Makefile.in | wc -c)
+
+:

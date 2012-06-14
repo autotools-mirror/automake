@@ -31,8 +31,7 @@ END
 
 $ACLOCAL
 $AUTOMAKE
-len=`grep '^srcdir' Makefile.in | wc -l`
-test $len -eq 1
+test $(grep -c '^srcdir' Makefile.in) -eq 1
 
 # Also make sure include file is distributed.
 sed -n -e '/^DIST_COMMON =.*\\$/ {

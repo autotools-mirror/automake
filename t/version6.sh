@@ -18,7 +18,7 @@
 
 . ./defs || Exit 1
 
-amver=`$AUTOMAKE --version | sed -e 's/.* //;1q'`
+amver=$($AUTOMAKE --version | sed -e 's/.* //;1q')
 
 # Does the extracted version number seems legit?
 case $amver in

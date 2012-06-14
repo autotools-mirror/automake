@@ -34,19 +34,12 @@ $AUTOMAKE
 
 $EGREP '\.stamp|class' Makefile.in # For debugging.
 grep '^all[-a-z]*:.*classjava\.stamp' Makefile.in
-test `grep -c '^all[-a-z]*:.*classjava\.stamp' Makefile.in` -eq 1
+test $(grep -c '^all[-a-z]*:.*classjava\.stamp' Makefile.in) -eq 1
 
-cat >a.java <<EOF
-class a
-{
-}
-EOF
+echo 'class a { }' > a.java
+echo 'class b { }' > b.java
 
-cat >b.java <<EOF
-class b
-{
-}
-EOF
-
-./configure --prefix "`pwd`"
+./configure
 $MAKE distcheck
+
+:

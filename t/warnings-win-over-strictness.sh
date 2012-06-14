@@ -32,7 +32,7 @@ ko ()
 {
   AUTOMAKE_run $*
   grep '^Makefile\.am:.*:=.*not portable' stderr
-  test `wc -l <stderr` -eq 1
+  test $(wc -l <stderr) -eq 1
 }
 
 set_am_opts()

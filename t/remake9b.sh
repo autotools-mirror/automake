@@ -82,7 +82,7 @@ for vpath in : false; do
   remake_
   $FGREP FINGERPRINT Makefile # For debugging.
   $FGREP $magic1 Makefile
-  test x"`./foo.sh`" = x"$magic1"
+  test x"$(./foo.sh)" = x"$magic1"
 
   $sleep
   echo 'sed "s/^\\(FINGERPRINT\\) *=.*/\\1 = '$magic2'/"' \
@@ -91,7 +91,7 @@ for vpath in : false; do
   $FGREP FINGERPRINT Makefile # For debugging.
   $FGREP $magic1 Makefile && Exit 1
   $FGREP $magic2 Makefile
-  test x"`./foo.sh`" = x"$magic2"
+  test x"$(./foo.sh)" = x"$magic2"
 
   $sleep
   echo cat > $srcdir/tweak-makefile-am # Make it a no-op again.

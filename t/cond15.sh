@@ -53,8 +53,8 @@ $ACLOCAL
 $AUTOMAKE
 
 $FGREP helldl Makefile.in # For debugging.
-num1=`$FGREP 'helldl$(EXEEXT):' Makefile.in | wc -l`
-num2=`$FGREP '@COND1_FALSE@@COND2_TRUE@helldl$(EXEEXT):' Makefile.in | wc -l`
+num1=$($FGREP -c 'helldl$(EXEEXT):' Makefile.in)
+num2=$($FGREP -c '@COND1_FALSE@@COND2_TRUE@helldl$(EXEEXT):' Makefile.in)
 test $num1 -eq 4
 test $num2 -eq 1
 

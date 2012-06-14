@@ -83,7 +83,7 @@ $ACLOCAL
 unset AUTOMAKE_JOBS || :
 AUTOMAKE_run --add-missing
 mv stderr expected
-Makefile_ins=`find . -name Makefile.in`
+Makefile_ins=$(find . -name Makefile.in)
 for file in $Makefile_ins; do
   mv $file $file.exp
 done

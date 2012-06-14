@@ -20,15 +20,15 @@ am_create_testdir=empty
 . ./defs || Exit 1
 
 $ACLOCAL --print-ac-dir
-test "`$ACLOCAL --print-ac-dir`" = "$am_system_acdir"
+test "$($ACLOCAL --print-ac-dir)" = "$am_system_acdir"
 
 $ACLOCAL -Wno-obsolete --acdir foo --print-ac-dir
-test "`$ACLOCAL -Wno-obsolete --acdir foo --print-ac-dir`" = foo
+test "$($ACLOCAL -Wno-obsolete --acdir foo --print-ac-dir)" = foo
 
 $ACLOCAL --system-acdir /bar --print-ac-dir
-test "`$ACLOCAL --system-acdir /bar --print-ac-dir`" = /bar
+test "$($ACLOCAL --system-acdir /bar --print-ac-dir)" = /bar
 
 $ACLOCAL --automake-acdir /bar --print-ac-dir
-test "`$ACLOCAL --automake-acdir /bar --print-ac-dir`" = "$am_system_acdir"
+test "$($ACLOCAL --automake-acdir /bar --print-ac-dir)" = "$am_system_acdir"
 
 :

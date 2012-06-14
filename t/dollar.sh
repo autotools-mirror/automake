@@ -38,7 +38,9 @@ EOF
 $ACLOCAL
 $AUTOCONF
 $AUTOMAKE
-./configure --prefix "`pwd`/inst"
+./configure --prefix "$(pwd)/inst"
 $MAKE install
 test -f 'inst/my/hello$world'
 $MAKE check-dist
+
+:

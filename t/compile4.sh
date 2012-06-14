@@ -25,25 +25,24 @@ get_shell_script compile
 mkdir sub
 
 cat >sub/foo.c <<'EOF'
-int
-foo ()
+int foo (void)
 {
   return 0;
 }
 EOF
 
 cat >main.c <<'EOF'
-extern int foo ();
-int
-main ()
+extern int foo (void);
+int main (void)
 {
   return foo ();
 }
 EOF
 
-absfoodir=`pwd`/sub
-absmainc=`pwd`/main.c
-absmainobj=`pwd`/main.obj
+cwd=$(pwd) || fatal_ "cannot get current directory"
+absfoodir=$cwd/sub
+absmainc=$cwd/main.c
+absmainobj=$cwd/main.obj
 
 cat >> configure.ac << 'END'
 AC_PROG_CC
@@ -84,9 +83,8 @@ fi
 # this should work also without a space.  Try both usages.
 for sp in '' ' '; do
   rm -f main
-
-  ./compile cl $CFLAGS $LDFLAGS -L${sp}"$absfoodir" "$absmainobj" -o main -l${sp}foo
-
+  ./compile cl $CFLAGS $LDFLAGS -L${sp}"$absfoodir" "$absmainobj" \
+               -o main -l${sp}foo
   ./main
 done
 

@@ -34,7 +34,7 @@ $AUTOCONF
 $AUTOMAKE -Wno-override
 
 grep 'site\.exp' Makefile.in
-test `grep -c '^site\.exp:' Makefile.in` -eq 1
+test $(grep -c '^site\.exp:' Makefile.in) -eq 1
 
 ./configure
 $MAKE site.exp

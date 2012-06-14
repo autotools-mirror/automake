@@ -25,7 +25,7 @@ cp "$am_docdir"/amhello-1.0.tar.gz . \
   || fatal_ "cannot get amhello tarball"
 
 host=i586-mingw32msvc
-build=`"$am_scriptdir"/config.guess` && test -n "$build" \
+build=$("$am_scriptdir"/config.guess) && test -n "$build" \
   || fatal_ "cannot guess build platform"
 case $build in *mingw*) skip_ "build system is MinGW too";; esac
 

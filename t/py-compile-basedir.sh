@@ -28,7 +28,7 @@ cp "$am_scriptdir/py-compile" . \
   || fatal_ "failed to fetch auxiliary script py-compile"
 
 f=__init__
-for d in foo foo/bar "`pwd`/foo" . .. ../foo ''; do
+for d in foo foo/bar "$(pwd)/foo" . .. ../foo ''; do
   if test -z "$d"; then
     d2=.
   else

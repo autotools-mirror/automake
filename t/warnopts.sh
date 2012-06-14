@@ -52,7 +52,7 @@ grep '^sub/Makefile.am:.*INCLUDES' stderr
 grep '^sub/Makefile.am:.*foo_SOURCES' stderr && Exit 1
 grep '^Makefile.am:.*INCLUDES' stderr && Exit 1
 # Only three lines of warnings.
-test `grep -v 'warnings are treated as errors' stderr | wc -l` = 3
+test $(grep -v 'warnings are treated as errors' stderr | wc -l) -eq 3
 
 # On fast machines the autom4te.cache created during the above run of
 # $AUTOMAKE is likely to have the same time stamp as the configure.ac
@@ -71,3 +71,5 @@ AC_OUTPUT
 END
 $ACLOCAL
 $AUTOMAKE
+
+:

@@ -81,7 +81,7 @@ cat >mylex.sh <<'END'
 echo "$@" >lex.yy.c
 END
 chmod +x myyacc.sh mylex.sh
-PATH="`pwd`$PATH_SEPARATOR$PATH"
+PATH=$(pwd)$PATH_SEPARATOR$PATH; export PATH
 
 # "make maintainer-clean; ./configure; make" should always work,
 # per GNU Standard.
@@ -89,5 +89,7 @@ $MAKE maintainer-clean
 ./configure
 YACC="myyacc.sh" LEX="mylex.sh" \
    LEX_OUTPUT_ROOT='lex.yy' $MAKE -e zardoz.c joe.c
-grep zardoz.y zardoz.c
-grep joe.l joe.c
+$FGREP zardoz.y zardoz.c
+$FGREP joe.l joe.c
+
+:

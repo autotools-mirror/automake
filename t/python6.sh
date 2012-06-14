@@ -33,6 +33,6 @@ $AUTOMAKE --add-missing
 
 # Simulate no Python.
 ./configure PYTHON=:
-test x"`cat py`" = x:
+test x"$(cat py)" = x:
 
 :

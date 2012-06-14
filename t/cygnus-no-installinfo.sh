@@ -40,7 +40,7 @@ $ACLOCAL
 $AUTOMAKE --cygnus -Wno-override -Wno-obsolete
 $AUTOCONF
 
-cwd=`pwd` || Exit 1
+cwd=$(pwd) || Exit 1
 ./configure --prefix="$cwd"/_inst
 $MAKE
 $MAKE install

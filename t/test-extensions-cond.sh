@@ -60,7 +60,7 @@ END
 
 for i in 1 2 3; do
   AUTOMAKE_fails $i
-  lineno=`sed -n 's/^## lineno //p' $i.am` \
+  lineno=$(sed -n 's/^## lineno //p' $i.am) \
     && test 0 -lt "$lineno" \
     || Exit 99
   grep "^$i\\.am:$lineno:.*TEST_EXTENSIONS.*conditional content" stderr

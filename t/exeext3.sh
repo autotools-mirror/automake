@@ -36,6 +36,8 @@ $ACLOCAL
 $AUTOMAKE -Wno-override
 
 $FGREP 'maude$(EXEEXT):' Makefile.in
-test 1 = `grep 'maude.*:' Makefile.in | wc -l`
+test 1 -eq $(grep -c 'maude.*:' Makefile.in)
 $FGREP '3dldf$(EXEEXT):' Makefile.in
-test 1 = `grep '3dldf.*:' Makefile.in | wc -l`
+test 1 -eq $(grep -c '3dldf.*:' Makefile.in)
+
+:

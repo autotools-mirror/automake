@@ -40,7 +40,7 @@ cat > mdir3/baz.m4 << 'END'
 AC_DEFUN([AM_BAZ_MACRO], [am--baz])
 END
 
-ACLOCAL_PATH=mdir1:./mdir2:`pwd`/mdir3 $ACLOCAL
+ACLOCAL_PATH=mdir1:./mdir2:$(pwd)/mdir3 $ACLOCAL
 $AUTOCONF
 
 # there should be no m4_include in aclocal.m4, even though ACLOCAL_PATH

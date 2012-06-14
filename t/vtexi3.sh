@@ -91,7 +91,7 @@ do_check ()
   # Check that UPDATED seems right, and that UPDATED and UPDATED-MONTH
   # are consistent.
   $EGREP "^@set UPDATED $date$" $srcdir/$vfile.texi
-  vmonth=`grep '^@set UPDATED ' $srcdir/$vfile.texi | awk '{print $4, $5}'`
+  vmonth=$(grep '^@set UPDATED ' $srcdir/$vfile.texi | awk '{print $4, $5}')
   grep "^@set UPDATED-MONTH $vmonth$" $srcdir/$vfile.texi
   # Check that the vers*.texi file is distributed according
   # to $(DISTFILES).

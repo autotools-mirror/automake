@@ -39,7 +39,7 @@ $AUTOMAKE -a
 grep -i 'log' Makefile.in # For debugging.
 
 for lc in $valid_extensions; do
-  uc=`echo $lc | tr '[a-z]' '[A-Z]'`
+  uc=$(echo $lc | tr '[a-z]' '[A-Z]')
   $FGREP "\$(${uc}_LOG_COMPILER)" Makefile.in
   grep "^${uc}_LOG_COMPILE =" Makefile.in
   grep "^\.${lc}\.log:" Makefile.in
@@ -57,7 +57,7 @@ END
 
 AUTOMAKE_fails
 for suf in mu .x-y a-b .t.1 .6c .0 .11  @suf@ .@ext@ '.=' '_&_'; do
-  suf2=`printf '%s\n' "$suf" | sed -e 's/\./\\./'`
+  suf2=$(printf '%s\n' "$suf" | sed -e 's/\./\\./')
   $EGREP "^Makefile\.am:2:.*invalid test extension.* $suf2( |$)" stderr
 done
 

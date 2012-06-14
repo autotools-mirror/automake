@@ -73,7 +73,7 @@ AUTOMAKE_fails -Wno-extra-portability
 
 grep 'as canonical' stderr | grep -v ' .foo. ' | grep -v ' .libfoo_a. ' \
   && Exit 1
-test `grep 'variable.*is defined but' stderr | wc -l` = 13
+test $(grep -c 'variable.*is defined but' stderr) -eq 13
 
 # If we add a global -Wnone, all warnings should disappear.
 $AUTOMAKE -Wnone

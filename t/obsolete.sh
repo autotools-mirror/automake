@@ -39,7 +39,7 @@ cat obs.1        # Likewise.
 cat obs.2        # Likewise.
 
 # Sanity check.  Make sure we have added something to configure.ac.
-test `wc -l <configure.ac` -gt 1
+test $(wc -l <configure.ac) -gt 1
 
 $ACLOCAL
 

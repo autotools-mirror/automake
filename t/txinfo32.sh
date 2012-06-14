@@ -32,9 +32,9 @@ END
 $ACLOCAL
 $AUTOCONF
 $AUTOMAKE
-./configure "--prefix=`pwd`/inst"
+./configure --prefix="$(pwd)/inst"
 $MAKE html dvi ps pdf info \
       install-html install-dvi install-ps install-pdf install-info \
       install-man install-data install-exec install uninstall
 
-Exit 0
+:
