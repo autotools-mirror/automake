@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2001-2012 Free Software Foundation, Inc.
+# Copyright (C) 1999-2012 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,23 +14,31 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Test to make sure config sub in _SOURCES fails.
+# Test to make sure config substitution in _SOURCES fails.
 
 . ./defs || Exit 1
 
-cat >> configure.ac << 'END'
-AC_PROG_CC
-END
+echo AC_PROG_CC >> configure.ac
 
 cat > Makefile.am << 'END'
-bin_PROGRAMS = x
+bin_PROGRAMS = x y
+x_SOURCES = x.c @FOO@
 bar = @FOO@
 foo = $(bar)
-x_SOURCES = x.c $(foo)
-EXTRA_x_SOURCES = y.c
+EXTRA_y_SOURCES = $(foo) y.c
 END
 
 $ACLOCAL
 AUTOMAKE_fails
-grep 'Makefile.am:2:.*bar.*substitution' stderr
-grep 'Makefile.am:2:.*x_SOURCES' stderr
+
+cat > exp-err << 'END'
+Makefile.am:2: error: 'x_SOURCES' includes configure substitution '@FOO@';
+Makefile.am:2: configure substitutions are not allowed in _SOURCES variables
+Makefile.am:3: error: 'bar' includes configure substitution '@FOO@'
+Makefile.am:3: and is referred to from 'EXTRA_y_SOURCES';
+Makefile.am:3: configure substitutions are not allowed in _SOURCES variables
+END
+
+diff exp-err stderr
+
+:

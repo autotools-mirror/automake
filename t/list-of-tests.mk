@@ -316,6 +316,7 @@ t/confh5.sh \
 t/confh6.sh \
 t/confh7.sh \
 t/confh8.sh \
+t/confh-subdir-clean.sh \
 t/confincl.sh \
 t/conflnk.sh \
 t/conflnk2.sh \
@@ -368,6 +369,7 @@ t/depcomp.sh \
 t/depcomp2.sh \
 t/depcomp8a.sh \
 t/depcomp8b.sh \
+t/depcomp-implicit-auxdir.sh \
 t/depdist.sh \
 t/depend.sh \
 t/depend3.sh \
@@ -376,6 +378,7 @@ t/depend5.sh \
 t/depend6.sh \
 t/deprecated-acinit.sh \
 t/destdir.sh \
+t/dir-named-obj-is-bad.sh \
 t/dirlist.sh \
 t/dirlist2.sh \
 t/dirlist-abspath.sh \
@@ -989,8 +992,8 @@ t/silent-nested-vars.sh \
 t/silent-lex.sh \
 t/silent-yacc.sh \
 t/silent-yacc-headers.sh \
-t/srcsub.sh \
-t/srcsub2.sh \
+t/src-acsubst.sh \
+t/sourcefile-in-subdir.sh \
 t/space.sh \
 t/specflg.sh \
 t/specflg2.sh \
@@ -1026,10 +1029,6 @@ t/subdir-cond-gettext.sh \
 t/subdir-order.sh \
 t/subdir-with-slash.sh \
 t/subdir-subsub.sh \
-t/subdir3.sh \
-t/subdir4.sh \
-t/subdir6.sh \
-t/subdir7.sh \
 t/subdir10.sh \
 t/subdir-distclean.sh \
 t/subdirbuiltsources.sh \

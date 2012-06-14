@@ -26,12 +26,12 @@ AC_OUTPUT
 END
 
 : > obj/Makefile.am
-echo 'SUBDIRS = obj' >Makefile.am
+echo 'SUBDIRS = obj' > Makefile.am
 
 $ACLOCAL
 
 AUTOMAKE_fails
-grep 'Makefile.am:1:.*obj.*BSD' stderr
+grep "^Makefile\.am:1:.*'obj'.*BSD make" stderr
 
 cat >Makefile.am <<'END'
 SUBDIRS = @STH@
@@ -40,6 +40,22 @@ DIST_SUBDIRS = $(FOO)
 END
 
 AUTOMAKE_fails
-grep 'Makefile.am:2:.*obj.*BSD' stderr
+grep "^Makefile\\.am:2:.*'obj'.*BSD make" stderr
+
+rm -rf autom4te*.cache
+
+cat >configure.ac << 'END'
+AC_INIT([x], [1.0])
+AC_CONFIG_AUX_DIR([obj])
+AM_INIT_AUTOMAKE
+AC_CONFIG_FILES([Makefile])
+END
+
+rm -f obj/Makefile.am
+: > Makefile.am
+
+$ACLOCAL
+AUTOMAKE_fails -a
+grep "^configure\.ac:2:.*'obj'.*BSD make" stderr
 
 :
