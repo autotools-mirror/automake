@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2001-2012 Free Software Foundation, Inc.
+# Copyright (C) 2004-2012 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,29 +14,42 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# It is ok to have a conditional SUBDIRS when using gettext.
+# Test SUDBIRS with '/' in them.
 
-required=gettext
 . ./defs || Exit 1
 
 cat >> configure.ac << 'END'
-AM_GNU_GETTEXT
-AM_CONDITIONAL(MAUDE, true)
-ALL_LINGUAS=
-AC_SUBST(ALL_LINGUAS)
+AC_CONFIG_FILES([src/subdir/Makefile src/subdir2/Makefile])
+AC_OUTPUT
 END
 
-mkdir po intl
-: >config.rpath
+echo SUBDIRS = src/subdir >Makefile.am
 
-cat > Makefile.am << 'END'
-if MAUDE
-SUBDIRS = po intl
-else
-SUBDIRS =
-endif
-END
+mkdir src
+mkdir src/subdir
+mkdir src/subdir2
+
+: >src/subdir/foo
+: >src/subdir2/foo
+
+cat >src/subdir/Makefile.am <<'EOF'
+EXTRA_DIST = foo
+SUBDIRS = ../subdir2
+EOF
+
+cat >src/subdir2/Makefile.am <<'EOF'
+EXTRA_DIST = foo
+EOF
 
 $ACLOCAL
-# Gettext wants config.guess etc.
-$AUTOMAKE --add-missing
+$AUTOCONF
+$AUTOMAKE --copy --add-missing
+./configure
+$MAKE distdir
+test -f $distdir/src/subdir/foo
+test -f $distdir/src/subdir2/foo
+$MAKE clean
+$MAKE distclean
+test ! -f src/subdir2/Makefile
+
+:

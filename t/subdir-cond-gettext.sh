@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 1996-2012 Free Software Foundation, Inc.
+# Copyright (C) 2001-2012 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,39 +14,31 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Test to make sure sub-sub-dirs work correctly.
+# It is ok to have a conditional SUBDIRS when using gettext.
 
+required=gettext
 . ./defs || Exit 1
 
-mkdir one
-mkdir one/two
-
 cat >> configure.ac << 'END'
-AC_CONFIG_FILES([one/Makefile one/two/Makefile])
-AC_OUTPUT
+AM_GNU_GETTEXT
+AM_CONDITIONAL([MAUDE], [true])
+ALL_LINGUAS=
+AC_SUBST([ALL_LINGUAS])
 END
 
-# Files required because we are using '--gnu'.
-: > INSTALL
-: > NEWS
-: > README
-: > COPYING
-: > AUTHORS
-: > ChangeLog
+mkdir po intl
+: >config.rpath
 
 cat > Makefile.am << 'END'
-SUBDIRS = one
-END
-
-cat > one/Makefile.am << 'END'
-SUBDIRS = two
-END
-
-cat > one/two/Makefile.am << 'END'
-pkgdata_DATA =
+if MAUDE
+SUBDIRS = po intl
+else
+SUBDIRS =
+endif
 END
 
 $ACLOCAL
-$AUTOMAKE --gnu
+# Gettext wants config.guess etc.
+$AUTOMAKE --add-missing
 
 :
