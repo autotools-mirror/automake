@@ -979,6 +979,7 @@ t/silent6.sh \
 t/silent7.sh \
 t/silent8.sh \
 t/silent9.sh \
+t/silent-obsolescent-warns.sh \
 t/silentcxx.sh \
 t/silentcxx-gcc.sh \
 t/silentf77.sh \
