@@ -24,7 +24,10 @@ AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
-info_TEXINFOS = textutils.texi
+info_TEXINFOS = textutils.texi doc/automake-ng.texi
+.PHONY: echo-info-deps
+echo-info-deps:
+	echo ' ' $(INFO_DEPS) ' '
 END
 
 cat > textutils.texi <<EOF
@@ -36,18 +39,34 @@ Hello walls.
 @bye
 EOF
 
+mkdir doc
+cat > doc/automake-ng.texi <<EOF
+\input texinfo
+@setfilename automake-ng
+@settitle automake-ng
+@node Top
+Blurb.
+@bye
+EOF
+
 $ACLOCAL
 $AUTOCONF
 $AUTOMAKE --add-missing
 
-grep '^INFO_DEPS.*textutils$' Makefile.in
-
-# We should not use single suffix inference rules (with separate
-# dependencies), this confuses Solaris make.
-grep '^\.texi:$' Makefile.in && Exit 1
-grep 'textutils: *textutils\.texi' Makefile.in
-
 ./configure
 $MAKE distcheck
+
+$MAKE
+test -f textutils
+test -f doc/automake-ng
+test ! -f textutils.info
+test ! -f doc/automake-ng.info
+
+$MAKE distdir
+test -f $distdir/textutils
+test -f $distdir/doc/automake-ng
+
+$MAKE echo-info-deps | grep '[ /]textutils '
+$MAKE echo-info-deps | grep '[ /]doc/automake-ng '
 
 :

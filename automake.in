@@ -2859,10 +2859,9 @@ sub output_texinfo_build_rules ($$$@)
   $ssfx ||= "";
   $dsfx ||= "";
 
-  # We can output two kinds of rules: the "generic" rules use Make
-  # suffix rules and are appropriate when $source and $dest do not lie
-  # in a sub-directory; the "specific" rules are needed in the other
-  # case.
+  # We can output two kinds of rules: the "generic" rules use pattern
+  # rules and are appropriate when $source and $dest do not lie in a
+  # sub-directory; the "specific" rules are needed in the other case.
   #
   # The former are output only once (this is not really apparent here,
   # but just remember that some logic deeper in Automake will not
@@ -2891,20 +2890,6 @@ sub output_texinfo_build_rules ($$$@)
   # if needed.)
   $generic = 0 unless $insrc;
 
-  # We cannot use a suffix rule to build info files with an empty
-  # extension.  Otherwise we would output a single suffix inference
-  # rule, with separate dependencies, as in
-  #
-  #    .texi:
-  #             $(MAKEINFO) ...
-  #    foo.info: foo.texi
-  #
-  # which confuse Solaris make.  (See the Autoconf manual for
-  # details.)  Therefore we use a specific rule in this case.  This
-  # applies to info files only (dvi and pdf files always have an
-  # extension).
-  my $generic_info = ($generic && $dsfx) ? 1 : 0;
-
   my $dipfx = ($insrc ? '$(srcdir)/' : '') . $dpfx;
 
   $output_rules .= file_contents ('texibuild',
@@ -2917,12 +2902,9 @@ sub output_texinfo_build_rules ($$$@)
 				  DEST_INFO_PREFIX => $dipfx,
 				  DEST_SUFFIX      => $dsfx,
 				  GENERIC          => $generic,
-				  GENERIC_INFO     => $generic_info,
 				  INSRC		   => $insrc,
 				  MAKEINFOFLAGS    => $makeinfoflags,
 				  SOURCE           => ($generic
-						       ? '$<' : $source),
-				  SOURCE_INFO      => ($generic_info
 						       ? '$<' : $source),
 				  SOURCE_REAL      => $source,
 				  SOURCE_SUFFIX    => $ssfx,
