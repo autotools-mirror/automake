@@ -15,22 +15,25 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # The for conditional SUBDIRS.
-# SUBDIRS + AM_CONDITIONAL setup from the manual.
-# Lots of lines here are duplicated in subcond3.test.
+# SUBDIRS + AC_SUBST setup from the manual.
+# Lots of lines here are duplicated in subcond-am-cond.test.
 
 . ./defs || Exit 1
 
 cat >>configure.ac <<'END'
-AM_CONDITIONAL([COND_OPT], [test "$want_opt" = yes])
+if test "$want_opt" = yes; then
+  MAYBE_OPT=opt
+else
+  MAYBE_OPT=
+fi
+AC_SUBST([MAYBE_OPT])
 AC_CONFIG_FILES([src/Makefile opt/Makefile])
 AC_OUTPUT
 END
 
 cat >Makefile.am << 'END'
-if COND_OPT
-  MAYBE_OPT = opt
-endif
 SUBDIRS = src $(MAYBE_OPT)
+DIST_SUBDIRS = src opt
 
 # Testing targets.
 #
@@ -42,17 +45,15 @@ SUBDIRS = src $(MAYBE_OPT)
 # We rely on 'distcheck' to run 'check-local' and use
 # 'sanity1' and 'sanity2' as evidences that test-build was run.
 
-if COND_OPT
 test-build: all
 	test -f src/result
-	test -f opt/result
-	: > $(top_builddir)/../../sanity2
-else
-test-build: all
-	test -f src/result
-	test ! -f opt/result
-	: > $(top_builddir)/../../sanity1
-endif
+	if test -n "$(MAYBE_OPT)"; then \
+	   test -f opt/result || exit 1; \
+	   : > $(top_builddir)/../../sanity2 || exit 1; \
+	else \
+	   test ! -f opt/result || exit 1; \
+	   : > $(top_builddir)/../../sanity1 || exit 1; \
+	fi
 
 test-dist: distdir
 	test -f $(distdir)/src/source
@@ -87,3 +88,5 @@ $MAKE distcheck
 test -f sanity1
 DISTCHECK_CONFIGURE_FLAGS=want_opt=yes $MAKE distcheck
 test -f sanity2
+
+:

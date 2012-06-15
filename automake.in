@@ -1138,15 +1138,19 @@ sub verbose_private_var ($)
     return 'am__v_' . $name;
 }
 
-# define_verbose_var (NAME, VAL)
-# ------------------------------
-# For silent rules, setup VAR and dispatcher, to expand to VAL if silent.
-sub define_verbose_var ($$)
+# define_verbose_var (NAME, VAL-IF-SILENT, [VAL-IF-VERBOSE])
+# ----------------------------------------------------------
+# For  silent rules, setup VAR and dispatcher, to expand to
+# VAL-IF-SILENT if silent, to VAL-IF-VERBOSE (defaulting to
+# empty) if not.
+sub define_verbose_var ($$;$)
 {
-    my ($name, $val) = @_;
+    my ($name, $silent_val, $verbose_val) = @_;
+    $verbose_val = '' unless defined $verbose_val;
     my $var = verbose_var ($name);
     my $pvar = verbose_private_var ($name);
     my $silent_var = $pvar . '_0';
+    my $verbose_var = $pvar . '_1';
     # For typical 'make's, 'configure' replaces AM_V (inside @@) with $(V)
     # and AM_DEFAULT_V (inside @@) with $(AM_DEFAULT_VERBOSITY).
     # For strict POSIX 2008 'make's, it replaces them with 0 or 1 instead.
@@ -1154,9 +1158,12 @@ sub define_verbose_var ($$)
     define_variable ($var, '$(' . $pvar . '_@'.'AM_V'.'@)', INTERNAL);
     define_variable ($pvar . '_', '$(' . $pvar . '_@'.'AM_DEFAULT_V'.'@)',
                      INTERNAL);
-    Automake::Variable::define ($silent_var, VAR_AUTOMAKE, '', TRUE, $val,
-                                '', INTERNAL, VAR_ASIS)
+    Automake::Variable::define ($silent_var, VAR_AUTOMAKE, '', TRUE,
+                                $silent_val, '', INTERNAL, VAR_ASIS)
       if (! vardef ($silent_var, TRUE));
+    Automake::Variable::define ($verbose_var, VAR_AUTOMAKE, '', TRUE,
+                                $verbose_val, '', INTERNAL, VAR_ASIS)
+      if (! vardef ($verbose_var, TRUE));
 }
 
 # Above should not be needed in the general automake code.
@@ -1191,7 +1198,6 @@ sub define_verbose_tagvar ($)
 {
     my ($name) = @_;
     define_verbose_var ($name, '@echo "  '. $name . ' ' x (8 - length ($name)) . '" $@;');
-    define_verbose_var ('at', '@');
 }
 
 # define_verbose_texinfo
@@ -1215,6 +1221,20 @@ sub define_verbose_libtool ()
 {
     define_verbose_var ('lt', '--silent');
     return verbose_flag ('lt');
+}
+
+sub handle_silent ()
+{
+    # Define "$(AM_V_P)", expanding to a shell conditional that can be
+    # used in make recipes to determine whether we are being run in
+    # silent mode or not.  The choice of the name derives from the LISP
+    # convention of appending the letter 'P' to denote a predicate (see
+    # also "the '-P' convention" in the Jargon File); we do so for lack
+    # of a better convention.
+    define_verbose_var ('P', 'false', ':');
+    # *Always* provide the user with '$(AM_V_GEN)', unconditionally.
+    define_verbose_tagvar ('GEN');
+    define_verbose_var ('at', '@');
 }
 
 
@@ -1570,9 +1590,6 @@ sub handle_languages
 	  unless defined $done{$languages{'c'}};
 	define_linker_variable ($languages{'c'});
       }
-
-    # Always provide the user with 'AM_V_GEN' for silent rules.
-    define_verbose_tagvar ('GEN');
 }
 
 
@@ -7999,6 +8016,8 @@ sub generate_makefile ($$)
   handle_ltlibraries;
   handle_programs;
   handle_scripts;
+
+  handle_silent;
 
   # These must be run after all the sources are scanned.  They
   # use variables defined by &handle_libraries, &handle_ltlibraries,

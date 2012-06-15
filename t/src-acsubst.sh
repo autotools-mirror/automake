@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 1996-2012 Free Software Foundation, Inc.
+# Copyright (C) 1999-2012 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,39 +14,31 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Test to make sure sub-sub-dirs work correctly.
+# Test to make sure config substitution in _SOURCES fails.
 
 . ./defs || Exit 1
 
-mkdir one
-mkdir one/two
-
-cat >> configure.ac << 'END'
-AC_CONFIG_FILES([one/Makefile one/two/Makefile])
-AC_OUTPUT
-END
-
-# Files required because we are using '--gnu'.
-: > INSTALL
-: > NEWS
-: > README
-: > COPYING
-: > AUTHORS
-: > ChangeLog
+echo AC_PROG_CC >> configure.ac
 
 cat > Makefile.am << 'END'
-SUBDIRS = one
-END
-
-cat > one/Makefile.am << 'END'
-SUBDIRS = two
-END
-
-cat > one/two/Makefile.am << 'END'
-pkgdata_DATA =
+bin_PROGRAMS = x y
+x_SOURCES = x.c @FOO@
+bar = @FOO@
+foo = $(bar)
+EXTRA_y_SOURCES = $(foo) y.c
 END
 
 $ACLOCAL
-$AUTOMAKE --gnu
+AUTOMAKE_fails
+
+cat > exp-err << 'END'
+Makefile.am:2: error: 'x_SOURCES' includes configure substitution '@FOO@';
+Makefile.am:2: configure substitutions are not allowed in _SOURCES variables
+Makefile.am:3: error: 'bar' includes configure substitution '@FOO@'
+Makefile.am:3: and is referred to from 'EXTRA_y_SOURCES';
+Makefile.am:3: configure substitutions are not allowed in _SOURCES variables
+END
+
+diff exp-err stderr
 
 :
