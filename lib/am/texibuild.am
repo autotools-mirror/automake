@@ -35,7 +35,8 @@
 	  done; \
 	else :; fi && \
 	$(if $(am__info_insrc),cd "$$am__cwd" &&) \
-	if $(MAKEINFO) $(AM_MAKEINFOFLAGS) $(MAKEINFOFLAGS) %MAKEINFOFLAGS% -o $@ $<; \
+	if $(MAKEINFO) $(AM_MAKEINFOFLAGS) $(MAKEINFOFLAGS) \
+	               $(am__makeinfoflags) -o $@ $<; \
 	then \
 	  rc=0; \
 	$(if $(am__info_insrc),$(am__cd) $(srcdir);) \
@@ -53,8 +54,8 @@ INFO_DEPS += %DEST_INFO_PREFIX%%DEST_SUFFIX%
 	%AM_V_TEXI2DVI%$(am__ensure_target_dir_exists) && \
 	TEXINPUTS="$(am__TEXINFO_TEX_DIR)$(PATH_SEPARATOR)$$TEXINPUTS" \
 ## Must set MAKEINFO like this so that version.texi will be found even
-## if it is in srcdir (-I $(srcdir) is set in %MAKEINFOFLAGS%).
-	MAKEINFO='$(MAKEINFO) $(AM_MAKEINFOFLAGS) $(MAKEINFOFLAGS) %MAKEINFOFLAGS%' \
+## if it is in srcdir (-I $(srcdir) is set in '$(am__makeinfoflags)').
+	MAKEINFO='$(MAKEINFO) $(AM_MAKEINFOFLAGS) $(MAKEINFOFLAGS) $(am__makeinfoflags)' \
 ## texi2dvi doesn't silence everything with -q, redirect to /dev/null instead.
 ## We still want -q (%TEXIQUIET%) because it turns on batch mode.
 ## Use '--clean' to avoid leaving auxiliary files behind cluttering the build
@@ -66,8 +67,8 @@ INFO_DEPS += %DEST_INFO_PREFIX%%DEST_SUFFIX%
 	%AM_V_TEXI2PDF%$(am__ensure_target_dir_exists) && \
 	TEXINPUTS="$(am__TEXINFO_TEX_DIR)$(PATH_SEPARATOR)$$TEXINPUTS" \
 ## Must set MAKEINFO like this so that version.texi will be found even
-## if it is in srcdir (-I $(srcdir) is set in %MAKEINFOFLAGS%).
-	MAKEINFO='$(MAKEINFO) $(AM_MAKEINFOFLAGS) $(MAKEINFOFLAGS) %MAKEINFOFLAGS%' \
+## if it is in srcdir (-I $(srcdir) is set in '$(am__makeinfoflags)').
+	MAKEINFO='$(MAKEINFO) $(AM_MAKEINFOFLAGS) $(MAKEINFOFLAGS) $(am__makeinfoflags)' \
 ## texi2pdf doesn't silence everything with -q, redirect to /dev/null instead.
 ## We still want -q (%TEXIQUIET%) because it turns on batch mode.
 ## Use '--clean' to avoid leaving auxiliary files behind cluttering the build
@@ -86,7 +87,7 @@ INFO_DEPS += %DEST_INFO_PREFIX%%DEST_SUFFIX%
 	  && { test ! -d $(@:.html=.htp) || rm -rf $(@:.html=.htp); } \
 	  || exit 1; \
 	if $(MAKEINFOHTML) $(AM_MAKEINFOHTMLFLAGS) $(MAKEINFOFLAGS) \
-	                   %MAKEINFOFLAGS% -o $(@:.html=.htp) $<; \
+	                   $(am__makeinfoflags) -o $(@:.html=.htp) $<; \
 	then \
 	  rm -rf $@; \
 ## Work around a bug in Texinfo 4.1 (-o foo.html outputs files in foo/
@@ -105,3 +106,9 @@ INFO_DEPS += %DEST_INFO_PREFIX%%DEST_SUFFIX%
 %DEST_PREFIX%.dvi: %SOURCE_REAL% %DEPS%
 %DEST_PREFIX%.pdf: %SOURCE_REAL% %DEPS%
 %DEST_PREFIX%.html: %SOURCE_REAL% %DEPS%
+
+%DEST_INFO_PREFIX%%DEST_SUFFIX% \
+%DEST_PREFIX%.dvi \
+%DEST_PREFIX%.pdf \
+%DEST_PREFIX%.html \
+: am__makeinfoflags = %MAKEINFOFLAGS%
