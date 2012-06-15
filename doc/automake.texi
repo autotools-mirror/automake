@@ -2294,9 +2294,9 @@ a file and prints some date information about it.
 
 @item missing
 This wraps a number of programs that are typically only required by
-maintainers.  If the program in question doesn't exist,
-@command{missing} prints an informative warning and attempts to fix
-things so that the build can continue.
+maintainers.  If the program in question doesn't exist, or seems to old,
+@command{missing} will print an informative warning before failing out,
+to provide the user with more context and information.
 
 @item mkinstalldirs
 This script used to be a wrapper around @samp{mkdir -p}, which is not
@@ -11498,12 +11498,12 @@ lists.
 
 Packages made with Autoconf and Automake ship with some generated
 files like @file{configure} or @file{Makefile.in}.  These files were
-generated on the developer's host and are distributed so that
+generated on the developer's machine and are distributed so that
 end-users do not have to install the maintainer tools required to
 rebuild them.  Other generated files like Lex scanners, Yacc parsers,
 or Info documentation, are usually distributed on similar grounds.
 
-Automake outputs rules in @file{Makefile}s to rebuild these files.  For
+Automake output rules in @file{Makefile}s to rebuild these files.  For
 instance, @command{make} will run @command{autoconf} to rebuild
 @file{configure} whenever @file{configure.ac} is changed.  This makes
 development safer by ensuring a @file{configure} is never out-of-date
@@ -11566,10 +11566,41 @@ If users use @command{cvs update} to update their copy, instead of
 inaccurate.  Some rebuild rules will be triggered and attempt to
 run developer tools such as @command{autoconf} or @command{automake}.
 
-Actually, calls to such tools are all wrapped into a call to the
-@command{missing} script discussed later (@pxref{maintainer-mode}).
-@command{missing} will take care of fixing the timestamps when these
-tools are not installed, so that the build can continue.
+Calls to such tools are all wrapped into a call to the @command{missing}
+script discussed later (@pxref{maintainer-mode}), so that the user will
+see more descriptive warnings about missing or out-of-date tools, and
+possible suggestions about how to obtain them, rather than just some
+``command not found'' error, or (worse) some obscure message from some
+older version of the required tool they happen to have installed.
+
+Maintainers interested in keeping their package buildable from a CVS
+checkout even for those users that lack maintainer-specific tools might
+want to provide an helper script (or to enhance their existing bootstrap
+script) to fix the timestamps after a
+@command{cvs update} or a @command{git checkout}, to prevent spurious
+rebuilds.  In case of a project committing the Autotools-generated
+files, as well as the generated @file{.info} files, such script might
+look something like this:
+
+@smallexample
+#!/bin/sh
+# fix-timestamp.sh: prevents useless rebuilds after "cvs update"
+sleep 1
+# aclocal-generated aclocal.m4 depends on locally-installed
+# '.m4' macro files, as well as on 'configure.ac'
+touch aclocal.m4
+sleep 1
+# autoconf-generated configure depends on aclocal.m4 and on
+# configure.ac
+configure config.h.in
+# so does autoheader-generated config.h.in
+configure config.h.in
+# and all the automake-generated Makefile.in files
+touch `find . -name Makefile.in -print`
+# finally, the makeinfo-generated '.info' files depend on the
+# corresponding '.texi' files
+touch doc/*.info
+@end smallexample
 
 @item
 In distributed development, developers are likely to have different
@@ -11666,20 +11697,20 @@ tools shouldn't be required during a user build and they are not
 checked for in @file{configure}.
 
 However, if for some reason a rebuild rule is triggered and involves a
-missing tool, @command{missing} will notice it and warn the user.
-Besides the warning, when a tool is missing, @command{missing} will
-attempt to fix timestamps in a way that allows the build to continue.
-For instance, @command{missing} will touch @file{configure} if
-@command{autoconf} is not installed.  When all distributed files are
-kept under version control, this feature of @command{missing} allows a
-user @emph{with no maintainer tools} to build a package off its version
-control repository, bypassing any timestamp inconsistency (implied by
-e.g.@: @samp{cvs update} or @samp{git clone}).
+missing tool, @command{missing} will notice it and warn the user, even
+suggesting how to obtain such a tool (at least in case it is a well-known
+one, like @command{makeinfo} or @command{bison}).  This is more helpful
+and user-friendly than just having the rebuild rules spewing out a terse
+error message like @samp{sh: @var{tool}: command not found}.  Similarly,
+@command{missing} will warn the user if it detects that a maintainer
+tool it attempted to use seems too old (be warned that diagnosing this
+correctly is typically more difficult that detecting missing tools, and
+requires cooperation from the tool itself, so it won't always work).
 
 If the required tool is installed, @command{missing} will run it and
 won't attempt to continue after failures.  This is correct during
 development: developers love fixing failures.  However, users with
-wrong versions of maintainer tools may get an error when the rebuild
+missing or too old maintainer tools may get an error when the rebuild
 rule is spuriously triggered, halting the build.  This failure to let
 the build continue is one of the arguments of the
 @code{AM_MAINTAINER_MODE} advocates.

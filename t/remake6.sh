@@ -42,23 +42,23 @@ $MAKE
 rm -f Makefile.in
 $MAKE >stdout || { cat stdout; Exit 1; }
 cat stdout
-test `grep -c " --run " stdout` -eq 1
+test `grep -c "/missing " stdout` -eq 1
 
 rm -f sub/Makefile.in
 $MAKE >stdout || { cat stdout; Exit 1; }
 cat stdout
-test `grep -c " --run " stdout` -eq 1
+test `grep -c "/missing " stdout` -eq 1
 
 $sleep  # Let touched files appear newer.
 
 touch Makefile.am
 $MAKE >stdout || { cat stdout; Exit 1; }
 cat stdout
-test `grep -c " --run " stdout` -eq 1
+test `grep -c "/missing " stdout` -eq 1
 
 touch sub/Makefile.am
 $MAKE >stdout || { cat stdout; Exit 1; }
 cat stdout
-test `grep -c " --run " stdout` -eq 1
+test `grep -c "/missing " stdout` -eq 1
 
 :
