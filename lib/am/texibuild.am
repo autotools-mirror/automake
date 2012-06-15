@@ -15,7 +15,7 @@
 ## along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 %%DEST_SUFFIX%: %%SOURCE_SUFFIX%
-?!INSRC?	@$(am__ensure_target_dir_exists)
+	$(if $(am__info_insrc),,@$(am__ensure_target_dir_exists))
 ## Back up the info files before running makeinfo. This is the cheapest
 ## way to ensure that
 ## 1) If the texinfo file shrinks (or if you start using --no-split),
@@ -25,7 +25,7 @@
 ##    to fail, the info files are not removed.  (They are needed by the
 ##    developer while he writes documentation.)
 	%AM_V_MAKEINFO%restore=: && backupdir=.am$$$$ && \
-?INSRC?	am__cwd=`pwd` && $(am__cd) $(srcdir) && \
+	$(if $(am__info_insrc),am__cwd=`pwd` && $(am__cd) $(srcdir) &&) \
 	rm -rf $$backupdir && mkdir $$backupdir && \
 ## If makeinfo is not installed we must not backup the files so
 ## 'missing' can do its job and touch $@ if it exists.
@@ -34,15 +34,15 @@
 	    if test -f $$f; then mv $$f $$backupdir; restore=mv; else :; fi; \
 	  done; \
 	else :; fi && \
-?INSRC?	cd "$$am__cwd"; \
+	$(if $(am__info_insrc),cd "$$am__cwd" &&) \
 	if $(MAKEINFO) $(AM_MAKEINFOFLAGS) $(MAKEINFOFLAGS) %MAKEINFOFLAGS% -o $@ $<; \
 	then \
 	  rc=0; \
-?INSRC?	  $(am__cd) $(srcdir); \
+	$(if $(am__info_insrc),$(am__cd) $(srcdir);) \
 	else \
 	  rc=$$?; \
 ## Beware that backup info files might come from a subdirectory.
-?INSRC?	  $(am__cd) $(srcdir) && \
+	$(if $(am__info_insrc),$(am__cd) $(srcdir) &&) \
 	  $$restore $$backupdir/* $(@D); \
 	fi; \
 	rm -rf $$backupdir; exit $$rc
@@ -100,6 +100,8 @@ INFO_DEPS += %DEST_INFO_PREFIX%%DEST_SUFFIX%
 	fi
 
 %DEST_INFO_PREFIX%%DEST_SUFFIX%: %SOURCE_REAL% %DEPS%
+?INSRC?%DEST_INFO_PREFIX%%DEST_SUFFIX%: am__info_insrc=yes
+
 %DEST_PREFIX%.dvi: %SOURCE_REAL% %DEPS%
 %DEST_PREFIX%.pdf: %SOURCE_REAL% %DEPS%
 %DEST_PREFIX%.html: %SOURCE_REAL% %DEPS%
