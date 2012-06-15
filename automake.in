@@ -2859,38 +2859,11 @@ sub output_texinfo_build_rules ($$$@)
   $ssfx ||= "";
   $dsfx ||= "";
 
-  # We can output two kinds of rules: the "generic" rules use pattern
-  # rules and are appropriate when $source and $dest do not lie in a
-  # sub-directory; the "specific" rules are needed in the other case.
-  #
-  # The former are output only once (this is not really apparent here,
-  # but just remember that some logic deeper in Automake will not
-  # output the same rule twice); while the later need to be output for
-  # each Texinfo source.
-  my $generic;
-  my $makeinfoflags;
   my $sdir = dirname $source;
-  if ($sdir eq '.' && dirname ($dest) eq '.')
-    {
-      $generic = 1;
-      $makeinfoflags = '-I $(srcdir)';
-    }
-  else
-    {
-      $generic = 0;
-      $makeinfoflags = "-I $sdir -I \$(srcdir)/$sdir";
-    }
-
-  # A directory can contain two kinds of info files: some built in the
-  # source tree, and some built in the build tree.  The rules are
-  # different in each case.  However we cannot output two different
-  # set of generic rules.  Because in-source builds are more usual, we
-  # use generic rules in this case and fall back to "specific" rules
-  # for build-dir builds.  (It should not be a problem to invert this
-  # if needed.)
-  $generic = 0 unless $insrc;
-
   my $dipfx = ($insrc ? '$(srcdir)/' : '') . $dpfx;
+  my $makeinfoflags = ($sdir eq '.' && dirname ($dest) eq '.')
+                      ? '-I $(srcdir)'
+                      : "-I $sdir -I \$(srcdir)/$sdir";
 
   $output_rules .= file_contents ('texibuild',
 				  new Automake::Location,
@@ -2901,11 +2874,8 @@ sub output_texinfo_build_rules ($$$@)
 				  DEST_PREFIX      => $dpfx,
 				  DEST_INFO_PREFIX => $dipfx,
 				  DEST_SUFFIX      => $dsfx,
-				  GENERIC          => $generic,
 				  INSRC		   => $insrc,
 				  MAKEINFOFLAGS    => $makeinfoflags,
-				  SOURCE           => ($generic
-						       ? '$<' : $source),
 				  SOURCE_REAL      => $source,
 				  SOURCE_SUFFIX    => $ssfx,
                                   TEXIQUIET        => verbose_flag('texinfo'),
