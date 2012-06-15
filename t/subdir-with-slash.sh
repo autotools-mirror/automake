@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 1999-2012 Free Software Foundation, Inc.
+# Copyright (C) 2004-2012 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,20 +14,42 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Test to make sure config sub in _SOURCES fails.
+# Test SUDBIRS with '/' in them.
 
 . ./defs || Exit 1
 
 cat >> configure.ac << 'END'
-AC_PROG_CC
+AC_CONFIG_FILES([src/subdir/Makefile src/subdir2/Makefile])
+AC_OUTPUT
 END
 
-cat > Makefile.am << 'END'
-bin_PROGRAMS = x
-x_SOURCES = x.c @FOO@
-EXTRA_x_SOURCES = y.c
-END
+echo SUBDIRS = src/subdir >Makefile.am
+
+mkdir src
+mkdir src/subdir
+mkdir src/subdir2
+
+: >src/subdir/foo
+: >src/subdir2/foo
+
+cat >src/subdir/Makefile.am <<'EOF'
+EXTRA_DIST = foo
+SUBDIRS = ../subdir2
+EOF
+
+cat >src/subdir2/Makefile.am <<'EOF'
+EXTRA_DIST = foo
+EOF
 
 $ACLOCAL
-AUTOMAKE_fails
-grep 'Makefile.am:2:.*x_SOURCES.*substitution' stderr
+$AUTOCONF
+$AUTOMAKE --copy --add-missing
+./configure
+$MAKE distdir
+test -f $distdir/src/subdir/foo
+test -f $distdir/src/subdir2/foo
+$MAKE clean
+$MAKE distclean
+test ! -f src/subdir2/Makefile
+
+:

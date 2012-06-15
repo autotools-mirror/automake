@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2004-2012 Free Software Foundation, Inc.
+# Copyright (C) 1996-2012 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,42 +14,46 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Test SUDBIRS with /.
+# Test to make sure sub-sub-dirs work correctly.
 
 . ./defs || Exit 1
 
+mkdir one
+mkdir one/two
+
 cat >> configure.ac << 'END'
-AC_CONFIG_FILES([src/subdir/Makefile src/subdir2/Makefile])
+AC_CONFIG_FILES([one/Makefile one/two/Makefile])
 AC_OUTPUT
 END
 
-echo SUBDIRS = src/subdir >Makefile.am
+# Files required because we are using '--gnu'.
+: > INSTALL
+: > NEWS
+: > README
+: > COPYING
+: > AUTHORS
+: > ChangeLog
 
-mkdir src
-mkdir src/subdir
-mkdir src/subdir2
+cat > Makefile.am << 'END'
+SUBDIRS = one
+END
 
-: >src/subdir/foo
-: >src/subdir2/foo
+cat > one/Makefile.am << 'END'
+SUBDIRS = two
+END
 
-cat >src/subdir/Makefile.am <<'EOF'
-EXTRA_DIST = foo
-SUBDIRS = ../subdir2
-EOF
-
-cat >src/subdir2/Makefile.am <<'EOF'
-EXTRA_DIST = foo
-EOF
+cat > one/two/Makefile.am << 'END'
+pkgdata_DATA = data.txt
+data.txt:
+	echo dummy >$@
+END
 
 $ACLOCAL
 $AUTOCONF
-$AUTOMAKE --copy --add-missing
+$AUTOMAKE --gnu
+
 ./configure
-$MAKE distdir
-test -f $distdir/src/subdir/foo
-test -f $distdir/src/subdir2/foo
-$MAKE clean
-$MAKE distclean
-test ! -f src/subdir2/Makefile
+$MAKE
+test -f one/two/data.txt
 
 :

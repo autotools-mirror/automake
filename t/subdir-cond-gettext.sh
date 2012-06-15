@@ -14,23 +14,31 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Test to make sure config sub in _SOURCES fails.
+# It is ok to have a conditional SUBDIRS when using gettext.
 
+required=gettext
 . ./defs || Exit 1
 
 cat >> configure.ac << 'END'
-AC_PROG_CC
+AM_GNU_GETTEXT
+AM_CONDITIONAL([MAUDE], [true])
+ALL_LINGUAS=
+AC_SUBST([ALL_LINGUAS])
 END
 
+mkdir po intl
+: >config.rpath
+
 cat > Makefile.am << 'END'
-bin_PROGRAMS = x
-bar = @FOO@
-foo = $(bar)
-x_SOURCES = x.c $(foo)
-EXTRA_x_SOURCES = y.c
+if MAUDE
+SUBDIRS = po intl
+else
+SUBDIRS =
+endif
 END
 
 $ACLOCAL
-AUTOMAKE_fails
-grep 'Makefile.am:2:.*bar.*substitution' stderr
-grep 'Makefile.am:2:.*x_SOURCES' stderr
+# Gettext wants config.guess etc.
+$AUTOMAKE --add-missing
+
+:
