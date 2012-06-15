@@ -185,6 +185,7 @@ EXTRA_DIST += lib/Automake/Config.in
 ## --------------------- ##
 
 dist_am_DATA = \
+  lib/am/am-dir.am \
   lib/am/all-target.am \
   lib/am/check-target.am \
   lib/am/serial-tests.am \
