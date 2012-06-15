@@ -2865,11 +2865,8 @@ sub output_texinfo_build_rules ($$$@)
                       ? '-I $(srcdir)'
                       : "-I $sdir -I \$(srcdir)/$sdir";
 
-  $output_rules .= file_contents ('texibuild',
+  $output_rules .= file_contents ('texi-spec',
 				  new Automake::Location,
-                                  AM_V_MAKEINFO    => verbose_flag('MAKEINFO'),
-                                  AM_V_TEXI2DVI    => verbose_flag('TEXI2DVI'),
-                                  AM_V_TEXI2PDF    => verbose_flag('TEXI2PDF'),
 				  DEPS             => "@deps",
 				  DEST_PREFIX      => $dpfx,
 				  DEST_INFO_PREFIX => $dipfx,
@@ -2877,9 +2874,6 @@ sub output_texinfo_build_rules ($$$@)
 				  INSRC		   => $insrc,
 				  MAKEINFOFLAGS    => $makeinfoflags,
 				  SOURCE_REAL      => $source,
-				  SOURCE_SUFFIX    => $ssfx,
-                                  TEXIQUIET        => verbose_flag('texinfo'),
-                                  TEXIDEVNULL      => verbose_flag('texidevnull'),
 				  );
   return ("$dpfx.dvi", "$dpfx.pdf", "$dpfx.ps", "$dpfx.html");
 }
@@ -3183,6 +3177,20 @@ sub handle_texinfo ()
   if ($info_texinfos)
     {
       define_verbose_texinfo;
+      # Keep this list in sync with the $infobase transform done
+      # in &handle_texinfo_helper.
+      foreach my $valid_texinfo_suf (qw/texi texinfo txi/)
+        {
+          $output_rules .= file_contents (
+              'texibuild', new Automake::Location,
+              AM_V_MAKEINFO    => verbose_flag('MAKEINFO'),
+              AM_V_TEXI2DVI    => verbose_flag('TEXI2DVI'),
+              AM_V_TEXI2PDF    => verbose_flag('TEXI2PDF'),
+              TEXIQUIET        => verbose_flag('texinfo'),
+              TEXIDEVNULL      => verbose_flag('texidevnull'),
+              'TEXI-SUFFIX'    => $valid_texinfo_suf
+            );
+        }
       ($mostlyclean, $clean, $maintclean) = handle_texinfo_helper ($info_texinfos);
       chomp $mostlyclean;
       chomp $clean;

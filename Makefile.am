@@ -225,6 +225,7 @@ dist_am_DATA = \
   lib/am/subdirs.am \
   lib/am/tags.am \
   lib/am/texi-vers.am \
+  lib/am/texi-spec.am \
   lib/am/texibuild.am \
   lib/am/texinfos.am \
   lib/am/vala.am \
