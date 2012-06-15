@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 1996-2012 Free Software Foundation, Inc.
+# Copyright (C) 2012 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,29 +14,25 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Test for bug reported by Glenn Amerine:
-#   When automake sees version.texi is being included by a texi file,
-#   version.texi gets listed as a dependency for the .info file but
-#   not the .dvi file.
+# Test that automake complains properly when texinfo input files
+# specify output info files with an invalid extension.
 
 . ./defs || Exit 1
 
 cat > Makefile.am << 'END'
-info_TEXINFOS = zardoz.texi
+info_TEXINFOS = foo.texi bar.texi baz.texi
 END
 
-cat > zardoz.texi << 'END'
-@setfilename zardoz.info
-@include version.texi
-END
-
-# Required when using Texinfo.
-: > mdate-sh
+echo '@setfilename foo.inf'     > foo.texi
+echo '@setfilename bar'         > bar.texi
+echo '@setfilename baz.texi'    > baz.texi
 : > texinfo.tex
 
 $ACLOCAL
-$AUTOMAKE
+AUTOMAKE_fails
 
-grep '^zardoz\.dvi:.*[ /]version.texi' Makefile.in
+grep "foo\.texi:.* 'foo.inf'.*unrecognized extension" stderr
+grep "bar\.texi:.* 'bar'.*unrecognized extension" stderr
+grep "baz\.texi:.* 'baz.texi'.*unrecognized extension" stderr
 
 :
