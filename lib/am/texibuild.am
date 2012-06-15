@@ -76,16 +76,17 @@ INFO_DEPS += %DEST_INFO_PREFIX%%DEST_SUFFIX%
 	$(TEXI2PDF) %TEXIQUIET% --clean -o $@ $< %TEXIDEVNULL%
 
 %.html: %%SOURCE_SUFFIX%
-	%SILENT%$(am__ensure_target_dir_exists)
+	%AM_V_MAKEINFO%$(am__ensure_target_dir_exists) \
 ## When --split (the default) is used, makeinfo will output a
 ## directory.  However it will not update the time stamp of a
 ## previously existing directory, and when the names of the nodes
 ## in the manual change, it may leave unused pages.  Our fix
 ## is to build under a temporary name, and replace the target on
 ## success.
-	%AM_V_MAKEINFO%rm -rf $(@:.html=.htp)
-	%SILENT%if $(MAKEINFOHTML) $(AM_MAKEINFOHTMLFLAGS) $(MAKEINFOFLAGS) \
-	                           %MAKEINFOFLAGS% -o $(@:.html=.htp) $<; \
+	  && { test ! -d $(@:.html=.htp) || rm -rf $(@:.html=.htp); } \
+	  || exit 1; \
+	if $(MAKEINFOHTML) $(AM_MAKEINFOHTMLFLAGS) $(MAKEINFOFLAGS) \
+	                   %MAKEINFOFLAGS% -o $(@:.html=.htp) $<; \
 	then \
 	  rm -rf $@; \
 ## Work around a bug in Texinfo 4.1 (-o foo.html outputs files in foo/
