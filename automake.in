@@ -6817,8 +6817,6 @@ sub transform_token ($$$)
 #   - replaces %KEY% with $VAL,
 #   - enables/disables ?KEY? and ?!KEY?,
 #   - replaces %?KEY% with TRUE or FALSE.
-#   - replaces %KEY?IFTRUE%, %KEY:IFFALSE%, and %KEY?IFTRUE:IFFALSE% with
-#     IFTRUE / IFFALSE, as appropriate.
 sub transform ($$)
 {
   my ($token, $transform) = @_;
@@ -6829,11 +6827,6 @@ sub transform ($$)
   if ($token =~ /^%([\w\-]+)%$/)
     {
       return transform_token ($token, $transform, $1);
-    }
-  # %KEY?IFTRUE%, %KEY:IFFALSE%, and %KEY?IFTRUE:IFFALSE%.
-  elsif ($token =~ /^%([\w\-]+)(?:\?([^?:%]+))?(?::([^?:%]+))?%$/)
-    {
-      return transform_token ($token, $transform, $1) ? ($2 || '') : ($3 || '');
     }
   # %?KEY%.
   elsif ($token =~ /^%\?([\w\-]+)%$/)
@@ -6912,7 +6905,6 @@ sub preprocess_file ($%)
 
   # Substitute Automake template tokens.
   s/(?: % \?? [\w\-]+ %
-      | % [\w\-]+ (?:\?[^?:%]+)? (?::[^?:%]+)? %
       | \? !? [\w\-]+ \?
     )/transform($&, \%transform)/gex;
   # transform() may have added some ##%-comments to strip.
