@@ -29,8 +29,8 @@ define am__texibuild_dvi_or_pdf
 	$2 %TEXIQUIET% --clean -o $@ $< %TEXIDEVNULL%
 endef
 
-%.info: %.%TEXI-SUFFIX%
-	$(if $(am__info_insrc),,@$(am__ensure_target_dir_exists))
+define am__texibuild_info
+	$(if $1,,@$(am__ensure_target_dir_exists))
 ## Back up the info files before running makeinfo. This is the cheapest
 ## way to ensure that
 ## 1) If the texinfo file shrinks (or if you start using --no-split),
@@ -40,7 +40,7 @@ endef
 ##    to fail, the info files are not removed.  (They are needed by the
 ##    developer while he writes documentation.)
 	%AM_V_MAKEINFO%restore=: && backupdir=.am$$$$ && \
-	$(if $(am__info_insrc),am__cwd=`pwd` && $(am__cd) $(srcdir) &&) \
+	$(if $1,am__cwd=`pwd` && $(am__cd) $(srcdir) &&) \
 	rm -rf $$backupdir && mkdir $$backupdir && \
 ## If makeinfo is not installed we must not backup the files so
 ## 'missing' can do its job and touch $@ if it exists.
@@ -54,22 +54,17 @@ endef
 	               $(am__makeinfoflags) -o $@ $<; \
 	then \
 	  rc=0; \
-	$(if $(am__info_insrc),$(am__cd) $(srcdir);) \
+	  $(if $(am__info_insrc),$(am__cd) $(srcdir);) \
 	else \
 	  rc=$$?; \
 ## Beware that backup info files might come from a subdirectory.
-	$(if $(am__info_insrc),$(am__cd) $(srcdir) &&) \
+	  $(if $(am__info_insrc),$(am__cd) $(srcdir) &&) \
 	  $$restore $$backupdir/* $(@D); \
 	fi; \
 	rm -rf $$backupdir; exit $$rc
+endef
 
-%.dvi: %.%TEXI-SUFFIX%
-	$(call am__texibuild_dvi_or_pdf,%AM_V_TEXI2DVI%,$(TEXI2DVI))
-
-%.pdf: %.%TEXI-SUFFIX%
-	$(call am__texibuild_dvi_or_pdf,%AM_V_TEXI2PDF%,$(TEXI2PDF))
-
-%.html: %.%TEXI-SUFFIX%
+define am__texibuild_html
 	%AM_V_MAKEINFO%$(am__ensure_target_dir_exists) \
 ## When --split (the default) is used, makeinfo will output a
 ## directory.  However it will not update the time stamp of a
@@ -92,3 +87,16 @@ endef
 	    rm -rf $(@:.html=); else rm -Rf $(@:.html=.htp) $@; fi; \
 	  exit 1; \
 	fi
+endef
+
+%.info: %.%TEXI-SUFFIX%
+	$(call am__texibuild_info,$(am__info_insrc))
+
+%.dvi: %.%TEXI-SUFFIX%
+	$(call am__texibuild_dvi_or_pdf,%AM_V_TEXI2DVI%,$(TEXI2DVI))
+
+%.pdf: %.%TEXI-SUFFIX%
+	$(call am__texibuild_dvi_or_pdf,%AM_V_TEXI2PDF%,$(TEXI2PDF))
+
+%.html: %.%TEXI-SUFFIX%
+	$(am__texibuild_html)
