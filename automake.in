@@ -2840,36 +2840,6 @@ sub scan_texinfo_file ($)
 	  map { "$infobase.$_" } (sort keys %clean_suffixes));
 }
 
-
-# @CLEAN_FILES
-# handle_texinfo_source ($SOURCE, $DEST, $INSRC, @DEPENDENCIES)
-# ------------------------------------------------------------------
-# SOURCE - the source Texinfo file
-# DEST - the destination Info file
-# INSRC - whether DEST should be built in the source tree
-# DEPENDENCIES - known dependencies
-sub handle_texinfo_source ($$$@)
-{
-  my ($source, $dest, $insrc, @deps) = @_;
-
-  my $sdir = dirname $source;
-  my $makeinfoflags = ($sdir eq '.' && dirname ($dest) eq '.')
-                      ? '-I $(srcdir)'
-                      : "-I $sdir -I \$(srcdir)/$sdir";
-
-  (my $dpfx = $dest) =~ s/\.info$//;
-  $output_rules .= file_contents ('texi-spec',
-				  new Automake::Location,
-				  DEPS             => "@deps",
-				  DEST_PREFIX      => $dpfx,
-				  INSRC		   => $insrc,
-				  MAKEINFOFLAGS    => $makeinfoflags,
-				  SOURCE_REAL      => $source,
-				  );
-  return ("$dpfx.dvi", "$dpfx.pdf", "$dpfx.ps", "$dpfx.html");
-}
-
-
 # ($MOSTLYCLEAN, $TEXICLEAN, $MAINTCLEAN)
 # handle_texinfo_helper ($info_texinfos)
 # --------------------------------------
@@ -3037,11 +3007,23 @@ sub handle_texinfo_helper ($)
 	  push_dist_common ('$(' . $canonical . '_TEXINFOS)');
 	}
 
-      my @cfiles = handle_texinfo_source ($texi, $out_file,
-                                          $insrc, @texi_deps);
-      push (@texi_cleans, @cfiles);
+      my $sdir = dirname $texi;
+      my $makeinfoflags = ($sdir eq '.' && dirname ($out_file) eq '.')
+                           ? '-I $(srcdir)'
+                           : "-I $sdir -I \$(srcdir)/$sdir";
 
-      push (@info_deps_list, $out_file);
+      (my $dpfx = $out_file) =~ s/\.info$//;
+      $output_rules .= file_contents ('texi-spec',
+                                      new Automake::Location,
+                                      DEPS             => "@texi_deps",
+                                      DEST_PREFIX      => $dpfx,
+                                      INSRC            => $insrc,
+                                      MAKEINFOFLAGS    => $makeinfoflags,
+                                      SOURCE_REAL      => $texi,
+                                      );
+
+      push @texi_cleans, "$dpfx.dvi", "$dpfx.pdf", "$dpfx.ps", "$dpfx.html";
+      push @info_deps_list, $out_file;
 
       # If a vers*.texi file is needed, emit the rule.
       if ($vtexi)
