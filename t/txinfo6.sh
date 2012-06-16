@@ -14,20 +14,30 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Test to make sure '.txi' extension works.
+# Make sure '.txi' and '.texinfo' are accepted Texinfo extensions.
 
 . ./defs || Exit 1
 
-cat > Makefile.am << 'END'
-info_TEXINFOS = foo.txi
-END
+echo AC_OUTPUT >> configure.ac
+echo info_TEXINFOS = foo.txi doc/bar.texinfo > Makefile.am
 
+mkdir doc
 echo '@setfilename foo.info' > foo.txi
+echo '@setfilename bar.info' > doc/bar.texinfo
 : > texinfo.tex
 
 $ACLOCAL
+$AUTOCONF
 $AUTOMAKE
 
-grep '^%\.info: %\.txi$' Makefile.in
+./configure
+
+for fmt in info pdf dvi html; do
+  $MAKE -n "$fmt" > stdout || { cat stdout; Exit 1; }
+  cat stdout
+  for basename in foo doc/bar; do
+    grep "[/ $tab]$basename\\.$fmt[; $tab]" stdout
+  done
+done
 
 :
