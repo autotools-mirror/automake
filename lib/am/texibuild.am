@@ -28,11 +28,11 @@ define am__texibuild_dvi_or_pdf
 	MAKEINFO='$(MAKEINFO) $(AM_MAKEINFOFLAGS) $(MAKEINFOFLAGS) $(am__makeinfoflags)' \
 ## texi2dvi and texi2pdf don't silence everything with -q, redirect to
 ## /dev/null instead.
-## We still want -q (%TEXIQUIET%) because it turns on batch mode.
+## We still want -q ($(AM_V_texinfo)) because it turns on batch mode.
 ## Use '--clean' to avoid leaving auxiliary files behind cluttering the
 ## build directory (see automake bug#11146).  We should start using
 ## '--tidy' when we can assume Texinf 4.9 or later.
-	$2 %TEXIQUIET% --clean -o $@ $< %TEXIDEVNULL%
+	$2 $(AM_V_texinfo) --clean -o $@ $< $(AM_V_texidevnull)
 endef
 
 define am__texibuild_info
@@ -45,7 +45,7 @@ define am__texibuild_info
 ## 2) If the texinfo file has some minor mistakes which cause makeinfo
 ##    to fail, the info files are not removed.  (They are needed by the
 ##    developer while he writes documentation.)
-	%AM_V_MAKEINFO%restore=: && backupdir=.am$$$$ && \
+	$(AM_V_MAKEINFO)restore=: && backupdir=.am$$$$ && \
 	$(if $1,am__cwd=`pwd` && $(am__cd) $(srcdir) &&) \
 	rm -rf $$backupdir && mkdir $$backupdir && \
 ## If makeinfo is not installed we must not backup the files so
@@ -71,7 +71,7 @@ define am__texibuild_info
 endef
 
 define am__texibuild_html
-	%AM_V_MAKEINFO%$(am__ensure_target_dir_exists) \
+	$(AM_V_MAKEINFO)$(am__ensure_target_dir_exists) \
 ## When --split (the default) is used, makeinfo will output a
 ## directory.  However it will not update the time stamp of a
 ## previously existing directory, and when the names of the nodes
@@ -106,9 +106,11 @@ define am__texi_rules_for_suffix
 	$$(am__texibuild_html)
 endef
 
-$(foreach s,%TEXI-SUFFIXES%,$(eval $(call am__texi_rules_for_suffix,$s)))
+## Keep the list of texi suffixes in sync with the '$infobase' transform
+## done 'automake:handle_texinfo_helper()'.
+$(foreach s,txi texi texinfo,$(eval $(call am__texi_rules_for_suffix,$s)))
 
 ## The way to make PostScript, for those who want it.
 %.ps: %.dvi
-	%AM_V_DVIPS%TEXINPUTS="$(am__TEXINFO_TEX_DIR)$(PATH_SEPARATOR)$$TEXINPUTS" \
-	$(DVIPS) %TEXIQUIET% -o $@ $<
+	$(AM_V_DVIPS)TEXINPUTS="$(am__TEXINFO_TEX_DIR)$(PATH_SEPARATOR)$$TEXINPUTS" \
+	$(DVIPS) $(AM_V_texinfo) -o $@ $<
