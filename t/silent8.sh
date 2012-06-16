@@ -40,23 +40,31 @@ $AUTOCONF
 
 ./configure --disable-silent-rules
 
-# Make sure that all labels work in silent-mode.
-$MAKE V=0 dvi html info ps pdf >stdout || { cat stdout; Exit 1; }
+# Silent mode output.
+st=0
+$MAKE V=0 dvi html info ps pdf >stdout 2>stderr || st=$?
 cat stdout
-grep 'DVIPS    foo.ps' stdout || Exit 1
-grep 'MAKEINFO foo.html' stdout || Exit 1
-grep 'MAKEINFO foo.info' stdout || Exit 1
-grep 'TEXI2DVI foo.dvi' stdout || Exit 1
-grep 'TEXI2PDF foo.pdf' stdout || Exit 1
+cat stderr >&2
+test $st -eq 0
+grep '^  DVIPS    foo\.ps$'   stdout
+grep '^  MAKEINFO foo\.html$' stdout
+grep '^  MAKEINFO foo\.info$' stdout
+grep '^  TEXI2DVI foo\.dvi$'  stdout
+grep '^  TEXI2PDF foo\.pdf$'  stdout
+# No make recipe is displayed before being executed.
+$EGREP 'texi2(dvi|pdf)|dvips|makeinfo|(rm|mv) ' stdout stderr && Exit 1
+# No verbose output from TeX nor dvips.
+$EGREP 'foo\.log|3\.14|Copyright|This is|[Oo]utput ' output && Exit 1
 
-# Now make sure the labels don't appear in verbose mode.
+# Verbose mode output.
 $MAKE clean || Exit 1
-$MAKE V=1 dvi html info ps pdf >stdout || { cat stdout; Exit 1; }
-cat stdout
-grep 'DVIPS    foo.ps' stdout && Exit 1
-grep 'MAKEINFO foo.html' stdout && Exit 1
-grep 'MAKEINFO foo.info' stdout && Exit 1
-grep 'TEXI2DVI foo.dvi' stdout && Exit 1
-grep 'TEXI2PDF foo.pdf' stdout && Exit 1
+$MAKE V=1 dvi html info ps pdf >output 2>&1 || { cat output; Exit 1; }
+cat output
+$EGREP '(DVIPS|MAKEINFO|TEXI2(PDF|DVI)) ' output && Exit 1
+# Verbose output from TeX.
+grep '[Oo]utput .*foo\.pdf' output
+$FGREP 'foo.log' output
+# Verbose output from dvips.
+$FGREP ' dvips' output
 
 :
