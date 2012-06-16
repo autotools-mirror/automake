@@ -14,6 +14,21 @@
 ## You should have received a copy of the GNU General Public License
 ## along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+define am__texibuild_dvi_or_pdf
+	$1$(am__ensure_target_dir_exists) && \
+	TEXINPUTS="$(am__TEXINFO_TEX_DIR)$(PATH_SEPARATOR)$$TEXINPUTS" \
+## Must set MAKEINFO like this so that version.texi will be found even
+## if it is in srcdir (-I $(srcdir) is set in '$(am__makeinfoflags)').
+	MAKEINFO='$(MAKEINFO) $(AM_MAKEINFOFLAGS) $(MAKEINFOFLAGS) $(am__makeinfoflags)' \
+## texi2dvi and texi2pdf don't silence everything with -q, redirect to
+## /dev/null instead.
+## We still want -q (%TEXIQUIET%) because it turns on batch mode.
+## Use '--clean' to avoid leaving auxiliary files behind cluttering the
+## build directory (see automake bug#11146).  We should start using
+## '--tidy' when we can assume Texinf 4.9 or later.
+	$2 %TEXIQUIET% --clean -o $@ $< %TEXIDEVNULL%
+endef
+
 %.info: %.%TEXI-SUFFIX%
 	$(if $(am__info_insrc),,@$(am__ensure_target_dir_exists))
 ## Back up the info files before running makeinfo. This is the cheapest
@@ -49,30 +64,10 @@
 	rm -rf $$backupdir; exit $$rc
 
 %.dvi: %.%TEXI-SUFFIX%
-	%AM_V_TEXI2DVI%$(am__ensure_target_dir_exists) && \
-	TEXINPUTS="$(am__TEXINFO_TEX_DIR)$(PATH_SEPARATOR)$$TEXINPUTS" \
-## Must set MAKEINFO like this so that version.texi will be found even
-## if it is in srcdir (-I $(srcdir) is set in '$(am__makeinfoflags)').
-	MAKEINFO='$(MAKEINFO) $(AM_MAKEINFOFLAGS) $(MAKEINFOFLAGS) $(am__makeinfoflags)' \
-## texi2dvi doesn't silence everything with -q, redirect to /dev/null instead.
-## We still want -q (%TEXIQUIET%) because it turns on batch mode.
-## Use '--clean' to avoid leaving auxiliary files behind cluttering the build
-## directory (see automake bug#11146).  We should start using '--tidy' when we
-## can assume Texinf 4.9 or later.
-	$(TEXI2DVI) %TEXIQUIET% --clean -o $@ $< %TEXIDEVNULL%
+	$(call am__texibuild_dvi_or_pdf,%AM_V_TEXI2DVI%,$(TEXI2DVI))
 
 %.pdf: %.%TEXI-SUFFIX%
-	%AM_V_TEXI2PDF%$(am__ensure_target_dir_exists) && \
-	TEXINPUTS="$(am__TEXINFO_TEX_DIR)$(PATH_SEPARATOR)$$TEXINPUTS" \
-## Must set MAKEINFO like this so that version.texi will be found even
-## if it is in srcdir (-I $(srcdir) is set in '$(am__makeinfoflags)').
-	MAKEINFO='$(MAKEINFO) $(AM_MAKEINFOFLAGS) $(MAKEINFOFLAGS) $(am__makeinfoflags)' \
-## texi2pdf doesn't silence everything with -q, redirect to /dev/null instead.
-## We still want -q (%TEXIQUIET%) because it turns on batch mode.
-## Use '--clean' to avoid leaving auxiliary files behind cluttering the build
-## directory (see automake bug#11146).  We should start using '--tidy' when we
-## can assume Texinf 4.9 or later.
-	$(TEXI2PDF) %TEXIQUIET% --clean -o $@ $< %TEXIDEVNULL%
+	$(call am__texibuild_dvi_or_pdf,%AM_V_TEXI2PDF%,$(TEXI2PDF))
 
 %.html: %.%TEXI-SUFFIX%
 	%AM_V_MAKEINFO%$(am__ensure_target_dir_exists) \
