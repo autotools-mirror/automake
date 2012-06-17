@@ -22,15 +22,21 @@ required='makeinfo-html tex texi2dvi-o dvips'
 echo AC_OUTPUT >> configure.ac
 
 cat > Makefile.am <<'EOF'
-info_TEXINFOS = foo.texi
+info_TEXINFOS = foo.texi sub/zardoz.texi
 EOF
 
 cat > foo.texi <<'EOF'
 \input texinfo
-@c %**start of header
 @setfilename foo.info
 @settitle foo manual
-@c %**end of header
+@bye
+EOF
+
+mkdir sub
+cat > sub/zardoz.texi <<'EOF'
+\input texinfo
+@setfilename zardoz.info
+@settitle zardoz manual
 @bye
 EOF
 
@@ -46,15 +52,22 @@ $MAKE V=0 dvi html info ps pdf >stdout 2>stderr || st=$?
 cat stdout
 cat stderr >&2
 test $st -eq 0
-grep '^  DVIPS    foo\.ps$'   stdout
-grep '^  MAKEINFO foo\.html$' stdout
-grep '^  MAKEINFO foo\.info$' stdout
-grep '^  TEXI2DVI foo\.dvi$'  stdout
-grep '^  TEXI2PDF foo\.pdf$'  stdout
+grep '^  DVIPS    foo\.ps$'         stdout
+grep '^  MAKEINFO foo\.html$'       stdout
+grep '^  MAKEINFO foo\.info$'       stdout
+grep '^  TEXI2DVI foo\.dvi$'        stdout
+grep '^  TEXI2PDF foo\.pdf$'        stdout
+grep '^  DVIPS    sub/zardoz.ps$'   stdout
+grep '^  MAKEINFO sub/zardoz.html$' stdout
+grep '^  MAKEINFO sub/zardoz.info$' stdout
+grep '^  TEXI2DVI sub/zardoz.dvi$'  stdout
+grep '^  TEXI2PDF sub/zardoz.pdf$'  stdout
 # No make recipe is displayed before being executed.
-$EGREP 'texi2(dvi|pdf)|dvips|makeinfo|(rm|mv) ' stdout stderr && Exit 1
+$EGREP 'texi2(dvi|pdf)|dvips|makeinfo|(rm|mv) ' \
+  stdout stderr && Exit 1
 # No verbose output from TeX nor dvips.
-$EGREP 'foo\.log|3\.14|Copyright|This is|[Oo]utput ' output && Exit 1
+$EGREP '(zardoz|foo)\.log|3\.14|Copyright|This is|[Oo]utput ' \
+  stdout stderr && Exit 1
 
 # Verbose mode output.
 $MAKE clean || Exit 1
@@ -63,7 +76,9 @@ cat output
 $EGREP '(DVIPS|MAKEINFO|TEXI2(PDF|DVI)) ' output && Exit 1
 # Verbose output from TeX.
 grep '[Oo]utput .*foo\.pdf' output
+grep '[Oo]utput .*zardoz\.pdf' output
 $FGREP 'foo.log' output
+$FGREP 'zardoz.log' output
 # Verbose output from dvips.
 $FGREP ' dvips' output
 
