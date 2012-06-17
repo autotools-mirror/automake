@@ -93,7 +93,8 @@ for fmt in info pdf ps dvi html all; do
   $MAKE $fmt
   ls -l . sub # For debugging.
   ls -d foo* baz* sub/bar* > lst
-  $EGREP -v '^(foo|sub/bar|baz)\.(texi|dvi|ps|pdf|html|info)$' lst && Exit 1
+  $EGREP -v '^(foo|sub/bar|baz)\.(texi|dvi|ps|pdf|html|info|t2[dp])$' \
+    lst && Exit 1
   $MAKE clean
 done
 
