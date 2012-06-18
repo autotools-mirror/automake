@@ -34,8 +34,8 @@ endif
 
 # To allow bootstrapping also in an unconfigured tree.
 srcdir ?= .
-am__cd ?= CDPATH=. && unset CDPATH && cd
 V ?= 0
+unexport CDPATH
 
 ifeq ($(V),0)
   AM_V_BOOTSTRAP = @echo "  BOOTSTRAP";
@@ -50,7 +50,7 @@ endif
 # Must be phony, not to be confused with the 'bootstrap' script.
 .PHONY: bootstrap
 bootstrap:
-	$(AM_V_BOOTSTRAP)$(am__cd) $(srcdir) && ./bootstrap.sh
+	$(AM_V_BOOTSTRAP)cd $(srcdir) && ./bootstrap.sh
 	$(AM_V_CONFIGURE)set -e; \
 	am__bootstrap_configure () { \
 	  $(srcdir)/configure $${1+"$$@"} $(BOOTSTRAP_CONFIGURE_FLAGS); \

@@ -51,8 +51,7 @@ sc_mkinstalldirs \
 sc_pre_normal_post_install_uninstall \
 sc_perl_no_undef \
 sc_perl_no_split_regex_space \
-sc_cd_in_backquotes \
-sc_cd_relative_dir \
+sc_no_am_cd \
 sc_perl_at_uscore_in_scalar_context \
 sc_perl_local \
 sc_AMDEP_TRUE_in_automake_in \
@@ -187,27 +186,19 @@ sc_perl_no_split_regex_space:
 	  exit 1; \
 	fi
 
-## Look for cd within backquotes
-sc_cd_in_backquotes:
-	@if grep -n '^[^#]*` *cd ' $(srcdir)/automake.in $(ams); then \
-	  echo "Consider using \$$(am__cd) in the lines above." 1>&2; \
+sc_no_am_cd:
+	@files="\
+	  $(xtests) \
+	  $(pms) \
+	  $(ams) \
+	  $(srcdir)/automake.in \
+	  $(srcdir)/doc/*.texi \
+	"; \
+	if grep -F 'am__cd' $$files; then \
+	  echo "Found uses of 'am__cd', which is obsolete" 1>&2; \
+	  echo "Using a simple 'cd' should be enough" 1>&2; \
 	  exit 1; \
-	fi
-
-## Look for cd to a relative directory (may be influenced by CDPATH).
-## Skip some known directories that are OK.
-sc_cd_relative_dir:
-	@if grep -n '^[^#]*cd ' $(srcdir)/automake.in $(ams) | \
-	      grep -v 'echo.*cd ' | \
-	      grep -v 'am__cd =' | \
-	      grep -v '^[^#]*cd [./]' | \
-	      grep -v '^[^#]*cd \$$(top_builddir)' | \
-	      grep -v '^[^#]*cd "\$$\$$am__cwd' | \
-	      grep -v '^[^#]*cd \$$(abs' | \
-	      grep -v '^[^#]*cd "\$$(DESTDIR)'; then \
-	  echo "Consider using \$$(am__cd) in the lines above." 1>&2; \
-	  exit 1; \
-	fi
+	else :; fi
 
 ## Using @_ in a scalar context is most probably a programming error.
 sc_perl_at_uscore_in_scalar_context:

@@ -503,7 +503,7 @@ $(srcdir)/doc/amhello-1.0.tar.gz: $(amhello_sources) $(srcdir)/configure.ac
 	$(AM_V_GEN): \
 	  && PATH="$(abs_top_builddir)/t/wrap$(PATH_SEPARATOR)$$PATH" \
 	  && export PATH \
-	  && $(am__cd) $(srcdir)/doc/amhello \
+	  && cd $(srcdir)/doc/amhello \
 	  && ACLOCAL=aclocal-$(APIVERSION) && export ACLOCAL \
 	  && AUTOMAKE=automake-$(APIVERSION) && export AUTOMAKE \
 	  && AUTOCONF='$(am_AUTOCONF)' && export AUTOCONF \
@@ -591,7 +591,7 @@ ChangeLog:
 # Ensure tests are world-executable.
 # FIXME: this should be turned into a maintainer check...
 dist-hook:
-	$(am__cd) $(distdir)/t && chmod a+rx *.sh *.tap
+	cd $(distdir)/t && chmod a+rx *.sh *.tap
 
 
 ## --------------------------- ##
@@ -712,14 +712,14 @@ autodiffs:
 	     rev=$$1 dir=$$2 \
 	       && echo "$@: will get files from revision $$rev" \
 	       && $(GIT) clone -q --depth 1 "$$am_gitdir" tmp \
-	       && $(am__cd) tmp \
+	       && cd tmp \
 	       && $(GIT) checkout -q "$$rev" \
 	       && echo "$@: bootstrapping $$rev" \
 	       && $(SHELL) ./bootstrap.sh \
 	       && echo "$@: copying files from $$rev" \
 	       && makefile_ins=`find . -name Makefile.in` \
 	       && (tar cf - configure aclocal.m4 $$makefile_ins) | \
-	          (cd .. && $(am__cd) "$$dir" && tar xf -) \
+	          (cd .. && cd "$$dir" && tar xf -) \
 	       && cd .. \
 	       && rm -rf tmp; \
 	 }; \
@@ -729,7 +729,7 @@ autodiffs:
 	   && $(GIT) --git-dir="$$am_gitdir" describe $$NEW_COMMIT >/dev/null \
 	   && rm -rf $$outdir \
 	   && mkdir $$outdir \
-	   && $(am__cd) $$outdir \
+	   && cd $$outdir \
 	   && mkdir new old \
 	   && get_autofiles_from_rev $$OLD_COMMIT old \
 	   && get_autofiles_from_rev $$NEW_COMMIT new \
@@ -796,7 +796,7 @@ fetch:
 	rm -rf Fetchdir > /dev/null 2>&1
 	mkdir Fetchdir
 ## If a get fails then that is a problem.
-	($(am__cd) Fetchdir && \
+	(cd Fetchdir && \
 	$(WGET_SV_GIT_CF)config.guess -O config.guess && \
 	$(WGET_SV_GIT_CF)config.sub -O config.sub && \
 	$(WGET_SV_CVS)texinfo/texinfo/doc/texinfo.tex -O texinfo.tex && \
