@@ -35,8 +35,7 @@ endif
 # To allow bootstrapping also in an unconfigured tree.
 srcdir ?= .
 am__cd ?= CDPATH=. && unset CDPATH && cd
-AM_DEFAULT_VERBOSITY ?= 0
-V ?= $(AM_DEFAULT_VERBOSITY)
+V ?= 0
 
 ifeq ($(V),0)
   AM_V_BOOTSTRAP = @echo "  BOOTSTRAP";

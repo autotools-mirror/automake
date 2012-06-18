@@ -1119,15 +1119,6 @@ sub verbose_var ($)
     return 'AM_V_' . $name;
 }
 
-# verbose_private_var (NAME)
-# --------------------------
-# The naming policy for the private variables for silent rules.
-sub verbose_private_var ($)
-{
-    my ($name) = @_;
-    return 'am__v_' . $name;
-}
-
 # define_verbose_var (NAME, VAL-IF-SILENT, [VAL-IF-VERBOSE])
 # ----------------------------------------------------------
 # For  silent rules, setup VAR and dispatcher, to expand to
@@ -1138,19 +1129,13 @@ sub define_verbose_var ($$;$)
     my ($name, $silent_val, $verbose_val) = @_;
     $verbose_val = '' unless defined $verbose_val;
     my $var = verbose_var ($name);
-    my $pvar = verbose_private_var ($name);
-    my $silent_var = $pvar . '_0';
-    my $verbose_var = $pvar . '_1';
-    define_variable ($var, INTERNAL,
-                     '$(' . $pvar . '_$(V))');
-    define_variable ($pvar . '_', INTERNAL,
-                     '$(' . $pvar . '_$(AM_DEFAULT_VERBOSITY))');
-    Automake::Variable::define ($silent_var, VAR_AUTOMAKE, '', TRUE,
+    define_variable ($var, INTERNAL, "\$($var/\$V)");
+    Automake::Variable::define ("$var/0", VAR_AUTOMAKE, '', TRUE,
                                 $silent_val, '', INTERNAL)
-      if (! vardef ($silent_var, TRUE));
-    Automake::Variable::define ($verbose_var, VAR_AUTOMAKE, '', TRUE,
+      if (! vardef ("$var/0", TRUE));
+    Automake::Variable::define ("$var/1", VAR_AUTOMAKE, '', TRUE,
                                 $verbose_val, '', INTERNAL)
-      if (! vardef ($verbose_var, TRUE));
+      if (! vardef ("$var/1", TRUE));
 }
 
 # Above should not be needed in the general automake code.

@@ -30,9 +30,9 @@ echo SUBDIRS = sub > Makefile.am
 
 mkdir sub
 cat > sub/Makefile.am <<'EOF'
-my_verbose = $(my_verbose_$(V))
-my_verbose_ = $(my_verbose_$(AM_DEFAULT_VERBOSITY))
-my_verbose_0 = @echo " XGEN    $@";
+my_verbose = $(my_verbose/$(V))
+my_verbose/0 = @echo " XGEN    $@";
+my_verbose/1 =
 
 all-local: foo gen-headers
 

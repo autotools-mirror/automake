@@ -21,12 +21,8 @@ AS_HELP_STRING(
   [verbose build output (undo: "make V=0")])dnl
 ])
 case $enable_silent_rules in @%:@ (((
-  yes) AM_DEFAULT_VERBOSITY=0;;
-   no) AM_DEFAULT_VERBOSITY=1;;
-    *) AM_DEFAULT_VERBOSITY=m4_if([$1], [yes], [0], [1]);;
+  yes) V=0;;
+   no) V=1;;
+    *) V=m4_if([$1], [yes], [0], [1]);;
 esac
-AC_SUBST([AM_DEFAULT_VERBOSITY])dnl
-AM_BACKSLASH='\'
-AC_SUBST([AM_BACKSLASH])dnl
-_AM_SUBST_NOTMAKE([AM_BACKSLASH])dnl
-])
+AC_SUBST([V])])

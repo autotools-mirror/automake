@@ -25,18 +25,23 @@ Automatic dependency tracking support
 Silent rules
 ============
 
-* The silent-rules support unconditionally assumes that nested variables
-  expansion are supported.  Accordingly, the AC_SUBST'd variables '@AM_V@'
-  and'@AM_DEFAULT_V@' have been removed, so that instead of using
-  something like:
+* The silent rules support has been simplified to take advantage
+  of more GNU make features.  Among other things, the AC_SUBST'd
+  variables '@AM_V@' and'@AM_DEFAULT_V@' have been removed.  Now,
+  when defining uses custom silent rules, you should do something
+  like:
 
-    pkg_verbose = $(pkg_verbose_@AM_V@)
-    pkg_verbose_ = $(pkg_verbose_@AM_DEFAULT_V@)
+      # Modern correct way.
+      pkg_verbose = $(pkg_verbose/$(V))
+      pkg_verbose/0 = @echo PKG-GEN $@;
+      pkg_verbose/1 =
 
-  you should simply use:
+  while the old idiom would have been something like:
 
-    pkg_verbose = $(pkg_verbose_$(V))
-    pkg_verbose_ = $(pkg_verbose_$(AM_DEFAULT_VERBOSITY))
+      # Old obsolete way, won't work anymore.
+      pkg_verbose = $(pkg_verbose_@AM_V@)
+      pkg_verbose_ = $(pkg_verbose_@AM_DEFAULT_V@)
+      pkg_verbose_0 = @echo PKG-GEN $@;
 
 
 Warnings and diagnostic

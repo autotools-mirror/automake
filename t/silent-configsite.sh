@@ -28,9 +28,9 @@ EOF
 cat > Makefile.am <<'EOF'
 .PHONY: test-silent test-nosilent
 test-silent:
-	test x'$(AM_DEFAULT_VERBOSITY)' = x'0'
+	$(AM_V_P); test $$? -eq 1
 test-nosilent:
-	test x'$(AM_DEFAULT_VERBOSITY)' = x'1'
+	$(AM_V_P); test $$? -eq 0
 EOF
 
 unset enable_silent_rules || :
