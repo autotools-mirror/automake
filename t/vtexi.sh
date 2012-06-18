@@ -53,10 +53,4 @@ grep '^\$(srcdir)/textutils\.info:.*[ /]version\.texi *$' Makefile.in
 $EGREP 'stamp-vti:.*textutils\.texi( .*)?$' Makefile.in
 $EGREP 'stamp-vti:.*\$\(top_srcdir\)/configure( .*)?$' Makefile.in
 
-# Check that the path to mdate-sh is correct.  Over escaping of '$'
-# etc. once led to '\$\(srcdir\)/mdate-sh'.
-# Filter out '$(srcdir)/mdate-sh'; there should be no occurrences
-# of '.../mdate-sh' left then.
-sed 's,\$(srcdir)/mdate-sh,,g' Makefile.in | grep '/mdate-sh' && Exit 1
-
 :

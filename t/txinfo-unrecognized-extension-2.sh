@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2001-2012 Free Software Foundation, Inc.
+# Copyright (C) 2012 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,33 +14,25 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Test to make sure that mdate-sh is added to the right directory.
-# Report from Kevin Dalley.
+# Test that automake complains properly when texinfo input files
+# specify output info files with an invalid extension.
 
 . ./defs || Exit 1
 
-cat >> configure.ac << 'END'
-AC_CONFIG_FILES([sub/Makefile])
-END
-
 cat > Makefile.am << 'END'
-SUBDIRS = sub
+info_TEXINFOS = foo.texi bar.texi baz.texi
 END
 
-mkdir sub
-
-cat > sub/Makefile.am << 'END'
-info_TEXINFOS = textutils.texi
-END
-
-cat > sub/textutils.texi << 'END'
-@include version.texi
-@setfilename textutils.info
-END
+echo '@setfilename foo.inf'     > foo.texi
+echo '@setfilename bar'         > bar.texi
+echo '@setfilename baz.texi'    > baz.texi
+: > texinfo.tex
 
 $ACLOCAL
-$AUTOMAKE -a
-ls -l sub
-test -f sub/mdate-sh
+AUTOMAKE_fails
+
+grep "foo\.texi:.* 'foo.inf'.*unrecognized extension" stderr
+grep "bar\.texi:.* 'bar'.*unrecognized extension" stderr
+grep "baz\.texi:.* 'baz.texi'.*unrecognized extension" stderr
 
 :

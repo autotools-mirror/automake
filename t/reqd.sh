@@ -28,18 +28,16 @@ mkdir one
 mkdir two
 
 echo 'SUBDIRS = one two' > Makefile.am
+
 echo 'info_TEXINFOS = mumble.texi' > one/Makefile.am
-cat >one/mumble.texi <<'END'
-@setfilename mumble.info
-@include version.texi
-END
+echo @setfilename mumble.info > one/mumble.texi
 
 cp one/Makefile.am one/mumble.texi two
 
 $ACLOCAL
 $AUTOMAKE --add-missing --copy
 
-test -f one/mdate-sh
 test -f one/texinfo.tex
-test -f two/mdate-sh
 test -f two/texinfo.tex
+
+:

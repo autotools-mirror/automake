@@ -26,7 +26,7 @@ info_TEXINFOS = zardoz.texi
 END
 
 cat > zardoz.texi << 'END'
-@setfilename zardoz
+@setfilename zardoz.info
 @include version.texi
 END
 

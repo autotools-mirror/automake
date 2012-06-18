@@ -24,7 +24,7 @@ info_TEXINFOS = texinfo.texi
 END
 
 cat > texinfo.texi << 'END'
-@setfilename texinfo
+@setfilename texinfo.info
 ...
 @verbatim
 @setfilename foobar.info
@@ -36,6 +36,6 @@ $ACLOCAL
 $AUTOMAKE --add-missing
 
 grep 'foobar' Makefile.in && Exit 1
-grep 'texinfo:' Makefile.in
+grep 'texinfo\.info:' Makefile.in
 
 :

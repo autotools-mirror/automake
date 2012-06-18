@@ -14,8 +14,30 @@
 ## You should have received a copy of the GNU General Public License
 ## along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-%%DEST_SUFFIX%: %%SOURCE_SUFFIX%
-?!INSRC?	@$(am__ensure_target_dir_exists)
+TEXI2DVI = texi2dvi
+TEXI2PDF = $(TEXI2DVI) --pdf --batch
+DVIPS = dvips
+MAKEINFOHTML = $(MAKEINFO) --html
+AM_MAKEINFOHTMLFLAGS ?= $(AM_MAKEINFOFLAGS)
+
+define am__texibuild_dvi_or_pdf
+	$1$(am__ensure_target_dir_exists) && \
+	TEXINPUTS="$(am__TEXINFO_TEX_DIR)$(PATH_SEPARATOR)$$TEXINPUTS" \
+## Must set MAKEINFO like this so that version.texi will be found even
+## if it is in srcdir.
+	MAKEINFO='$(MAKEINFO) $(AM_MAKEINFOFLAGS) $(MAKEINFOFLAGS) \
+	                      -I $(@D) -I $(srcdir)/$(@D)' \
+## texi2dvi and texi2pdf don't silence everything with -q, redirect to
+## /dev/null instead.
+## We still want -q ($(AM_V_TEXI_QUIETOPTS)) because it turns on batch
+## mode.  Use '--clean' to avoid leaving auxiliary files behind cluttering
+## the build directory (see automake bug#11146).  We should start using
+## '--tidy' when we can assume Texinf 4.9 or later.
+	$2 $(AM_V_TEXI_QUIETOPTS) --clean -o $@ $< $(AM_V_TEXI_DEVNULL_REDIRECT)
+endef
+
+define am__texibuild_info
+	$(if $1,,@$(am__ensure_target_dir_exists))
 ## Back up the info files before running makeinfo. This is the cheapest
 ## way to ensure that
 ## 1) If the texinfo file shrinks (or if you start using --no-split),
@@ -24,8 +46,8 @@
 ## 2) If the texinfo file has some minor mistakes which cause makeinfo
 ##    to fail, the info files are not removed.  (They are needed by the
 ##    developer while he writes documentation.)
-	%AM_V_MAKEINFO%restore=: && backupdir=.am$$$$ && \
-?INSRC?	am__cwd=`pwd` && $(am__cd) $(srcdir) && \
+	$(AM_V_MAKEINFO)restore=: && backupdir=.am$$$$ && \
+	$(if $1,am__cwd=`pwd` && $(am__cd) $(srcdir) &&) \
 	rm -rf $$backupdir && mkdir $$backupdir && \
 ## If makeinfo is not installed we must not backup the files so
 ## 'missing' can do its job and touch $@ if it exists.
@@ -34,61 +56,34 @@
 	    if test -f $$f; then mv $$f $$backupdir; restore=mv; else :; fi; \
 	  done; \
 	else :; fi && \
-?INSRC?	cd "$$am__cwd"; \
-	if $(MAKEINFO) $(AM_MAKEINFOFLAGS) $(MAKEINFOFLAGS) %MAKEINFOFLAGS% -o $@ $<; \
+	$(if $(am__info_insrc),cd "$$am__cwd" &&) \
+	if $(MAKEINFO) $(AM_MAKEINFOFLAGS) $(MAKEINFOFLAGS) \
+	               -I $(@D) -I $(srcdir)/$(@D) -o $@ $<; \
 	then \
 	  rc=0; \
-?INSRC?	  $(am__cd) $(srcdir); \
+	  $(if $(am__info_insrc),$(am__cd) $(srcdir);) \
 	else \
 	  rc=$$?; \
 ## Beware that backup info files might come from a subdirectory.
-?INSRC?	  $(am__cd) $(srcdir) && \
+	  $(if $(am__info_insrc),$(am__cd) $(srcdir) &&) \
 	  $$restore $$backupdir/* $(@D); \
 	fi; \
 	rm -rf $$backupdir; exit $$rc
+endef
 
-INFO_DEPS += %DEST_INFO_PREFIX%%DEST_SUFFIX%
-
-?GENERIC?%.dvi: %%SOURCE_SUFFIX%
-?!GENERIC?%DEST_PREFIX%.dvi: %SOURCE% %DEPS%
-	%AM_V_TEXI2DVI%$(am__ensure_target_dir_exists) && \
-	TEXINPUTS="$(am__TEXINFO_TEX_DIR)$(PATH_SEPARATOR)$$TEXINPUTS" \
-## Must set MAKEINFO like this so that version.texi will be found even
-## if it is in srcdir (-I $(srcdir) is set in %MAKEINFOFLAGS%).
-	MAKEINFO='$(MAKEINFO) $(AM_MAKEINFOFLAGS) $(MAKEINFOFLAGS) %MAKEINFOFLAGS%' \
-## texi2dvi doesn't silence everything with -q, redirect to /dev/null instead.
-## We still want -q (%TEXIQUIET%) because it turns on batch mode.
-## Use '--clean' to avoid leaving auxiliary files behind cluttering the build
-## directory (see automake bug#11146).  We should start using '--tidy' when we
-## can assume Texinf 4.9 or later.
-	$(TEXI2DVI) %TEXIQUIET% --clean -o $@ $< %TEXIDEVNULL%
-
-?GENERIC?%.pdf: %%SOURCE_SUFFIX%
-?!GENERIC?%DEST_PREFIX%.pdf: %SOURCE% %DEPS%
-	%AM_V_TEXI2PDF%$(am__ensure_target_dir_exists) && \
-	TEXINPUTS="$(am__TEXINFO_TEX_DIR)$(PATH_SEPARATOR)$$TEXINPUTS" \
-## Must set MAKEINFO like this so that version.texi will be found even
-## if it is in srcdir (-I $(srcdir) is set in %MAKEINFOFLAGS%).
-	MAKEINFO='$(MAKEINFO) $(AM_MAKEINFOFLAGS) $(MAKEINFOFLAGS) %MAKEINFOFLAGS%' \
-## texi2pdf doesn't silence everything with -q, redirect to /dev/null instead.
-## We still want -q (%TEXIQUIET%) because it turns on batch mode.
-## Use '--clean' to avoid leaving auxiliary files behind cluttering the build
-## directory (see automake bug#11146).  We should start using '--tidy' when we
-## can assume Texinf 4.9 or later.
-	$(TEXI2PDF) %TEXIQUIET% --clean -o $@ $< %TEXIDEVNULL%
-
-?GENERIC?%.html: %%SOURCE_SUFFIX%
-?!GENERIC?%DEST_PREFIX%.html: %SOURCE% %DEPS%
-	%SILENT%$(am__ensure_target_dir_exists)
+define am__texibuild_html
+	$(AM_V_MAKEINFO)$(am__ensure_target_dir_exists) \
 ## When --split (the default) is used, makeinfo will output a
 ## directory.  However it will not update the time stamp of a
 ## previously existing directory, and when the names of the nodes
 ## in the manual change, it may leave unused pages.  Our fix
 ## is to build under a temporary name, and replace the target on
 ## success.
-	%AM_V_MAKEINFO%rm -rf $(@:.html=.htp)
-	%SILENT%if $(MAKEINFOHTML) $(AM_MAKEINFOHTMLFLAGS) $(MAKEINFOFLAGS) \
-	                           %MAKEINFOFLAGS% -o $(@:.html=.htp) $<; \
+	  && { test ! -d $(@:.html=.htp) || rm -rf $(@:.html=.htp); } \
+	  || exit 1; \
+	if $(MAKEINFOHTML) $(AM_MAKEINFOHTMLFLAGS) $(MAKEINFOFLAGS) \
+	                    -I $(@D) -I $(srcdir)/$(@D) \
+			    -o $(@:.html=.htp) $<; \
 	then \
 	  rm -rf $@; \
 ## Work around a bug in Texinfo 4.1 (-o foo.html outputs files in foo/
@@ -100,11 +95,18 @@ INFO_DEPS += %DEST_INFO_PREFIX%%DEST_SUFFIX%
 	    rm -rf $(@:.html=); else rm -Rf $(@:.html=.htp) $@; fi; \
 	  exit 1; \
 	fi
+endef
 
-## If we are using the generic rules, we need separate dependencies.
-%DEST_INFO_PREFIX%%DEST_SUFFIX%: %SOURCE_REAL% %DEPS%
-if %?GENERIC%
-%DEST_PREFIX%.dvi: %SOURCE_REAL% %DEPS%
-%DEST_PREFIX%.pdf: %SOURCE_REAL% %DEPS%
-%DEST_PREFIX%.html: %SOURCE_REAL% %DEPS%
-endif %?GENERIC%
+%.info: %.texi
+	$(call am__texibuild_info,$(am__info_insrc))
+%.dvi: %.texi
+	$(call am__texibuild_dvi_or_pdf,$(AM_V_TEXI2DVI),$(TEXI2DVI))
+%.pdf: %.texi
+	$(call am__texibuild_dvi_or_pdf,$(AM_V_TEXI2PDF),$(TEXI2PDF))
+%.html: %.texi
+	$(call am__texibuild_html)
+
+## The way to make PostScript, for those who want it.
+%.ps: %.dvi
+	$(AM_V_DVIPS)TEXINPUTS="$(am__TEXINFO_TEX_DIR)$(PATH_SEPARATOR)$$TEXINPUTS" \
+	$(DVIPS) $(AM_V_TEXI_QUIETOPTS) -o $@ $<
