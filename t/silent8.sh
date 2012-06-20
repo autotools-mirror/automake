@@ -16,7 +16,7 @@
 
 # Check texinfo rules in silent-rules mode.
 
-required='makeinfo-html tex texi2dvi dvips'
+required='makeinfo tex texi2dvi dvips'
 . ./defs || Exit 1
 
 echo AC_OUTPUT >> configure.ac

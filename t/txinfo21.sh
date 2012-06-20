@@ -17,7 +17,7 @@
 # Test support for building HTML documentation, and the many
 # install-DOC flavors.
 
-required='makeinfo-html tex texi2dvi'
+required='makeinfo tex texi2dvi'
 . ./defs || Exit 1
 
 cat >>configure.ac <<\EOF
