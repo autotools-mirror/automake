@@ -17,7 +17,7 @@
 # DVIS, PDFS, PSS, HTMLS should not be cleaned upon 'mostlyclean'.
 # Similar to txinfo25.test.
 
-required='makeinfo tex texi2dvi-o dvips'
+required='makeinfo tex texi2dvi dvips'
 . ./defs || Exit 1
 
 mkdir sub

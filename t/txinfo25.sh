@@ -20,7 +20,7 @@
 # (Similar to txinfo16.test, plus CLEANFILES).
 # (See also txinfo23.test and txinfo24.test).
 
-required='makeinfo tex texi2dvi-o'
+required='makeinfo tex texi2dvi'
 . ./defs || Exit 1
 
 cat >> configure.ac << 'END'

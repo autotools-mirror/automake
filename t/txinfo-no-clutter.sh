@@ -17,7 +17,7 @@
 # The pdf, ps and dvi targets shouldn't let clutter in the build directory.
 # Related to automake bug#11146.
 
-required='makeinfo tex texi2dvi-o dvips'
+required='makeinfo tex texi2dvi dvips'
 . ./defs || Exit 1
 
 mkdir sub
