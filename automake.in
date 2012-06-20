@@ -2738,34 +2738,14 @@ sub handle_scripts
 ## Handling Texinfo files.  ##
 ## ------------------------ ##
 
-# ($OUTFILE, $VFILE, @CLEAN_FILES)
+# ($OUTFILE, $VFILE)
 # &scan_texinfo_file ($FILENAME)
 # ------------------------------
 # $OUTFILE     - name of the info file produced by $FILENAME.
 # $VFILE       - name of the version.texi file used (undef if none).
-# @CLEAN_FILES - list of byproducts (indexes etc.)
 sub scan_texinfo_file ($)
 {
   my ($filename) = @_;
-
-  # Some of the following extensions are always created, no matter
-  # whether indexes are used or not.  Other (like cps, fns, ... pgs)
-  # are only created when they are used.  We used to scan $FILENAME
-  # for their use, but that is not enough: they could be used in
-  # included files.  We can't scan included files because we don't
-  # know the include path.  Therefore we always erase these files, no
-  # matter whether they are used or not.
-  #
-  # (tmp is only created if an @macro is used and a certain e-TeX
-  # feature is not available.)
-  my %clean_suffixes =
-    map { $_ => 1 } (qw(aux log toc tmp
-			cp cps
-			fn fns
-			ky kys
-			vr vrs
-			tp tps
-			pg pgs)); # grep 'new.*index' texinfo.tex
 
   my $texi = new Automake::XFile "< $filename";
   verb "reading $filename";
@@ -2794,23 +2774,6 @@ sub scan_texinfo_file ($)
 	{
 	  $vfile = $1;
 	}
-
-      # Try to find new or unused indexes.
-
-      # Creating a new category of index.
-      elsif (/^\@def(code)?index (\w+)/)
-	{
-	  $clean_suffixes{$2} = 1;
-	  $clean_suffixes{"$2s"} = 1;
-	}
-
-      # Merging an index into an another.
-      elsif (/^\@syn(code)?index (\w+) (\w+)/)
-	{
-	  delete $clean_suffixes{"$2s"};
-	  $clean_suffixes{"$3s"} = 1;
-	}
-
     }
 
   if (! $outfile)
@@ -2821,8 +2784,7 @@ sub scan_texinfo_file ($)
 
   my $infobase = basename ($filename);
   $infobase =~ s/\.texi$//;
-  return ($outfile, $vfile,
-	  map { "$infobase.$_" } (sort keys %clean_suffixes));
+  return ($outfile, $vfile);
 }
 
 # ($MOSTLYCLEAN, $TEXICLEAN, $MAINTCLEAN)
@@ -2863,10 +2825,13 @@ sub handle_texinfo_helper ($)
 
       # If 'version.texi' is referenced by input file, then include
       # automatic versioning capability.
-      my ($out_file, $vtexi, @clean_files) =
+      my ($out_file, $vtexi) =
 	scan_texinfo_file ("$relative_dir/$texi")
 	or next;
-      push (@mostly_cleans, @clean_files);
+      # Directory of auxiliary files and build by-products used by texi2dvi
+      # and texi2pdf.
+      push @mostly_cleans, "$relative_dir/$infobase.t2d";
+      push @mostly_cleans, "$relative_dir/$infobase.t2p";
 
       # If the Texinfo source is in a subdirectory, create the
       # resulting info in this subdirectory.  If it is in the current

@@ -19,7 +19,7 @@
 # (Similar to txinfo13.test, plus DISTCLEANFILES).
 # (See also txinfo24.test and txinfo25.test).
 
-required='makeinfo tex texi2dvi-o'
+required='makeinfo tex texi2dvi'
 . ./defs || Exit 1
 
 cat >> configure.ac << 'END'

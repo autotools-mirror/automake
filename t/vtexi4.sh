@@ -21,7 +21,7 @@
 # for more vers*.texi files, and does not require makeinfo, tex and
 # texi2dvi.
 
-required='makeinfo tex texi2dvi-o'
+required='makeinfo tex texi2dvi'
 . ./defs || Exit 1
 
 case `LC_ALL=C date '+%u'` in

@@ -17,7 +17,7 @@
 # If $(infodir) is the empty string, then nothing should be installed there.
 # Likewise for the other install-* targets used for texinfo files.
 
-required='makeinfo-html tex texi2dvi'
+required='makeinfo tex texi2dvi'
 . ./defs || Exit 1
 
 dvips --help \

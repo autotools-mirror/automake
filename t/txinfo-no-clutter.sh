@@ -17,7 +17,7 @@
 # The pdf, ps and dvi targets shouldn't let clutter in the build directory.
 # Related to automake bug#11146.
 
-required='makeinfo tex texi2dvi-o dvips'
+required='makeinfo tex texi2dvi dvips'
 . ./defs || Exit 1
 
 mkdir sub
@@ -93,7 +93,8 @@ for fmt in info pdf ps dvi html all; do
   $MAKE $fmt
   ls -l . sub # For debugging.
   ls -d foo* baz* sub/bar* > lst
-  $EGREP -v '^(foo|sub/bar|baz)\.(texi|dvi|ps|pdf|html|info)$' lst && Exit 1
+  $EGREP -v '^(foo|sub/bar|baz)\.(texi|dvi|ps|pdf|html|info|t2[dp])$' \
+    lst && Exit 1
   $MAKE clean
 done
 
