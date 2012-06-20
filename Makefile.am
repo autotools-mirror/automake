@@ -198,7 +198,6 @@ dist_am_DATA = \
   lib/am/configure.am \
   lib/am/data.am \
   lib/am/dejagnu.am \
-  lib/am/depend.am \
   lib/am/depend2.am \
   lib/am/distdir.am \
   lib/am/footer.am \
