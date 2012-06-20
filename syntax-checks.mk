@@ -77,7 +77,6 @@ sc_tests_plain_sleep \
 sc_m4_am_plain_egrep_fgrep \
 sc_tests_PATH_SEPARATOR \
 sc_tests_logs_duplicate_prefixes \
-sc_tests_makefile_variable_order \
 sc_perl_at_substs \
 sc_unquoted_DESTDIR \
 sc_tabs_in_texi \
@@ -522,28 +521,6 @@ sc_tests_logs_duplicate_prefixes: sc_ensure_testsuite_has_run
 	  echo 'Duplicate warning/error message prefixes seen in above tests.' >&2; \
 	  exit 1; \
 	fi
-
-## Ensure variables are listed before rules in Makefile.in files we generate.
-sc_tests_makefile_variable_order: sc_ensure_testsuite_has_run
-	@st=0; \
-	for file in `find t -name Makefile.in -print`; do \
-	  latevars=`sed -n \
-	    -e :x -e 's/#.*//' \
-	    -e '/\\\\$$/{' -e N -e 'b x' -e '}' \
-	    -e '# Literal TAB.' \
-	    -e '1,/^	/d' \
-	    -e '# Allow @ so we match conditionals.' \
-	    -e '/^ *[a-zA-Z_@]\{1,\} *=/p' $$file`; \
-	  if test -n "$$latevars"; then \
-	    echo "Variables are expanded too late in $$file:" >&2; \
-	    echo "$$latevars" | sed 's/^/  /' >&2; \
-	    st=1; \
-	  fi; \
-	done; \
-	test $$st -eq 0 || { \
-	  echo 'Ensure variables are expanded before rules' >&2; \
-	  exit 1; \
-	}
 
 ## Using ':' as a PATH separator is not portable.
 sc_tests_PATH_SEPARATOR:
