@@ -525,9 +525,10 @@ my @all;
 my @check;
 my @check_tests;
 
-# Keys in this hash table are files to delete.  The associated
-# value tells when this should happen (MOSTLY_CLEAN, DIST_CLEAN, etc.)
-my %clean_files;
+# Keys in this hash table are files and directories to delete.  The
+# associated value tells when this should happen (MOSTLY_CLEAN,
+# DIST_CLEAN, etc).
+my (%clean_files, %clean_dirs);
 
 # Keys in this hash table are object files or other files in
 # subdirectories which need to be removed.  This only holds files
@@ -655,6 +656,7 @@ sub initialize_per_input ()
     @check_tests = ();
 
     %clean_files = ();
+    %clean_dirs = ();
     %compile_clean_files = ();
 
     # We always include '.'.  This isn't strictly correct.
@@ -4006,19 +4008,29 @@ sub handle_clean ($)
 {
   my ($makefile) = @_;
 
-  my @keys = keys %clean_files;
-  my @mostly = grep { $clean_files{$_} == MOSTLY_CLEAN     } @keys;
-  my @plain  = grep { $clean_files{$_} == CLEAN            } @keys;
-  my @dist   = grep { $clean_files{$_} == DIST_CLEAN       } @keys;
-  my @maint  = grep { $clean_files{$_} == MAINTAINER_CLEAN } @keys;
+  my @fkeys = keys %clean_files;
+  my @fmostly = grep { $clean_files{$_} == MOSTLY_CLEAN     } @fkeys;
+  my @fplain  = grep { $clean_files{$_} == CLEAN            } @fkeys;
+  my @fdist   = grep { $clean_files{$_} == DIST_CLEAN       } @fkeys;
+  my @fmaint  = grep { $clean_files{$_} == MAINTAINER_CLEAN } @fkeys;
+
+  my @dkeys = keys %clean_dirs;
+  my @dmostly = grep { $clean_dirs{$_} == MOSTLY_CLEAN     } @dkeys;
+  my @dplain  = grep { $clean_dirs{$_} == CLEAN            } @dkeys;
+  my @ddist   = grep { $clean_dirs{$_} == DIST_CLEAN       } @dkeys;
+  my @dmaint  = grep { $clean_dirs{$_} == MAINTAINER_CLEAN } @dkeys;
 
   $output_rules .= &file_contents
     ('clean',
      new Automake::Location,
-     'MOSTLYCLEAN-FILES'     => "@mostly",
-     'CLEAN-FILES'           => "@plain",
-     'DISTCLEAN-FILES'       => "@dist",
-     'MAINTAINERCLEAN-FILES' => "@maint",
+     'MOSTLYCLEAN-FILES'     => "@fmostly",
+     'CLEAN-FILES'           => "@fplain",
+     'DISTCLEAN-FILES'       => "@fdist",
+     'MAINTAINERCLEAN-FILES' => "@fmaint",
+     'MOSTLYCLEAN-DIRS'      => "@dmostly",
+     'CLEAN-DIRS'            => "@dplain",
+     'DISTCLEAN-DIRS'        => "@ddist",
+     'MAINTAINERCLEAN-DIRS'  => "@dmaint",
      'MAKEFILE'              => basename $makefile);
 }
 
