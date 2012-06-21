@@ -210,7 +210,6 @@ dist_am_DATA = \
   lib/am/lex.am \
   lib/am/library.am \
   lib/am/libs.am \
-  lib/am/libtool.am \
   lib/am/lisp.am \
   lib/am/ltlib.am \
   lib/am/ltlibrary.am \

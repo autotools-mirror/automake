@@ -2231,17 +2231,20 @@ sub handle_libtool
   require_conf_file_with_macro (TRUE, 'LIBTOOL', FOREIGN, @libtool_files)
     if $relative_dir eq '.' && ! $libtool_new_api;
 
-  # .libs is for Unix, _libs for DOS.
-  my @libtool_clean_directories = map { ("$_/.libs", "$_/_libs") }
-                                  (sort keys %libtool_clean_directories);
   check_user_variables 'LIBTOOLFLAGS';
 
-  # Output the libtool compilation rules.
-  # FIXME: actually, this only output the libtool cleaning rules ...
-  # FIXME: some code reorganization/refactoring is probably in order.
-  $output_rules .= &file_contents (
-    'libtool', new Automake::Location,
-    'LIBTOOL-CLEAN-DIRECTORIES' => "@libtool_clean_directories");
+  foreach my $dir (%libtool_clean_directories)
+    {
+      # '.libs' is for Unix, '_libs' for DOS.
+      $clean_dirs{"$dir/.libs"} = CLEAN;
+      $clean_dirs{"$dir/_libs"} = CLEAN;
+    }
+
+  if ($relative_dir eq '.')
+    {
+      $clean_files{"libtool"} = DIST_CLEAN;
+      $clean_files{"config.lt"} = DIST_CLEAN;
+    }
 }
 
 # handle_programs ()
