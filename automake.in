@@ -1838,43 +1838,34 @@ sub handle_single_transform ($$$$$%)
 	$linkers_used{$linker} = 1;
 
 	push (@result, $object);
+        $directory = '.' if $directory eq '';
 
 	if (! defined $object_map{$object})
-	{
+	  {
 	    $object_map{$object} = $full;
 
-	    # If resulting object is in subdir, we need to make
-	    # sure the subdir exists at build time.
-	    if ($object =~ /\//)
-	    {
-		# FIXME: check that $DIRECTORY is somewhere in the
-		# project
+            # For Java, the way we're handling it right now, a
+            # '..' component doesn't make sense.
+            err_am "'$full' should not contain a '..' component"
+              if $lang && $lang->name eq 'java' && $object =~ m{(/|^)\.\./};
 
-		# For Java, the way we're handling it right now, a
-		# '..' component doesn't make sense.
-		if ($lang && $lang->name eq 'java' && $object =~ /(\/|^)\.\.\//)
-		  {
-		    err_am "'$full' should not contain a '..' component";
-		  }
-
-                # Make sure *all* object files in the subdirectory are
-                # removed by "make mostlyclean".  Not only this is more
-                # efficient than listing the object files to be removed
-                # individually (which would cause an 'rm' invocation for
-                # each of them -- very inefficient, see bug#10697), it
-                # would also leave stale object files in the subdirectory
-                # whenever a source file there is removed or renamed.
-                $compile_clean_files{"$directory/*.\$(OBJEXT)"} = MOSTLY_CLEAN;
-                if ($object =~ /\.lo$/)
-                  {
-                    # If we have a libtool object, then we also must remove
-                    # any '.lo' objects in the same subdirectory.
-                    $compile_clean_files{"$directory/*.lo"} = MOSTLY_CLEAN;
-                    # Remember to cleanup .libs/ in this directory.
-                    $libtool_clean_directories{$directory} = 1;
-                  }
-	    }
-	}
+            # Make sure *all* object files in this object's subdirectory
+            # are removed by "make mostlyclean".  Not only this is more
+            # efficient than listing the object files to be removed
+            # individually (which would cause an 'rm' invocation for each
+            # of them -- very inefficient, see bug#10697), it would also
+            # leave stale object files in the subdirectory whenever a
+            # source file there is removed or renamed.
+            $compile_clean_files{"$directory/*.\$(OBJEXT)"} = MOSTLY_CLEAN;
+            if ($object =~ /\.lo$/)
+              {
+                # If we have a libtool object, then we also must remove
+                # any '.lo' objects in the same subdirectory.
+                $compile_clean_files{"$directory/*.lo"} = MOSTLY_CLEAN;
+                # Remember to cleanup .libs/ in this directory.
+                $libtool_clean_directories{$directory} = 1;
+              }
+	  }
 
 	# Transform .o or $o file into .P file (for automatic
 	# dependency code).
@@ -2125,11 +2116,8 @@ sub handle_LIBOBJS_or_ALLOCA ($)
   my $dir = '';
 
   # If LIBOBJS files must be built in another directory we have
-  # to define LIBOBJDIR and ensure the files get cleaned.
-  # Otherwise LIBOBJDIR can be left undefined, and the cleaning
-  # is achieved by 'rm -f *.$(OBJEXT)' in compile.am.
-  if ($config_libobj_dir
-      && $relative_dir ne $config_libobj_dir)
+  # to define the 'LIBOBJDIR' make variable.
+  if ($config_libobj_dir && $relative_dir ne $config_libobj_dir)
     {
       # In the top-level Makefile we do not use $(top_builddir), because
       # we are already there, and since the targets are built without
@@ -2138,11 +2126,10 @@ sub handle_LIBOBJS_or_ALLOCA ($)
       $dir = "$config_libobj_dir/" if $config_libobj_dir ne '.';
       $dir = "$topsrcdir/$dir" if $relative_dir ne '.';
       define_variable ('LIBOBJDIR', INTERNAL, $dir);
-      $clean_files{"\$($var)"} = MOSTLY_CLEAN;
-      # If LTLIBOBJS is used, we must also clear LIBOBJS (which might
-      # be created by libtool as a side-effect of creating LTLIBOBJS).
-      $clean_files{"\$($var)"} = MOSTLY_CLEAN if $var =~ s/^LT//;
     }
+  $compile_clean_files{'$(LIBOBJDIR)*.$(OBJEXT)'} = MOSTLY_CLEAN;
+  $compile_clean_files{'$(LIBOBJDIR)*.lo'} = MOSTLY_CLEAN
+    if $var =~ /^LT/;
 
   return $dir;
 }
