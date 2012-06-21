@@ -530,12 +530,6 @@ my @check_tests;
 # DIST_CLEAN, etc).
 my (%clean_files, %clean_dirs);
 
-# Keys in this hash table are object files or other files in
-# subdirectories which need to be removed.  This only holds files
-# which are created by compilations.  The value in the hash indicates
-# when the file should be removed.
-my %compile_clean_files;
-
 # Keys in this hash table are directories where we expect to build a
 # libtool object.  We use this information to decide what directories
 # to delete.
@@ -657,7 +651,6 @@ sub initialize_per_input ()
 
     %clean_files = ();
     %clean_dirs = ();
-    %compile_clean_files = ();
 
     # We always include '.'.  This isn't strictly correct.
     %libtool_clean_directories = ('.' => 1);
@@ -1856,12 +1849,12 @@ sub handle_single_transform ($$$$$%)
             # of them -- very inefficient, see bug#10697), it would also
             # leave stale object files in the subdirectory whenever a
             # source file there is removed or renamed.
-            $compile_clean_files{"$directory/*.\$(OBJEXT)"} = MOSTLY_CLEAN;
+            $clean_files{"$directory/*.\$(OBJEXT)"} = MOSTLY_CLEAN;
             if ($object =~ /\.lo$/)
               {
                 # If we have a libtool object, then we also must remove
                 # any '.lo' objects in the same subdirectory.
-                $compile_clean_files{"$directory/*.lo"} = MOSTLY_CLEAN;
+                $clean_files{"$directory/*.lo"} = MOSTLY_CLEAN;
                 # Remember to cleanup .libs/ in this directory.
                 $libtool_clean_directories{$directory} = 1;
               }
@@ -2127,8 +2120,8 @@ sub handle_LIBOBJS_or_ALLOCA ($)
       $dir = "$topsrcdir/$dir" if $relative_dir ne '.';
       define_variable ('LIBOBJDIR', INTERNAL, $dir);
     }
-  $compile_clean_files{'$(LIBOBJDIR)*.$(OBJEXT)'} = MOSTLY_CLEAN;
-  $compile_clean_files{'$(LIBOBJDIR)*.lo'} = MOSTLY_CLEAN
+  $clean_files{'$(LIBOBJDIR)*.$(OBJEXT)'} = MOSTLY_CLEAN;
+  $clean_files{'$(LIBOBJDIR)*.lo'} = MOSTLY_CLEAN
     if $var =~ /^LT/;
 
   return $dir;
@@ -2221,7 +2214,6 @@ sub handle_compile ()
 {
    return if ! $must_handle_compiled_objects;
 
-   %mostly_cleaned = (%compile_clean_files, %mostly_cleaned);
    my ($coms, $vars, $rules) =
       &file_contents_internal (1, "$libdir/am/compile.am",
 			       new Automake::Location,
