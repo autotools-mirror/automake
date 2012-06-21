@@ -192,7 +192,6 @@ dist_am_DATA = \
   lib/am/parallel-tests.am \
   lib/am/check-typos.am \
   lib/am/color-tests.am \
-  lib/am/clean-hdr.am \
   lib/am/clean.am \
   lib/am/compile.am \
   lib/am/configure.am \
