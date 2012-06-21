@@ -530,11 +530,6 @@ my @check_tests;
 # DIST_CLEAN, etc).
 my (%clean_files, %clean_dirs);
 
-# Keys in this hash table are directories where we expect to build a
-# libtool object.  We use this information to decide what directories
-# to delete.
-my %libtool_clean_directories;
-
 # Value of $(SOURCES), used by tags.am.
 my @sources;
 # Sources which go in the distribution.
@@ -651,9 +646,6 @@ sub initialize_per_input ()
 
     %clean_files = ();
     %clean_dirs = ();
-
-    # We always include '.'.  This isn't strictly correct.
-    %libtool_clean_directories = ('.' => 1);
 
     @sources = ();
     @dist_sources = ();
@@ -1855,8 +1847,7 @@ sub handle_single_transform ($$$$$%)
                 # If we have a libtool object, then we also must remove
                 # any '.lo' objects in the same subdirectory.
                 $clean_files{"$directory/*.lo"} = MOSTLY_CLEAN;
-                # Remember to cleanup .libs/ in this directory.
-                $libtool_clean_directories{$directory} = 1;
+                $clean_dirs{"$directory/.libs"} = CLEAN;
               }
 	  }
 
@@ -2233,11 +2224,6 @@ sub handle_libtool
 
   check_user_variables 'LIBTOOLFLAGS';
 
-  foreach my $dir (%libtool_clean_directories)
-    {
-      $clean_dirs{"$dir/.libs"} = CLEAN;
-    }
-
   if ($relative_dir eq '.')
     {
       $clean_files{"libtool"} = DIST_CLEAN;
@@ -2305,7 +2291,7 @@ sub handle_programs
       my($xlink, $vlink) = &define_per_target_linker_variable ($linker, $xname);
       $vlink = verbose_flag ($vlink || 'GEN');
 
-      $libtool_clean_directories{dirname ($one_file)} = 1;
+      $clean_dirs{dirname ($one_file) . '/.libs'} = CLEAN;
 
       $output_rules .= &file_contents ('program',
 				       $where,
@@ -2643,9 +2629,7 @@ sub handle_ltlibraries
 	    }
 	}
 
-      # Remember to cleanup .libs/ in this directory.
-      my $dirname = dirname $onelib;
-      $libtool_clean_directories{$dirname} = 1;
+      $clean_dirs{dirname ($onelib) . '/.libs'} = CLEAN;
 
       $output_rules .= &file_contents ('ltlibrary',
 				       $where,
