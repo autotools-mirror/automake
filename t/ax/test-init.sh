@@ -200,16 +200,6 @@ cross_compiling ()
   test x"$host_alias" != x && test x"$build_alias" != x"$host_alias"
 }
 
-# is_newest FILE FILES
-# --------------------
-# Return false if any file in FILES is newer than FILE.
-# Resolve ties in favor of FILE.
-is_newest ()
-{
-  is_newest_files=$(find "$@" -prune -newer "$1")
-  test -z "$is_newest_files"
-}
-
 # is_blocked_signal SIGNAL-NUMBER
 # --------------------------------
 # Return success if the given signal number is blocked in the shell,
