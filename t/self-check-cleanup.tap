@@ -40,7 +40,7 @@ fi
 export have_symlinks # Is used also by spawned shells.
 
 # Don't let a failure poison all subsequent tests.
-do_clean ()
+do_clean_setup ()
 {
   # Don't try to be smart and use find here, that has caused issues
   # and extra ERROR results in the past.  Be dumb and safe.
@@ -48,7 +48,11 @@ do_clean ()
     test ! -d $d || chmod u+rwx $d || :
   done
   rm -rf t
+  mkdir -p t/ax
+  cp "$am_top_builddir"/t/ax/test-init.sh t/ax
 }
+
+do_clean_setup
 
 # Exporting 'keep_testdirs' to "yes" in the environment should cause
 # the cleanup code not to be run, so that the temporary directories
@@ -59,11 +63,11 @@ command_ok_ '"keep_testdirs=yes" causes testdir to be kept around' eval '
      && test -f t/dummy.dir/foo \
      && test okok = $(cat t/dummy.dir/foo)'
 
-do_clean
+do_clean_setup
 
 # Check that pre-test cleanup works also with directories with
 # "null" permissions, and containing broken symlinks.
-mkdir t t/dummy.dir t/dummy.dir/sub
+mkdir t/dummy.dir t/dummy.dir/sub
 (
   cd t/dummy.dir
   touch file sub/file
@@ -82,7 +86,7 @@ command_ok_ "pre-cleanup removed low-perms testdir" \
                && test ! -d t/dummy.dir \
                && test ! -r t/dummy.dir'
 
-do_clean
+do_clean_setup
 
 # Check that post-test cleanup works also with directories with
 # "null" permissions, and containing broken symlinks.
@@ -109,7 +113,7 @@ command_ok_ "post-cleanup removed null-perms testdir" \
                && test ! -d t/dummy.dir \
                && test ! -r t/dummy.dir'
 
-do_clean
+do_clean_setup
 
 # Check that pre-test cleanup does not unduly change the permissions of
 # files to which symlinks in the temporary test directory point to.
@@ -120,7 +124,7 @@ if test $have_symlinks = yes; then
   : > file
   chmod 000 file
 
-  mkdir t t/dummy.dir
+  mkdir t/dummy.dir
   (cd t/dummy.dir && ln -s ../../dir ../../file .)
 
   command_ok_ "pre-cleanup with testdir with zero-perms symlinks" \
@@ -152,7 +156,7 @@ else # $have_symlinks = no
   skip_row_ 6 "symlinks not supported"
 fi
 
-do_clean
+do_clean_setup
 
 # Check that the cleanup trap does not remove the temporary
 # test directory in case of test failure, skip, hard-error,
@@ -168,7 +172,7 @@ for st in 1 2 3 10 77 99 126 127 130 255; do
   " t/dummy.sh
   command_ok_ "testdir not removed if exiting with status $st" \
               test -f t/dummy.dir/foo
-  do_clean
+  do_clean_setup
 done
 
 for sig in 1 2 3 9 13 15; do
@@ -185,7 +189,7 @@ for sig in 1 2 3 9 13 15; do
   " t/dummy.sh
   command_ok_ "testdir not removed if getting signal $sig" \
               test -f t/dummy.dir/foo
-  do_clean
+  do_clean_setup
 done
 
 :

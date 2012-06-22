@@ -387,8 +387,11 @@ $(srcdir)/t/testsuite-part.am: $(srcdir)/gen-testsuite-part Makefile.am
 
 # Static dependencies valid for each test case.
 check_SCRIPTS = t/wrap/aclocal-$(APIVERSION) t/wrap/automake-$(APIVERSION)
-dist_check_DATA = t/ax/plain-functions.sh t/ax/tap-functions.sh
-check_DATA = defs defs-static
+dist_check_DATA = \
+  t/ax/test-init.sh  \
+  t/ax/plain-functions.sh  \
+  t/ax/tap-functions.sh
+nodist_check_DATA = defs-static
 
 # Few more static dependencies.
 t/distcheck-missing-m4.log: t/ax/distcheck-hook-m4.am
