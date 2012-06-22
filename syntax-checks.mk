@@ -58,6 +58,7 @@ sc_AMDEP_TRUE_in_automake_in \
 sc_tests_make_without_am_makeflags \
 sc_tests_obsolete_variables \
 sc_tests_here_document_format \
+sc_tests_command_subst \
 sc_tests_Exit_not_exit \
 sc_tests_automake_fails \
 sc_tests_required_after_defs \
@@ -338,6 +339,33 @@ $(sc_tests_plain_check_rules): sc_tests_plain_% :
 sc_tests_here_document_format:
 	@if grep '<<' $(xtests) | grep -Ev '\b(END|EOF)\b|\bcout <<'; then \
 	  echo 'Use here documents with "END" and "EOF" only, for greppability.' 1>&2; \
+	  exit 1; \
+	fi
+
+## Our test case should use the $(...) POSIX form for command substitution,
+## rather than the older `...` form.
+## The point of ignoring text on here-documents is that we want to exempt
+## Makefile.am rules, configure.ac code and helper shell script created and
+## used by out shell scripts, because Autoconf (as of version 2.69) does not
+## yet ensure that $CONFIG_SHELL will be set to a proper POSIX shell.
+sc_tests_command_subst:
+	@found=false; \
+	scan () { \
+	  sed -n -e '/^#/d' \
+	         -e '/<<.*END/,/^END/b' -e '/<<.*EOF/,/^EOF/b' \
+	         -e 's/\\`/\\{backtick}/' \
+	         -e "s/[^\\]'\([^']*\`[^']*\)*'/'{quoted-text}'/g" \
+	         -e '/`/p' $$*; \
+	}; \
+	for file in $(xtests); do \
+	  res=`scan $$file`; \
+	  if test -n "$$res"; then \
+	    echo "$$file:$$res"; \
+	    found=true; \
+	  fi; \
+	done; \
+	if $$found; then \
+	  echo 'Use $$(...), not `...`, for command substitutions.' >&2; \
 	  exit 1; \
 	fi
 
