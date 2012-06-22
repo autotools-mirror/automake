@@ -109,6 +109,7 @@ t/aclocal-install-fail.sh \
 t/aclocal-install-mkdir.sh \
 t/aclocal-no-install-no-mkdir.sh \
 t/aclocal-verbose-install.sh \
+t/aclocal-autoconf-version-check.sh \
 t/ac-output-old.tap \
 t/acsilent.sh \
 t/acsubst.sh \
@@ -656,7 +657,6 @@ t/makevars.sh \
 t/man.sh \
 t/man2.sh \
 t/man3.sh \
-t/man4.sh \
 t/man5.sh \
 t/man6.sh \
 t/man7.sh \
@@ -667,12 +667,8 @@ t/mdate3.sh \
 t/mdate4.sh \
 t/mdate5.sh \
 t/mdate6.sh \
-t/missing.sh \
-t/missing2.sh \
+t/missing-version-mismatch.sh \
 t/missing3.sh \
-t/missing4.sh \
-t/missing5.sh \
-t/missing6.sh \
 t/missing-auxfile-stops-makefiles-creation.sh \
 t/mkinstall.sh \
 t/mkinst2.sh \
@@ -931,6 +927,7 @@ t/remake-deleted-am-2.sh \
 t/remake-deleted-am-subdir.sh \
 t/remake-deleted-am.sh \
 t/remake-renamed-am.sh \
+t/remake-aclocal-version-mismatch.sh \
 t/pr8365-remake-timing.sh \
 t/req.sh \
 t/reqd.sh \
@@ -1176,7 +1173,6 @@ t/txinfo26.sh \
 t/txinfo27.sh \
 t/txinfo28.sh \
 t/txinfo29.sh \
-t/txinfo30.sh \
 t/txinfo31.sh \
 t/txinfo32.sh \
 t/txinfo33.sh \

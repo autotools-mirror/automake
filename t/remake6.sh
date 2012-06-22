@@ -39,7 +39,7 @@ do_check ()
 {
   $MAKE >stdout || { cat stdout; Exit 1; }
   cat stdout
-  test $(grep -c " --run " stdout) -eq 1
+  test $(grep -c "/missing " stdout) -eq 1
 }
 
 # Now, we are set up.  Ensure that, for either missing Makefile.in,
