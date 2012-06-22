@@ -59,9 +59,8 @@ grep version1 aclocal.m4
 $sleep
 # aclocal.m4 should change if we touch otherfile.m4
 touch m4/otherfile.m4
-$sleep
 $ACLOCAL -I m4
-test $(ls -1t aclocal.m4 m4/otherfile.m4 | sed 1q) = aclocal.m4
+is_newest aclocal.m4 m4/otherfile.m4
 
 $AUTOCONF
 $AUTOMAKE

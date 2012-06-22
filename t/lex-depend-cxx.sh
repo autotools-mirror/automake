@@ -40,9 +40,8 @@ test-deps-exist:
 
 .PHONY: test-obj-updated
 test-obj-updated: joe.$(OBJEXT) moe.$(OBJEXT)
-	stat older my-hdr.hxx joe.$(OBJEXT) moe.$(OBJEXT) || :
-	test `ls -t older joe.$(OBJEXT) | sed 1q` = joe.$(OBJEXT)
-	test `ls -t older moe.$(OBJEXT) | sed 1q` = moe.$(OBJEXT)
+	is_newest joe.$(OBJEXT) my-hdr.hxx
+	is_newest moe.$(OBJEXT) my-hdr.hxx
 END
 
 cat > joe.ll << 'END'
@@ -86,7 +85,6 @@ $AUTOCONF
 $MAKE test-deps-exist
 $MAKE
 
-: > older
 $sleep
 touch my-hdr.hxx
 $MAKE test-obj-updated

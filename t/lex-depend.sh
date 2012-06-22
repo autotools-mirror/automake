@@ -38,8 +38,7 @@ test-deps-exist:
 
 .PHONY: test-obj-updated
 test-obj-updated: joe.$(OBJEXT)
-	stat older my-hdr.h joe.$(OBJEXT) || : For debugging.
-	test `ls -t older joe.$(OBJEXT) | sed 1q` = joe.$(OBJEXT)
+	is_newest joe.$(OBJEXT) my-hdr.h
 END
 
 cat > joe.l << 'END'
@@ -80,10 +79,15 @@ $AUTOCONF
 
 $MAKE test-deps-exist
 $MAKE
+cross_compiling || test "$(./zoo)" = 'Hello, World!' || Exit 1
 
-: > older
 $sleep
-touch my-hdr.h
+cat >> my-hdr.h << 'END'
+#undef MESSAGE
+#define MESSAGE "Howdy, Earth!"
+END
 $MAKE test-obj-updated
+$MAKE
+cross_compiling || test "$(./zoo)" = 'Howdy, Earth!' || Exit 1
 
 :

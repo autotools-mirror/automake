@@ -47,7 +47,6 @@ $AUTOCONF
 $AUTOMAKE
 ./configure
 
-$sleep
 echo stamp > stampfile
 $sleep
 for target in dist distcheck; do
@@ -56,7 +55,8 @@ for target in dist distcheck; do
     $MAKE -n $target | grep stamp-sub-dist-hook || Exit 1
   fi
   $MAKE test-no-distdir
-  test $(ls -1t | sed 1q) = stampfile
+  # No file has been actually touched or created.
+  is_newest stampfile $(find .)
 done
 
 :
