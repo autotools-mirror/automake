@@ -63,6 +63,8 @@ tab='	'
 # A newline character.
 nl='
 '
+# A literal escape character.  Used by test checking colored output.
+esc=''
 
 # As autoconf-generated configure scripts do, ensure that IFS
 # is defined initially, so that saving and restoring $IFS works.
@@ -752,6 +754,15 @@ do
       case " $required " in
         *\ gfortran\ *) ;;
         *) FC=$F77 FCFLAGS=$FFLAGS; export FC FCFLAGS;;
+      esac
+      ;;
+    grep-nonprint)
+      # Check that grep can parse nonprinting characters correctly.
+      # BSD 'grep' works from a pipe, but not a seekable file.
+      # GNU or BSD 'grep -a' works on files, but is not portable.
+      case $(echo "$esc" | grep .)$(echo "$esc" | grep "$esc") in
+        "$esc$esc") ;;
+        *) skip_ "grep can't handle nonprinting characters correctly";;
       esac
       ;;
     javac)

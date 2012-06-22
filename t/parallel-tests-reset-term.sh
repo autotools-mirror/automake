@@ -17,19 +17,10 @@
 # Check that the parallel-tests driver correctly handle overrides of the
 # TERM variable by either TESTS_ENVIRONMENT and AM_TESTS_ENVIRONMENT.
 
+required='grep-nonprint'
 . ./defs || Exit 1
 
-esc='['
-
 TERM=ansi; export TERM
-
-# Check that grep can parse nonprinting characters.
-# BSD 'grep' works from a pipe, but not a seekable file.
-# GNU or BSD 'grep -a' works on files, but is not portable.
-case `echo "$esc" | $FGREP "$esc"` in
-  "$esc") ;;
-  *) skip_ "$FGREP can't parse nonprinting characters" ;;
-esac
 
 cat >> configure.ac << 'END'
 AC_OUTPUT
@@ -67,9 +58,9 @@ $AUTOMAKE -a
 ./configure
 
 mkcheck TESTS_ENVIRONMENT='TERM=dumb'
-cat stdout | grep "PASS.*foobar" | $FGREP "$esc"
+cat stdout | grep "PASS.*foobar" | grep "$esc\\["
 
 mkcheck AM_TESTS_ENVIRONMENT='TERM=dumb'
-cat stdout | grep "PASS.*foobar" | $FGREP "$esc"
+cat stdout | grep "PASS.*foobar" | grep "$esc\\["
 
 :

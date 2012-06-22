@@ -16,18 +16,8 @@
 
 # Colorized output from the testsuite report shouldn't end up in log files.
 
+required='grep-nonprint'
 . ./defs || Exit 1
-
-esc=''
-
-# Check that grep can parse nonprinting characters.
-# BSD 'grep' works from a pipe, but not a seekable file.
-# GNU or BSD 'grep -a' works on files, but is not portable.
-case `echo "$esc" | $FGREP "$esc"` in
-  "$esc") ;;
-# Creative quoting below to please maintainer-check.
-  *) echo "$me: f""grep can't parse nonprinting characters" >&2; Exit 77;;
-esac
 
 TERM=ansi; export TERM
 
@@ -57,6 +47,8 @@ $AUTOMAKE --add-missing
 ./configure
 mv config.log config-log # Avoid possible false positives below.
 AM_COLOR_TESTS=always $MAKE -e check && Exit 1
-$FGREP "$esc" *.log && Exit 1
+# Not a useless use of cat; see above comments "grep-nonprinting"
+# requirement in 'test-init.sh'.
+cat *.log | grep "$esc" && Exit 1
 
 :
