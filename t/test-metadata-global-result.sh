@@ -60,7 +60,7 @@ get_escaped_line()
 have_result ()
 {
    cat > exp; echo >> exp; echo logloglog >> exp
-   eline=`get_escaped_line exp`
+   eline=$(get_escaped_line exp)
    sed -n -e "/^$eline$/,/^logloglog$/p" test-suite.log > got
    cat exp; cat got
    diff exp got

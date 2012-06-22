@@ -49,7 +49,7 @@ fi
 # in the AM_GNU_GETTEXT_VERSION call in configure.ac if we want autopoint
 # (or gettextize) to setup the correct infrastructure -- in particular,
 # for what concerns us, to bring in all the required .m4 files.
-autopoint_version=`extract_program_version $am_gettextize_command` \
+autopoint_version=$(extract_program_version $am_gettextize_command) \
   && test -n "$autopoint_version" \
   || autopoint_version=0.10.35
 
@@ -61,7 +61,7 @@ AM_GNU_GETTEXT
 AM_GNU_GETTEXT_VERSION([$autopoint_version])
 END
 
-if $am_gettextize_command --force && test -f m4/gettext.m4; then :; else
+if ! ($am_gettextize_command --force && test -f m4/gettext.m4); then
   # Older versions of gettext might not have a gettextize program
   # available, but this doesn't mean the user hasn't made the gettext
   # macros available, e.g., by properly setting ACLOCAL_PATH.
@@ -75,7 +75,7 @@ if $am_gettextize_command --force && test -f m4/gettext.m4; then :; else
   fi
 fi
 
-echo "ACLOCAL_PATH='`pwd`/m4':\$ACLOCAL_PATH" >> get.sh
+echo "ACLOCAL_PATH='$(pwd)/m4':\$ACLOCAL_PATH" >> get.sh
 echo "export ACLOCAL_PATH" >> get.sh
 
 # Even recent versions of gettext used the now-obsolete 'AM_PROG_MKDIR_P'
@@ -92,7 +92,7 @@ END
 
 # Remove any Makefile.in possibly created by gettextize/autopoint, to
 # avoid spurious maintainer-check failures.
-rm -f `find . -name Makefile.in`
+rm -f $(find . -name Makefile.in)
 
 # The file gettextize or autopoint might have copied in the 'm4'
 # subdirectory of the test directory are going to be needed by

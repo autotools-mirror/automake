@@ -33,6 +33,6 @@ $AUTOCONF
 $AUTOMAKE --add-missing
 
 ./configure
-test x"`cat py.out`" = x0:1
+test x"$(cat py.out)" = x0:1
 
 :

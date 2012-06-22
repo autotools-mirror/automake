@@ -48,7 +48,7 @@ $AUTOMAKE --copy --add-missing
 # or distributions possibly overriding '${libdir}' in their $CONFIG_SITE
 # file (for example, defining it to '${prefix}/lib64' on 64-bit systems,
 # as is the case with openSUSE 12.1).  See automake bug#10426.
-cwd=`pwd` || Exit 99
+cwd=$(pwd) || fatal_ "getting current working directory"
 ./configure --prefix "$cwd/inst" --libdir "$cwd/inst/lib"
 
 # A rule in the Makefile should create subdir.

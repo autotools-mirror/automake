@@ -27,7 +27,7 @@ echo : >> get.sh
 echo ACLOCAL_AMFLAGS = -I m4 > Makefile.am
 
 if libtoolize --copy --install && test -f m4/libtool.m4; then
-  echo "ACLOCAL_PATH='`pwd`/m4':\$ACLOCAL_PATH" >> get.sh
+  echo "ACLOCAL_PATH='$(pwd)/m4':\$ACLOCAL_PATH" >> get.sh
   echo "export ACLOCAL_PATH" >> get.sh
 else
   # Libtoolize from libtool < 2.0 didn't support the '--install' option,

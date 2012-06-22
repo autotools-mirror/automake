@@ -128,7 +128,7 @@ grep 'installing.*4/m1\.m4' stderr
 
 $ACLOCAL -I 5 2>stderr && { cat stderr >&2; Exit 1; }
 cat stderr >&2
-test `grep -c 'ill-formed serial' stderr` -eq 3
+test $(grep -c 'ill-formed serial' stderr) -eq 3
 
 $ACLOCAL -I 6 2>stderr && { cat stderr >&2; Exit 1; }
 cat stderr >&2

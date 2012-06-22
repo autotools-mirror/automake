@@ -36,10 +36,8 @@ $ACLOCAL
 $AUTOCONF
 $AUTOMAKE --add-missing
 
-rm -rf inst build
-mkdir inst
-instdir=`pwd`/inst
-mkdir build
+instdir=$(pwd)/inst
+mkdir inst build
 cd build
 ../configure --prefix="/usr"
 $MAKE install DESTDIR=$instdir

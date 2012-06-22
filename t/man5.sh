@@ -40,28 +40,30 @@ $ACLOCAL
 $AUTOCONF
 $AUTOMAKE
 
+cwd=$(pwd) || fatal_ "getting current working directory"
+
 # Let's play with $DESTDIR too, it shouldn't hurt.
 ./configure --mandir=/man
-$MAKE DESTDIR="`pwd`/_inst" install
+$MAKE DESTDIR="$cwd/_inst" install
 
-test -f ./_inst/man/man2/foo.2
-test -f ./_inst/man/man2/nfoo.2
-test -f ./_inst/man/man2/baz-1.4.2
-test -f ./_inst/man/man2/nbaz-1.4.2
-test -f ./_inst/man/man3/bar.3
-test -f ./_inst/man/man3/nbar.3
+test -f _inst/man/man2/foo.2
+test -f _inst/man/man2/nfoo.2
+test -f _inst/man/man2/baz-1.4.2
+test -f _inst/man/man2/nbaz-1.4.2
+test -f _inst/man/man3/bar.3
+test -f _inst/man/man3/nbar.3
 
-test ! -d ./_inst/man/man1
-test ! -d ./_inst/man/man4
-test ! -d ./_inst/man/man5
+test ! -d _inst/man/man1
+test ! -d _inst/man/man4
+test ! -d _inst/man/man5
 
-$MAKE DESTDIR="`pwd`/_inst" uninstall
+$MAKE DESTDIR="$cwd/_inst" uninstall
 
-test ! -f ./_inst/man/man2/foo.2
-test ! -f ./_inst/man/man2/nfoo.2
-test ! -f ./_inst/man/man2/baz-1.4.2
-test ! -f ./_inst/man/man2/nbaz-1.4.2
-test ! -f ./_inst/man/man3/bar.3
-test ! -f ./_inst/man/man3/nbar.3
+test ! -f _inst/man/man2/foo.2
+test ! -f _inst/man/man2/nfoo.2
+test ! -f _inst/man/man2/baz-1.4.2
+test ! -f _inst/man/man2/nbaz-1.4.2
+test ! -f _inst/man/man3/bar.3
+test ! -f _inst/man/man3/nbar.3
 
 :

@@ -53,9 +53,10 @@ $ACLOCAL
 $AUTOMAKE
 $AUTOCONF
 
+# Make it harder to experience false postives when grepping error messages.
 inst=__inst-dir__
 
-./configure --prefix="`pwd`/$inst"
+./configure --prefix="$(pwd)/$inst"
 
 mkdir $inst $inst/share
 : > $inst/share/foobar.txt

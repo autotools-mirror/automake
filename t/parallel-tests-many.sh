@@ -116,7 +116,7 @@ setup_data ()
 
 for count in 1 2 4 8 12 16 20 24 28 32 48 64 96 128 E_HUGE; do
   test $count = E_HUGE && break
-  count=`expr $count '*' 100` || Exit 99
+  count=$(($count * 100))
   setup_data
   if $MAKE this-will-fail; then
     continue
@@ -125,7 +125,8 @@ for count in 1 2 4 8 12 16 20 24 28 32 48 64 96 128 E_HUGE; do
     # hit the system command-line limits; we can stop.  But first, for
     # good measure, increase the number of tests of some 20%, to be
     # "even more sure" of really tickling command line length limits.
-    count=`expr '(' $count '*' 12 ')' / 10` || Exit 99
+    count=$(($count * 12))
+    count=$(($count / 10))
     setup_data
     break
   fi
@@ -159,15 +160,15 @@ ls -1 $deepdir | grep '\.log$' > lst
 sed 20q lst # For debugging.
 sed 20q grp # Likewise.
 
-test `cat <grp | wc -l` -eq $count
-test `cat <lst | wc -l` -eq $count
+test $(cat <grp | wc -l) -eq $count
+test $(cat <lst | wc -l) -eq $count
 
 # We need to simulate a failure of two tests.
 st=0
 env TESTS="$deepdir/$tname-1.test $deepdir/$tname-2.test" \
     TEST_LOG_COMPILER=false $MAKE -e check > stdout && st=1
 cat stdout
-test `grep -c '^FAIL:' stdout` -eq 2 || st=1
+test $(grep -c '^FAIL:' stdout) -eq 2 || st=1
 test $st -eq 0 || fatal_ "couldn't simulate failure of two tests"
 unset st
 
@@ -175,7 +176,7 @@ $MAKE recheck > stdout || { cat stdout; Exit 1; }
 cat stdout
 grep "^PASS: .*$tname-1\.test" stdout
 grep "^PASS: .*$tname-2\.test" stdout
-test `LC_ALL=C grep -c "^[A-Z][A-Z]*:" stdout` -eq 2
+test $(LC_ALL=C grep -c "^[A-Z][A-Z]*:" stdout) -eq 2
 grep "^# TOTAL: 2$" stdout
 grep "^# PASS:  2$" stdout
 

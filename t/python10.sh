@@ -50,11 +50,13 @@ $ACLOCAL
 $AUTOCONF
 $AUTOMAKE --add-missing
 
-mkdir inst
-inst=`pwd`/inst
-mkdir build
-cd build
-../configure --prefix="$inst"
+inst=inst_
+mkdir inst_ build_
+cd build_
+
+cwd=$(pwd) || fatal_ "getting current working directory"
+
+../configure --prefix="$cwd/$inst" one=0
 $MAKE install
 test -f "$inst/your/two.py"
 test -f "$inst/your/two.pyc"
@@ -67,7 +69,7 @@ test ! -f "$inst/your/two.py"
 test ! -f "$inst/your/two.pyc"
 test ! -f "$inst/your/two.pyo"
 
-../configure --prefix="$inst" one=1
+../configure --prefix=$cwd/"$inst" one=1
 $MAKE install
 test ! -f "$inst/your/two.py"
 test ! -f "$inst/your/two.pyc"

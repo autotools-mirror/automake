@@ -110,10 +110,12 @@ $ACLOCAL
 $AUTOCONF
 $AUTOMAKE --add-missing
 
+cwd=$(pwd) || fatal_ "getting current working directory"
+
 # Install libraries in lib/, programs in bin/, and the rest in empty/.
 # (in fact there is no "rest", so as the name imply empty/ is
 # expected to remain empty).
-./configure "--prefix=`pwd`/empty" "--libdir=`pwd`/lib" "--bindir=`pwd`/bin"
+./configure --prefix="$cwd/empty" --libdir="$cwd/lib" --bindir="$cwd/bin"
 
 $MAKE
 test -f libtop.la
@@ -132,8 +134,7 @@ test -f installcheck-ok
 rm -f installcheck-ok
 
 find empty -type f -print > empty.lst
-cat empty.lst
-test 0 = `wc -l < empty.lst`
+test -s empty.lst && { cat empty.lst; Exit 1; }
 
 $MAKE clean
 test ! -f libtop.la
@@ -148,9 +149,10 @@ test -f installcheck-ok
 rm -f installcheck-ok
 
 $MAKE uninstall
-find lib -type f -print > lib.lst
-test 0 = `wc -l < lib.lst`
-find bin -type f -print > bin.lst
-test 0 = `wc -l < bin.lst`
+for d in lib bin; do
+  find $d -type f -print > $d.lst
+  test -s $d.lst && { cat $d.lst; Exit 1; }
+  : For shells with busted 'set -e'.
+done
 
 :

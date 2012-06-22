@@ -25,7 +25,15 @@ plan_ 32
 
 unset AM_TESTS_REEXEC BASH_VERSION || :
 
-cwd=`pwd` || fatal_ "cannot get current working directory"
+get_test_init_sh ()
+{
+  mkdir -p ${1-.}/t/ax
+  cp "$am_top_builddir"/t/ax/test-init.sh ${1-.}/t/ax \
+    || fatal_ "fetching 't/ax/test-init.sh' from top_builddir"
+}
+
+cwd=$(pwd) || fatal_ "getting current working directory"
+get_test_init_sh
 cp "$am_top_builddir"/defs . || fatal_ "fetching 'defs' from top_builddir"
 
 #
@@ -165,6 +173,7 @@ sed -e "s|^am_top_builddir=.*|am_top_builddir='$cwd'|" \
     <  "$am_top_builddir"/defs-static > defs-static
 sed -e "s|^am_top_builddir=.*|am_top_builddir='$cwd/sub'|" \
     <  "$am_top_builddir"/defs-static > sub/defs-static
+get_test_init_sh sub
 
 check_preserve_args ()
 {
@@ -179,13 +188,13 @@ check_reexec_message ()
   dir=$1; shift
   get_ddata "$dir"
   $sh "${dir}${dsep}dummy.sh" "$@" \
-    | grep "^dummy: exec $AM_TEST_RUNNER_SHELL ${dir}${dsep}dummy\\.sh $*\$" \
+    | grep "^exec $AM_TEST_RUNNER_SHELL ${dir}${dsep}dummy\\.sh $*\$" \
     && r='ok' || r='not ok'
   result_ "$r" "$sh display re-exec message [$dname] [args: $*]"
 }
 
 ./dummy.sh a b \
-  | grep "^dummy: exec $AM_TEST_RUNNER_SHELL \\./dummy\\.sh a b$" \
+  | grep "^exec $AM_TEST_RUNNER_SHELL \\./dummy\\.sh a b$" \
   && r='ok' || r='not ok'
 result_ "$r" "direct run display re-exec message [args: a b]"
 

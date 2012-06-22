@@ -34,8 +34,8 @@ if test -z "$VIRTUAL_ENV"; then
   framework_failure_ "can't activate python virtual environment"
 fi
 
-cwd=`pwd`
-py_version=`python -c 'import sys; print("%u.%u" % tuple(sys.version_info[:2]))'`
+cwd=$(pwd) || fatal_ "getting current working directory"
+py_version=$(python -c 'import sys; print("%u.%u" % tuple(sys.version_info[:2]))')
 py_site=$VIRTUAL_ENV/lib/python$py_version/site-packages
 
 # We need control over the package name.

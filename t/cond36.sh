@@ -54,7 +54,7 @@ $AUTOMAKE -Wno-error
 
 # Still and all, it should generate two rules.
 $FGREP 'tparse.h' Makefile.in # For debugging.
-test `$FGREP -c 'tparse.h:' Makefile.in` = 2
+test $($FGREP -c 'tparse.h:' Makefile.in) -eq 2
 $FGREP '@CASE_A_TRUE@tparse.h:' Makefile.in
 $FGREP '@CASE_A_FALSE@tparse.h:' Makefile.in
 

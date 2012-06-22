@@ -42,6 +42,6 @@ $ACLOCAL -I m4
 $FGREP AM_SOME_MACRO aclocal.m4 && Exit 1
 $FGREP AM_MORE_MACRO aclocal.m4 && Exit 1
 $FGREP 'm4_include([m4/more.m4])' aclocal.m4
-test 1 = `grep m4_include aclocal.m4 | wc -l`
+test 1 = $(grep m4_include aclocal.m4 | wc -l)
 
 :

@@ -120,14 +120,14 @@ rm -f install-sh
 $ACLOCAL
 $AUTOCONF
 $AUTOMAKE -a --copy
-./configure --prefix "`pwd`/inst" --program-prefix=p
+./configure --prefix "$(pwd)/inst" --program-prefix=p
 
 $MAKE
 $MAKE test-install-data
 $MAKE test-install-exec
 $MAKE uninstall
 
-test `find inst/foo -type f -print | wc -l` = 0
+test $(find inst/foo -type f -print | wc -l) -eq 0
 
 $MAKE install-strip
 
@@ -137,11 +137,11 @@ $MAKE uninstall
 $MAKE distclean
 mkdir build
 cd build
-../configure --prefix "`pwd`/inst" --program-prefix=p
+../configure --prefix "$(pwd)/inst" --program-prefix=p
 $MAKE
 $MAKE test-install-data
 $MAKE test-install-exec
 $MAKE uninstall
-test `find inst/foo -type f -print | wc -l` = 0
+test $(find inst/foo -type f -print | wc -l) -eq 0
 
 :

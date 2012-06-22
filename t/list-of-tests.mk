@@ -947,7 +947,6 @@ t/self-check-is_newest.tap \
 t/self-check-me.tap \
 t/self-check-reexec.tap \
 t/self-check-report.sh \
-t/self-check-sanity.sh \
 t/self-check-seq.tap \
 t/self-check-is-blocked-signal.tap \
 t/self-check-tap.sh \

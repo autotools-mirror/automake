@@ -27,12 +27,12 @@ re='Files .*automatically distributed.*if found'
 list1=`$AUTOMAKE --help \
         | sed -n "/^$re.*always/,/^ *$/p" \
         | sed 1d`
-list1=`echo $list1`
+list1=$(echo $list1)
 
 list2=`$AUTOMAKE --help \
         | sed -n "/^$re.*under certain conditions/,/^ *$/p" \
         | sed 1d`
-list2=`echo $list2`
+list2=$(echo $list2)
 
 test -n "$list1"
 test -n "$list2"

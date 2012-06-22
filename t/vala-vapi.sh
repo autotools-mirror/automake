@@ -47,7 +47,7 @@ cat > foo.vapi <<'END'
 public const string BARBAR;
 END
 
-if cross_compiling; then :; else
+if ! cross_compiling; then
   unindent >> Makefile.am <<'END'
     check-local: test2
     .PHONY: test1 test2

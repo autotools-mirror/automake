@@ -38,7 +38,7 @@ $ACLOCAL
 $AUTOMAKE --add-missing
 $AUTOCONF
 
-./configure "--infodir=`pwd`/_inst"
+./configure "--infodir=$(pwd)/_inst"
 $MAKE
 
 # Make sure .iNN files are installed.

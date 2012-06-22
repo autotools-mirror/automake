@@ -49,7 +49,7 @@ $ACLOCAL
 $AUTOCONF
 $AUTOMAKE --add-missing
 
-./configure "--prefix=`pwd`/inst"
+./configure --prefix="$(pwd)/inst"
 
 $MAKE
 $MAKE install 2>stderr || { cat stderr >&2; Exit 1; }
@@ -57,6 +57,6 @@ cat stderr >&2
 grep 'has not been installed' stderr && Exit 1
 
 $MAKE uninstall
-test `find inst -type f -print | wc -l` -eq 0
+test $(find inst -type f -print | wc -l) -eq 0
 
 :

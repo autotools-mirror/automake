@@ -60,7 +60,7 @@ END
 chmod +x Mycomp
 
 # Make sure the compiler doesn't understand '-c -o'
-CC=`pwd`/Mycomp
+CC=$(pwd)/Mycomp
 export CC
 
 $ACLOCAL

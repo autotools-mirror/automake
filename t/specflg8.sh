@@ -57,7 +57,7 @@ $MAKE
 ./true
 ./false && Exit 1
 
-objext=`sed -n -e 's/^OBJEXT = //p' < Makefile`
+objext=$(sed -n -e 's/^OBJEXT = //p' < Makefile)
 test -f ./true-true.$objext
 test -f ./false-true.$objext
 

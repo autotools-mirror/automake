@@ -31,7 +31,7 @@ $ACLOCAL
 AUTOMAKE_fails
 grep "^configure\.ac:2:.*mutually exclusive" stderr > tar-err
 cat tar-err
-test 1 = `wc -l < tar-err`
+test 1 -eq $(wc -l < tar-err)
 grep "'tar-pax'" tar-err
 grep "'tar-v7'"  tar-err
 

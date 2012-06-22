@@ -61,9 +61,11 @@ $sleep
 touch m4/otherfile.m4
 $sleep
 $ACLOCAL -I m4
-test `ls -1t aclocal.m4 m4/otherfile.m4 | sed 1q` = aclocal.m4
+test $(ls -1t aclocal.m4 m4/otherfile.m4 | sed 1q) = aclocal.m4
 
 $AUTOCONF
 $AUTOMAKE
 ./configure
 $MAKE distcheck
+
+:

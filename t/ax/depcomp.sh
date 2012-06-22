@@ -69,7 +69,7 @@
 
 # This expects ./defs has already been included has already been included..
 
-ocwd=`pwd` || fatal_ "cannot get current working directory"
+ocwd=$(pwd) || fatal_ "getting current working directory"
 longpath=this-is/a-path/which-has/quite-a/definitely/truly/long_long_name
 cachevar=am_cv_CC_dependencies_compiler_type
 
@@ -343,7 +343,7 @@ do_test ()
     absolute)
       mkdir -p vpath-abs/build
       cd vpath-abs/build
-      absdir="`(cd .. && pwd)`" || fatal_ "getting absolute directory"
+      absdir=$(cd .. && pwd) || fatal_ "getting absolute directory"
       setup_srcdir "$absdir/vpath-abs"
       unset absdir
       ;;

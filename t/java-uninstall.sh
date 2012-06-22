@@ -56,7 +56,7 @@ $ACLOCAL
 $AUTOCONF
 $AUTOMAKE
 
-./configure --prefix="`pwd`"/_inst
+./configure --prefix="$(pwd)"/_inst
 javadir=_inst/java
 
 check_uninstallation()

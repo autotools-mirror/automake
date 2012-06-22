@@ -73,11 +73,11 @@ grep PKG_CHECK_MODULES configure && skip_ "pkg-config m4 macros not found"
 ./configure
 $MAKE
 
-if cross_compiling; then :; else
+if ! cross_compiling; then
   ./src/foo
   ./src/bar
-  test `./src/foo` = foo
-  test `./src/bar` = bar
+  test "$(./src/foo)" = foo
+  test "$(./src/bar)" = bar
 fi
 
 # Test clean rules.

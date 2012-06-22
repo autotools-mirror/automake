@@ -42,7 +42,7 @@ $AUTOMAKE --add-missing
 $MAKE -j >>stdout || { cat stdout; Exit 1; }
 
 cat stdout
-test 1 -eq `grep 'Warnings can be ignored' stdout | wc -l`
+test 1 -eq $(grep -c 'Warnings can be ignored' stdout)
 
 test -f am-one.elc
 test -f am-two.elc
@@ -56,7 +56,7 @@ rm -f am-*.elc
 $MAKE -j >>stdout || { cat stdout; Exit 1; }
 
 cat stdout
-test 1 -eq `grep 'Warnings can be ignored' stdout | wc -l`
+test 1 -eq $(grep -c 'Warnings can be ignored' stdout)
 test -f am-one.elc
 test -f am-two.elc
 test -f am-three.elc

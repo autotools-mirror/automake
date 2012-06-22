@@ -31,7 +31,7 @@ xtests := $(shell \
      done; \
    done | sort)
 
-xdefs = $(srcdir)/defs $(srcdir)/defs-static.in
+xdefs = $(srcdir)/t/ax/test-init.sh $(srcdir)/defs $(srcdir)/defs-static.in
 
 ams := $(shell find $(srcdir) -name '*.dir' -prune -o -name '*.am' -print)
 

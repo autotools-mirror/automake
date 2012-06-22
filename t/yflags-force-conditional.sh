@@ -33,7 +33,7 @@ echo "/* $* */" > y.tab.c
 echo 'extern int dummy;' >> y.tab.c
 END
 chmod a+x bin/fake-yacc
-PATH=`pwd`/bin$PATH_SEPARATOR$PATH; export PATH
+PATH=$(pwd)/bin$PATH_SEPARATOR$PATH; export PATH
 YACC=fake-yacc; export YACC
 
 cat > Makefile.am <<'END'

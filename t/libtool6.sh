@@ -42,4 +42,6 @@ libtoolize
 $ACLOCAL
 $AUTOMAKE --add-missing
 # am_liba_la_rpath is defined twice, and used once
-test 3 = `grep 'am_liba_la_rpath' Makefile.in | wc -l`
+test 3 -eq $(grep -c 'am_liba_la_rpath' Makefile.in)
+
+:

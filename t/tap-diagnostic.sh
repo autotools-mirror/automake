@@ -118,6 +118,6 @@ grep "^# all.test:${ws0p}bar${ws0p}$" stdout
 grep "^# all.test:${ws1p}zardoz${ws0p}$" stdout
 grep "^# all.test:${ws1p}foo  bar${tab}baz${ws0p}$" stdout
 
-test `grep -c '^# all\.test:' stdout` -eq 4
+test $(grep -c '^# all\.test:' stdout) -eq 4
 
 :

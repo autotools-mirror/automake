@@ -21,7 +21,7 @@
 
 . ./defs || Exit 1
 
-ocwd=`pwd` || Exit 1
+ocwd=$(pwd) || fatal_ "getting current working directory"
 
 magic1=::MagicStringOne::
 magic2=__MagicStringTwo__
@@ -43,7 +43,8 @@ done
 echo AC_OUTPUT >> "$ocwd"/configure.ac
 : > Makefile.am
 unset d i
-bottom=`pwd`
+
+bottom=$(pwd) || fatal_ "getting current working directory"
 
 cd "$ocwd"
 

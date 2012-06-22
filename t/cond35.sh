@@ -55,7 +55,7 @@ $AUTOCONF
 $AUTOMAKE --add-missing
 
 $FGREP 'tparse.h' Makefile.in # For debugging.
-test `$FGREP -c 'tparse.h:' Makefile.in` = 1
+test $($FGREP -c 'tparse.h:' Makefile.in) -eq 1
 
 cat > tscan.l << 'END'
 %{

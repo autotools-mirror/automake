@@ -35,7 +35,7 @@ $AUTOMAKE
 # overkill.
 for t in info dist-info dvi-am install-html uninstall-pdf-am; do
   $EGREP "(^| )$t*.:" Makefile.in # For debugging.
-  test `$EGREP -c "(^| )$t(:| *.:)" Makefile.in` -eq 1
+  test $($EGREP -c "(^| )$t(:| *.:)" Makefile.in) -eq 1
 done
 
 :

@@ -89,7 +89,7 @@ grep " --tag=FC" Makefile.in
 # or if the compiler cannot compile Fortran 90 files).
 ./configure
 $MAKE
-subobjs=`echo sub/*.lo`
+subobjs=$(echo sub/*.lo)
 test "$subobjs" = 'sub/*.lo'
 $MAKE distcheck
 
@@ -103,3 +103,5 @@ test ! -f bar.lo
 test ! -f baz.lo
 test ! -f libgoodbye_la-baz.lo
 $MAKE distcheck
+
+:

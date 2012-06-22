@@ -70,7 +70,7 @@ $AUTOMAKE
 # For debugging.
 $EGREP -n 'ABCD|am__empty' Makefile.in
 # Sanity check.
-test `$EGREP -c "^[ $tab]*@$v2@ @$v3@[ $tab]*$bs?$" Makefile.in` -eq 3
+test $($EGREP -c "^[ $tab]*@$v2@ @$v3@[ $tab]*$bs?$" Makefile.in) -eq 3
 
 ./configure
 {

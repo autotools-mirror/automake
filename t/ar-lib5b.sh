@@ -80,7 +80,7 @@ case " $* " in
 esac
 END
 chmod +x bin/lib
-PATH=`pwd`/bin$PATH_SEPARATOR$PATH; export PATH
+PATH=$(pwd)/bin$PATH_SEPARATOR$PATH; export PATH
 
 $ACLOCAL
 $AUTOCONF

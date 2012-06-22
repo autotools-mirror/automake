@@ -239,7 +239,7 @@ $AUTOMAKE -a
 # To have the parallel testsuite more verbose.
 VERBOSE=yes; export VERBOSE
 
-./configure --prefix="`pwd`/_inst"
+./configure --prefix="$(pwd)/_inst"
 cat jprog/PkgLocation.java # For debugging.
 $MAKE check
 $MAKE install

@@ -29,7 +29,7 @@ ACLOCAL=$am_original_ACLOCAL
 AUTOMAKE=$am_original_AUTOMAKE
 
 escape_dots () { sed 's/\./\\./g'; } # Avoid issues with "\" in backquotes.
-apiversion_rx=`echo "$APIVERSION" | escape_dots`
+apiversion_rx=$(echo "$APIVERSION" | escape_dots)
 
 $ACLOCAL --version --help >stdout || { cat stdout; Exit 1; }
 cat stdout

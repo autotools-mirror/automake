@@ -21,7 +21,7 @@
 
 . ./defs || Exit 1
 
-cwd=`pwd` || fatal_ "couldn't get current working directory"
+cwd=$(pwd) || fatal_ "getting current working directory"
 
 echo AC_OUTPUT >> configure.ac
 
@@ -52,7 +52,7 @@ rm -f *.tar.* *has-run*
 
 TAR="$cwd/am--tar foo" $MAKE distcheck
 test -f $me-1.0.tar.gz
-test "`cat am--tar-has-run`" = foo
+test "$(cat am--tar-has-run)" = foo
 
 rm -f *.tar.* *has-run*
 
@@ -60,6 +60,6 @@ TAR=; unset TAR
 # Creative use of eval to pacify maintainer checks.
 eval \$'MAKE dist "TAR=./am--tar mu"'
 test -f $me-1.0.tar.gz
-test "`cat am--tar-has-run`" = mu
+test "$(cat am--tar-has-run)" = mu
 
 :

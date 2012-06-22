@@ -311,7 +311,7 @@ done > tap
 
 # Lots of non-failures (300 per kind).
 (cat tap && cat tap && cat tap) > all.test
-test `wc -l <all.test` -eq 900 || Exit 99 # Sanity check.
+test $(wc -l <all.test) -eq 900 || Exit 99 # Sanity check.
 echo 1..900 >> all.test # Test plan.
 do_check --pass <<END
 $success_header
@@ -327,7 +327,7 @@ END
 
 # 1 failure and lots of non-failures means failure.
 (cat tap && echo "not ok" && cat tap) > all.test
-test `wc -l <all.test` -eq 601 || Exit 99 # Sanity check.
+test $(wc -l <all.test) -eq 601 || Exit 99 # Sanity check.
 echo 1..601 >> all.test # Test plan.
 do_check --fail <<END
 $failure_header
@@ -343,7 +343,7 @@ END
 
 # 1 error and lots of non-failures means failure.
 (cat tap && sed 30q tap && echo 'Bail out!') > all.test
-test `wc -l <all.test` -eq 331 || Exit 99 # Sanity check.
+test $(wc -l <all.test) -eq 331 || Exit 99 # Sanity check.
 echo 1..331 >> all.test # Test plan.
 do_check --fail <<END
 $failure_header

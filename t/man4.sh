@@ -67,7 +67,7 @@ cat > bin/help2man <<'END'
 exit 127
 END
 chmod +x bin/help2man
-PATH=`pwd`/bin$PATH_SEPARATOR$PATH
+PATH=$(pwd)/bin$PATH_SEPARATOR$PATH
 
 grep_error_messages()
 {

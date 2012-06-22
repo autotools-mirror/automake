@@ -70,7 +70,7 @@ ok 4 # SKIP
 
 END
 
-tests=`echo *.test`
+tests=$(echo *.test)
 
 for tap_flags in "" "--comments"; do
   env TEST_LOG_DRIVER_FLAGS="$tap_flags" TESTS="$tests" \

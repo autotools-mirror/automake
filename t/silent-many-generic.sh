@@ -59,7 +59,7 @@ do_and_check_silent_build ()
   grep 'CXXLD .*baz' stdout
   grep 'CCLD .*bla'  stdout
 
-  if $rebuild; then :; else
+  if ! $rebuild; then
     grep 'YACC .*foo6\.' stdout
     grep 'YACC .*baz6\.' stdout
     grep 'LEX .*foo5\.'  stdout
@@ -85,7 +85,7 @@ do_and_check_verbose_build ()
 
   $EGREP '(CC|CXX|FC|F77|LD) ' stdout && Exit 1
 
-  if $rebuild; then :; else
+  if ! $rebuild; then
     grep 'ylwrap ' stdout
     $EGREP '(LEX|YACC) ' stdout && Exit 1
   fi
@@ -215,7 +215,7 @@ cp foo6.y sub/baz6.y
 
 mkdir bin
 saved_PATH=$PATH; export saved_PATH
-PATH=`pwd`/bin$PATH_SEPARATOR$PATH; export PATH
+PATH=$(pwd)/bin$PATH_SEPARATOR$PATH; export PATH
 
 $ACLOCAL
 $AUTOMAKE --add-missing

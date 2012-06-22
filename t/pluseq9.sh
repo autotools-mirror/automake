@@ -66,6 +66,6 @@ AUTOMAKE_fails
 grep '[cC]annot apply.*+=' stderr
 grep ':   !COND1 and !COND3$' stderr
 # Make sure there is exactly one missing condition.
-test `grep ':  ' stderr | wc -l` = 1
+test $(grep -c ':  ' stderr) -eq 1
 
 :

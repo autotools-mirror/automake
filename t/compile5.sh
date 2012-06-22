@@ -62,7 +62,7 @@ $AUTOMAKE -a
 ./configure
 . ./check_host
 
-pwd=`pwd`
+cwd=$(pwd) || fatal_ "cannot get current directory"
 
 # POSIX mandates that the compiler accepts a space between the -I,
 # -l and -L options and their respective arguments.  Traditionally,
@@ -70,15 +70,10 @@ pwd=`pwd`
 for sp in '' ' '; do
   # Check if "compile cl" transforms absolute file names to
   # host format (e.g /somewhere -> c:/msys/1.0/somewhere).
-
-  res=`./compile ./cl -L${sp}"$pwd" | sed -e 's/-link -LIBPATH://'`
-
+  res=$(./compile ./cl -L${sp}"$cwd" | sed -e 's/-link -LIBPATH://')
   case $res in
-    ?:[\\/]*)
-      ;;
-    *)
-      Exit 1
-      ;;
+    ?:[\\/]*) ;;
+    *) Exit 1 ;;
   esac
 done
 

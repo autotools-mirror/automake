@@ -37,8 +37,9 @@ $ACLOCAL
 $AUTOCONF
 $AUTOMAKE --add-missing
 
-instdir=`pwd`/inst
-destdir=`pwd`/dest
+cwd=$(pwd) || fatal_ "getting current working directory"
+instdir=$cwd/inst
+destdir=$cwd/dest
 mkdir build
 cd build
 ../configure --prefix="$instdir"

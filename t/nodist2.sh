@@ -32,7 +32,7 @@ EOF
 $ACLOCAL
 $AUTOCONF
 $AUTOMAKE -a
-./configure --prefix "`pwd`/install"
+./configure --prefix "$(pwd)/install"
 $MAKE install-data
 
 :

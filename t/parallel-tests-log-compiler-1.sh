@@ -69,7 +69,7 @@ END
 sed 's/--chk/--am-test/' chk-compiler > test-compiler
 
 mkdir bin
-PATH=`pwd`/bin$PATH_SEPARATOR$PATH; export PATH
+PATH=$(pwd)/bin$PATH_SEPARATOR$PATH; export PATH
 
 cat > bin/t-compiler <<'END'
 #! /bin/sh

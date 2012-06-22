@@ -19,6 +19,8 @@
 am_create_testdir=empty
 . ./defs || Exit 1
 
+cwd=$(pwd) || fatal_ "getting current working directory"
+
 # Make sure the directory we will create can be created...
 mkdir '~a b' && mkdir '~a b/-x  y' \
   || skip_ "directory names with spaces and metacharacters not accepted"
@@ -49,10 +51,9 @@ exec mkdir "$@"
 EOF
 
 chmod +x bin/mkdir
-AM_PATH=$PATH
-export AM_PATH
-PATH=`pwd`/bin$PATH_SEPARATOR$PATH
-export PATH
+
+AM_PATH=$PATH; export AM_PATH
+PATH=$cwd/bin$PATH_SEPARATOR$PATH; export PATH
 
 # Test mkinstalldirs without mkdir -p.
 
@@ -60,6 +61,8 @@ export PATH
 test -d '~a b/-x  y'
 rm -rf '~a b'
 
-./mkinstalldirs "`pwd`///~a b//-x  y"
-test -d "`pwd`/~a b/-x  y"
+./mkinstalldirs "$cwd///~a b//-x  y"
+test -d "$cwd/~a b/-x  y"
 rm -rf '~a b'
+
+:

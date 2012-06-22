@@ -79,12 +79,12 @@ $sleep
 $sleep
 touch ../foo/parse.y
 $MAKE obj
-test `ls -1t foo/parse.h z | sed 1q` = z
+test $(ls -1t foo/parse.h z | sed 1q) = z
 $sleep
 sed 's/%%/%token TOKEN\n%%/g' ../foo/parse.y >../foo/parse.yt
 mv -f ../foo/parse.yt ../foo/parse.y
 $MAKE obj
-test `ls -1t foo/parse.h z | sed 1q` = foo/parse.h
+test $(ls -1t foo/parse.h z | sed 1q) = foo/parse.h
 
 # Now, adds another parser to test ylwrap.
 

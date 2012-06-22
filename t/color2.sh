@@ -32,7 +32,7 @@ std="$esc\[m"
 # Check that grep can parse nonprinting characters.
 # BSD 'grep' works from a pipe, but not a seekable file.
 # GNU or BSD 'grep -a' works on files, but is not portable.
-case `echo "$std" | grep .` in
+case $(echo "$std" | grep .) in
   "$std") ;;
   *) skip_ "grep can't parse nonprinting characters";;
 esac

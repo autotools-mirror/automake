@@ -66,7 +66,7 @@ $AUTOMAKE -a
 
 # Program should build and run.
 $MAKE
-if cross_compiling; then :; else
+if ! cross_compiling; then
   echo GOOD | ./foo
   echo BAD | ./foo && Exit 1
   : For shells with busted 'set -e'.

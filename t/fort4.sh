@@ -74,7 +74,7 @@ $AUTOCONF
 # or if the compiler cannot compile Fortran 90 files).
 ./configure
 $MAKE
-subobjs=`echo sub/*.o sub/*.obj`
+subobjs=$(echo sub/*.o sub/*.obj)
 test "$subobjs" = 'sub/*.o sub/*.obj'
 $MAKE distcheck
 
@@ -90,3 +90,5 @@ test ! -f baz.obj
 test ! -f goodbye-baz.o
 test ! -f goodbye-baz.obj
 $MAKE distcheck
+
+:

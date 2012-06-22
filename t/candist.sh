@@ -27,6 +27,6 @@ END
 
 $ACLOCAL
 AUTOMAKE_fails
-test 2 -eq `grep -c 'dist.*forbidden' stderr`
+test 2 -eq $(grep -c 'dist.*forbidden' stderr)
 
 Exit 0

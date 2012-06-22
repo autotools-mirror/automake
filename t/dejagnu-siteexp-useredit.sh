@@ -56,7 +56,7 @@ $MAKE site.exp
 cat site.exp
 is_newest site.exp Makefile  # Sanity check.
 grep '|objdir|' site.exp
-test `grep -c '|objdir|' site.exp` -eq 1
+test $($FGREP -c '|objdir|' site.exp) -eq 1
 
 # We can do a "more semantic" check if DejaGnu is available.
 if runtest SOMEPROGRAM=someprogram --version; then

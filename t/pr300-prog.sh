@@ -62,7 +62,7 @@ $ACLOCAL
 $AUTOCONF
 $AUTOMAKE --copy --add-missing
 
-./configure --prefix "`pwd`/inst"
+./configure --prefix "$(pwd)/inst"
 
 $MAKE test-all
 $MAKE test-install

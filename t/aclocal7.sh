@@ -55,17 +55,17 @@ $AUTOMAKE --no-force
 
 # aclocal.m4 and Makefile.in should not have been updated, so 'foo'
 # should be younger
-test `ls -1t aclocal.m4 Makefile.in sub/Makefile.in foo | sed 1q` = foo
+test $(ls -1t aclocal.m4 Makefile.in sub/Makefile.in foo | sed 1q) = foo
 
 $sleep
 $ACLOCAL -I m4 --force
-test `ls -1t aclocal.m4 foo | sed 1q` = aclocal.m4
+test $(ls -1t aclocal.m4 foo | sed 1q) = aclocal.m4
 # We still use --no-force for automake, but since aclocal.m4 has
 # changed all Makefile.ins should be updated.
 $sleep
 $AUTOMAKE --no-force
-test `ls -1t Makefile.in foo | sed 1q` = Makefile.in
-test `ls -1t sub/Makefile.in foo | sed 1q` = sub/Makefile.in
+test $(ls -1t Makefile.in foo | sed 1q) = Makefile.in
+test $(ls -1t sub/Makefile.in foo | sed 1q) = sub/Makefile.in
 
 touch m4/somedefs.m4
 $sleep
@@ -76,9 +76,9 @@ $sleep
 $AUTOMAKE --no-force
 
 # aclocal.m4 should have been updated, although its contents haven't changed.
-test `ls -1t aclocal.m4 foo | sed 1q` = aclocal.m4
-test `ls -1t Makefile.in foo | sed 1q` = Makefile.in
-test `ls -1t sub/Makefile.in foo | sed 1q` = sub/Makefile.in
+test $(ls -1t aclocal.m4 foo | sed 1q) = aclocal.m4
+test $(ls -1t Makefile.in foo | sed 1q) = Makefile.in
+test $(ls -1t sub/Makefile.in foo | sed 1q) = sub/Makefile.in
 
 touch fragment.inc
 $sleep
@@ -87,9 +87,9 @@ $sleep
 $ACLOCAL -I m4
 $AUTOMAKE --no-force
 # Only ./Makefile.in should change.
-test `ls -1t aclocal.m4 foo | sed 1q` = foo
-test `ls -1t Makefile.in foo | sed 1q` = Makefile.in
-test `ls -1t sub/Makefile.in foo | sed 1q` = foo
+test $(ls -1t aclocal.m4 foo | sed 1q) = foo
+test $(ls -1t Makefile.in foo | sed 1q) = Makefile.in
+test $(ls -1t sub/Makefile.in foo | sed 1q) = foo
 
 grep README Makefile.in && Exit 1
 
@@ -99,8 +99,8 @@ touch foo
 $sleep
 $AUTOMAKE --no-force
 # Even if no dependency change, the content changed.
-test `ls -1t Makefile.in foo | sed 1q` = Makefile.in
-test `ls -1t sub/Makefile.in foo | sed 1q` = foo
+test $(ls -1t Makefile.in foo | sed 1q) = Makefile.in
+test $(ls -1t sub/Makefile.in foo | sed 1q) = foo
 
 grep README Makefile.in
 
@@ -111,6 +111,6 @@ $sleep
 $ACLOCAL -I m4
 $AUTOMAKE --no-force
 # Only sub/Makefile.in should change.
-test `ls -1t aclocal.m4 foo | sed 1q` = foo
-test `ls -1t Makefile.in foo | sed 1q` = foo
-test `ls -1t sub/Makefile.in foo | sed 1q` = sub/Makefile.in
+test $(ls -1t aclocal.m4 foo | sed 1q) = foo
+test $(ls -1t Makefile.in foo | sed 1q) = foo
+test $(ls -1t sub/Makefile.in foo | sed 1q) = sub/Makefile.in

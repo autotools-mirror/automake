@@ -32,7 +32,6 @@ END
 
 $ACLOCAL
 AUTOMAKE_fails -Wno-portability
-q="[\`'\"]"
-grep "^Makefile\.am:3:.* AR .* with $q=$q before .*$q+=$q" stderr
+grep "^Makefile\.am:3:.* AR .* with '=' before .*'+='" stderr
 
 :

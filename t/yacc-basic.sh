@@ -67,7 +67,7 @@ test -f bar-parse.c
 # Check that per-object flags are honored.
 test -f bar-parse.output
 
-if cross_compiling; then :; else
+if ! cross_compiling; then
   echo a | ./foo
   echo b | ./foo && Exit 1
   echo a | ./bar

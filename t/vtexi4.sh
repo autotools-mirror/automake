@@ -24,16 +24,12 @@
 required='makeinfo tex texi2dvi'
 . ./defs || Exit 1
 
-case `LC_ALL=C date '+%u'` in
-  [1-7]) date_is_posix=:;;
-      *) date_is_posx=false;;
-esac
-$date_is_posix \
-  && day=`LC_ALL=C date '+%d'` && test -n "$day" \
-  && month=`LC_ALL=C date '+%B'` && test -n "$month" \
-  && year=`LC_ALL=C date '+%Y'`&& test -n "$year" \
+test $(LC_ALL=C date '+%u') -gt 0 && test $(LC_ALL=C date '+%u') -lt 8 \
+  && day=$(LC_ALL=C date '+%d')   && test -n "$day" \
+  && month=$(LC_ALL=C date '+%B') && test -n "$month" \
+  && year=$(LC_ALL=C date '+%Y')  && test -n "$year" \
   || skip_ "'date' is not POSIX-compliant enough"
-day=`echo "$day" | sed 's/^0//'`
+day=$(echo "$day" | sed 's/^0//')
 
 (echo 'x' | grep x) \
   || skip_ "grep doesn't work on input that is not pure text"

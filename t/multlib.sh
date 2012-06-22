@@ -27,7 +27,7 @@ mkdir m4
 cp "$mldir"/config-ml.in "$mldir"/symlink-tree .
 cp "$mldir"/multi.m4 m4
 
-ACLOCAL_PATH=${ACLOCAL_PATH+"$ACLOCAL_PATH:"}`pwd`/m4
+ACLOCAL_PATH=${ACLOCAL_PATH+"$ACLOCAL_PATH:"}$(pwd)/m4
 export ACLOCAL_PATH
 
 cat >configure.ac <<'END'
@@ -53,7 +53,7 @@ gcc ${1+"$@"}
 END
 
 chmod +x mycc
-PATH=`pwd`$PATH_SEPARATOR$PATH
+PATH=$(pwd)$PATH_SEPARATOR$PATH; export PATH
 
 cat >Makefile.am <<'EOF'
 SUBDIRS = @subdirs@

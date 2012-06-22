@@ -148,7 +148,7 @@ for x in 'ok' 'ok 3' 'not ok' 'not ok # TODO' 'ok # TODO' 'ok # SKIP'; do
 END
   $MAKE check >stdout && { cat stdout; Exit 1; }
   cat stdout
-  test `$FGREP -c ': all.test' stdout` -eq 4
+  test $($FGREP -c ': all.test' stdout) -eq 4
   $EGREP '^PASS: all\.test 1($| )' stdout
   $EGREP '^SKIP: all\.test 2($| )' stdout
   $EGREP ': all\.test 3($| )' stdout

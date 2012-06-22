@@ -36,7 +36,7 @@ ACLOCAL="$ACLOCAL --system-acdir=sys-acdir"
 $ACLOCAL -I foo --install
 test -f foo/my-defs.m4
 
-$ACLOCAL --install -I "`pwd`/bar"
+$ACLOCAL --install -I "$(pwd)/bar"
 test -f bar/my-defs.m4
 
 $ACLOCAL --install -I baz/sub/sub2
@@ -54,10 +54,10 @@ ls zardoz2 | grep . && Exit 1
 
 # Directories in ACLOCAL_PATH should never be created if they don't
 # exist.
-ACLOCAL_PATH="`pwd`/none:`pwd`/none2" $ACLOCAL --install && Exit 1
+ACLOCAL_PATH="$(pwd)/none:$(pwd)/none2" $ACLOCAL --install && Exit 1
 test ! -d none
 test ! -d none2
-ACLOCAL_PATH="`pwd`/none:`pwd`/none2" $ACLOCAL --install -I x
+ACLOCAL_PATH="$(pwd)/none:$(pwd)/none2" $ACLOCAL --install -I x
 test -f x/my-defs.m4
 test ! -d none
 test ! -d none2

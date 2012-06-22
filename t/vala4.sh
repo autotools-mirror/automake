@@ -35,10 +35,7 @@ exit 0
 END
 chmod +x valac
 
-cwd=`pwd`
-
-# Use $cwd instead of `pwd` in the && list below to avoid a bug in
-# the way Solaris/Heirloom Sh handles 'set -e'.
+cwd=$(pwd) || fatal_ "getting current working directory"
 
 $ACLOCAL
 $AUTOMAKE -a

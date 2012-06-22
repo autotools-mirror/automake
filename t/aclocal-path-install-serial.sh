@@ -57,7 +57,7 @@ win ()
 
 mkdir sdir pdir m4
 
-ACLOCAL="$ACLOCAL --system-acdir=`pwd`/sdir"
+ACLOCAL="$ACLOCAL --system-acdir=$(pwd)/sdir"
 ACLOCAL_PATH=./pdir; export ACLOCAL_PATH
 
 cat > sdir/foo.m4 << 'END'

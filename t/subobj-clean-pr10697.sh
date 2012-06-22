@@ -34,21 +34,19 @@ END
 echo "OBJEXT='@OBJEXT@'" > get-objext.in
 
 oPATH=$PATH
-ocwd=`pwd` || fatal_ "getting current working directory"
+ocwd=$(pwd) || fatal_ "getting current working directory"
 
 # An rm(1) wrapper that fails when invoked too many times.
 mkdir rm-wrap
 max_rm_invocations=3
 count_file=$ocwd/rm-wrap/count
 cat > rm-wrap/rm <<END
-#!/bin/sh
-set -e
-count=\`cat '$count_file'\`
-count=\`expr \$count + 1\`
-if test \$count -le $max_rm_invocations; then :; else
+#!$AM_TEST_RUNNER_SHELL -e
+count=\$((\$(cat '$count_file') + 1))
+test \$count -le $max_rm_invocations || {
   echo "rm invoked more than $max_rm_invocations times" >&2
   exit 1
-fi
+}
 echo "\$count" > '$count_file'
 PATH='$oPATH'; export PATH
 exec rm "\$@"

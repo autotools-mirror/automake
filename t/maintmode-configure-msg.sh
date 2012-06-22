@@ -37,8 +37,7 @@ check_configure_message_with ()
   ./configure ${1+"$@"} >stdout || { cat stdout; Exit 1; }
   cat stdout
   grep "^checking whether to enable maintainer-specific.*\\.\\.\\. $answer$" stdout
-  test `grep -c 'checking.*maint' stdout` -eq 1
-  :
+  test $(grep -c 'checking.*maint' stdout) -eq 1
 }
 
 set_maintmode "DEFAULT"
