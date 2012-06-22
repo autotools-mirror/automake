@@ -63,6 +63,7 @@ sc_tests_automake_fails \
 sc_tests_required_after_defs \
 sc_tests_overriding_macros_on_cmdline \
 sc_tests_plain_sleep \
+sc_tests_ls_t \
 sc_m4_am_plain_egrep_fgrep \
 sc_tests_no_configure_in \
 sc_tests_PATH_SEPARATOR \
@@ -363,6 +364,16 @@ sc_tests_overriding_macros_on_cmdline:
 	@if grep 'SHELL=.*\$$MAKE' $(xtests); then \
 	  echo '$$MAKE ignores the SHELL envvar, use "$$MAKE SHELL=$$SHELL" in' 1>&2; \
 	  echo 'the above lines.' 1>&2; \
+	  exit 1; \
+	fi
+
+## Prefer use of our 'is_newest' auxiliary script over the more hacky
+## idiom "test $(ls -1t new old | sed 1q) = new", which is both more
+## cumbersome and more fragile.
+sc_tests_ls_t:
+	@if LC_ALL=C grep -E '\bls(\s+-[a-zA-Z0-9]+)*\s+-[a-zA-Z0-9]*t' \
+	    $(xtests); then \
+	  echo "Use 'is_newest' rather than hacks based on 'ls -t'" 1>&2; \
 	  exit 1; \
 	fi
 

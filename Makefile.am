@@ -322,7 +322,7 @@ TAP_LOG_DRIVER = AM_TAP_AWK='$(AWK)' $(SHELL) $(srcdir)/lib/tap-driver.sh
 
 AM_TAP_LOG_DRIVER_FLAGS = --merge
 
-EXTRA_DIST += t/README t/ax/is
+EXTRA_DIST += t/README t/ax/is t/ax/is_newest
 
 TESTS = ## Will be updated later.
 

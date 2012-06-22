@@ -38,8 +38,7 @@ cat > Makefile.am <<'END'
 SUBDIRS = sub3
 .PHONY: test-prog-updated
 test-prog-updated:
-	stat older sub3/run$(EXEEXT) || : For debugging.
-	test `ls -t older sub3/run$(EXEEXT) | sed 1q` = sub3/run$(EXEEXT)
+	is_newest sub3/run$(EXEEXT) sub2/config.bot
 END
 
 cat > sub3/Makefile.am <<'END'
@@ -68,13 +67,12 @@ $AUTOMAKE
 ./configure --enable-dependency-tracking
 $MAKE
 # Sanity check.
-cross_compiling || { sub3/run | grep grepme1; }
+cross_compiling || sub3/run | grep grepme1 || Exit 1
 
-: > older
 $sleep
 echo '#define NAME "grepme2"' > sub2/config.bot
 $MAKE
-cross_compiling || { sub3/run | grep grepme2; }
+cross_compiling || sub3/run | grep grepme2 || Exit 1
 $MAKE test-prog-updated
 
 $MAKE distcheck

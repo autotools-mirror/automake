@@ -37,70 +37,64 @@ END
 mkdir m4
 echo 'AC_DEFUN([SOME_DEFS], [])' > m4/somedefs.m4
 
-$sleep
-
-$ACLOCAL -I m4
-
 # Automake will take aclocal.m4 to be newer if it has the same timestamp
 # as Makefile.in.  Avoid the confusing by sleeping.
-$sleep
+AUTOMAKE_after_aclocal ()
+{
+  $sleep
+  $AUTOMAKE --no-force
+}
 
-$AUTOMAKE --no-force
-
-$sleep
+$ACLOCAL -I m4
+AUTOMAKE_after_aclocal
 
 touch foo
+$sleep
 $ACLOCAL -I m4
-$AUTOMAKE --no-force
-
+AUTOMAKE_after_aclocal
 # aclocal.m4 and Makefile.in should not have been updated, so 'foo'
 # should be younger
-test $(ls -1t aclocal.m4 Makefile.in sub/Makefile.in foo | sed 1q) = foo
+is_newest foo aclocal.m4 Makefile.in sub/Makefile.in
 
 $sleep
 $ACLOCAL -I m4 --force
-test $(ls -1t aclocal.m4 foo | sed 1q) = aclocal.m4
+is_newest aclocal.m4 foo
 # We still use --no-force for automake, but since aclocal.m4 has
 # changed all Makefile.ins should be updated.
-$sleep
-$AUTOMAKE --no-force
-test $(ls -1t Makefile.in foo | sed 1q) = Makefile.in
-test $(ls -1t sub/Makefile.in foo | sed 1q) = sub/Makefile.in
+AUTOMAKE_after_aclocal
+is_newest Makefile.in aclocal.m4 foo
+is_newest sub/Makefile.in aclocal.m4 foo
 
+$sleep
 touch m4/somedefs.m4
 $sleep
-touch foo
-$sleep
 $ACLOCAL -I m4
+AUTOMAKE_after_aclocal
+# aclocal.m4 should have been updated, although its contents haven't
+# changed.
+is_newest aclocal.m4 m4/somedefs.m4
+is_newest Makefile.in m4/somedefs.m4
+is_newest sub/Makefile.in m4/somedefs.m4
+
 $sleep
-$AUTOMAKE --no-force
-
-# aclocal.m4 should have been updated, although its contents haven't changed.
-test $(ls -1t aclocal.m4 foo | sed 1q) = aclocal.m4
-test $(ls -1t Makefile.in foo | sed 1q) = Makefile.in
-test $(ls -1t sub/Makefile.in foo | sed 1q) = sub/Makefile.in
-
 touch fragment.inc
 $sleep
-touch foo
-$sleep
 $ACLOCAL -I m4
-$AUTOMAKE --no-force
+AUTOMAKE_after_aclocal
 # Only ./Makefile.in should change.
-test $(ls -1t aclocal.m4 foo | sed 1q) = foo
-test $(ls -1t Makefile.in foo | sed 1q) = Makefile.in
-test $(ls -1t sub/Makefile.in foo | sed 1q) = foo
+is_newest Makefile.in fragment.inc
+is_newest fragment.inc aclocal.m4
+is_newest fragment.inc sub/Makefile.in
 
 grep README Makefile.in && Exit 1
 
-: > README
 $sleep
-touch foo
+: > README
 $sleep
 $AUTOMAKE --no-force
 # Even if no dependency change, the content changed.
-test $(ls -1t Makefile.in foo | sed 1q) = Makefile.in
-test $(ls -1t sub/Makefile.in foo | sed 1q) = foo
+is_newest Makefile.in README
+is_newest README sub/Makefile.in
 
 grep README Makefile.in
 
@@ -111,6 +105,8 @@ $sleep
 $ACLOCAL -I m4
 $AUTOMAKE --no-force
 # Only sub/Makefile.in should change.
-test $(ls -1t aclocal.m4 foo | sed 1q) = foo
-test $(ls -1t Makefile.in foo | sed 1q) = foo
-test $(ls -1t sub/Makefile.in foo | sed 1q) = sub/Makefile.in
+is_newest foo aclocal.m4
+is_newest foo Makefile.in
+is_newest sub/Makefile.in foo
+
+:
