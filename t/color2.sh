@@ -17,10 +17,10 @@
 # Test Automake TESTS color output, using the expect(1) program.
 # Keep this in sync with the sister test 'color.test'.
 
+required='grep-nonprint'
 # For gen-testsuite-part: ==> try-with-serial-tests <==
 . ./defs || Exit 1
 
-esc=''
 # Escape '[' for grep, below.
 red="$esc\[0;31m"
 grn="$esc\[0;32m"
@@ -28,14 +28,6 @@ lgn="$esc\[1;32m"
 blu="$esc\[1;34m"
 mgn="$esc\[0;35m"
 std="$esc\[m"
-
-# Check that grep can parse nonprinting characters.
-# BSD 'grep' works from a pipe, but not a seekable file.
-# GNU or BSD 'grep -a' works on files, but is not portable.
-case $(echo "$std" | grep .) in
-  "$std") ;;
-  *) skip_ "grep can't parse nonprinting characters";;
-esac
 
 # This test requires a working a working 'expect' program.
 # Creative quoting required to avoid spurious maintainer-check failure.
@@ -108,7 +100,8 @@ $AUTOMAKE --add-missing
 
 test_color ()
 {
-  # Not a useless use of cat; see above comments about grep.
+  # Not a useless use of cat; see above comments "grep-nonprinting"
+  # requirement in 'test-init.sh'.
   cat stdout | grep "^${grn}PASS${std}: .*pass"
   cat stdout | grep "^${red}FAIL${std}: .*fail"
   cat stdout | grep "^${blu}SKIP${std}: .*skip"
@@ -136,7 +129,8 @@ test_no_color ()
     # not unduly colorized.
     (
       set +e # In case some grepped regex below isn't matched.
-      # Not a useless use of cat; see above comments about grep.
+      # Not a useless use of cat; see above comments "grep-nonprinting"
+      # requirement in 'test-init.sh'.
       cat stdout | grep "TOTAL.*:"
       cat stdout | grep "PASS.*:"
       cat stdout | grep "FAIL.*:"

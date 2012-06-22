@@ -26,10 +26,13 @@ set -e
 # Test scripts can override it if they need to (but this should
 # be done carefully).
 if test -z "$me"; then
-  # Guard against failure to spawn sed (seen on MSYS), or empty $argv0.
-  me=`echo "$argv0" | sed -e 's,.*[\\/],,;s/\.sh$//;s/\.tap$//'` \
-    && test -n "$me" \
-    || { echo "$argv0: failed to define \$me" >&2; exit 99; }
+  # Strip all directory components.
+  me=${argv0##*/}
+  # Strip test suffix.
+  case $me in
+    *.tap) me=${me%.tap};;
+     *.sh) me=${me%.sh} ;;
+  esac
 fi
 
 
@@ -63,6 +66,8 @@ tab='	'
 # A newline character.
 nl='
 '
+# A literal escape character.  Used by test checking colored output.
+esc=''
 
 # As autoconf-generated configure scripts do, ensure that IFS
 # is defined initially, so that saving and restoring $IFS works.
@@ -752,6 +757,15 @@ do
       case " $required " in
         *\ gfortran\ *) ;;
         *) FC=$F77 FCFLAGS=$FFLAGS; export FC FCFLAGS;;
+      esac
+      ;;
+    grep-nonprint)
+      # Check that grep can parse nonprinting characters correctly.
+      # BSD 'grep' works from a pipe, but not a seekable file.
+      # GNU or BSD 'grep -a' works on files, but is not portable.
+      case $(echo "$esc" | grep .)$(echo "$esc" | grep "$esc") in
+        "$esc$esc") ;;
+        *) skip_ "grep can't handle nonprinting characters correctly";;
       esac
       ;;
     javac)

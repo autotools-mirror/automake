@@ -45,7 +45,7 @@ for opt in ansi2knr lib/ansi2knr; do
   AUTOMAKE_fails -Wnone
   grep "^Makefile\.am:1:.*$warn_rx" stderr
   # ansi2knr option in configure.ac
-  echo > Makefile.am # `echo', not `:', for Solaris /bin/sh.
+  echo > Makefile.am # 'echo', not ':', for Solaris /bin/sh.
   sed "s|^\\(AM_INIT_AUTOMAKE\\).*|\1([$opt])|" configure.sav >configure.ac
   cat configure.ac # For debugging.
   rm -rf autom4te*.cache

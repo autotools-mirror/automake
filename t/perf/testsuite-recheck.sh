@@ -69,7 +69,7 @@ END
 # Temporarily disable shell traces, to avoid bloating the log file.
 set +x
 
-for i in `seq_ 1 $count`; do
+for i in $(seq_ 1 $count); do
   echo dummy $i > $i.log
   echo :global-test-result: PASS > $i.trs
   echo :test-result: PASS >> $i.trs

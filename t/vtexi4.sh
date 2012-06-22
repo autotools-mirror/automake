@@ -21,7 +21,7 @@
 # for more vers*.texi files, and does not require makeinfo, tex and
 # texi2dvi.
 
-required='makeinfo tex texi2dvi'
+required='makeinfo tex texi2dvi grep-nonprint'
 . ./defs || Exit 1
 
 test $(LC_ALL=C date '+%u') -gt 0 && test $(LC_ALL=C date '+%u') -lt 8 \
@@ -30,9 +30,6 @@ test $(LC_ALL=C date '+%u') -gt 0 && test $(LC_ALL=C date '+%u') -lt 8 \
   && year=$(LC_ALL=C date '+%Y')  && test -n "$year" \
   || skip_ "'date' is not POSIX-compliant enough"
 day=$(echo "$day" | sed 's/^0//')
-
-(echo 'x' | grep x) \
-  || skip_ "grep doesn't work on input that is not pure text"
 
 cat > configure.ac << END
 AC_INIT([$me], [123.456])
@@ -51,7 +48,7 @@ cat > Makefile.am << 'END'
 include defs.am
 info_TEXINFOS = foo.texi
 test-grepinfo:
-## Not useless uses of cat: we only tested that grep worked on
+## Not useless uses of cat: we only tested that grep works on
 ## non-text input when that's given from a pipe.
 	cat $(srcdir)/foo.info | grep 'GREPVERSION=$(my_version_rx)='
 	cat $(srcdir)/foo.info | grep 'GREPEDITION=$(my_version_rx)='

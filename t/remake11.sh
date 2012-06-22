@@ -48,10 +48,10 @@ bottom=$(pwd) || fatal_ "getting current working directory"
 
 cd "$ocwd"
 
-makefiles_am_list=`find . -name Makefile.am | LC_ALL=C sort`
-makefiles_list=`echo "$makefiles_am_list" | sed 's/\.am$//'`
-bar_in_list=`find . -name bar.in | LC_ALL=C sort`
-bar_list=`echo "$bar_in_list" | sed 's/\.in$//'`
+makefiles_am_list=$(find . -name Makefile.am | LC_ALL=C sort)
+makefiles_list=$(echo "$makefiles_am_list" | sed 's/\.am$//')
+bar_in_list=$(find . -name bar.in | LC_ALL=C sort)
+bar_list=$(echo "$bar_in_list" | sed 's/\.in$//')
 
 cat configure.ac # For debugging.
 

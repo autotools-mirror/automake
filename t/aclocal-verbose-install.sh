@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Check verbose messages by `aclocal --install'.
+# Check verbose messages by 'aclocal --install'.
 
 am_create_testdir=empty
 . ./defs || Exit 1

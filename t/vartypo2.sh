@@ -40,18 +40,18 @@ $ACLOCAL
 AUTOMAKE_fails --add-missing
 # The expected diagnostic is:
 # automake: warnings are treated as errors
-# Makefile.am:3: warning: variable `EXTRA_libfoo_la_SOURCES' is defined but no program or
-# Makefile.am:3: library has `libfoo_la' as canonical name (possible typo)
-# Makefile.am:1: warning: variable `libfoo_la_SOURCES' is defined but no program or
-# Makefile.am:1: library has `libfoo_la' as canonical name (possible typo)
-# Makefile.am:2: warning: variable `nodist_libfoo_la_SOURCES' is defined but no program or
-# Makefile.am:2: library has `libfoo_la' as canonical name (possible typo)
-# Makefile.am:4: warning: variable `libfoo_la_LIBADD' is defined but no program or
-# Makefile.am:4: library has `libfoo_la' as canonical name (possible typo)
-# Makefile.am:6: warning: variable `EXTRA_libfoo_la_DEPENDENCIES' is defined but no program or
-# Makefile.am:6: library has `libfoo_la' as canonical name (possible typo)
-# Makefile.am:5: warning: variable `libfoo_la_DEPENDENCIES' is defined but no program or
-# Makefile.am:5: library has `libfoo_la' as canonical name (possible typo)
+# Makefile.am:3: warning: variable 'EXTRA_libfoo_la_SOURCES' is defined but no program or
+# Makefile.am:3: library has 'libfoo_la' as canonical name (possible typo)
+# Makefile.am:1: warning: variable 'libfoo_la_SOURCES' is defined but no program or
+# Makefile.am:1: library has 'libfoo_la' as canonical name (possible typo)
+# Makefile.am:2: warning: variable 'nodist_libfoo_la_SOURCES' is defined but no program or
+# Makefile.am:2: library has 'libfoo_la' as canonical name (possible typo)
+# Makefile.am:4: warning: variable 'libfoo_la_LIBADD' is defined but no program or
+# Makefile.am:4: library has 'libfoo_la' as canonical name (possible typo)
+# Makefile.am:6: warning: variable 'EXTRA_libfoo_la_DEPENDENCIES' is defined but no program or
+# Makefile.am:6: library has 'libfoo_la' as canonical name (possible typo)
+# Makefile.am:5: warning: variable 'libfoo_la_DEPENDENCIES' is defined but no program or
+# Makefile.am:5: library has 'libfoo_la' as canonical name (possible typo)
 
 grep 'as canonical' stderr | grep -v ' .libfoo_la. ' && Exit 1
 test $(grep -c 'variable.*is defined but' stderr) -eq 6
