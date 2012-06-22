@@ -82,13 +82,13 @@ do_check ()
 }
 
 if test $use_colors = yes; then
-  red='[0;31m'
-  grn='[0;32m'
-  lgn='[1;32m'
-  blu='[1;34m'
-  mgn='[0;35m'
-  brg='[1m'
-  std='[m'
+  red="$esc[0;31m"
+  grn="$esc[0;32m"
+  lgn="$esc[1;32m"
+  blu="$esc[1;34m"
+  mgn="$esc[0;35m"
+  brg="$esc[1m"
+  std="$esc[m"
   echo AUTOMAKE_OPTIONS = color-tests >> Makefile.am
 else
   red= grn= lgn= blu= mgn= brg= std=

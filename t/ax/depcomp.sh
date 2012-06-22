@@ -134,11 +134,11 @@ AM_INIT_AUTOMAKE
 AC_PROG_CC
 AM_PROG_CC_C_O
 AM_PROG_AR
-`if test $depcomp_with_libtool = yes; then
-  echo AC_PROG_LIBTOOL
-else
-  echo AC_PROG_RANLIB
-fi`
+$(if test $depcomp_with_libtool = yes; then
+    echo AC_PROG_LIBTOOL
+  else
+    echo AC_PROG_RANLIB
+  fi)
 AC_CONFIG_FILES([Makefile src/Makefile])
 AC_OUTPUT
 END

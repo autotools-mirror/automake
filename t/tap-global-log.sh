@@ -113,8 +113,10 @@ done
 
 grep '^1\.\.0 # SKIP all$' test-suite.log
 
-case `cat test-suite.log` in
-  *"`cat hodgepodge`"*) ;;
+test_suite_contents=$(cat test-suite.log)
+hodgepodge_contents=$(cat hodgepodge)
+case $test_suite_contents in
+  *"$hodgepodge_contents"*) ;;
   *) Exit 1;;
 esac
 

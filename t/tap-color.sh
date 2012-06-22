@@ -17,9 +17,9 @@
 # TAP support:
 #  - colorization of TAP results and diagnostic messages
 
+required='grep-nonprint'
 . ./defs || Exit 1
 
-esc=''
 # Escape '[' for grep, below.
 red="$esc\[0;31m"
 grn="$esc\[0;32m"
@@ -27,14 +27,6 @@ lgn="$esc\[1;32m"
 blu="$esc\[1;34m"
 mgn="$esc\[0;35m"
 std="$esc\[m"
-
-# Check that grep can parse nonprinting characters.
-# BSD 'grep' works from a pipe, but not a seekable file.
-# GNU or BSD 'grep -a' works on files, but is not portable.
-case `echo "$std" | grep .` in
-  "$std") ;;
-  *) echo "$me: grep can't parse nonprinting characters" >&2; Exit 77;;
-esac
 
 cat > Makefile.am << 'END'
 AUTOMAKE_OPTIONS = color-tests
@@ -101,7 +93,8 @@ END
 
 test_color ()
 {
-  # Not a useless use of cat; see above comments about grep.
+  # Not a useless use of cat; see above comments "grep-nonprinting"
+  # requirement in 'test-init.sh'.
   cat stdout | grep "^${grn}PASS${std}: all\.test 1 - foo$"
   cat stdout | grep "^${lgn}XFAIL${std}: all\.test 2 - bar # TODO td$"
   cat stdout | grep "^${blu}SKIP${std}: all\.test 3 - baz # SKIP sk$"
@@ -124,6 +117,8 @@ test_color ()
 
 test_no_color ()
 {
+  # Not a useless use of cat; see above comments "grep-nonprinting"
+  # requirement in 'test-init.sh'.
   cat stdout | grep "$esc" && Exit 1
   :
 }
