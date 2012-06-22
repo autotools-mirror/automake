@@ -30,7 +30,7 @@ echo '@setfilename foo.info' > foo.texi
 $ACLOCAL
 $AUTOMAKE
 
-for i in `grep '^INFOS =' Makefile.in | sed -e 's/^INFOS = //'`; do
+for i in $(grep '^INFOS =' Makefile.in | sed -e 's/^INFOS = //'); do
    echo $i
    case "$i" in
     foo*)

@@ -60,7 +60,7 @@ grep '^sub/Makefile.am:.*AUTOMAKE_OPTIONS' stderr
 grep '^sub/Makefile\.am:.*AM_PROG_CC_C_O' stderr && Exit 1
 grep '^Makefile\.am:.*AUTOMAKE_OPTIONS' stderr && Exit 1
 # Only two lines of warnings.
-test $(grep -v 'warnings are treated as errors' stderr | wc -l) = 2
+test $(grep -v 'warnings are treated as errors' stderr | wc -l) -eq 2
 
 rm -rf autom4te*.cache
 

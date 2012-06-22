@@ -36,10 +36,10 @@ $EGREP -i '\.stamp|\.class|java|classpath' Makefile.in # For debugging.
 
 for var in JAVAC JAVAROOT CLASSPATH_ENV am__java_sources; do
   grep "^$var =" Makefile.in
-  test `grep -c "^[$sp$tab]*$var[$sp$tab]*=" Makefile.in` = 1
+  test $(grep -c "^[$sp$tab]*$var[$sp$tab]*=" Makefile.in) -eq 1
 done
 
 grep '^classjava\.stamp:' Makefile.in
-test `grep -c "class.*java.*\.stamp.*:" Makefile.in` = 1
+test $(grep -c "class.*java.*\.stamp.*:" Makefile.in) -eq 1
 
 :

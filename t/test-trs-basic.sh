@@ -68,11 +68,11 @@ for vpath in : false; do
   $srcdir/configure
 
   $MAKE tb
-  test x"`cat tb`" = x"foo bar sub/zardoz"
+  test x"$(cat tb)" = x"foo bar sub/zardoz"
   rm -f tb
   # Please don't change the order of the stuff in TESTS, below.
   $MAKE TESTS='foo.test foo2.sh foo-log foolog.test a.log.b.sh 0.exe' tb
-  test x"`cat tb`" = x"foo foo2 foo-log foolog a.log.b 0.exe"
+  test x"$(cat tb)" = x"foo foo2 foo-log foolog a.log.b 0.exe"
   rm -f tb
 
   cd $srcdir

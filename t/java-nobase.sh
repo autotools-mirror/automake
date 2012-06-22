@@ -56,7 +56,7 @@ $ACLOCAL
 $AUTOCONF
 $AUTOMAKE
 
-./configure --prefix="`pwd`"/_inst
+./configure --prefix="$(pwd)"/_inst
 $MAKE check
 $MAKE install
 $MAKE test-install

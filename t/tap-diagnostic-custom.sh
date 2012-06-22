@@ -57,7 +57,7 @@ for string in \
 '## leave its behaviour in this context undefined for the moment.'
 do
   case $string in '##'*) continue;; esac
-  i=`expr $i + 1`
+  i=$(($i + 1))
   unindent >> Makefile.am << END
     TEST_EXTENSIONS += .t$i
     TESTS += foo$i.t$i

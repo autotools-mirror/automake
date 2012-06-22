@@ -58,7 +58,7 @@ END
 
 cp x.c y.c
 
-instdir=`pwd`/_inst || fatal_ "cannot get current directory"
+instdir=$(pwd)/_inst || fatal_ "cannot get current directory"
 
 # Skip the rest of the test in case of e.g. missing C compiler.
 ./configure --prefix="$instdir" x=yes || Exit $?

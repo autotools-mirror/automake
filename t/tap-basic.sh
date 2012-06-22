@@ -145,7 +145,7 @@ test -f test-suite.log
 
 grep '^ERROR: bail\.test - Bail out!' stdout
 grep '^PASS:' stdout && Exit 1
-test `$FGREP -c ': bail.test' stdout` -eq 1
+test $($FGREP -c ': bail.test' stdout) -eq 1
 $FGREP 'success.test' stdout && Exit 1
 
 # Override TESTS from the command line, making it point to a test

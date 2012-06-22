@@ -28,12 +28,12 @@ cd amhello-1.0
 
 ./configure --prefix /usr
 $MAKE
-$MAKE DESTDIR="`pwd`/inst" install
+$MAKE DESTDIR="$(pwd)/inst" install
 cd inst
 find . -type f -print > ../files.lst
-tar cvf amhello-1.0-i686.tar.gz `cat ../files.lst` > tar.got 2>&1
+tar cvf amhello-1.0-i686.tar.gz $(cat ../files.lst) > tar.got 2>&1
 
-EXEEXT=`sed -n -e 's/^EXEEXT *= *//p' < ../Makefile`
+EXEEXT=$(sed -n -e 's/^EXEEXT *= *//p' < ../Makefile)
 
 if tar --version </dev/null | grep GNU; then
   LC_ALL=C sort tar.got > t

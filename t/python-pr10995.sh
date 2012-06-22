@@ -44,14 +44,12 @@ $AUTOCONF
 $AUTOMAKE --add-missing
 test -f py-compile
 
-inst=`pwd`/inst
-
-./configure --prefix="$inst"
+./configure --prefix="$(pwd)/inst"
 $MAKE install
-test -f "$inst/py/yes.py"
-test -f "$inst/py/yes.pyc"
-test ! -f "$inst/py/no.py"
-test ! -f "$inst/py/no.pyc"
+test -f inst/py/yes.py
+test -f inst/py/yes.pyc
+test ! -f inst/py/no.py
+test ! -f inst/py/no.pyc
 
 $MAKE disttest
 

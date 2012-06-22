@@ -26,7 +26,7 @@ plan_ 70
 #  Common and/or auxiliary subroutines and variables.  #
 # ---------------------------------------------------- #
 
-ocwd=`pwd` || fatal_ "obtaining current working directory"
+ocwd=$(pwd) || fatal_ "getting current working directory"
 
 TAR='' && unset TAR
 
@@ -56,45 +56,56 @@ setup_vars_for_compression_format ()
   esac
 }
 
+have_compressor ()
+{
+  test $# -eq 1 || fatal_ "have_compressor(): bad usage"
+  case $1 in
+    # Assume gzip(1) is available on every reasonable portability target.
+    gzip)
+      return 0;;
+    # On Cygwin, as of 9/2/2012, 'compress' is provided by sharutils
+    # and is just a dummy script that is not able to actually compress
+    # (it can only decompress).  So, check that the 'compress' program
+    # is actually able to compress input.
+    # Note that, at least on GNU/Linux, 'compress' does (and is
+    # documented to) exit with status 2 if the output is larger than
+    # the input after (attempted) compression; so we need to pass it
+    # an input that it can actually reduce in size when compressing.
+    compress)
+      for x in 1 2 3 4 5 6 7 8; do
+        echo aaaaaaaaaaaaaaaaaaaaa
+      done | compress -c >/dev/null && return 0
+      return 1
+      ;;
+    *)
+      # Redirect to stderr to avoid polluting the output, in case this
+      # function is used in a command substitution (as it is, below).
+      if $1 --version </dev/null >&2; then
+        return 0
+      else
+        return 1
+      fi
+      ;;
+  esac
+  fatal_ "have_compressor(): dead code reached"
+}
+
 all_compression_formats='gzip tarZ lzip xz bzip2 zip shar'
 
-all_compressors=`
+all_compressors=$(
   for x in $all_compression_formats; do
     setup_vars_for_compression_format $x
     echo $compressor
-  done | tr "$nl" ' '`
+  done | tr "$nl" ' ')
 echo All compressors: $all_compressors
 
-missing_compressors=`
+missing_compressors=$(
   for c in $all_compressors; do
-    case $c in
-      # Assume gzip(1) is available on every reasonable portability target.
-      gzip)
-        continue
-        ;;
-      # On Cygwin, as of 9/2/2012, 'compress' is provided by sharutils
-      # and is just a dummy script that is not able to actually compress
-      # (it can only decompress).  So, check that the 'compress' program
-      # is actually able to compress input.
-      # Note that, at least on GNU/Linux, 'compress' does (and is
-      # documented to) exit with status 2 if the output is larger than
-      # the input after (attempted) compression; so we need to pass it
-      # an input that it can actually reduce in size when compressing.
-      compress)
-        for x in 1 2 3 4 5 6 7 8; do
-          echo aaaaaaaaaaaaaaa
-        done | $c -c >/dev/null && continue
-        : For shells with busted 'set -e'.
-        ;;
-      *)
-        $c --version </dev/null >&2 && continue
-        : For shells with busted 'set -e'.
-        ;;
-    esac
-    echo $c
-  done | tr "$nl" ' '`
+    have_compressor $c || echo $c
+  done | tr "$nl" ' ')
 echo Missing compressors: $missing_compressors
 
+# Redefine to avoid re-running the already executed checks.
 have_compressor ()
 {
   case " $missing_compressors " in *\ $1\ *) false;; *) : ;; esac
@@ -112,8 +123,8 @@ start_subtest ()
   if test $# -gt 0; then
     eval "$@" || fatal_ "start_subtest: evaluating assignments"
   fi
-  ac_opts=`echo $ac_opts | tr ',' ' '`
-  am_opts=`echo $am_opts | tr ',' ' '`
+  ac_opts=$(echo $ac_opts | tr ',' ' ')
+  am_opts=$(echo $am_opts | tr ',' ' ')
   mkdir "$name"
   cd "$name"
   unindent > configure.ac <<END
@@ -161,7 +172,7 @@ can_compress ()
         && $MAKE dist-$format \
         && test -f $tarname-1.0.$suffix \
         && ls -l *$tarname* \
-        && test "`ls *$tarname*`" = $tarname-1.0.$suffix'
+        && test "$(echo *$tarname*)" = $tarname-1.0.$suffix'
 
   unset suffix compressor format tarname
 }
@@ -178,7 +189,7 @@ command_ok_ "default [configure]"       ./configure
 command_ok_ "default [make distcheck]"  $MAKE distcheck
 
 command_ok_ "'make dist' only builds *.tar.gz by default" \
-            test "`ls *defaults*`" = defaults-1.0.tar.gz
+            test "$(ls *defaults*)" = defaults-1.0.tar.gz
 
 rm -rf *defaults*
 
@@ -416,7 +427,7 @@ ls -l # For debugging.
 cd ..
 
 oPATH=$PATH
-PATH=`pwd`/bin$PATH_SEPARATOR$PATH; export PATH
+PATH=$(pwd)/bin$PATH_SEPARATOR$PATH; export PATH
 
 command_ok_ \
   "$desc ['make dist-all', stubbed]" \

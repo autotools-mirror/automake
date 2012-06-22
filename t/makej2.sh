@@ -37,9 +37,9 @@ $AUTOMAKE
 
 mkdir build
 cd build
-../configure "--prefix=`pwd`/inst"
+../configure --prefix="$(pwd)/inst"
 
 $MAKE -j2 distcheck
 $MAKE test-distdir-removed
 
-Exit 0
+:

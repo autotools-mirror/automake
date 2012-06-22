@@ -77,7 +77,7 @@ cd ..
 # still be ongoing when the parallel one has terminated.
 kill -0 $!
 cat parallel/stdout
-test `grep -c '^PASS:' parallel/stdout` -eq 12
+test $(grep -c '^PASS:' parallel/stdout) -eq 12
 
 # Wait long enough so that there are no open files any more when the
 # post-test cleanup runs.  But exit after we've waited for two minutes
@@ -85,7 +85,7 @@ test `grep -c '^PASS:' parallel/stdout` -eq 12
 # already happened).
 i=1
 while test ! -f serial/test-suite.log && test $i -le 120; do
-  i=`expr $i + 1`
+  i=$(($i + 1))
   sleep '1' # Extra quoting to please maintainer-check.
 done
 $sleep

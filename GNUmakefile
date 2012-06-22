@@ -19,7 +19,7 @@ ifeq ($(filter bootstrap,$(MAKECMDGOALS)),)
 
 ifeq ($(wildcard Makefile),)
   # Any target but 'bootstrap' specified in an unconfigured tree
-  # is an error, env when the user is running GNU make.
+  # is an error, even when the user is running GNU make.
   $(warning There seems to be no Makefile in this directory.)
   $(warning You must run ./configure before running 'make'.)
   $(error Fatal Error)

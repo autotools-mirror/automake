@@ -31,24 +31,10 @@ tap_fail_count_=0
 tap_xfail_count_=0
 tap_xpass_count_=0
 
-# The first "test -n" tries to avoid extra forks when possible.
-if test -n "${ZSH_VERSION}${BASH_VERSION}" \
-     || (eval 'test $((1 + 1)) = 2') >/dev/null 2>&1
-then
-  # Outer use of 'eval' needed to protect dumber shells from parsing
-  # errors.
-  eval 'incr_ () { eval "$1=\$((\${$1} + 1))"; }'
-else
-  incr_ () { eval "$1=\`expr \${$1} + 1\`"; }
-fi
-
 # not COMMAND [ARGS...]
 # ---------------------
 # Run the given command and invert its exit status.
-not ()
-{
-  if "$@"; then return 1; else return 0; fi
-}
+not () { ! "$@"; }
 
 # plan_ [unknown|later|lazy|now|NUMBER-OF-PLANNED-TESTS]
 # ------------------------------------------------------
@@ -136,14 +122,20 @@ result_ ()
     ""|TODO|SKIP) ;;
     *) bailout_ "result_: invalid directive '$directive_'" ;;
   esac
-  incr_ tap_count_
+  tap_count_=$(($tap_count_ + 1))
   case $tap_result_,$tap_directive_ in
-    ok,) incr_ tap_pass_count_;;                # Passed.
-    not\ ok,TODO) incr_ tap_xfail_count_;;      # Expected failure.
-    not\ ok,*) incr_ tap_fail_count_ ;;         # Failed.
-    ok,TODO) incr_ tap_xpass_count_ ;;          # Unexpected pass.
-    ok,SKIP) incr_ tap_skip_count_ ;;           # Skipped.
-    *) bailout_ "internal error in 'result_'";; # Can't happen.
+    ok,)                                                # Passed.
+      tap_pass_count_=$(($tap_pass_count_ + 1))         ;;
+    not\ ok,TODO)                                       # Expected failure.
+      tap_xfail_count_=$(($tap_xfail_count_ + 1))       ;;
+    not\ ok,*)                                          # Failed.
+      tap_fail_count_=$(($tap_fail_count_ + 1))         ;;
+    ok,TODO)                                            # Unexpected pass.
+      tap_xpass_count_=$(($tap_xpass_count_ + 1))       ;;
+    ok,SKIP)                                            # Skipped.
+      tap_skip_count_=$(($tap_skip_count_ + 1))         ;;
+    *)                                                  # Can't happen.
+      bailout_ "internal error in 'result_'"            ;;
   esac
   tap_text_="$tap_result_ $tap_count_"
   if test x"$*" != x; then
@@ -169,7 +161,7 @@ skip_ () { result_ 'ok' -D SKIP ${1+"$@"}; }
 skip_row_ ()
 {
   skip_count_=$1; shift
-  for i_ in `seq_ $skip_count_`; do skip_ ${1+"$@"}; done
+  for i_ in $(seq_ $skip_count_); do skip_ ${1+"$@"}; done
 }
 
 # skip_all_ [REASON ...]

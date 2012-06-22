@@ -41,7 +41,7 @@ LOG_DRIVER_FLAGS = _
 END
 
 mkdir sub bin
-PATH=`pwd`/bin$PATH_SEPARATOR$PATH; export PATH
+PATH=$(pwd)/bin$PATH_SEPARATOR$PATH; export PATH
 
 cat > wrapper.skel <<'END'
 #! /bin/sh

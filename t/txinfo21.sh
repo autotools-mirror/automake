@@ -120,7 +120,8 @@ AM_MAKEINFOHTMLFLAGS = --no-headers --no-split
 AM_MAKEINFOFLAGS = --unsupported-option
 EOF
 $AUTOMAKE
-./configure --prefix "`pwd`"
+./configure --prefix "$(pwd)"
+
 $MAKE html
 test -f main.html
 test -f sub/main2.html

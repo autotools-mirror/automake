@@ -24,9 +24,9 @@
 #
 # From manpage Test::Harness::TAP(3):
 #
-# ``Lines written to standard output matching /^(not )?ok\b/ must be
+#   Lines written to standard output matching /^(not )?ok\b/ must be
 #   interpreted as test lines. All other lines must not be considered
-#   test output.''
+#   test output.
 #
 # Unfortunately, the exact format of TODO and SKIP directives is not as
 # clearly described in that manpage; but a simple reverse-engineering of

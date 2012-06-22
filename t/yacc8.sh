@@ -74,16 +74,14 @@ test -f foo/parse.h
 
 # Make sure foo/parse.h is not updated, unless when needed.
 $sleep
-: > z
-$sleep
 touch ../foo/parse.y
 $MAKE obj
-test `ls -1t foo/parse.h z | sed 1q` = z
+is_newest ../foo/parse.y foo/parse.h
 $sleep
 sed 's/%%/%token TOKEN\n%%/g' ../foo/parse.y >../foo/parse.yt
 mv -f ../foo/parse.yt ../foo/parse.y
 $MAKE obj
-test `ls -1t foo/parse.h z | sed 1q` = foo/parse.h
+is_newest foo/parse.h ../foo/parse.y
 
 # Now, adds another parser to test ylwrap.
 

@@ -58,14 +58,14 @@ $EGREP 'MANS|\.([123456789]|man)' Makefile.in # For debugging.
 
 mkdir build
 cd build
-../configure FOO=true --prefix="`pwd`/_inst"
+../configure FOO=true --prefix="$(pwd)/_inst"
 $EGREP 'MANS|\.([123456789]|man)' Makefile # For debugging.
 touch foo.1 6.man
 $MAKE install
 $MAKE test1
 
 cd ..
-./configure FOO=false --prefix="`pwd`/_inst"
+./configure FOO=false --prefix="$(pwd)/_inst"
 $EGREP 'MANS|\.([123456789]|man)' Makefile # For debugging.
 touch bar.2 baz.1 zap.5
 $MAKE install

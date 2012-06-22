@@ -19,16 +19,14 @@
 
 . ./defs || Exit 1
 
-n=1
-files=
-match=
+n=1 files= match=
 while test $n -le 100
 do
   files="$files filename$n"
   match="..........$match"
-  n=`expr $n + 1`
+  n=$(($n + 1))
 done
-files2=`echo "$files" | sed s/filename/filenameb/g`
+files2=$(echo "$files" | sed s/filename/filenameb/g)
 
 cat >Makefile.am <<EOF
 FOO = $files $files2 \
@@ -46,3 +44,5 @@ $AUTOMAKE
 
 grep $match Makefile.in && Exit 1
 grep 'filenameb100 grepme' Makefile.in
+
+:

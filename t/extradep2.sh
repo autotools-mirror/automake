@@ -43,8 +43,7 @@ EXTRA_DIST = bardep
 
 .PHONY: bar-has-been-updated
 bar-has-been-updated:
-	stat older bar$(EXEEXT) libfoo.la || : For debugging.
-	test `ls -t bar$(EXEEXT) older | sed q` = bar$(EXEEXT)
+	is_newest bar$(EXEEXT) libfoo.la
 END
 
 cat >libfoo.c <<'END'
@@ -77,7 +76,6 @@ $MAKE && Exit 1
 : >bardep
 
 $MAKE
-: > older
 $sleep
 touch libfoo.la
 $MAKE

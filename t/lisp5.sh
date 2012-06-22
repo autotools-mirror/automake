@@ -59,7 +59,9 @@ $ACLOCAL
 $AUTOCONF
 $AUTOMAKE --add-missing
 
-./configure --prefix "`pwd`"
+cwd=$(pwd) || fatal_ "getting current working directory"
+
+./configure --prefix "$cwd"
 $MAKE
 $MAKE test
 $MAKE install-test
@@ -69,7 +71,7 @@ $MAKE not-installed
 # Fake the absence of emacs.
 # *.el files SHOULD be installed by "make install" (and uninstalled
 # by "make uninstall").
-./configure EMACS=no --prefix "`pwd`"
+./configure EMACS=no --prefix "$cwd"
 $MAKE
 $MAKE test
 $MAKE install-test

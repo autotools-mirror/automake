@@ -95,7 +95,7 @@ $ACLOCAL
 $AUTOCONF
 $AUTOMAKE -a
 
-cwd=`pwd` || fatal_ "getting current working directory"
+cwd=$(pwd) || fatal_ "getting current working directory"
 
 doinst ()
 {

@@ -55,7 +55,7 @@ $ACLOCAL
 $AUTOCONF
 $AUTOMAKE --add-missing
 
-instdir=`pwd`/inst
+instdir=$(pwd)/inst || fatal_ "getting current working directory"
 ./configure --prefix="$instdir"
 $MAKE
 

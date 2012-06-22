@@ -19,7 +19,7 @@
 
 . ./defs || Exit 1
 
-ocwd=`pwd` || fatal_ "cannot get current working directory"
+ocwd=$(pwd) || fatal_ "cannot get current working directory"
 
 mkdir src build
 mv install-sh missing configure.ac src

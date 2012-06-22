@@ -57,7 +57,7 @@ touch aclocal.m4 # Avoid unnecessary firing the remake rules.
 $AUTOCONF
 $AUTOMAKE Makefile
 
-./configure --prefix="`pwd`/_inst"
+./configure --prefix="$(pwd)/_inst"
 
 $MAKE test
 

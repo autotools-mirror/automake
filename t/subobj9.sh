@@ -34,7 +34,7 @@ END
 
 cat > Makefile.am << 'END'
 noinst_LTLIBRARIES = libfoo.la
-libfoo_la_SOURCES = src/foo.cc .//src/bar.cc  # The `.//' is meant.
+libfoo_la_SOURCES = src/foo.cc .//src/bar.cc  # The './/' is meant.
 .PHONY: print
 print:
 	@echo BEG1: "$(LTCXXCOMPILE)" :1END

@@ -62,7 +62,7 @@ grep '^maude\.static$(EXEEXT):' Makefile.in
 grep '^maude3$(EXEEXT):' Makefile.in
 grep '^mt$(EXEEXT):' Makefile.in
 grep '^rmt$(EXEEXT):' Makefile.in
-test `grep '^bin_PROGRAMS =' Makefile.in | wc -l` = 1
+test $(grep -c '^bin_PROGRAMS =' Makefile.in) -eq 1
 
 # Make sure $(EXEEXT) gets stripped before canonicalization.
 grep 'maude3__EXEEXT__OBJECTS' Makefile.in && Exit 1

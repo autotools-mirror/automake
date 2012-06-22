@@ -72,6 +72,6 @@ grep '^SKIP: baz\.test' stdout # Deliberately laxer, see above for why.
 grep '^SKIP: wget\.test .* wget(1) not installed$' stdout
 grep '^SKIP: curl\.test .* Can'\''t connect to gnu\.org!$' stdout
 grep '^SKIP: mu\.test' stdout | $FGREP "$weirdchars" stdout
-test `grep -c ': .*\.test' stdout` -eq 6
+test $(grep -c ': .*\.test' stdout) -eq 6
 
 :

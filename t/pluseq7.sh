@@ -31,8 +31,7 @@ AR += qq
 END
 
 $ACLOCAL
-AUTOMAKE_fails
-q="[\`'\"]"
-grep "^Makefile\.am:3:.* AR .* with $q=$q before .*$q+=$q" stderr
+AUTOMAKE_fails -Wno-portability
+grep "^Makefile\.am:3:.* AR .* with '=' before .*'+='" stderr
 
 :

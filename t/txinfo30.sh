@@ -39,7 +39,7 @@ EOF
 
 chmod +x makeinfo
 
-PATH=`pwd`$PATH_SEPARATOR$PATH
+PATH=$(pwd)$PATH_SEPARATOR$PATH
 export PATH
 
 # Otherwise configure might pick up a working makeinfo from the

@@ -40,7 +40,7 @@ list=`$AUTOMAKE --help \
         | sed -n '/^Files.*automatically distributed.*if found.*always/,/^ *$/p' \
         | sed 1d`
 # Normalize whitespace, just in case.
-list=`echo $list`
+list=$(echo $list)
 
 test -n "$list"
 

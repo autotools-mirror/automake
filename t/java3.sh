@@ -42,8 +42,7 @@ $ACLOCAL
 $AUTOCONF
 $AUTOMAKE
 
-cwd=`pwd` || Exit 1
-./configure --prefix="$cwd/_inst"
+./configure --prefix="$(pwd)/_inst"
 $MAKE
 $MAKE install
 ls -l .

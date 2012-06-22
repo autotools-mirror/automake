@@ -76,6 +76,6 @@ done) || skip_ "failed to create deeper directory hierarchy"
 $MAKE dist 2>stderr && { cat stderr >&2; Exit 1; }
 cat stderr >&2
 grep 'filenames are too long' stderr
-test 1 = `grep 12345678 stderr | wc -l`
+test 1 -eq $(grep -c 12345678 stderr)
 
 :

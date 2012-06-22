@@ -81,31 +81,21 @@ $AUTOMAKE
 ./configure
 $MAKE testdist1
 
-cp aclocal.m4 stamp
+cp aclocal.m4 aclocal.old
 $sleep
-
-cat >>c.m4 <<\EOF
-AC_DEFUN([FOO], [ANOTHER_MACRO])
-EOF
-
+echo 'AC_DEFUN([FOO], [ANOTHER_MACRO])' >> c.m4
 $MAKE
-
 # Because c.m4 has changed, aclocal.m4 must have been rebuilt.
-test `ls -1t aclocal.m4 stamp | sed 1q` = aclocal.m4
+is_newest aclocal.m4 aclocal.old
 # However, since FOO is not used, f.m4 should not be included
 # and the contents of aclocal.m4 should remain the same
-diff aclocal.m4 stamp
+diff aclocal.m4 aclocal.old
 
-# If FOO where to be used, that would be another story, of course.
-cat >>configure.ac <<EOF
-FOO
-EOF
-
-cp aclocal.m4 stamp
+# If FOO where to be used, that would be another story, of course:
+# f.m4 should be included
 $sleep
-
+echo FOO >> configure.ac
 $MAKE
-
 $FGREP defs/f.m4 aclocal.m4
 $MAKE testdist2
 

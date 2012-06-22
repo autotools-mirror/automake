@@ -102,7 +102,7 @@ cat > skipall.test << 'END'
 END
 
 # We don't care about the exit status of "make check" here.
-$MAKE TESTS="`echo *.test`" check || :
+$MAKE TESTS="$(echo *.test)" check || :
 cat test-suite.log
 
 grep ':.*ok|not seen' test-suite.log && Exit 1

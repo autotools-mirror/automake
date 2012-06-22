@@ -34,6 +34,6 @@ $MAKE check >stdout && { cat stdout; Exit 1; }
 cat stdout
 
 count_test_results total=4 pass=0 fail=0 xpass=0 xfail=0 skip=1 error=3
-test `grep -c '^ERROR: all\.test - multiple test plans' stdout` -eq 3
+test $(grep -c '^ERROR: all\.test - multiple test plans' stdout) -eq 3
 
 :

@@ -93,7 +93,7 @@ $
 END
 
 # Strip any extra whitespace, for Solaris' wc.
-planned=`wc -l <punctuation | tr -d " $tab"`
+planned=$(wc -l <punctuation | tr -d " $tab")
 
 echo 1..$planned > all.test
 awk '{print "ok " NR $0 }' punctuation >> all.test

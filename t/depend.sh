@@ -31,6 +31,6 @@ END
 $ACLOCAL
 $AUTOMAKE
 
-test 1 = `grep '^@AMDEP_TRUE@-include ' Makefile.in | wc -l`
+test 1 -eq $(grep -c '^@AMDEP_TRUE@-include' Makefile.in)
 
 :

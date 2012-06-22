@@ -41,7 +41,7 @@ END
 $ACLOCAL
 $AUTOMAKE
 
-uncondval=`$FGREP 'foo-foo.$(OBJEXT): foo.c' Makefile.in`
+uncondval=$($FGREP 'foo-foo.$(OBJEXT): foo.c' Makefile.in)
 
 cat >> Makefile.am << 'END'
 foo_SOURCES += $(BAR_SRCS)
@@ -49,8 +49,10 @@ END
 
 $AUTOMAKE
 
-condval=`$FGREP 'foo-foo.$(OBJEXT): foo.c' Makefile.in`
+condval=$($FGREP 'foo-foo.$(OBJEXT): foo.c' Makefile.in)
 
+test -n "$uncondval"
+test -n "$condval"
 test "x$uncondval" = "x$condval"
 
 :

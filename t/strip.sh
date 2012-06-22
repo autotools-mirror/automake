@@ -41,7 +41,7 @@ $ACLOCAL
 $AUTOCONF
 $AUTOMAKE -a
 
-prefix=`cd install && pwd` || Exit 1
+prefix=$(cd install && pwd) || Exit 99
 ./configure --prefix="$prefix"
 $MAKE
 $MAKE install-strip

@@ -65,7 +65,7 @@ $FGREP 'am_zardoz_OBJECTS' Makefile.in
 $FGREP 'am_libzardoz_la_OBJECTS' Makefile.in
 $FGREP 'zardoz_vala.stamp:' Makefile.in
 $FGREP 'libzardoz_la_vala.stamp:' Makefile.in
-test `$FGREP -c '.stamp:' Makefile.in` -eq 2
+test $($FGREP -c '.stamp:' Makefile.in) -eq 2
 $FGREP 'zardoz.c' Makefile.in
 $FGREP 'zardoz-foo.c' Makefile.in
 $FGREP 'zardoz-bar.c' Makefile.in
@@ -76,7 +76,7 @@ $FGREP 'am_foo_OBJECTS' sub/Makefile.in
 $FGREP 'bar.c' sub/Makefile.in
 $FGREP 'baz.c' sub/Makefile.in
 $FGREP 'foo_vala.stamp:' sub/Makefile.in
-test `$FGREP -c '.stamp:' sub/Makefile.in` -eq 1
+test $($FGREP -c '.stamp:' sub/Makefile.in) -eq 1
 
 # Check against regression for weird bug due to unescaped '@'
 # characters used in a "..." perl string when writing the vala

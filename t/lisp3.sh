@@ -40,7 +40,7 @@ $ACLOCAL
 $AUTOCONF
 $AUTOMAKE --add-missing
 
-./configure --prefix="`pwd`/_inst"
+./configure --prefix="$(pwd)/_inst"
 
 $MAKE
 

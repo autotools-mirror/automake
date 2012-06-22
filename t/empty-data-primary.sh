@@ -25,7 +25,7 @@ echo 'data_DATA =' >Makefile.am
 $ACLOCAL
 $AUTOCONF
 $AUTOMAKE
-./configure --prefix "`pwd`/inst"
+./configure --prefix "$(pwd)/inst"
 $MAKE install
 
 :

@@ -24,7 +24,7 @@ get_shell_script missing
 
 # These programs may be invoked by 'missing'.
 needed_tools='chmod find sed test touch'
-needed_tools_csep=`echo $needed_tools | sed 's/ /, /g'`
+needed_tools_csep=$(echo $needed_tools | sed 's/ /, /g')
 
 cat >configure.ac <<EOF
 AC_INIT([missing4], [1.0])

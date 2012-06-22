@@ -76,7 +76,7 @@ cat stdout
 grep 'MKDIR_P.*\.' stdout && Exit 1
 
 cd ..
-./configure --prefix "`pwd`"
+./configure --prefix "$(pwd)"
 $MAKE distcheck
 
 :

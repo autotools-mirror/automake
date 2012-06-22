@@ -63,8 +63,8 @@ cat stdout
 count_test_results total=3 pass=1 fail=1 skip=0 xfail=0 xpass=0 error=1
 test -f test-suite.log
 cat test-suite.log
-test `grep -c '^FAIL:' test-suite.log` -eq 1
-test `grep -c '^ERROR:' test-suite.log` -eq 1
+test $(grep -c '^FAIL:' test-suite.log) -eq 1
+test $(grep -c '^ERROR:' test-suite.log) -eq 1
 $EGREP '^(X?PASS|XFAIL|SKIP)' test-suite.log && Exit 1
 test -f baz.log
 test -f bar.log

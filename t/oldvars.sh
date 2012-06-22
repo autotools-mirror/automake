@@ -32,4 +32,6 @@ EOF
 
 $ACLOCAL
 AUTOMAKE_fails
-test `grep -c anachronism stderr` -eq 8
+test $(grep -c anachronism stderr) -eq 8
+
+:

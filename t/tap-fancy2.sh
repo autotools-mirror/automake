@@ -24,9 +24,9 @@
 #
 # From manpage Test::Harness::TAP(3):
 #
-# ``Lines written to standard output matching /^(not )?ok\b/ must be
+#   Lines written to standard output matching /^(not )?ok\b/ must be
 #   interpreted as test lines. All other lines must not be considered
-#   test output.''
+#   test output.
 #
 # Unfortunately, the exact format of TODO and SKIP directives is not as
 # clearly described in that manpage; but a simple reverse-engineering of
@@ -108,7 +108,7 @@ xfail=130 # = 4 * 34 - 6
 xpass=130 # = 4 * 34 - 6
 skip=130  # = 4 * 34 - 6
 error=0
-total=`expr $pass + $fail + $xfail + $xpass + $skip`
+total=$(($pass + $fail + $xfail + $xpass + $skip))
 
 # Even nastier!  But accordingly to the specifics, it should still work.
 for result in 'ok' 'not ok'; do
@@ -117,10 +117,10 @@ done
 echo "ok{[(<#${tab}SKIP>)]}" >> all.test
 
 # We have to update some test counts.
-xfail=`expr $xfail + 1`
-xpass=`expr $xpass + 1`
-skip=`expr $skip + 1`
-total=`expr $total + 3`
+xfail=$(($xfail + 1))
+xpass=$(($xpass + 1))
+skip=$(($skip + 1))
+total=$(($total + 3))
 
 # And add the test plan!
 echo 1..$total >> all.test

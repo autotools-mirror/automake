@@ -21,19 +21,18 @@
 
 . "$am_testauxdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"
 
-# These nested loops are clearer without indentation.
-
+# These nested loops below are clearer without indentation.
 i=0
 for c1 in s S; do
 for c2 in k K; do
 for c3 in i I; do
 for c4 in p P; do
-  i=`expr $i + 1`
-  case $i in ?) i=0$i; esac
-  echo "1..0 # $c1$c2$c3$c4 foobar" > $i.test
+  i=$(($i + 1))
+  case $i in ?) j=0$i;; *) j=$i;; esac
+  echo "1..0 # $c1$c2$c3$c4 foobar" > $j.test
 done; done; done; done
 
-$MAKE TESTS="`echo *.test`" check >stdout || { cat stdout; Exit 1; }
+$MAKE TESTS="$(echo *.test)" check >stdout || { cat stdout; Exit 1; }
 cat stdout
 
 count_test_results total=16 pass=0 fail=0 xpass=0 xfail=0 skip=16 error=0

@@ -20,7 +20,7 @@ am_create_testdir=empty
 . ./defs || Exit 1
 
 mkdir acdir-more sub sub/acdir
-echo "`pwd`/acdir-more" > sub/acdir/dirlist
+echo "$(pwd)/acdir-more" > sub/acdir/dirlist
 
 echo 'AC_DEFUN([AM_FOO], [foo-foo--foo])' > acdir-more/foo.m4
 

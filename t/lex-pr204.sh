@@ -82,8 +82,7 @@ $sleep
 touch lexer.l lexer2.l
 $sleep
 $MAKE lexer.c lexer2.c
-stat lexer.c lexer.l lexer2.c lexer2.l || : # For debugging.
-test `ls -t lexer.c lexer.l | sed 1q` = lexer.c
-test `ls -t lexer2.c lexer2.l | sed 1q` = lexer2.c
+is_newest lexer.c lexer.l
+is_newest lexer2.c lexer2.l
 
 :

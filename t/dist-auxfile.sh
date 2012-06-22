@@ -27,7 +27,7 @@ for auxdir in build-aux ''; do
 
   echo "*** Testing with auxdir '$auxdir' ***"
 
-  i=`expr $i + 1`
+  i=$(($i + 1))
   mkdir T$i.d
   cd T$i.d
 

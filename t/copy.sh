@@ -77,7 +77,7 @@ test -f auxdir/install-sh
 is_symlink auxdir/install-sh
 test -f auxdir/depcomp
 is_not_symlink auxdir/depcomp
-test FAKE-DEPCOMP = `cat auxdir/depcomp`
+test FAKE-DEPCOMP = "$(cat auxdir/depcomp)"
 
 # 'automake -a -c' should not create symlinks, even when there are
 # already symlinked required auxiliary files.

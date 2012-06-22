@@ -44,8 +44,8 @@ check-local: $(TEST_SUITE_LOG)
 	test -f sub1/baz.trs
 END
 
-cat > checkdir-driver <<'END'
-#! /bin/sh
+echo "#!$AM_TEST_RUNNER_SHELL" > checkdir-driver
+cat >> checkdir-driver <<'END'
 set -e; set -u
 while test $# -gt 0; do
   case $1 in
@@ -60,8 +60,8 @@ done
 echo "log: $log_file" # For debugging.
 echo "trs: $trs_file" # Ditto.
 case $log_file in */*);; *) exit 1;; esac
-dir_log=`expr "$log_file" : '\(.*\)/[^/]*'`
-dir_trs=`expr "$trs_file" : '\(.*\)/[^/]*'`
+dir_log=${log_file%/*}
+dir_trs=${trs_file%/*}
 echo "dir_log: $dir_log" # For debugging.
 echo "dir_trs: $dir_trs" # Likewise.
 test x"$dir_trs" = x"$dir_log" || exit 1

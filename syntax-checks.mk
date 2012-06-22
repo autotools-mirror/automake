@@ -31,7 +31,7 @@ xtests := $(shell \
      done; \
    done | sort)
 
-xdefs = $(srcdir)/defs $(srcdir)/defs-static.in
+xdefs = $(srcdir)/t/ax/test-init.sh $(srcdir)/defs $(srcdir)/defs-static.in
 
 ams := $(shell find $(srcdir) -name '*.dir' -prune -o -name '*.am' -print)
 pms := $(dist_perllib_DATA)
@@ -74,6 +74,7 @@ sc_tests_Exit_not_exit \
 sc_tests_automake_fails \
 sc_tests_required_after_defs \
 sc_tests_plain_sleep \
+sc_tests_ls_t \
 sc_m4_am_plain_egrep_fgrep \
 sc_tests_PATH_SEPARATOR \
 sc_tests_logs_duplicate_prefixes \
@@ -483,6 +484,16 @@ sc_tests_required_after_defs:
 	    exit 1; \
 	  fi; \
 	done
+
+## Prefer use of our 'is_newest' auxiliary script over the more hacky
+## idiom "test $(ls -1t new old | sed 1q) = new", which is both more
+## cumbersome and more fragile.
+sc_tests_ls_t:
+	@if LC_ALL=C grep -E '\bls(\s+-[a-zA-Z0-9]+)*\s+-[a-zA-Z0-9]*t' \
+	    $(xtests); then \
+	  echo "Use 'is_newest' rather than hacks based on 'ls -t'" 1>&2; \
+	  exit 1; \
+	fi
 
 ## Never use 'sleep 1' to create files with different timestamps.
 ## Use '$sleep' instead.  Some filesystems (e.g., Windows) have only

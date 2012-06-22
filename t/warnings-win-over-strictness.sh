@@ -32,7 +32,7 @@ ko ()
 {
   AUTOMAKE_run $*
   grep '^Makefile\.am:.*sub/foo\.c.*requires.*AM_PROG_CC_C_O' stderr
-  test `wc -l <stderr` -eq 1
+  test $(wc -l <stderr) -eq 1
 }
 
 set_am_opts ()

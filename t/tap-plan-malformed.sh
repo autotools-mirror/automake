@@ -45,7 +45,7 @@ cat > e.test <<END
 0..0
 END
 
-tests_list=`echo *.test`
+tests_list=$(echo *.test)
 
 $MAKE TESTS="$tests_list" check >stdout && { cat stdout; Exit 1; }
 cat stdout

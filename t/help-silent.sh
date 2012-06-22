@@ -24,17 +24,15 @@ $ACLOCAL
 
 cp configure.ac configure.tmpl
 
-q="[\`'\"]"
-
 for args in '' 'yes' 'no'; do
   cp -f configure.tmpl configure.ac
   test x"$args" = x || echo "AM_SILENT_RULES([$args])/" >> configure.ac
   cat configure.ac # For debugging.
   $AUTOCONF --force
   grep_configure_help --enable-silent-rules \
-                      " less verbose build.*\\(undo.*${q}make V=1${q}"
+                      ' less verbose build.*\(undo.*"make V=1".*\)'
   grep_configure_help --disable-silent-rules \
-                      " verbose build.*\\(undo.*${q}make V=0${q}"
+                      ' verbose build.*\(undo.*"make V=0".*\)'
 done
 
 :

@@ -20,7 +20,7 @@
 
 . ./defs || Exit 1
 
-cwd=`pwd` || fatal_ "cannot get current working directory"
+cwd=$(pwd) || fatal_ "cannot get current working directory"
 
 cp "$am_testauxdir"/distcheck-hook-m4.am . \
   || fatal_ "cannot fetch makefile fragment 'distcheck-hook-m4.am'"

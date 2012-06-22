@@ -322,7 +322,7 @@ END
 ./configure
 $MAKE
 
-if cross_compiling; then :; else
+if ! cross_compiling; then
   unindent > exp << 'END'
     [Hello C, world C]
     [Hello C++, world C++]

@@ -49,7 +49,7 @@ $ACLOCAL
 $AUTOCONF
 $AUTOMAKE --add-missing
 
-./configure --prefix "`pwd`/inst"
+./configure --prefix "$(pwd)/inst"
 
 $MAKE check >stdout && { cat stdout; Exit 1; }
 cat stdout

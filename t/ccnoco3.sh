@@ -57,16 +57,16 @@ END
 
 chmod +x Mycomp
 
+# Make sure the compiler doesn't understand '-c -o'
+CC=$(pwd)/Mycomp
+export CC
+
 $ACLOCAL
 $AUTOCONF
 $AUTOMAKE --copy --add-missing
 
 mkdir build
 cd build
-
-# Make sure the compiler doesn't understand '-c -o'
-CC=`pwd`/../Mycomp
-export CC
 
 ../configure
 $MAKE 2>stderr || { cat stderr >&2; Exit 1; }

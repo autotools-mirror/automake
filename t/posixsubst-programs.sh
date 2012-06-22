@@ -53,7 +53,7 @@ $ACLOCAL
 $AUTOCONF
 $AUTOMAKE
 
-cwd=`pwd` || Exit 1
+cwd=$(pwd) || fatal_ "getting current working directory"
 ./configure --prefix="$cwd/_inst"
 $MAKE
 $MAKE install

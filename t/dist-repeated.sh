@@ -38,7 +38,7 @@ pythondir = ${prefix}/py
 PYTHON = false
 END
 
-ocwd=`pwd` || fatal_ "cannot get current working directory"
+ocwd=$(pwd) || fatal_ "cannot get current working directory"
 
 # Help to ensure cp won't see the same file twice.
 mkdir bin
@@ -73,7 +73,7 @@ esac
 exec cp "\$@"
 END
 chmod a+x bin/cp
-PATH=`pwd`/bin$PATH_SEPARATOR$PATH; export PATH;
+PATH=$(pwd)/bin$PATH_SEPARATOR$PATH; export PATH;
 
 : > foo.c
 : > bar.py

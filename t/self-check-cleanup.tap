@@ -23,7 +23,7 @@ plan_ 43
 
 # We still need a little hack to make ./defs work outside automake's
 # tree 'tests' subdirectory.  Not a big deal.
-sed "s|^am_top_builddir=.*|am_top_builddir='`pwd`'|" \
+sed "s|^am_top_builddir=.*|am_top_builddir='$(pwd)'|" \
   "$am_top_builddir"/defs-static >defs-static
 diff "$am_top_builddir"/defs-static defs-static \
   && fatal_ "failed to edit defs-static"
@@ -40,7 +40,7 @@ fi
 export have_symlinks # Is used also by spawned shells.
 
 # Don't let a failure poison all subsequent tests.
-do_clean ()
+do_clean_setup ()
 {
   # Don't try to be smart and use find here, that has caused issues
   # and extra ERROR results in the past.  Be dumb and safe.
@@ -50,6 +50,8 @@ do_clean ()
   rm -rf t
 }
 
+do_clean_setup
+
 # Exporting 'keep_testdirs' to "yes" in the environment should cause
 # the cleanup code not to be run, so that the temporary directories
 # are left on disk.
@@ -57,9 +59,9 @@ command_ok_ '"keep_testdirs=yes" causes testdir to be kept around' eval '
      env keep_testdirs=yes \
        $AM_TEST_RUNNER_SHELL -c ". ./defs && echo okok >foo" t/dummy.sh \
      && test -f t/dummy.dir/foo \
-     && test okok = `cat t/dummy.dir/foo`'
+     && test okok = $(cat t/dummy.dir/foo)'
 
-do_clean
+do_clean_setup
 
 # Check that pre-test cleanup works also with directories with
 # "null" permissions, and containing broken symlinks.
@@ -82,7 +84,7 @@ command_ok_ "pre-cleanup removed low-perms testdir" \
                && test ! -d t/dummy.dir \
                && test ! -r t/dummy.dir'
 
-do_clean
+do_clean_setup
 
 # Check that post-test cleanup works also with directories with
 # "null" permissions, and containing broken symlinks.
@@ -109,7 +111,7 @@ command_ok_ "post-cleanup removed null-perms testdir" \
                && test ! -d t/dummy.dir \
                && test ! -r t/dummy.dir'
 
-do_clean
+do_clean_setup
 
 # Check that pre-test cleanup does not unduly change the permissions of
 # files to which symlinks in the temporary test directory point to.
@@ -133,7 +135,7 @@ if test $have_symlinks = yes; then
 
   command_ok_ "post-cleanup with testdir with zero-perms symlinks" \
               $AM_TEST_RUNNER_SHELL -c '
-    ocwd=`pwd` || exit 1
+    ocwd=$(pwd) || exit 1
     stderr_fileno_=2
     . ./defs || Exit 1
     ln -s "$ocwd/dir" "$ocwd/file" .
@@ -152,7 +154,7 @@ else # $have_symlinks = no
   skip_row_ 6 "symlinks not supported"
 fi
 
-do_clean
+do_clean_setup
 
 # Check that the cleanup trap does not remove the temporary
 # test directory in case of test failure, skip, hard-error,
@@ -168,7 +170,7 @@ for st in 1 2 3 10 77 99 126 127 130 255; do
   " t/dummy.sh
   command_ok_ "testdir not removed if exiting with status $st" \
               test -f t/dummy.dir/foo
-  do_clean
+  do_clean_setup
 done
 
 for sig in 1 2 3 9 13 15; do
@@ -185,7 +187,7 @@ for sig in 1 2 3 9 13 15; do
   " t/dummy.sh
   command_ok_ "testdir not removed if getting signal $sig" \
               test -f t/dummy.dir/foo
-  do_clean
+  do_clean_setup
 done
 
 :

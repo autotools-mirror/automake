@@ -138,13 +138,13 @@ ok 4 # TODO
 Bail out!
 END
 
-tests=`echo *.test` # Also required later.
+tests=$(echo *.test) # Also required later.
 
 $MAKE TESTS="$tests" check >stdout && { cat stdout; Exit 1; }
 cat stdout
 
 # Dirty trick required here.
-for tst in `echo " $tests " | sed 's/.test / /'`; do
+for tst in $(echo " $tests " | sed 's/\.test / /'); do
   echo :copy-in-global-log: yes >> $tst.trs
 done
 
@@ -154,7 +154,7 @@ cat test-suite.log
 
 have_rst_section ()
 {
-  eqeq=`echo "$1" | sed 's/./=/g'`
+  eqeq=$(echo "$1" | sed 's/./=/g')
   # Assume $1 contains no RE metacharacters.
   sed -n "/^$1$/,/^$eqeq$/p" test-suite.log > got
   (echo "$1" && echo "$eqeq") > exp

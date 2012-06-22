@@ -43,8 +43,8 @@ $ACLOCAL
 for o in -a -i; do
   $AUTOMAKE $o
   grep '%\.[lco$]' Makefile.in # For debugging.
-  test `grep -c '^%\.$(OBJEXT): %\.c$' Makefile.in` -eq 1
-  test `grep -c '^%\.lo: %\.c$' Makefile.in` -eq 1
+  test $(grep -c '^%\.$(OBJEXT): %\.c$' Makefile.in) -eq 1
+  test $(grep -c '^%\.lo: %\.c$' Makefile.in) -eq 1
 done
 
 :

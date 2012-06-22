@@ -21,7 +21,7 @@ am_create_testdir=empty
 
 get_shell_script mdate-sh
 
-set x `./mdate-sh mdate-sh`
+set x $(./mdate-sh mdate-sh)
 shift
 echo "$*" # For debugging.
 
@@ -38,7 +38,7 @@ case $2 in
 esac
 
 # Stricter checks on the year required a POSIX date(1) command.
-if year=`date +%Y` && test $year -gt 2010; then
+if year=$(date +%Y) && test $year -gt 2010; then
   test $year = $3 || Exit 1
 fi
 

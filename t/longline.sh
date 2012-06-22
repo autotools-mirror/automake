@@ -31,7 +31,7 @@ done > t
 $ACLOCAL
 $AUTOMAKE
 grep long_variable Makefile.in # For debugging.
-test 80 -ge `grep DUMMY Makefile.in | wc -c`
-test 80 -ge `grep ZARDOZ Makefile.in | wc -c`
+test 80 -ge $(grep DUMMY Makefile.in | wc -c)
+test 80 -ge $(grep ZARDOZ Makefile.in | wc -c)
 
 :

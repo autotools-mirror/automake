@@ -33,6 +33,6 @@ $AUTOCONF
 $AUTOMAKE --add-missing
 
 ./configure
-test x"`cat py`" = x:
+test x"$(cat py)" = x:
 
 :

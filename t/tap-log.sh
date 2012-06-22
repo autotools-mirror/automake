@@ -103,8 +103,8 @@ for result in xfail fail xpass skip error; do
   $FGREP "$pmarker $result $pmarker" my.log || st=1
   $FGREP "$cmarker $result $cmarker" my.log || st=1
 done
-test `$FGREP -c "$pmarker" my.log` -eq 5
-test `$FGREP -c "$cmarker" my.log` -eq 5
+test $($FGREP -c "$pmarker" my.log) -eq 5
+test $($FGREP -c "$cmarker" my.log) -eq 5
 
 # Passed test scripts shouldn't be mentioned in the global log.
 $EGREP '(^pass|[^x]pass)\.test' my.log && Exit 1
@@ -139,8 +139,8 @@ test ! -f my.log
 test ! -f test-suite.log
 # Check that VERBOSE causes the global testsuite log to be
 # emitted on stdout.
-out=`cat stdout`
-log=`cat global.log`
+out=$(cat stdout)
+log=$(cat global.log)
 case $out in *"$log"*) ;; *) Exit 1;; esac
 
 touch error2.log test-suite.log my.log

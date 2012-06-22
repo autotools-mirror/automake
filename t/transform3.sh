@@ -78,12 +78,12 @@ $ACLOCAL
 $AUTOCONF
 $AUTOMAKE -a
 
-./configure --program-prefix=gnu- --prefix "`pwd`/inst"
+./configure --program-prefix=gnu- --prefix "$(pwd)/inst"
 
 $MAKE test-install
 
 $MAKE uninstall
-test `find inst -type f -print | wc -l` = 0
+test $(find inst -type f -print | wc -l) -eq 0
 
 # Opportunistically test for installdirs.
 rm -rf inst

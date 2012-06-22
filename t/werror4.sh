@@ -40,7 +40,7 @@ $ACLOCAL
 AUTOMAKE_fails -Wno-error
 grep 'VAR multiply defined' stderr
 grep 'SUB multiply defined' stderr
-test `grep -c 'warnings are treated as errors' stderr` -eq 1
+test $(grep -c 'warnings are treated as errors' stderr) -eq 1
 
 sed '/AUTOMAKE_OPTIONS/d' sub/Makefile.am > t
 mv -f t sub/Makefile.am
@@ -48,7 +48,7 @@ mv -f t sub/Makefile.am
 AUTOMAKE_fails -Wno-error
 grep 'VAR multiply defined' stderr
 grep 'SUB multiply defined' stderr
-test `grep -c 'warnings are treated as errors' stderr` -eq 1
+test $(grep -c 'warnings are treated as errors' stderr) -eq 1
 
 sed '/AUTOMAKE_OPTIONS/d' Makefile.am > t
 mv -f t Makefile.am
@@ -56,7 +56,7 @@ mv -f t Makefile.am
 AUTOMAKE_fails -Werror
 grep 'VAR multiply defined' stderr
 grep 'SUB multiply defined' stderr
-test `grep -c 'warnings are treated as errors' stderr` -eq 1
+test $(grep -c 'warnings are treated as errors' stderr) -eq 1
 
 AUTOMAKE_run -Wno-error
 grep 'VAR multiply defined' stderr

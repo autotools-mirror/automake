@@ -59,14 +59,14 @@ grep '^am_c_OBJECTS = ' Makefile.in
 grep '^am_d_OBJECTS = ' Makefile.in
 
 # Now the actual test.  Are both values equal?
-cobj=`sed -n '/^am_c_OBJECTS = / {
-                s/.* = \(.*\)$/\1/
-                p
-              }' Makefile.in`
-dobj=`sed -n '/^am_d_OBJECTS = / {
-                s/^.* = \(.*\)$/\1/
-                p
-              }' Makefile.in`
+cobj=$(sed -n '/^am_c_OBJECTS = / {
+                 s/.* = \(.*\)$/\1/
+                 p
+               }' Makefile.in)
+dobj=$(sed -n '/^am_d_OBJECTS = / {
+                 s/^.* = \(.*\)$/\1/
+                 p
+              }' Makefile.in)
 test "$cobj" = "$dobj"
 
 :

@@ -31,7 +31,6 @@ cat > foo << 'END'
 #! /bin/sh
 echo Maude
 END
-
 chmod +x foo
 
 mkdir install
@@ -40,7 +39,7 @@ $ACLOCAL
 $AUTOCONF
 $AUTOMAKE -a
 
-./configure "--prefix=`cd install && pwd`"
+./configure "--prefix=$(cd install && pwd)"
 
 $MAKE
 $MAKE distdir

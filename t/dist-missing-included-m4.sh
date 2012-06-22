@@ -41,7 +41,7 @@ $AUTOMAKE
 
 # A faulty distribution tarball, with a required '.m4' file missing.
 # Building from it should fail, both for in-tree and VPATH builds.
-ocwd=`pwd` || fatal_ "cannot get current working directory"
+ocwd=$(pwd) || fatal_ "cannot get current working directory"
 for vpath in false :; do
   $MAKE distdir
   test -f $distdir/zardoz.m4 # Sanity check.

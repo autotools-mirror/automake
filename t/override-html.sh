@@ -28,6 +28,6 @@ $ACLOCAL
 $AUTOMAKE -Wno-override
 
 # Overriding 'html' should cause only one "html:" rule to be output.
-test `grep '^html:' Makefile.in | wc -l` = 1
+test $(grep -c '^html:' Makefile.in) -eq 1
 
 :

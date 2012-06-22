@@ -104,7 +104,7 @@ mkdir build
 cd build
 
 # Use --program-prefix to make sure the std-options check honors it.
-../configure "--prefix=`pwd`/../inst-dir" --program-prefix=p
+../configure "--prefix=$(pwd)/../inst-dir" --program-prefix=p
 $MAKE all
 $MAKE test-install
 $MAKE -k installcheck 2>stderr && { cat stderr >&2; Exit 1; }

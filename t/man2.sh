@@ -36,15 +36,17 @@ $ACLOCAL
 $AUTOCONF
 $AUTOMAKE
 
+cwd=$(pwd) || fatal_ "getting current working directory"
+
 # Let's play with $DESTDIR too, it shouldn't hurt.
 ./configure --prefix='' --mandir=/man
-$MAKE DESTDIR="`pwd`/_inst" install
+$MAKE DESTDIR="$cwd/_inst" install
 
 test -f ./_inst/man/man2/foo.2
 test -f ./_inst/man/man4/foo.4
 test -f ./_inst/man/man4/bar.4
 
-$MAKE DESTDIR="`pwd`/_inst" uninstall
+$MAKE DESTDIR="$cwd/_inst" uninstall
 
 test ! -f ./_inst/man/man2/foo.2
 test ! -f ./_inst/man/man4/foo.4

@@ -141,8 +141,8 @@ $AUTOMAKE --add-missing
 
 $MAKE check >stdout || { cat stdout; Exit 1; }
 cat stdout
-test `grep -c '^PASS:'  stdout` -eq 3
-test `grep -c '^XFAIL:' stdout` -eq 13
+test $(grep -c '^PASS:'  stdout) -eq 3
+test $(grep -c '^XFAIL:' stdout) -eq 13
 
 for dir in sub1 sub2; do
   cd $dir
@@ -150,9 +150,9 @@ for dir in sub1 sub2; do
   cp x2.test pass.test
   $MAKE check >stdout && { cat stdout; Exit 1; }
   cat stdout
-  test "`cat pass.trs`" = ":test-result: FAIL"
-  test "`cat x1.trs`"   = ":test-result: XPASS"
-  test "`cat x2.trs`"   = ":test-result: XFAIL"
+  test "$(cat pass.trs)" = ":test-result: FAIL"
+  test "$(cat x1.trs)"   = ":test-result: XPASS"
+  test "$(cat x2.trs)"   = ":test-result: XFAIL"
   grep '^FAIL: pass\.test$' stdout
   grep '^XPASS: x1\.test$'  stdout
   grep '^XFAIL: x2\.test$'  stdout

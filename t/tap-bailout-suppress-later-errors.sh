@@ -66,8 +66,8 @@ grep '^PASS: baz\.test 1$'            stdout
 
 $FGREP 'Not seen' stdout && Exit 1
 
-test `$FGREP -c ': foo.test' stdout` -eq 1
-test `$FGREP -c ': bar.test' stdout` -eq 2
-test `$FGREP -c ': baz.test' stdout` -eq 2
+test $($FGREP -c ': foo.test' stdout) -eq 1
+test $($FGREP -c ': bar.test' stdout) -eq 2
+test $($FGREP -c ': baz.test' stdout) -eq 2
 
 :

@@ -79,8 +79,8 @@ test-install: install
 	test -f inst/man/man2/z-bar2.2
 	test -f inst/man/man1/z-baz.1
 	test -f inst/man/man1/z-baz2.1
-	if test -d inst/man/man8; then (exit 1); else :; fi
-	if test -d inst/man/man9; then (exit 1); else :; fi
+	test ! -d inst/man/man8
+	test ! -d inst/man/man9
 EOF
 
 : > foo.1
@@ -106,16 +106,18 @@ grep '^install-man3:' Makefile.in | grep '\$(nodist_man_MANS)'
 grep '^install-man4:' Makefile.in | grep '\$(notrans_man_MANS)'
 grep '^install-man5:' Makefile.in | grep '\$(notrans_dist_man_MANS)'
 grep '^install-man6:' Makefile.in | grep '\$(notrans_nodist_man_MANS)'
+grep '^install-man8:' Makefile.in && Exit 1
+grep '^install-man9:' Makefile.in && Exit 1
 
-if grep '^install-man8:' Makefile.in; then Exit 1; else :; fi
-if grep '^install-man9:' Makefile.in; then Exit 1; else :; fi
+cwd=$(pwd) || fatal_ "getting current working directory"
 
-./configure --program-prefix=gnu- --prefix "`pwd`"/inst --mandir "`pwd`"/inst/man
+./configure --program-prefix=gnu- --prefix "$cwd"/inst \
+                                  --mandir "$cwd"/inst/man
 $MAKE
 $MAKE test-install
-test `find inst/man -type f -print | wc -l` = 24
+test $(find inst/man -type f -print | wc -l) -eq 24
 $MAKE uninstall
-test `find inst/man -type f -print | wc -l` = 0
+test $(find inst/man -type f -print | wc -l) -eq 0
 
 # Opportunistically test for installdirs.
 rm -rf inst
@@ -127,5 +129,7 @@ test -d inst/man/man4
 test -d inst/man/man5
 test -d inst/man/man6
 test -d inst/man/man7
-if test -d inst/man/man8; then Exit 1; else :; fi
-if test -d inst/man/man9; then Exit 1; else :; fi
+test -d inst/man/man8 && Exit 1
+test -d inst/man/man9 && Exit 1
+
+:

@@ -37,7 +37,7 @@ cat stdout
 
 grep '^SKIP: foo\.test .* from the last line$' stdout
 grep '^SKIP: bar\.test$' stdout
-test `grep -c ': .*\.test' stdout` -eq 2
+test $(grep -c ': .*\.test' stdout) -eq 2
 count_test_results total=2 pass=0 fail=0 xpass=0 xfail=0 skip=2 error=0
 
 :

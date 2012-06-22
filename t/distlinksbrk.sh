@@ -29,7 +29,7 @@ lnkb=${lnk_base}__bbb
 
 ln -s nonesuch $lnk1 || skip_ "cannot create broken symlinks"
 
-ln -s "`pwd`/nonesuch" $lnk2
+ln -s "$(pwd)/nonesuch" $lnk2
 
 ln -s $lnk1 $lnka
 ln -s $lnka $lnkb

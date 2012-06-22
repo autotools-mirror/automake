@@ -54,7 +54,7 @@ $ACLOCAL
 $AUTOCONF
 $AUTOMAKE -a
 
-cwd=`pwd` || Exit 1
+cwd=$(pwd) || fatal_ "getting current working directory"
 ./configure --prefix="$cwd/_inst"
 $MAKE
 test -f libfoo2.c

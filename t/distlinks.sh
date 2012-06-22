@@ -36,7 +36,7 @@ ln -s foo  bar1
 ln -s bar1 bar2
 ln -s bar2 bar3
 
-ln -s "`pwd`/foo" quux
+ln -s "$(pwd)/foo" quux
 
 cat >> configure.ac << 'END'
 AC_OUTPUT

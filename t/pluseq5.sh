@@ -43,6 +43,6 @@ AUTOMAKE_fails
 # Is !CHECK mentioned?
 grep ':.*!CHECK$' stderr
 # Is there only one missing condition?
-test `grep ':  ' stderr | wc -l` = 1
+test $(grep -c ':  ' stderr) -eq 1
 
 :

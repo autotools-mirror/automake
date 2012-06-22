@@ -50,11 +50,14 @@ $ACLOCAL
 $AUTOCONF
 $AUTOMAKE
 
-./configure --program-prefix=gnu- --prefix "`pwd`/inst" --mandir "`pwd`/inst/man"
+cwd=$(pwd) || fatal_ "getting current working directory"
+
+./configure --program-prefix=gnu- --prefix "$cwd/inst" \
+                                  --mandir "$cwd/inst/man"
 $MAKE
 $MAKE test-install
 $MAKE uninstall
-test `find inst -type f -print | wc -l` = 0
+test $(find inst -type f -print | wc -l) -eq 0
 
 # Opportunistically test for installdirs.
 rm -rf inst
