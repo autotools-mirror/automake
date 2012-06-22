@@ -24,14 +24,14 @@ re='Files .*automatically distributed.*if found'
 # The automake manual states that the list of automatically-distributed
 # files should be given by 'automake --help'.
 
-list1=`$AUTOMAKE --help \
-        | sed -n "/^$re.*always/,/^ *$/p" \
-        | sed 1d`
+list1=$($AUTOMAKE --help \
+         | sed -n "/^$re.*always/,/^ *$/p" \
+         | sed 1d)
 list1=$(echo $list1)
 
-list2=`$AUTOMAKE --help \
-        | sed -n "/^$re.*under certain conditions/,/^ *$/p" \
-        | sed 1d`
+list2=$($AUTOMAKE --help \
+         | sed -n "/^$re.*under certain conditions/,/^ *$/p" \
+         | sed 1d)
 list2=$(echo $list2)
 
 test -n "$list1"

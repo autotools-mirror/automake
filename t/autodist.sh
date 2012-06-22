@@ -35,9 +35,9 @@ $AUTOCONF
 
 # The automake manual states that the list of automatically-distributed
 # files should be given by 'automake --help'.
-list=`$AUTOMAKE --help \
-        | sed -n '/^Files.*automatically distributed.*if found.*always/,/^ *$/p' \
-        | sed 1d`
+list=$($AUTOMAKE --help \
+         | sed -n '/^Files.*automatically distributed.*if found.*always/,/^ *$/p' \
+         | sed 1d)
 # Normalize whitespace, just in case.
 list=$(echo $list)
 
