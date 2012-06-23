@@ -1,7 +1,7 @@
 #! /bin/sh
 # Common wrapper for a few potentially missing GNU programs.
 
-scriptversion=2012-06-14.10; # UTC
+scriptversion=2012-06-23.01; # UTC
 
 # Copyright (C) 1996-2012 Free Software Foundation, Inc.
 # Originally written by Fran,cois Pinard <pinard@iro.umontreal.ca>, 1996.
@@ -104,102 +104,106 @@ else
   exit $st
 fi
 
-# Normalize program name to check for.
-program=`echo "$1" | sed '
-  s/^gnu-//; t
-  s/^gnu//; t
-  s/^g//; t'`
+perl_URL=http://www.perl.org/
+flex_URL=http://flex.sourceforge.net/
+gnu_software_URL=http://www.gnu.org/software
 
-# If it does not exist, or fails to run (possibly an outdated version),
-# advise the user how to get it.
-case $program in
+program_details ()
+{
+  case $1 in
+    aclocal|automake)
+      echo "The '$1' program is part of the GNU Automake package:"
+      echo "<$gnu_software_URL/automake>"
+      echo "It also requires GNU Autoconf, GNU m4 and Perl in order to run:"
+      echo "<$gnu_software_URL/autoconf>"
+      echo "<$gnu_software_URL/m4/>"
+      echo "<$perl_URL>"
+      ;;
+    autoconf|autom4te|autoheader)
+      echo "The '$1' program is part of the GNU Autoconf package:"
+      echo "<$gnu_software_URL/autoconf/>"
+      echo "It also requires GNU m4 and Perl in order to run:"
+      echo "<$gnu_software_URL/m4/>"
+      echo "<$perl_URL>"
+      ;;
+  esac
+}
 
-  aclocal*)
-    echo 1>&2 "\
-WARNING: '$1' is $msg.  You should only need it if
-         you modified 'acinclude.m4' or '${configure_ac}'.  You might want
-         to install the Automake and Perl packages.  Grab them from
-         any GNU archive site."
+give_advice ()
+{
+  # Normalize program name to check for.
+  normalized_program=`echo "$1" | sed '
+    s/^gnu-//; t
+    s/^gnu//; t
+    s/^g//; t'`
+
+  printf '%s\n' "'$1' is $msg."
+ 
+  configure_deps="'${configure_ac}' or m4 files included by '${configure_ac}'"
+  case $normalized_program in
+    autoconf*)
+      echo "You should only need it if you modified '${configure_ac}',"
+      echo "or m4 files included by it."
+      program_details 'autoconf'
+      ;;
+    autoheader*)
+      echo "You should only need it if you modified 'acconfig.h' or"
+      echo "$configure_deps."
+      program_details 'autoheader'
+      ;;
+    automake*)
+      echo "You should only need it if you modified 'Makefile.am' or"
+      echo "$configure_deps."
+      program_details 'automake'
+      ;;
+    aclocal*)
+      echo "You should only need it if you modified 'acinclude.m4' or"
+      echo "$configure_deps."
+      program_details 'aclocal'
+      ;;
+   autom4te*)
+      echo "You might have modified some maintainer files that require"
+      echo "the 'automa4te' program to be rebuilt."
+      program_details 'autom4te'
+      ;;
+    bison*|yacc*)
+      echo "You should only need it if you modified a '.y' file."
+      echo "You may want to install the GNU Bison package:"
+      echo "<$gnu_software_URL/bison/>"
+      ;;
+    lex*|flex*)
+      echo "You should only need it if you modified a '.l' file."
+      echo "You may want to install the Fast Lexical Analyzer package:"
+      echo "<$flex_URL>"
+      ;;
+    help2man*)
+      echo "You should only need it if you modified a dependency" \
+           "of a man page."
+      echo "You may want to install the GNU Help2man package:"
+      echo "<$gnu_software_URL/help2man/>"
     ;;
+    makeinfo*)
+      echo "You should only need it if you modified a '.texi' file, or"
+      echo "any other file indirectly affecting the aspect of the manual."
+      echo "You might want to install the Texinfo package:"
+      echo "<$gnu_software_URL/texinfo/>"
+      echo "The spurious makeinfo call might also be the consequence of"
+      echo "using a buggy 'make' (AIX, DU, IRIX), in which case you might"
+      echo "want to install GNU make:"
+      echo "<$gnu_software_URL/make/>"
+      ;;
+    *)
+      echo "You might have modified some files without having the proper"
+      echo "tools for further handling them.  Check the 'README' file, it"
+      echo "often tells you about the needed prerequisites for installing"
+      echo "this package.  You may also peek at any GNU archive site, in"
+      echo "case some other package contains this missing '$1' program."
+      ;;
+  esac
+}
 
-  autoconf*)
-    echo 1>&2 "\
-WARNING: '$1' is $msg.  You should only need it if
-         you modified '${configure_ac}'.  You might want to install the
-         Autoconf and GNU m4 packages.  Grab them from any GNU
-         archive site."
-    ;;
-
-  autoheader*)
-    echo 1>&2 "\
-WARNING: '$1' is $msg.  You should only need it if
-         you modified 'acconfig.h' or '${configure_ac}'.  You might want
-         to install the Autoconf and GNU m4 packages.  Grab them
-         from any GNU archive site."
-    ;;
-
-  automake*)
-    echo 1>&2 "\
-WARNING: '$1' is $msg.  You should only need it if
-         you modified 'Makefile.am', 'acinclude.m4' or '${configure_ac}'.
-         You might want to install the Automake and Perl packages.
-         Grab them from any GNU archive site."
-    ;;
-
-  autom4te*)
-    echo 1>&2 "\
-WARNING: '$1' is needed, but is $msg.
-         You might have modified some files without having the
-         proper tools for further handling them.
-         You can get '$1' as part of Autoconf from any GNU
-         archive site."
-    ;;
-
-  bison*|yacc*)
-    echo 1>&2 "\
-WARNING: '$1' $msg.  You should only need it if
-         you modified a '.y' file.  You may need the Bison package
-         in order for those modifications to take effect.  You can get
-         Bison from any GNU archive site."
-    ;;
-
-  lex*|flex*)
-    echo 1>&2 "\
-WARNING: '$1' is $msg.  You should only need it if
-         you modified a '.l' file.  You may need the Flex package
-         in order for those modifications to take effect.  You can get
-         Flex from any GNU archive site."
-    ;;
-
-  help2man*)
-    echo 1>&2 "\
-WARNING: '$1' is $msg.  You should only need it if
-	 you modified a dependency of a manual page.  You may need the
-	 Help2man package in order for those modifications to take
-	 effect.  You can get Help2man from any GNU archive site."
-    ;;
-
-  makeinfo*)
-    echo 1>&2 "\
-WARNING: '$1' is $msg.  You should only need it if
-         you modified a '.texi' or '.texinfo' file, or any other file
-         indirectly affecting the aspect of the manual.  The spurious
-         call might also be the consequence of using a buggy 'make' (AIX,
-         DU, IRIX).  You might want to install the Texinfo package or
-         the GNU make package.  Grab either from any GNU archive site."
-    ;;
-
-  *)
-    echo 1>&2 "\
-WARNING: '$1' is needed, and is $msg.
-         You might have modified some files without having the
-         proper tools for further handling them.  Check the 'README' file,
-         it often tells you about the needed prerequisites for installing
-         this package.  You may also peek at any GNU archive site, in case
-         some other package would contain this missing '$1' program."
-    ;;
-
-esac
+give_advice "$1" | sed -e '1s/^/WARNING: /' \
+                       -e '2,$s/^/         /' >&2
 
 # Propagate the correct exit status (expected to be 127 for a program
 # not found, 63 for a program that failed due to version mismatch).
