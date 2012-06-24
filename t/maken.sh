@@ -56,7 +56,7 @@ for target in dist distcheck; do
   fi
   $MAKE test-no-distdir
   # No file has been actually touched or created.
-  is_newest stampfile $(find .)
+  is_newest stampfile $(find . -type f) sub
 done
 
 :
