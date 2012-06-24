@@ -18,7 +18,7 @@
 # missing from the dist tarball (interaction with '--install').
 # See automake bug#9037.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cwd=$(pwd) || fatal_ "cannot get current working directory"
 
@@ -60,21 +60,21 @@ ACLOCAL_PATH=$cwd/pth; export ACLOCAL_PATH
 # We don't use '--install' here.  Our distcheck-hook should catch this.
 $ACLOCAL -I m4
 $AUTOCONF
-$EGREP 'MY_(FOO|BAR|BAZ|ZAR)' configure && Exit 1 # Sanity check.
+$EGREP 'MY_(FOO|BAR|BAZ|ZAR)' configure && exit 1 # Sanity check.
 $AUTOMAKE
 
 check_no_spurious_error ()
 {
-  $EGREP -i 'mkdir:|:.*(permission|denied)' output && Exit 1
+  $EGREP -i 'mkdir:|:.*(permission|denied)' output && exit 1
   # On failure, some make implementations (such as Solaris make) print the
   # whole failed recipe on stdout.  The first grep works around this.
-  grep -v 'rm -rf ' output | grep -i 'autom4te.*\.cache' && Exit 1
+  grep -v 'rm -rf ' output | grep -i 'autom4te.*\.cache' && exit 1
   : To placate 'set -e'.
 }
 
 ./configure
 
-$MAKE distcheck >output 2>&1 && { cat output; Exit 1; }
+$MAKE distcheck >output 2>&1 && { cat output; exit 1; }
 cat output
 for x in bar baz zar; do
   $EGREP "required m4 file.*not distributed.* $x.m4( |$)" output
@@ -98,15 +98,15 @@ MY_BLA
 END
 
 $MAKE
-$EGREP 'MY_(FOO|BAR|BAZ|QUX|ZAR|BLA)' configure && Exit 1 # Sanity check.
+$EGREP 'MY_(FOO|BAR|BAZ|QUX|ZAR|BLA)' configure && exit 1 # Sanity check.
 
-$MAKE distcheck >output 2>&1 && { cat output; Exit 1; }
+$MAKE distcheck >output 2>&1 && { cat output; exit 1; }
 cat output
 $EGREP "required m4 file.*not distributed.* qux.m4( |$)" output
 $EGREP "required m4 file.*not distributed.* bla.m4( |$)" output
 check_no_spurious_error
 # Check that we don't complain for files that should have been found.
-$FGREP " (bar|baz|zar).m4" output && Exit 1
+$FGREP " (bar|baz|zar).m4" output && exit 1
 
 # Now we again use '--install', and "make distcheck" should pass.
 $ACLOCAL -I m4 --install

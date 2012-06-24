@@ -16,7 +16,7 @@
 
 # Test to make sure we diagnose misplaced AC_CONFIG_AUX_DIR.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_CONFIG_AUX_DIR([.]) dnl this will appear after AM_INIT_AUTOMAKE

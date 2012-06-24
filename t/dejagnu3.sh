@@ -17,7 +17,7 @@
 # Check that the DejaGnu rules work for a simple program and test case.
 
 required=runtest
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > hammer << 'END'
 #! /bin/sh
@@ -63,7 +63,7 @@ $MAKE distcheck
 # Ensure that the envvar RUNTESTFLAGS is used.
 # Report from Mark Mitchell.
 RUNTESTFLAGS=--unknown-runtest-option $MAKE check >output 2>&1 \
-  && { cat output; Exit 1; }
+  && { cat output; exit 1; }
 cat output
 $FGREP 'unknown-runtest-option' output
 

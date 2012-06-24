@@ -17,7 +17,7 @@
 # Ensure DESTDIR is not included in byte-compiled files.
 
 required=python
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >>configure.ac <<'EOF'
 AM_PATH_PYTHON
@@ -49,6 +49,6 @@ test -f "$instdir/usr/share/my/my.pyo"
 
 # If DESTDIR has made it into the byte compiled files, fail the test.
 $FGREP "$instdir" "$instdir/usr/share/my/my.pyo" \
-                  "$instdir/usr/share/my/my.pyc" && Exit 1
+                  "$instdir/usr/share/my/my.pyc" && exit 1
 
 :

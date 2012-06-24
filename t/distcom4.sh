@@ -20,7 +20,7 @@
 # test with a Makefile in the directory.
 # Also make sure that README appears first in DIST_COMMON.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
    AC_CONFIG_FILES([tests/autoconf:tests/wrapper.in],

@@ -17,7 +17,7 @@
 # Test to make sure texinfo.tex correctly installed by -a.  Bug report
 # by Per Cederqvist.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > Makefile.am << 'END'
 info_TEXINFOS = textutils.texi

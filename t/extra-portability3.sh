@@ -17,7 +17,7 @@
 # Check interactions between the 'portability-recursive' and
 # 'extra-portability' warning categories.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 # We want (almost) complete control over automake options.
 AUTOMAKE="$am_original_AUTOMAKE --foreign -Werror"
@@ -44,14 +44,14 @@ grep 'recursive variable expansion' stderr
 # We can disable 'extra-portability' while leaving
 # 'portability-recursive' intact.
 AUTOMAKE_fails -Wportability-recursive -Wno-extra-portability
-grep 'requires.*AM_PROG_AR' stderr && Exit 1
+grep 'requires.*AM_PROG_AR' stderr && exit 1
 grep 'recursive variable expansion' stderr
 
 # We can disable 'portability-recursive' while leaving
 # 'extra-portability' intact.
 AUTOMAKE_fails -Wextra-portability -Wno-portability-recursive
 grep 'requires.*AM_PROG_AR' stderr
-grep 'recursive variable expansion' stderr && Exit 1
+grep 'recursive variable expansion' stderr && exit 1
 
 # Disabling 'portability' disables 'portability-recursive' and
 # 'extra-portability'.

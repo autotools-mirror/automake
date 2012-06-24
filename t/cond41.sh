@@ -16,14 +16,14 @@
 
 # AM_COND_IF with an undefined condition should fail.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >>configure.ac <<'END'
 AM_COND_IF([BAD_COND], [AC_CONFIG_FILES([file1])])
 AC_OUTPUT
 END
 
-$ACLOCAL 2>stderr && { cat stderr >&2; Exit 1; }
+$ACLOCAL 2>stderr && { cat stderr >&2; exit 1; }
 cat stderr >&2
 grep '^configure\.ac:4:.*AM_COND_IF.* no such condition.*BAD_COND' stderr
 

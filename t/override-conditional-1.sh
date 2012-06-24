@@ -16,7 +16,7 @@
 
 # Test for conditionally-defined overrides.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AM_CONDITIONAL([COND], [test x"$cond" = x"yes"])

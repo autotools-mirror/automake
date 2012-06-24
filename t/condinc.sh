@@ -16,7 +16,7 @@
 
 # Make sure a conditional include statement is handled properly.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AM_CONDITIONAL([TOBE], [false])
@@ -36,7 +36,7 @@ END
 $ACLOCAL
 $AUTOMAKE
 
-grep '^target:' Makefile.in && Exit 1
+grep '^target:' Makefile.in && exit 1
 grep '^@TOBE_TRUE@target:' Makefile.in
 
 :

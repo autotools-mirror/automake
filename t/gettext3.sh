@@ -17,7 +17,7 @@
 # Check gettext 'AM_GNU_GETTEXT_INTL_SUBDIR' support.
 
 required='gettext'
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >>configure.ac <<END
 AM_GNU_GETTEXT([external])

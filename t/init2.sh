@@ -17,7 +17,7 @@
 # Make sure we give a sensible error message when AM_INIT_AUTOMAKE
 # contains junk.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >configure.ac <<END
 AC_INIT([init2], [1.0])
@@ -27,4 +27,4 @@ END
 $ACLOCAL
 AUTOMAKE_fails
 grep 'nosuchoption.*recognized' stderr
-Exit 0
+exit 0

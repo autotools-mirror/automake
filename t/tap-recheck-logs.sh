@@ -17,7 +17,7 @@
 # TAP support:
 # - RECHECK_LOGS
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > Makefile.am << 'END'
 TEST_LOG_COMPILER = cat
@@ -58,21 +58,21 @@ grep_summary ()
   grep '^# ERROR: *1$' stdout
 }
 
-$MAKE -e check && Exit 1
+$MAKE -e check && exit 1
 test -f foo.log
 test -f bar.log
 test -f baz.log
 
 rm -f foo.log bar.log
 
-env RECHECK_LOGS= $MAKE -e check > stdout && { cat stdout; Exit 1; }
+env RECHECK_LOGS= $MAKE -e check > stdout && { cat stdout; exit 1; }
 cat stdout
 test -f foo.log
 test -f bar.log
 grep '^PASS: foo\.test 1$' stdout
 grep '^PASS: foo\.test 2$' stdout
 grep '^FAIL: bar\.test 1$' stdout
-grep 'baz\.test' stdout && Exit 1
+grep 'baz\.test' stdout && exit 1
 grep_summary
 
 $sleep
@@ -80,38 +80,38 @@ touch foo.test
 # We re-run only a successful test, but the tests that failed in the
 # previous run should still be taken into account, and cause an overall
 # failure.
-env RECHECK_LOGS= $MAKE -e check > stdout && { cat stdout; Exit 1; }
+env RECHECK_LOGS= $MAKE -e check > stdout && { cat stdout; exit 1; }
 cat stdout
 grep '^PASS: foo\.test 1$' stdout
 grep '^PASS: foo\.test 2$' stdout
-grep 'ba[rz]\.test' stdout && Exit 1
+grep 'ba[rz]\.test' stdout && exit 1
 is_newest foo.log foo.test
 grep_summary
 
 $sleep
 touch zardoz
-env RECHECK_LOGS= $MAKE -e check > stdout && { cat stdout; Exit 1; }
+env RECHECK_LOGS= $MAKE -e check > stdout && { cat stdout; exit 1; }
 cat stdout
 grep '^ERROR: baz\.test' stdout
-$EGREP '(foo|bar)\.test' stdout && Exit 1
+$EGREP '(foo|bar)\.test' stdout && exit 1
 is_newest baz.log zardoz
 grep_summary
 
 # Now, explicitly retry with all test logs already updated, and ensure
 # that the summary is still displayed.
-env RECHECK_LOGS= $MAKE -e check > stdout && { cat stdout; Exit 1; }
+env RECHECK_LOGS= $MAKE -e check > stdout && { cat stdout; exit 1; }
 cat stdout
-$EGREP '(foo|bar|baz)\.test' stdout && Exit 1
+$EGREP '(foo|bar|baz)\.test' stdout && exit 1
 grep_summary
 
 # The following should re-run foo.test (and only foo.test), even if its
 # log file is up-to-date.
 : > older
-env RECHECK_LOGS=foo.log $MAKE -e check > stdout && { cat stdout; Exit 1; }
+env RECHECK_LOGS=foo.log $MAKE -e check > stdout && { cat stdout; exit 1; }
 cat stdout
 grep '^PASS: foo\.test 1$' stdout
 grep '^PASS: foo\.test 2$' stdout
-grep 'ba[rz]\.test' stdout && Exit 1
+grep 'ba[rz]\.test' stdout && exit 1
 is_newest foo.log older
 grep_summary
 

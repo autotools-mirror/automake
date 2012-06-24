@@ -16,7 +16,7 @@
 
 # Check that canonicalization does not transliterate the '@' charactrer.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CC
@@ -32,6 +32,6 @@ $AUTOMAKE
 # The first grep is here mostly for debugging.
 grep foob.rquux Makefile.in
 grep foob@rquux Makefile.in
-grep 'foob[^@]rquux' Makefile.in && Exit 1
+grep 'foob[^@]rquux' Makefile.in && exit 1
 
 :

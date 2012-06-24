@@ -172,7 +172,7 @@ skip_all_ ()
 {
   echo "1..0 # SKIP" ${1+"$@"}
   planned_=0
-  Exit 0
+  exit 0
 }
 
 # bailout_ [REASON ...]
@@ -183,7 +183,7 @@ skip_all_ ()
 bailout_ ()
 {
   echo 'Bail out!' ${1+"$@"}
-  Exit 99
+  exit 99
 }
 
 # fatal_ [REASON ...]

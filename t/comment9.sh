@@ -17,7 +17,7 @@
 # Make sure ##-comments are ignored in variable definitions.
 # Report from Julien Sopena.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > Makefile.am << 'EOF'
 TESTS = \
@@ -48,6 +48,6 @@ sed -n -e '/^TESTS =.*\\$/ {
    }' -e '/^TESTS =/ p' Makefile.in > tests
 
 grep '3\.test' tests
-grep '##' tests && Exit 1
-grep '4\.test' tests && Exit 1
+grep '##' tests && exit 1
+grep '4\.test' tests && exit 1
 grep '5\.test' tests

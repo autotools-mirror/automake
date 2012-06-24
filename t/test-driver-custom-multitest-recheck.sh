@@ -22,7 +22,7 @@
 # and 'parallel-tests-recheck-override.test'.
 # Keep in sync with 'tap-recheck.test'.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cp "$am_testauxdir"/trivial-test-driver . \
   || fatal_ "failed to fetch auxiliary script trivial-test-driver"
@@ -91,7 +91,7 @@ do_recheck ()
          *) fatal_ "invalid usage of function 'do_recheck'";;
   esac
   rm -f *.run
-  eval "\$MAKE recheck >stdout $on_bad_rc { cat stdout; ls -l; Exit 1; }; :"
+  eval "\$MAKE recheck >stdout $on_bad_rc { cat stdout; ls -l; exit 1; }; :"
   cat stdout; ls -l
 }
 
@@ -120,7 +120,7 @@ for vpath in : false; do
   count_test_results total=0 pass=0 fail=0 xpass=0 xfail=0 skip=0 error=0
 
   : Run the tests for the first time.
-  $MAKE check >stdout && { cat stdout; Exit 1; }
+  $MAKE check >stdout && { cat stdout; exit 1; }
   cat stdout
   ls -l
   # All the test scripts should have run.

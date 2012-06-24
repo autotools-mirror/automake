@@ -17,7 +17,7 @@
 # Test to make sure empty _SOURCES works.
 # From Paul Berrevoets.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CC
@@ -34,5 +34,5 @@ END
 
 $ACLOCAL
 $AUTOMAKE
-$FGREP zoo. Makefile.in && Exit 1
-Exit 0
+$FGREP zoo. Makefile.in && exit 1
+exit 0

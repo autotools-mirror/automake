@@ -26,7 +26,7 @@
 # and the following CC:ed thread on bug-autoconf list:
 #   <http://lists.gnu.org/archive/html/bug-autoconf/2011-06/msg00002.html>
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_OUTPUT
@@ -79,13 +79,13 @@ for sh in "$SHELL" "$bin_ksh"; do
 END
     $AUTOMAKE -a
     CONFIG_SHELL="$sh" $sh ./configure CONFIG_SHELL="$sh"
-    VERBOSE=y $MAKE check >stdout || { cat stdout; Exit 1; }
+    VERBOSE=y $MAKE check >stdout || { cat stdout; exit 1; }
     cat stdout
     grep '[ /]foo\.test: foofoofoo$' stdout
     grep '[ /]foo\.test: barbarbar$' stdout
     grep '[ /]bar\.test: 8888$' stdout
     grep '[ /]bar\.test: 9999$' stdout
-    $EGREP '(foofoofoo|barbarbar|8888|9999)' foo.log && Exit 1
+    $EGREP '(foofoofoo|barbarbar|8888|9999)' foo.log && exit 1
     : # For shells with buggy 'set -e'.
   done
 done

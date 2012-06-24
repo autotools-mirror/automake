@@ -17,7 +17,7 @@
 # Test to make sure that automake includes the needed variables,
 # but not too many.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 # Find the macros wanted by Automake.
 $ACLOCAL
@@ -28,6 +28,6 @@ $ACLOCAL
 $AUTOMAKE
 
 # We are definitely not needing a compiler or preprocessor.
-$EGREP '^ *(CC|CPP|CXX|CXXCPP) *=' Makefile.in && Exit 1
+$EGREP '^ *(CC|CPP|CXX|CXXCPP) *=' Makefile.in && exit 1
 
 :

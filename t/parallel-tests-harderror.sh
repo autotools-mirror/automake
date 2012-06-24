@@ -16,7 +16,7 @@
 
 # Check parallel-tests features: DISABLE_HARD_ERRORS
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_CONFIG_FILES([sub/Makefile])
@@ -64,13 +64,13 @@ DISABLE_HARD_ERRORS=x $MAKE check
 # But an empty values for DISABLE_HARD_ERRORS means that hard errors
 # are not to be counted like normal failures.
 
-$MAKE check DISABLE_HARD_ERRORS='' && Exit 1
+$MAKE check DISABLE_HARD_ERRORS='' && exit 1
 cat test-suite.log
 grep '^ERROR: foo$' test-suite.log
 
 cd sub
 # The '-e' is wanted here.
-DISABLE_HARD_ERRORS='' $MAKE -e check && Exit 1
+DISABLE_HARD_ERRORS='' $MAKE -e check && exit 1
 cat test-suite.log
 grep '^ERROR: bar$' test-suite.log
 cd ..
@@ -85,8 +85,8 @@ $MAKE DISABLE_HARD_ERRORS=y distcheck
 echo 'DISABLE_HARD_ERRORS = yes' >> Makefile.am
 $AUTOMAKE Makefile
 ./config.status Makefile
-VERBOSE=yes $MAKE check && Exit 1
-grep '^FAIL' test-suite.log && Exit 1
+VERBOSE=yes $MAKE check && exit 1
+grep '^FAIL' test-suite.log && exit 1
 grep '^ERROR: bar$' sub/test-suite.log
 
 echo 'DISABLE_HARD_ERRORS = zardoz' >> sub/Makefile

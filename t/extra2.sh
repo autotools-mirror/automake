@@ -16,7 +16,7 @@
 
 # Check to make sure EXTRA_foo_SOURCES not defined unnecessarily.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CC
@@ -29,5 +29,5 @@ END
 $ACLOCAL
 $AUTOMAKE
 
-grep EXTRA_foo_SOURCES Makefile.in && Exit 1
-Exit 0
+grep EXTRA_foo_SOURCES Makefile.in && exit 1
+exit 0

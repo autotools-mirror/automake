@@ -19,7 +19,7 @@
 # For now, require the GNU compilers (to avoid some Libtool/Autoconf
 # issues).
 required='libtoolize g77 gfortran'
-. ./defs || Exit 1
+. ./defs || exit 1
 
 mkdir sub
 

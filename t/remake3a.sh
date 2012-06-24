@@ -18,7 +18,7 @@
 # there is no Makefile for that subdirectory.
 # See also sister "grepping" test 'remake3.test'.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_CONFIG_FILES([sub/foo])

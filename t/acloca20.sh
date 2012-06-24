@@ -17,7 +17,7 @@
 # Make sure aclocal does not write into symlinked aclocal.m4.
 
 am_create_testdir=empty
-. ./defs || Exit 1
+. ./defs || exit 1
 
 echo 'm4_define([FOO], [wrong foo])' > foo.m4
 echo 'm4_define([FOO], [right foo])' > acinclude.m4

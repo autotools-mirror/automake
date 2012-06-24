@@ -16,7 +16,7 @@
 
 # Targets and macros are two different name spaces.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > Makefile.am << 'END'
 install = install

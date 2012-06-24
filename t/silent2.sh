@@ -20,7 +20,7 @@
 # Please keep this file in sync with silent.test.
 
 required=gcc
-. ./defs || Exit 1
+. ./defs || exit 1
 
 mkdir sub
 
@@ -61,10 +61,10 @@ $AUTOMAKE --add-missing
 $AUTOCONF
 
 ./configure am_cv_CC_dependencies_compiler_type=gcc --enable-silent-rules
-$MAKE >stdout || { cat stdout; Exit 1; }
+$MAKE >stdout || { cat stdout; exit 1; }
 cat stdout
-$EGREP ' (-c|-o)' stdout && Exit 1
-grep 'mv ' stdout && Exit 1
+$EGREP ' (-c|-o)' stdout && exit 1
+grep 'mv ' stdout && exit 1
 grep 'CC .*foo\.' stdout
 grep 'CC .*bar\.' stdout
 grep 'CC .*baz\.' stdout
@@ -75,10 +75,10 @@ grep 'CCLD .*baz' stdout
 grep 'CCLD .*bla' stdout
 
 $MAKE clean
-$MAKE V=1 >stdout || { cat stdout; Exit 1; }
+$MAKE V=1 >stdout || { cat stdout; exit 1; }
 cat stdout
 grep ' -c' stdout
 grep ' -o foo' stdout
-$EGREP '(CC|LD) ' stdout && Exit 1
+$EGREP '(CC|LD) ' stdout && exit 1
 
 :

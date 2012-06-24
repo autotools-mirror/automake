@@ -17,7 +17,7 @@
 # Check parallel-tests features: runtime redefinition of $(TEST_SUITE_LOG)
 # for the recheck target.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac <<'END'
 AC_OUTPUT
@@ -61,35 +61,35 @@ filter_stdout ()
 }
 
 ./configure
-$MAKE check >stdout && { cat stdout; Exit 1; }
+$MAKE check >stdout && { cat stdout; exit 1; }
 cat stdout
 
 chmod a-rw test-suite.log
 TEST_SUITE_LOG=my.log $MAKE -e recheck >stdout \
-  && { cat stdout; Exit 1; }
+  && { cat stdout; exit 1; }
 cat stdout
 ls -l
 filter_stdout
 count_test_results total=2 pass=0 fail=1 skip=0 xfail=0 xpass=0 error=1
 for x in stdout my.log; do
-  $FGREP foofoo $x && Exit 1
+  $FGREP foofoo $x && exit 1
   $FGREP barbar $x
   $FGREP bazbaz $x
 done
 
 chmod a-rw my.log
 BAZ_EXIT_STATUS=0 TEST_SUITE_LOG=my2.log $MAKE -e recheck >stdout \
-  && { cat stdout; Exit 1; }
+  && { cat stdout; exit 1; }
 cat stdout
 ls -l
 count_test_results total=2 pass=1 fail=0 skip=0 xfail=0 xpass=0 error=1
 filter_stdout
-$FGREP foofoo stdout && Exit 1
+$FGREP foofoo stdout && exit 1
 $FGREP barbar stdout
 $FGREP bazbaz stdout
-$FGREP foofoo my2.log && Exit 1
+$FGREP foofoo my2.log && exit 1
 $FGREP barbar my2.log
-$FGREP bazbaz my2.log && Exit 1
+$FGREP bazbaz my2.log && exit 1
 
 chmod u+r test-suite.log my.log
 $FGREP bazbaz test-suite.log

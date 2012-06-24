@@ -20,7 +20,7 @@
 # If you cause some parts of this test to fail, chances are that you've
 # improved the Automake parser ;-)
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > Makefile.am <<END
 .PHONY: test
@@ -47,8 +47,8 @@ echo AC_OUTPUT >> configure.ac
 $ACLOCAL
 $AUTOMAKE
 
-$FGREP '$(EXEEEXT)' Makefile.in && Exit 1
-grep 'all:.*all-local' Makefile.in && Exit 1
+$FGREP '$(EXEEEXT)' Makefile.in && exit 1
+grep 'all:.*all-local' Makefile.in && exit 1
 grep "^${tab}bin_PROGRAMS = foo" Makefile.in
 
 $AUTOCONF

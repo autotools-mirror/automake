@@ -16,7 +16,7 @@
 
 # Auxiliary script for tests on TAP support: checking testsuite summary.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 br='============================================================================'
 
@@ -64,9 +64,9 @@ do_check ()
   $make_cmd check > stdout || st=$?
   cat stdout
   if test $expect_failure = yes; then
-    test $st -gt 0 || Exit 1
+    test $st -gt 0 || exit 1
   else
-    test $st -eq 0 || Exit 1
+    test $st -eq 0 || exit 1
   fi
   $PERL "$am_testauxdir"/extract-testsuite-summary.pl stdout >summary.got \
     || fatal_ "cannot extract testsuite summary"
@@ -78,7 +78,7 @@ do_check ()
   else
     compare=diff
   fi
-  $compare summary.exp summary.got || Exit 1
+  $compare summary.exp summary.got || exit 1
 }
 
 if test $use_colors = yes; then
@@ -311,7 +311,7 @@ done > tap
 
 # Lots of non-failures (300 per kind).
 (cat tap && cat tap && cat tap) > all.test
-test $(wc -l <all.test) -eq 900 || Exit 99 # Sanity check.
+test $(wc -l <all.test) -eq 900 || exit 99 # Sanity check.
 echo 1..900 >> all.test # Test plan.
 do_check --pass <<END
 $success_header
@@ -327,7 +327,7 @@ END
 
 # 1 failure and lots of non-failures means failure.
 (cat tap && echo "not ok" && cat tap) > all.test
-test $(wc -l <all.test) -eq 601 || Exit 99 # Sanity check.
+test $(wc -l <all.test) -eq 601 || exit 99 # Sanity check.
 echo 1..601 >> all.test # Test plan.
 do_check --fail <<END
 $failure_header
@@ -343,7 +343,7 @@ END
 
 # 1 error and lots of non-failures means failure.
 (cat tap && sed 30q tap && echo 'Bail out!') > all.test
-test $(wc -l <all.test) -eq 331 || Exit 99 # Sanity check.
+test $(wc -l <all.test) -eq 331 || exit 99 # Sanity check.
 echo 1..331 >> all.test # Test plan.
 do_check --fail <<END
 $failure_header

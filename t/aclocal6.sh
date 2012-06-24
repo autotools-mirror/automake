@@ -17,7 +17,7 @@
 # Make sure aclocal.m4 is rebuilt whenever a configure
 # dependency changes.  Test for acinclude.m4 and VPATH too.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 SOME_DEFS

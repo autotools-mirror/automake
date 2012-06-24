@@ -18,7 +18,7 @@
 # from Johan Danielsson (and a very nice bug report, too, I might
 # add).
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 WHO_AM_I=17

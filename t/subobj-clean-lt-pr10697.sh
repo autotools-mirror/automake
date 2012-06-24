@@ -22,7 +22,7 @@
 # 'subobj-clean-pr10697.sh', which deals with the non-libtool case.
 
 required='cc libtoolize'
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AM_PROG_AR
@@ -120,7 +120,7 @@ for i in 1 2; do
     test ! -f sub$i/$j.o
     test ! -f sub$i/$j.obj
     test ! -f sub$i/$j.lo
-    test -f sub$i/$j.c || Exit 99 # Sanity check
+    test -f sub$i/$j.c || exit 99 # Sanity check
   done
 done
 

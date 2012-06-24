@@ -18,7 +18,7 @@
 # For Automake bug#7648 and PR automake/491.
 
 required='c++ bison'
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CXX

@@ -16,7 +16,7 @@
 
 # Make sure conditionals work with man pages.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AM_CONDITIONAL([COND], [test x"$FOO" = x"true"])

@@ -16,7 +16,7 @@
 
 # Backward-compatibility: AC_OUTPUT with arguments.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 mkdir sub
 : > Makefile.am

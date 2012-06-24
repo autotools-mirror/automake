@@ -16,7 +16,7 @@
 
 # Another sources-in-conditional test.  Report from Tim Goodwin.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_SUBST([CC], [false])
@@ -48,8 +48,8 @@ $ACLOCAL
 $AUTOMAKE -i
 
 # We should not output useless definitions.
-grep '^@ONE_FALSE@' Makefile.in && Exit 1
-grep '^@TWO_FALSE@' Makefile.in && Exit 1
+grep '^@ONE_FALSE@' Makefile.in && exit 1
+grep '^@TWO_FALSE@' Makefile.in && exit 1
 
 $AUTOCONF
 

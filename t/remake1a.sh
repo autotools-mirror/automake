@@ -17,7 +17,7 @@
 # Make sure remaking rules in subdir are correctly generated.
 # See also sister "grepping" test 'remake.test'.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 fingerprint='=/FiNgErPrInT/='
 

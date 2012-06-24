@@ -18,7 +18,7 @@
 # are missing; but only if the former is not AC_SUBSTed itself
 # (lib_LIBRARIES is in the same boat here).
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >>configure.ac <<'END'
 AC_PROG_CC
@@ -38,6 +38,6 @@ END
 $ACLOCAL
 AUTOMAKE_fails
 grep 'bin_PROGRAMS.*contains configure substitution' stderr
-grep 'lib_LIBRARIES.*contains configure substitution' stderr && Exit 1
+grep 'lib_LIBRARIES.*contains configure substitution' stderr && exit 1
 
-Exit 0
+exit 0

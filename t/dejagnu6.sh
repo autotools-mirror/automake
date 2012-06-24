@@ -17,7 +17,7 @@
 # Check that "make check" fails, when a DejaGnu test fails.
 
 required=runtest
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > faildeja << 'END'
 #! /bin/sh
@@ -50,7 +50,7 @@ $AUTOMAKE --add-missing
 
 ./configure
 
-$MAKE check && Exit 1
+$MAKE check && exit 1
 test -f faildeja.log
 test -f faildeja.sum
 $FGREP 'FAIL: failing_deja_test' faildeja.sum

@@ -18,7 +18,7 @@
 # Jim Meyering.
 
 required=makeinfo
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac <<'END'
 AC_OUTPUT

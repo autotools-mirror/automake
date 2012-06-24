@@ -16,7 +16,7 @@
 
 # Test if automake warns if ar-lib is missing when AM_PROG_AR is used.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AM_PROG_AR

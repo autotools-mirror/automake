@@ -19,7 +19,7 @@
 #    all the $(TEST_LOGS) have a dummy dependency.
 # See also related test 'test-missing.test'.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_OUTPUT
@@ -36,13 +36,13 @@ $AUTOMAKE -a
 
 ./configure
 
-$MAKE foobar1.log foobar2.log || Exit 99
-test ! -f foobar1.log || Exit 99
-test ! -f foobar1.trs || Exit 99
-test ! -f foobar2.log || Exit 99
-test ! -f foobar2.trs || Exit 99
+$MAKE foobar1.log foobar2.log || exit 99
+test ! -f foobar1.log || exit 99
+test ! -f foobar1.trs || exit 99
+test ! -f foobar2.log || exit 99
+test ! -f foobar2.trs || exit 99
 
-$MAKE check >output 2>&1 && { cat output; Exit 1; }
+$MAKE check >output 2>&1 && { cat output; exit 1; }
 cat output
 grep 'test-suite\.log.*foobar1\.log' output
 grep 'test-suite\.log.*foobar1\.trs' output

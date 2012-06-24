@@ -18,7 +18,7 @@
 # See automake bug#8753.
 
 required="cc valac GNUmake"
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_CONFIG_SRCDIR([hello.vala])
@@ -74,7 +74,7 @@ grep barbarbar ../hello.c
 
 # Rebuild rules are not uselessly triggered.
 $MAKE -q
-$MAKE -n | grep '\.stamp' && Exit 1
+$MAKE -n | grep '\.stamp' && exit 1
 
 # Cleanup rules work also in VPATH builds.
 $MAKE clean

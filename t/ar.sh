@@ -16,7 +16,7 @@
 
 # Make sure that AR, ARFLAGS, and RANLIB can be substituted from configure.ac.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AM_PROG_AR

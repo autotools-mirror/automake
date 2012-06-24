@@ -20,7 +20,7 @@
 # This is the java sister test of instfail.test.
 
 required=javac
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >>configure.ac <<'END'
 AC_OUTPUT
@@ -50,7 +50,7 @@ for file in java1.class
 do
   chmod a-r $file
   test ! -r $file || skip_ "cannot drop file read permissions"
-  $MAKE install-data && Exit 1
+  $MAKE install-data && exit 1
   chmod u+r $file
 done
 

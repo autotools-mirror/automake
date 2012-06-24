@@ -17,7 +17,7 @@
 # Ensure we diagnose underquoted AC_DEFUN's.
 
 am_create_testdir=empty
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > configure.ac << 'END'
 AC_INIT
@@ -29,9 +29,9 @@ cat >m4/foo.m4 <<EOF
 AC_DEFUN(FOO, [echo foo])
 EOF
 
-$ACLOCAL -I m4 2>stderr && { cat stderr >&2; Exit 1; }
+$ACLOCAL -I m4 2>stderr && { cat stderr >&2; exit 1; }
 cat stderr >&2
 grep 'underquoted definition.*FOO' stderr
-grep 'warning.*warning' stderr && Exit 1
+grep 'warning.*warning' stderr && exit 1
 
 :

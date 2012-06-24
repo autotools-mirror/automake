@@ -16,7 +16,7 @@
 
 # Make sure that PACKAGE and VERSION are AC_DEFINEd when requested.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 # -------------------------------------------------------------------
 # Do not upgrade this file to use the modern AC_INIT/AM_INIT_AUTOMAKE
@@ -53,6 +53,6 @@ $ACLOCAL
 $AUTOCONF
 ./configure
 
-grep 'DEFS.*-DVERSION=\\"UnIqUe' output && Exit 1
+grep 'DEFS.*-DVERSION=\\"UnIqUe' output && exit 1
 
 :

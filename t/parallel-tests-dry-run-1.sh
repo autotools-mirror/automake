@@ -17,7 +17,7 @@
 # Check parallel-tests interactions with "make -n".
 # See also sister test 'parallel-tests-dry-run-2.test'.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 echo AC_OUTPUT >> configure.ac
 
@@ -82,7 +82,7 @@ END
 
 chmod a+x foo.test bar.test
 
-$MAKE check && Exit 1
+$MAKE check && exit 1
 
 for targ in recheck clean mostlyclean distclean; do
   $MAKE -n "$targ"

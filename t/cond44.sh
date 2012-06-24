@@ -17,7 +17,7 @@
 # Check that redefinitions of AC_SUBST'ed AM_SUBST_NOTMAKE'd variables
 # are not diagnosed.  See cond23.test.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >>configure.ac <<EOF
 AM_CONDITIONAL([COND], [true])
@@ -33,6 +33,6 @@ EOF
 
 $ACLOCAL
 AUTOMAKE_run
-grep 'libdir was already defined' stderr && Exit 1
-grep '^libdir = ' Makefile.in && Exit 1
-Exit 0
+grep 'libdir was already defined' stderr && exit 1
+grep '^libdir = ' Makefile.in && exit 1
+exit 0

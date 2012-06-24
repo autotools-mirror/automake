@@ -23,7 +23,7 @@
 # forgets '.../<file>.o'.
 
 required='c++ libtoolize'
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > configure.ac << END
 AC_INIT([$me], [1.0])
@@ -73,17 +73,17 @@ export AUTOCONF AUTOMAKE
 
 # Opportunistically check that --tag=CXX is used when supported.
 if ./libtool --help | grep tag=TAG; then
-  $MAKE print >stdout || { cat stdout; Exit 1; }
+  $MAKE print >stdout || { cat stdout; exit 1; }
   cat stdout
   grep 'BEG1: .*--tag=CXX.*--mode=compile.* :1END' stdout
   grep 'BEG2: .*--tag=CXX.*--mode=link.* :2END' stdout
 fi
 
 $MAKE
-$MAKE distcheck >output 2>&1 || { cat output; Exit 1; }
+$MAKE distcheck >output 2>&1 || { cat output; exit 1; }
 cat output
 # GNU Make used to complain that the Makefile contained two rules
 # for 'src/.dirstamp' and './/src/.dirstamp'.
-grep 'overriding commands' output && Exit 1
+grep 'overriding commands' output && exit 1
 
 :

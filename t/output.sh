@@ -16,7 +16,7 @@
 
 # Test to make sure files listed in AC_OUTPUT are found.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > configure.ac <<END
 AC_INIT([$me], [1.0])

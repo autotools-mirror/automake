@@ -17,7 +17,7 @@
 # Test to make sure empty _SOURCES suppresses assumption about default
 # name.  Report from Pavel Roskin.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CC
@@ -31,5 +31,5 @@ END
 $ACLOCAL
 $AUTOMAKE
 
-grep 'pavel\.[co]' Makefile.in && Exit 1
-Exit 0
+grep 'pavel\.[co]' Makefile.in && exit 1
+exit 0

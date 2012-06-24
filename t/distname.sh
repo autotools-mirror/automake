@@ -18,7 +18,7 @@
 # From Rainer Orth.
 
 required=cc
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_CONFIG_SRCDIR([a.c])
@@ -40,8 +40,8 @@ $AUTOMAKE --include-deps --copy --add-missing
 $MAKE dist
 
 gzip -d $me-1.0.tar.gz
-tar tf $me-1.0.tar > stdout || { cat stdout; Exit 1; }
+tar tf $me-1.0.tar > stdout || { cat stdout; exit 1; }
 cat stdout
-$FGREP ./$me-1.0/a.c stdout && Exit 1
+$FGREP ./$me-1.0/a.c stdout && exit 1
 
 :

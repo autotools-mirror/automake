@@ -16,7 +16,7 @@
 
 # Test to see if 'm4_sinclude' and 'm4_include' works.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac <<'EOF'
 sinclude([doesntexist.m4])
@@ -48,7 +48,7 @@ echo 'm4_include([sub/h.m4])' >> aclocal.m4
 
 $AUTOMAKE
 
-grep doesntexist Makefile.in && Exit 1
+grep doesntexist Makefile.in && exit 1
 grep MAGICALPIG Makefile.in
 grep MAGICALHOG Makefile.in
 grep GREPME Makefile.in

@@ -17,7 +17,7 @@
 # Check that the user can edit the Makefile-generated site.exp, and
 # have its edits survive to the remaking of that file.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_OUTPUT

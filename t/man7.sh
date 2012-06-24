@@ -16,7 +16,7 @@
 
 # Check for a bug in maintainer-clean w.r.t. generated manpages.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > Makefile.am << 'END'
 dist_man_MANS = $(srcdir)/foo.1 bar.1

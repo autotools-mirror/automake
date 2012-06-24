@@ -19,7 +19,7 @@
 # an early exit due to some command exiting unexpectedly with status 77.
 
 am_create_testdir=no
-. ./defs || Exit 1
+. ./defs || exit 1
 
 set +e
 
@@ -30,26 +30,29 @@ AM_TESTS_REEXEC=no; export AM_TESTS_REEXEC
 # testsuite shell to ensure it supports "VAR=val shell_func" correctly.
 run_dummy_test ()
 {
-  env $2 $AM_TEST_RUNNER_SHELL -c "am_create_testdir=no; . ./defs; $1" \
-                                  dummy.sh
+  env $2 $AM_TEST_RUNNER_SHELL -c "
+    am_create_testdir=no
+    . ./defs
+    $1
+  " dummy.sh
 }
 
 run_dummy_test '(exit 77); exit 77'
-test $? -eq 77 || Exit 1
+test $? -eq 77 || exit 1
 
 run_dummy_test 'sh -c "exit 77"' am_explicit_skips=no
-test $? -eq 77 || Exit 1
+test $? -eq 77 || exit 1
 
 run_dummy_test '(exit 77); exit 77' am_explicit_skips=yes 
-test $? -eq 78 || Exit 1
+test $? -eq 78 || exit 1
 
 run_dummy_test 'sh -c "exit 77"' am_explicit_skips=y
-test $? -eq 78 || Exit 1
+test $? -eq 78 || exit 1
 
-run_dummy_test 'Exit 77' am_explicit_skips=yes
-test $? -eq 77 || Exit 1
+run_dummy_test 'exit 77' am_explicit_skips=yes
+test $? -eq 77 || exit 1
 
 run_dummy_test 'skip_ "foo"' am_explicit_skips=y
-test $? -eq 77 || Exit 1
+test $? -eq 77 || exit 1
 
 :

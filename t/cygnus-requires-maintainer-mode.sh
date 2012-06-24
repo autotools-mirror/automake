@@ -16,7 +16,7 @@
 
 # Check that, in cygnus mode, maintainer mode is required.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 : > Makefile.am
 

@@ -16,7 +16,7 @@
 
 # Check that Automake warns about user variables being overridden.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 # We need (almost) complete control over automake options.
 AUTOMAKE="$am_original_AUTOMAKE -Werror"
@@ -47,7 +47,7 @@ AUTOMAKE_fails --add-missing --gnu
 grep '^Makefile\.am:1:.*CFLAGS' stderr
 grep '^Makefile\.am:2:.*LDFLAGS' stderr
 # No reason to warn about CXXFLAGS since it's not used.
-grep CXXFLAGS stderr && Exit 1
+grep CXXFLAGS stderr && exit 1
 # Don't warn if -Wno-gnu.
 $AUTOMAKE --gnu -Wno-gnu
 

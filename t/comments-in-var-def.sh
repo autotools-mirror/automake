@@ -17,7 +17,7 @@
 # Make sure Automake ignores in-line comments when using variables,
 # but preserve them in the output.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac <<'END'
 AC_OUTPUT

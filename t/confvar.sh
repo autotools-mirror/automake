@@ -16,7 +16,7 @@
 
 # Test to make sure configure_vars stuff works.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_SUBST([QBERT])

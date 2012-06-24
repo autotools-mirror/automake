@@ -20,7 +20,7 @@
 # even if AM_CFLAGS is undefined. Similarly for other *FLAGS variables
 # (CXXFLAGS, YFLAGS, LDFLAGS, ...)
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 # Disable shell globbing if possible.
 (set +f) >/dev/null 2>&1 && set +f

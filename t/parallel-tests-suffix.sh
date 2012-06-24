@@ -18,7 +18,7 @@
 # - suffix rules
 # See also sister test 'parallel-tests-suffix-prog.test'.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_OUTPUT

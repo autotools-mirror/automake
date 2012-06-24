@@ -16,7 +16,7 @@
 
 # Test for another '+=' problem.  Report from Brian Jones.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AM_CONDITIONAL([CHECK], [true])
@@ -53,7 +53,7 @@ grep AM_CPPFLAGS stderr
 # -Wno-obsolete:
 echo 'AUTOMAKE_OPTIONS = -Wno-obsolete' >> Makefile.am
 AUTOMAKE_fails
-grep AM_CPPFLAGS stderr && Exit 1
+grep AM_CPPFLAGS stderr && exit 1
 # !CHECK should still be mentioned.
 grep ':.*!CHECK$' stderr
 

@@ -16,7 +16,7 @@
 
 # Make sure an AC_CONFIG_FILES process filenames with AC_SUBST variables.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << \END
 AC_SUBST([FOO], [foo])

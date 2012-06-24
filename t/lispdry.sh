@@ -17,7 +17,7 @@
 # Check that 'make -n' works with the lisp_LISP recover rule.
 
 required='emacs non-root'
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > Makefile.am << 'EOF'
 dist_lisp_LISP = am-one.el am-two.el am-three.el

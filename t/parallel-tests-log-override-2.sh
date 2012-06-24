@@ -18,7 +18,7 @@
 #  - $(TEST_SUITE_LOG) and $(TESTS)
 #  - $(TEST_SUITE_LOG) and $(TEST_LOGS)
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac <<'END'
 AC_OUTPUT
@@ -61,7 +61,7 @@ for test_list_override in \
   'TEST_LOGS=pass.log skip.log'
 do
   env TEST_SUITE_LOG=partial.log "$test_list_override" \
-    $MAKE -e check >stdout || { cat stdout; Exit 1; }
+    $MAKE -e check >stdout || { cat stdout; exit 1; }
   cat stdout
   ls -l
   count_test_results total=2 pass=1 fail=0 skip=1 xfail=0 xpass=0 error=0
@@ -76,8 +76,8 @@ do
   grep '^SKIP: skip\.test$' stdout
   $FGREP 'SKIP: skip' partial.log
   $FGREP '% skipped test %' partial.log
-  $EGREP '(pass2|skip2|fail)\.test' stdout && Exit 1
-  $EGREP '(pass2|skip2|fail)' partial.log && Exit 1
+  $EGREP '(pass2|skip2|fail)\.test' stdout && exit 1
+  $EGREP '(pass2|skip2|fail)' partial.log && exit 1
   rm -f *.log
 done
 

@@ -17,7 +17,7 @@
 # Test 'py-compile --help', 'py-compile --version', and that 'py-compile'
 # correctly complains on wrong usage.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cp "$am_scriptdir/py-compile" . \
   || fatal_ "failed to fetch auxiliary script py-compile"
@@ -25,9 +25,9 @@ cp "$am_scriptdir/py-compile" . \
 # --help
 
 ./py-compile --help >stdout 2>stderr \
-  || { cat stdout; cat stderr >&2; Exit 1; }
+  || { cat stdout; cat stderr >&2; exit 1; }
 cat stdout
-test -s stderr && { cat stderr >&2; Exit 1; }
+test -s stderr && { cat stderr >&2; exit 1; }
 grep '^Usage: py-compile .' stdout
 $FGREP ' [--basedir DIR]' stdout
 $FGREP ' [--destdir DIR]' stdout
@@ -35,9 +35,9 @@ $FGREP ' [--destdir DIR]' stdout
 # --version
 
 ./py-compile --version >stdout 2>stderr \
-  || { cat stdout; cat stderr >&2; Exit 1; }
+  || { cat stdout; cat stderr >&2; exit 1; }
 cat stdout
-test -s stderr && { cat stderr >&2; Exit 1; }
+test -s stderr && { cat stderr >&2; exit 1; }
 year='20[0-9][0-9]' # Hopefully automake will be obsolete in 80 years ;-)
 month='(0[0-9]|1[012])'
 day='([012][0-9]|3[01])'
@@ -48,7 +48,7 @@ test $(wc -l <stdout) -eq 1
 # Unknown option.
 
 for opt in -b -d --foo; do
-  ./py-compile $opt 2>stderr && { cat stderr >&2; Exit 1; }
+  ./py-compile $opt 2>stderr && { cat stderr >&2; exit 1; }
   cat stderr >&2
   grep "^py-compile: unrecognized option '$opt'" stderr
   grep "^Try 'py-compile --help' for more information" stderr
@@ -57,7 +57,7 @@ done
 # Missing option argument.
 
 for opt in --basedir --destdir; do
-  ./py-compile $opt 2>stderr && { cat stderr >&2; Exit 1; }
+  ./py-compile $opt 2>stderr && { cat stderr >&2; exit 1; }
   cat stderr >&2
   grep "^py-compile: option '$opt' requires an argument" stderr
   grep "^Try 'py-compile --help' for more information" stderr
@@ -66,7 +66,7 @@ done
 # Missing files.
 
 for args in '' '--basedir dir' '--destdir dir'; do
-  ./py-compile $args 2>stderr && { cat stderr >&2; Exit 1; }
+  ./py-compile $args 2>stderr && { cat stderr >&2; exit 1; }
   cat stderr >&2
   grep '^py-compile: no files given' stderr
   grep "^Try 'py-compile --help' for more information" stderr

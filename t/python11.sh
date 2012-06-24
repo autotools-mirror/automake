@@ -17,7 +17,7 @@
 # Test missing python.
 
 # Python is not required for this test.
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >>configure.ac <<'EOF'
 m4_define([_AM_PYTHON_INTERPRETER_LIST], [IShouldNotExist1 IShouldNotExist2])
@@ -33,7 +33,7 @@ EOF
 $ACLOCAL
 $AUTOCONF
 
-./configure >stdout 2>stderr && { cat stdout; cat stderr >&2; Exit 1; }
+./configure >stdout 2>stderr && { cat stdout; cat stderr >&2; exit 1; }
 cat stdout
 cat stderr >&2
 grep 'checking for IShouldNotExist1' stdout
@@ -48,7 +48,7 @@ $AUTOCONF --force
 ./configure
 
 # Any user setting should be used.
-./configure PYTHON=foo >stdout && { cat stdout; Exit 1; }
+./configure PYTHON=foo >stdout && { cat stdout; exit 1; }
 cat stdout
 grep 'PYTHON = foo' stdout
 

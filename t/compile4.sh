@@ -18,7 +18,7 @@
 # with respect to absolute paths.
 
 required='cl'
-. ./defs || Exit 1
+. ./defs || exit 1
 
 get_shell_script compile
 

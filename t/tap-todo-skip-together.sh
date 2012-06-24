@@ -18,7 +18,7 @@
 #  - TODO and SKIP directives on the same line: the first one wins
 # See also related test 'tap-ambiguous-directive.test'.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 . "$am_testauxdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"
 
@@ -28,7 +28,7 @@ ok 1 # SKIP TODO
 not ok 2 # TODO SKIP
 END
 
-$MAKE check >stdout || { cat stdout; Exit 1; }
+$MAKE check >stdout || { cat stdout; exit 1; }
 cat stdout
 
 count_test_results total=2 pass=0 fail=0 xpass=0 xfail=1 skip=1 error=0

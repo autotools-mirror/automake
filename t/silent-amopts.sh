@@ -17,7 +17,7 @@
 # Check that automake complaints if the 'silent-rules' option is
 # used in AUTOMAKE_OPTIONS.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 echo AUTOMAKE_OPTIONS = silent-rules > Makefile.am
 

@@ -18,7 +18,7 @@
 # The example Makefile.am we use is from the FAQ entry 'distcleancheck'.
 
 required=cc
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >>configure.ac << 'END'
 AC_PROG_CC
@@ -62,7 +62,7 @@ mv -f t Makefile.am
 $AUTOMAKE
 ./configure
 $MAKE
-$MAKE distcheck 2>stderr && { cat srderr >&2; Exit 1; }
+$MAKE distcheck 2>stderr && { cat srderr >&2; exit 1; }
 cat stderr >&2
 
 grep 'ERROR:.*files left in build directory after distclean' stderr

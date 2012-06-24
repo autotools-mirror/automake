@@ -17,7 +17,7 @@
 # Check that non-conditional primaries cannot use directories defined
 # in some conditions (but not others).
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >>configure.ac << 'EOF'
 AM_CONDITIONAL([USE_FOO], [true])
@@ -32,7 +32,7 @@ EOF
 
 $ACLOCAL
 AUTOMAKE_fails
-grep ' USE_FOO' stderr && Exit 1
+grep ' USE_FOO' stderr && exit 1
 grep '!USE_FOO' stderr
 
 :

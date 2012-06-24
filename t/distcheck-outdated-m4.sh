@@ -18,7 +18,7 @@
 # files in a dist tarball (interaction with '--install').
 # See automake bug#9037.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cwd=$(pwd) || fatal_ "cannot get current working directory"
 
@@ -59,10 +59,10 @@ $MAKE distcheck # Sanity check.
 
 check_no_spurious_error ()
 {
-  $EGREP -i 'mkdir:|:.*(permission|denied)' output && Exit 1
+  $EGREP -i 'mkdir:|:.*(permission|denied)' output && exit 1
   # On failure, some make implementations (such as Solaris make) print the
   # whole failed recipe on stdout.  The first grep works around this.
-  grep -v 'rm -rf ' output | grep -i 'autom4te.*\.cache' && Exit 1
+  grep -v 'rm -rf ' output | grep -i 'autom4te.*\.cache' && exit 1
   : To placate 'set -e'.
 }
 
@@ -79,13 +79,13 @@ AC_DEFUN([MY_ZARDOZ], [:])
 END
 
 $MAKE # Rebuild configure and makefiles.
-$MAKE distcheck >output 2>&1 && { cat output; Exit 1; }
+$MAKE distcheck >output 2>&1 && { cat output; exit 1; }
 cat output
 
 $EGREP "required m4 file.* outdated.* baz.m4( |$)" output
 check_no_spurious_error
 # Check that we don't complain for files that aren't outdated.
-$EGREP " (foo|bar).m4" output && Exit 1
+$EGREP " (foo|bar).m4" output && exit 1
 
 # Now we again use '--install' explicitly, and "make distcheck"
 # should pass.
@@ -121,12 +121,12 @@ AC_DEFUN([MY_FNORD], [:])
 END
 
 $MAKE # Rebuild configure and makefiles.
-$MAKE distcheck >output 2>&1 && { cat output; Exit 1; }
+$MAKE distcheck >output 2>&1 && { cat output; exit 1; }
 cat output
 $EGREP "required m4 file.* outdated.* fnord.m4( |$)" output
 check_no_spurious_error
 # Check that we don't complain for files that aren't outdated.
-$EGREP " (foo|bar|baz).m4" output && Exit 1
+$EGREP " (foo|bar|baz).m4" output && exit 1
 
 # Now we again use '--install' explicitly, and "make distcheck"
 # should pass.

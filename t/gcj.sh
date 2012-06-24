@@ -16,7 +16,7 @@
 
 # Test of compiled java.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 _AM_DEPENDENCIES([GCJ])

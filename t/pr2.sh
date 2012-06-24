@@ -27,7 +27,7 @@
 # to the distribution directory before it creates a templ
 # subdirectory in the distribution directory.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_OUTPUT([README.foo:templ/README.foo.in])

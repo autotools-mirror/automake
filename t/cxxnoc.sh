@@ -16,7 +16,7 @@
 
 # Test to make sure pure C++ sources don't include C-specific code.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CXX
@@ -33,5 +33,5 @@ END
 $ACLOCAL
 $AUTOMAKE
 
-$FGREP '(CC)' Makefile.in && Exit 1
-Exit 0
+$FGREP '(CC)' Makefile.in && exit 1
+exit 0

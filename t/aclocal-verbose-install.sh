@@ -17,7 +17,7 @@
 # Check verbose messages by 'aclocal --install'.
 
 am_create_testdir=empty
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > configure.ac <<END
 AC_INIT([$me], [1.0])
@@ -37,7 +37,7 @@ mkdir foodir
 : > foodir/bar.m4
 
 $ACLOCAL --system-acdir=sys-acdir --install --verbose -I foodir 2>stderr \
- || { cat stderr >&2; Exit 1; }
+ || { cat stderr >&2; exit 1; }
 cat stderr >&2
 grep ' installing .*sys-acdir/bar\.m4.* to .*foodir/bar\.m4' stderr
 grep ' installing .*sys-acdir/quux\.m4.* to .*foodir/quux\.m4' stderr

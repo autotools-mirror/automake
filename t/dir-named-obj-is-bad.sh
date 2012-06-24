@@ -16,7 +16,7 @@
 
 # Naming a subdirectory 'obj/' is a bad idea.  Automake should say so.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 mkdir obj
 

@@ -16,7 +16,7 @@
 
 # Make sure --help and --version takes precedence over other options.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 # We must have full control over the content of the current directory.
 mkdir cleandir

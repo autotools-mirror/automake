@@ -16,7 +16,7 @@
 
 # Test to make sure subdir source file generates explicit dependency.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > Makefile.am << 'END'
 bin_PROGRAMS = zardoz widdershins

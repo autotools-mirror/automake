@@ -31,7 +31,7 @@
 # when developers ask users to try out a fix from VCS; the developers themselves
 # will usually have help2man installed (or should install it).
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > Makefile.am << 'END'
 dist_man_MANS = $(srcdir)/foo.1 bar.1
@@ -74,7 +74,7 @@ grep_error_messages()
   grep ' man pages contain.*missing help2man.* replacement text' stderr \
    && grep 'install help2man' stderr \
    && grep 'regenerate the man pages' stderr \
-   || Exit 1
+   || exit 1
 }
 
 $ACLOCAL
@@ -83,10 +83,10 @@ $AUTOCONF
 
 ./configure
 $MAKE
-$MAKE dist 2>stderr && { cat stderr >&2; Exit 1; }
+$MAKE dist 2>stderr && { cat stderr >&2; exit 1; }
 cat stderr >&2
 grep_error_messages
-$MAKE distcheck 2>stderr && { cat stderr >&2; Exit 1; }
+$MAKE distcheck 2>stderr && { cat stderr >&2; exit 1; }
 cat stderr >&2
 grep_error_messages
 $MAKE distclean
@@ -95,10 +95,10 @@ mkdir build
 cd build
 ../configure
 $MAKE
-$MAKE dist 2>stderr && { cat stderr >&2; Exit 1; }
+$MAKE dist 2>stderr && { cat stderr >&2; exit 1; }
 cat stderr >&2
 grep_error_messages
-$MAKE distcheck 2>stderr && { cat stderr >&2; Exit 1; }
+$MAKE distcheck 2>stderr && { cat stderr >&2; exit 1; }
 cat stderr >&2
 grep_error_messages
 

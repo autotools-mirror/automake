@@ -16,9 +16,9 @@
 
 # Calling AM_AUTOMAKE_VERSION by hand is a bug.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 echo 'AM_AUTOMAKE_VERSION([1.9])' >>configure.ac
-$ACLOCAL 2>stderr && { cat stderr >&2; Exit 0; }
+$ACLOCAL 2>stderr && { cat stderr >&2; exit 0; }
 cat stderr >&2
 $FGREP 'AM_INIT_AUTOMAKE([1.9])' stderr

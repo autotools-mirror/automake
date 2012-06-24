@@ -17,7 +17,7 @@
 # Test for --install with #serial numbers.
 
 am_create_testdir=empty
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > configure.ac << 'END'
 AC_INIT
@@ -96,7 +96,7 @@ $FGREP ':macro14:' configure
 $FGREP ':macro23:' configure
 
 clean_stale
-$ACLOCAL -I 4 -I 1 -I 2 --install 2>stderr && { cat stderr >&2; Exit 1; }
+$ACLOCAL -I 4 -I 1 -I 2 --install 2>stderr && { cat stderr >&2; exit 1; }
 cat stderr >&2
 grep 'macro.*AM_MACRO2.*not found' stderr
 
@@ -118,7 +118,7 @@ clean_stale
 $ACLOCAL -I 4 -I 1 --diff=diff >stdout 2>stderr || {
   cat stderr >&2
   cat stdout
-  Exit 1
+  exit 1
 }
 cat stderr >&2
 cat stdout
@@ -126,11 +126,11 @@ grep '#serial 456' stdout
 test ! -f 4/m1.m4
 grep 'installing.*4/m1\.m4' stderr
 
-$ACLOCAL -I 5 2>stderr && { cat stderr >&2; Exit 1; }
+$ACLOCAL -I 5 2>stderr && { cat stderr >&2; exit 1; }
 cat stderr >&2
 test $(grep -c 'ill-formed serial' stderr) -eq 3
 
-$ACLOCAL -I 6 2>stderr && { cat stderr >&2; Exit 1; }
+$ACLOCAL -I 6 2>stderr && { cat stderr >&2; exit 1; }
 cat stderr >&2
 grep 'serial.*before any macro definition' stderr
 

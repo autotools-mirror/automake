@@ -17,7 +17,7 @@
 # Test Automake style tests.
 
 # For gen-testsuite-part: ==> try-with-serial-tests <==
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > Makefile.am << 'END'
 TESTS = frob.test
@@ -29,7 +29,7 @@ $ACLOCAL
 $AUTOMAKE
 
 grep 'check-TESTS.*:' Makefile.in
-grep 'check-DEJAGNU' Makefile.in && Exit 1
+grep 'check-DEJAGNU' Makefile.in && exit 1
 
 # 'check-TESTS' is phony.
 sed -n '/^\.PHONY:/,/^$/p' Makefile.in | $EGREP '(^| )check-TESTS($| )'

@@ -18,7 +18,7 @@
 # even when the Automake-generated parallel testsuite harness failed.
 # See automake bug#9245.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_OUTPUT
@@ -43,16 +43,16 @@ $AUTOMAKE -a
 ./configure
 
 # Some make implementations don't grok the '-j' option.
-$MAKE -j1 || Exit 77
+$MAKE -j1 || exit 77
 
 for j in '' -j1 -j2; do
-  $MAKE $j check && Exit 1
-  TESTS=foo.test $MAKE $j -e check && Exit 1
-  $MAKE $j recheck && Exit 1
-  TEST_LOGS=foo.log $MAKE $j -e check && Exit 1
+  $MAKE $j check && exit 1
+  TESTS=foo.test $MAKE $j -e check && exit 1
+  $MAKE $j recheck && exit 1
+  TEST_LOGS=foo.log $MAKE $j -e check && exit 1
   rm -f test-suite.log
-  $MAKE $j test-suite.log && Exit 1
-  test -f test-suite.log || Exit 1
+  $MAKE $j test-suite.log && exit 1
+  test -f test-suite.log || exit 1
 done
 
 :

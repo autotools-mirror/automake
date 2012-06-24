@@ -19,7 +19,7 @@
 # test 'silentcxx.test', which should work with generic compilers.
 
 required=g++
-. ./defs || Exit 1
+. ./defs || exit 1
 
 mkdir sub
 
@@ -74,11 +74,11 @@ for config_args in \
   am_cv_CXX_dependencies_compiler_type=gcc
 do
   ./configure $config_args --enable-silent-rules
-  $MAKE >stdout || { cat stdout; Exit 1; }
+  $MAKE >stdout || { cat stdout; exit 1; }
   cat stdout
 
-  $EGREP ' (-c|-o)' stdout && Exit 1
-  grep 'mv ' stdout && Exit 1
+  $EGREP ' (-c|-o)' stdout && exit 1
+  grep 'mv ' stdout && exit 1
 
   grep 'CXX .*foo\.'  stdout
   grep 'CXX .*baz\.'  stdout
@@ -92,13 +92,13 @@ do
   # Ensure a clean rebuild.
   $MAKE clean
 
-  $MAKE V=1 >stdout || { cat stdout; Exit 1; }
+  $MAKE V=1 >stdout || { cat stdout; exit 1; }
   cat stdout
 
   grep ' -c ' stdout
   grep ' -o ' stdout
 
-  $EGREP '(CC|CXX|LD) ' stdout && Exit 1
+  $EGREP '(CC|CXX|LD) ' stdout && exit 1
 
   # Ensure a clean reconfiguration/rebuild.
   $MAKE clean

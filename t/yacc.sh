@@ -17,7 +17,7 @@
 # Test to make sure intermediate .c file is built from yacc source.
 # Bug from Thomas Morgan.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CC

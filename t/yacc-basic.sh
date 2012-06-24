@@ -18,7 +18,7 @@
 # Keep in sync with sister test 'yacc-cxx.test'.
 
 required='cc yacc'
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CC
@@ -69,9 +69,9 @@ test -f bar-parse.output
 
 if ! cross_compiling; then
   echo a | ./foo
-  echo b | ./foo && Exit 1
+  echo b | ./foo && exit 1
   echo a | ./bar
-  echo b | ./bar && Exit 1
+  echo b | ./bar && exit 1
   : For shells with busted 'set -e'.
 fi
 

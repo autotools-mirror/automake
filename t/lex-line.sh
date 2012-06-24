@@ -20,7 +20,7 @@
 # See also sister test 'yacc-line.test'.
 
 required='cc lex'
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_CONFIG_FILES([sub/Makefile])
@@ -106,15 +106,15 @@ for vpath in : false; do
   ls -l . sub sub/dir
   $EGREP 'line|\.l' $c_outputs
 
-  grep '#.*line.*build.*\.l' $c_outputs && Exit 1
+  grep '#.*line.*build.*\.l' $c_outputs && exit 1
   # Adjusted "#line" should not contain reference to the absolute
   # srcdir.
-  $EGREP '#.*line *"?/.*\.l' $c_outputs && Exit 1
+  $EGREP '#.*line *"?/.*\.l' $c_outputs && exit 1
   # Adjusted "#line" should not contain reference to the default
   # output file names, e.g., 'lex.yy.c'.
-  grep '#.*line.*lex\.yy' $c_outputs && Exit 1
+  grep '#.*line.*lex\.yy' $c_outputs && exit 1
   # Look out for a silly regression.
-  grep "#.*\.l.*\.l" $c_outputs && Exit 1
+  grep "#.*\.l.*\.l" $c_outputs && exit 1
   if $vpath; then
     grep '#.*line.*"\.\./zardoz\.l"' zardoz.c
     grep '#.*line.*"\.\./dir/quux\.l"' bar-quux.c

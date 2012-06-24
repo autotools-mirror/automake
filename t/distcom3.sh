@@ -17,7 +17,7 @@
 # Test to make sure that non-existing common files are distributed
 # if they are buildable.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > Makefile.am << 'END'
 README:
@@ -32,9 +32,9 @@ END
 $ACLOCAL
 
 # Should not warn about missing README, since it is a target.
-$AUTOMAKE --add-missing --gnu >output 2>&1 || { cat output; Exit 1; }
+$AUTOMAKE --add-missing --gnu >output 2>&1 || { cat output; exit 1; }
 cat output
-grep README output && Exit 1
+grep README output && exit 1
 
 sed -n -e '/^DIST_COMMON =.*\\$/ {
    :loop

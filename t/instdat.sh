@@ -17,7 +17,7 @@
 # Test to see if defining INSTALL_DATA causes problems.  From EGCS
 # list.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac <<END
 AC_SUBST([INSTALL_DATA])
@@ -28,5 +28,5 @@ END
 $ACLOCAL
 $AUTOMAKE
 
-grep '^DATA =' Makefile.in | grep 'INSTALL_DATA' && Exit 1
-Exit 0
+grep '^DATA =' Makefile.in | grep 'INSTALL_DATA' && exit 1
+exit 0

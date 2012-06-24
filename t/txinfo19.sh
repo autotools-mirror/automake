@@ -17,7 +17,7 @@
 # Test support for DJGPP's .iNN info files.
 
 required=makeinfo
-. ./defs || Exit 1
+. ./defs || exit 1
 
 echo AC_OUTPUT >> configure.ac
 

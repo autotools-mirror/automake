@@ -16,7 +16,7 @@
 
 # Make sure aclocal only warns about definitions overridden by acinclude.m4.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AM_FUNC_STRTOD

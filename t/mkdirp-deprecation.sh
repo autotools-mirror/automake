@@ -17,7 +17,7 @@
 # Check that the AM_PROG_MKDIR_P macro is deprecated.  It will be
 # be removed in the next major Automake release.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 echo AM_PROG_MKDIR_P >> configure.ac
 : > Makefile.am
@@ -32,7 +32,7 @@ grep_err ()
 
 $ACLOCAL
 
-$AUTOCONF -Werror -Wobsolete 2>stderr && { cat stderr >&2; Exit 1; }
+$AUTOCONF -Werror -Wobsolete 2>stderr && { cat stderr >&2; exit 1; }
 cat stderr >&2
 grep_err
 

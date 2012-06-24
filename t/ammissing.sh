@@ -16,10 +16,10 @@
 
 # Test to see if aclocal correctly reports missing AM_ macro.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 echo AM_ZARDOZ >> configure.ac
 
-$ACLOCAL 2>stderr && { cat stderr >&2; Exit 1; }
+$ACLOCAL 2>stderr && { cat stderr >&2; exit 1; }
 cat stderr
 grep 'configure.ac:.*AM_ZARDOZ.*not found' stderr

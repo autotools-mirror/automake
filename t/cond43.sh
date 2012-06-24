@@ -16,7 +16,7 @@
 
 # Ensure an error with underquoted usage of AM_COND_IF in configure.ac.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >>configure.ac <<'END'
 AM_CONDITIONAL([COND1], [:])

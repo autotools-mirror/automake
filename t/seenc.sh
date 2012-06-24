@@ -16,7 +16,7 @@
 
 # Test to make sure C-but-not-CC error works.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 dnl AC_PROG_CC and AC_PROG_CXX missing on purpose

@@ -18,7 +18,7 @@
 # Report from Pavel Roskin.  Report of problems with '--no-force' from
 # Scott James Remnant (Debian #206299)
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CC

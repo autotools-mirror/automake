@@ -21,7 +21,7 @@
 # See automake bug#11089.
 
 required='cc c++'
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CC
@@ -64,7 +64,7 @@ CXX=false $MAKE -e
 
 # Sanity check.
 rm -f foo foo.exe
-CC=false $MAKE -e && Exit 99
+CC=false $MAKE -e && exit 99
 
 $MAKE distclean
 
@@ -83,6 +83,6 @@ CC=false $MAKE -e
 
 # Sanity check.
 rm -f foo foo.exe
-CXX=false $MAKE -e && Exit 99
+CXX=false $MAKE -e && exit 99
 
 :

@@ -16,7 +16,7 @@
 
 # Custom test drivers: per-extension test drivers.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_OUTPUT
@@ -140,4 +140,4 @@ for x in 1 2 3 4.c 5.suf sub/test; do
   diff $x.exp $x.log || st=1
 done
 
-Exit $st
+exit $st

@@ -17,7 +17,7 @@
 # Basic checks and some regressions testing on 'version.texi'
 # support for texinfo files.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > Makefile.am << 'END'
 info_TEXINFOS = textutils.texi
@@ -57,6 +57,6 @@ $EGREP 'stamp-vti:.*\$\(top_srcdir\)/configure( .*)?$' Makefile.in
 # etc. once led to '\$\(srcdir\)/mdate-sh'.
 # Filter out '$(srcdir)/mdate-sh'; there should be no occurrences
 # of '.../mdate-sh' left then.
-sed 's,\$(srcdir)/mdate-sh,,g' Makefile.in | grep '/mdate-sh' && Exit 1
+sed 's,\$(srcdir)/mdate-sh,,g' Makefile.in | grep '/mdate-sh' && exit 1
 
 :

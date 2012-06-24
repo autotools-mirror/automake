@@ -16,7 +16,7 @@
 
 # Check user extensibility of silent-rules mode.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >>configure.ac <<'EOF'
 AM_SILENT_RULES
@@ -69,17 +69,17 @@ do_check ()
   esac
   shift
   $MAKE clean
-  $MAKE ${1+"$@"} >output 2>&1 || { cat output; Exit 1; }
+  $MAKE ${1+"$@"} >output 2>&1 || { cat output; exit 1; }
   sed 's/^/  /' output
   if $silent; then
-    $FGREP 'cp ' output && Exit 1
-    $FGREP 'generate-header' output && Exit 1
-    $FGREP 'rm -f' output && Exit 1
-    grep '[012]\.h' output && Exit 1
+    $FGREP 'cp ' output && exit 1
+    $FGREP 'generate-header' output && exit 1
+    $FGREP 'rm -f' output && exit 1
+    grep '[012]\.h' output && exit 1
     grep '^ XGEN    foo$' output
     grep '^ GEN     \[headers\]$' output
   else
-    $FGREP 'GEN ' output && Exit 1
+    $FGREP 'GEN ' output && exit 1
     $FGREP 'cp ./foo.in foo' output
     $FGREP "rm -f sub/0.h sub/1.h sub/2.h" output
     $FGREP "generate-header --flags sub/0.h sub/1.h sub/2.h" output

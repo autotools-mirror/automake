@@ -17,7 +17,7 @@
 # Test sources listed in conditional.
 # Report from Rob Savoye <rob@cygnus.com>, and Lars J. Aas.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CC

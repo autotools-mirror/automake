@@ -22,7 +22,7 @@
 # need sister tests for other primaries too?  E.g., PROGRAMS, LISP,
 # PYTHON, etc...
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_OUTPUT
@@ -48,19 +48,19 @@ test ! -d inst
 rm -rf inst
 
 $MAKE install-exec
-test -f inst/bin/foo || Exit 99 # Sanity check.
+test -f inst/bin/foo || exit 99 # Sanity check.
 $MAKE uninstall
 test ! -f inst/bin/foo
 
 $MAKE install-data
-test -f inst/share/bar || Exit 99 # Sanity check.
+test -f inst/share/bar || exit 99 # Sanity check.
 $MAKE uninstall
 test ! -f inst/share/bar
 
 rm -rf inst
 
 $MAKE install-exec
-test -f inst/bin/foo || Exit 99 # Sanity check.
+test -f inst/bin/foo || exit 99 # Sanity check.
 $MAKE uninstall
 test ! -f inst/bin/foo
 

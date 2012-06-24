@@ -17,7 +17,7 @@
 # Make sure Automake will install several copies of required files if needed.
 # Reported by Marius Vollmer.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac <<EOF
 AC_CONFIG_FILES([one/Makefile two/Makefile])

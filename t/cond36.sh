@@ -16,7 +16,7 @@
 
 # Check rules output for parser defined conditionally.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >>configure.ac <<'EOF'
 AM_CONDITIONAL([CASE_A], [test -z "$case_B"])

@@ -18,7 +18,7 @@
 # And check that this *cannot* be overridden.
 
 required=cc
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac <<'END'
 AM_MAINTAINER_MODE
@@ -66,7 +66,7 @@ $MAKE test-nodeps
 
 # Sanity check.
 $MAKE clean
-$MAKE >out 2>&1 && { cat out; Exit 1; }
+$MAKE >out 2>&1 && { cat out; exit 1; }
 cat out
 # Not all compilers mention the undefined symbol in the error message.
 grep GIVE_BACK out || grep main out

@@ -16,7 +16,7 @@
 
 # Test Objective C compilation flags.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_OBJC
@@ -52,9 +52,9 @@ $AUTOCONF
 $AUTOMAKE -a
 
 $FGREP OBJCFLAGS Makefile.in # For debugging.
-grep '\$(OBJCFLAGS).*\$(AM_OBJCFLAGS)'       Makefile.in && Exit 1
-grep '\$(OBJCFLAGS).*\$(foo.*_OBJCFLAGS)'    Makefile.in && Exit 1
-grep '\$(foo.*_OBJCFLAGS).*\$(AM_OBJCFLAGS)' Makefile.in && Exit 1
+grep '\$(OBJCFLAGS).*\$(AM_OBJCFLAGS)'       Makefile.in && exit 1
+grep '\$(OBJCFLAGS).*\$(foo.*_OBJCFLAGS)'    Makefile.in && exit 1
+grep '\$(foo.*_OBJCFLAGS).*\$(AM_OBJCFLAGS)' Makefile.in && exit 1
 
 ./configure OBJCFLAGS=-UERROR
 $MAKE 

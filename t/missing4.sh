@@ -17,7 +17,7 @@
 # See how well the rebuild rule handles an aclocal.m4 that was
 # generated for another version of autoconf.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 echo AC_OUTPUT >>configure.ac
 
@@ -30,18 +30,18 @@ $AUTOMAKE
 $MAKE
 
 sed '1,20 s/m4_defn(\[AC_AUTOCONF_VERSION\]),/9999,/' < aclocal.m4 > aclocal.tmp
-cmp aclocal.m4 aclocal.tmp && Exit 1
+cmp aclocal.m4 aclocal.tmp && exit 1
 
 mv aclocal.tmp aclocal.m4
 
-$MAKE 2>stderr || { cat cat stderr >&2; Exit 1; }
+$MAKE 2>stderr || { cat cat stderr >&2; exit 1; }
 cat stderr >&2
 grep 'You have another version of autoconf' stderr
 grep 'aclocal.m4:.*this file was generated for' stderr
 
-$MAKE 2>stderr || { cat cat stderr >&2; Exit 1; }
+$MAKE 2>stderr || { cat cat stderr >&2; exit 1; }
 cat stderr >&2
-grep 'You have another version of autoconf' stderr && Exit 1
-grep 'aclocal.m4:.*this file was generated for' stderr && Exit 1
+grep 'You have another version of autoconf' stderr && exit 1
+grep 'aclocal.m4:.*this file was generated for' stderr && exit 1
 
 :

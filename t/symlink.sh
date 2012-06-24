@@ -18,7 +18,7 @@
 # Reported by Joerg-Martin Schwarz.
 
 am_create_testdir=empty
-. ./defs || Exit 1
+. ./defs || exit 1
 
 : > Makefile.am
 

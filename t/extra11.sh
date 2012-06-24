@@ -18,7 +18,7 @@
 # Suggested by observations from Braden McDaniel.
 
 required=GNUmake
-. ./defs || Exit 1
+. ./defs || exit 1
 
 echo AC_OUTPUT >> configure.ac
 

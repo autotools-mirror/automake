@@ -17,7 +17,7 @@
 # Test to make sure that AC_CONFIG_LINKS using a variable source
 # is not broken.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > Makefile.am << 'END'
 SUBDIRS = sdir
@@ -59,8 +59,8 @@ $AUTOMAKE
 
 # $my_src_dir and $my_dest are variables local to configure, they should
 # not appear in Makefile.
-grep my_src_dir Makefile.in && Exit 1
-grep my_dest Makefile.in && Exit 1
+grep my_src_dir Makefile.in && exit 1
+grep my_dest Makefile.in && exit 1
 
 ./configure
 test -r sdir/dest2

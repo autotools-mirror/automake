@@ -20,7 +20,7 @@
 # with the use of the reStructuredText field ':copy-in-global-log:' in
 # the associated '.trs' files.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_OUTPUT
@@ -141,6 +141,6 @@ grep '^seen corn 1$' test-suite.log
 grep '^seen corn 2$' test-suite.log
 grep '^seen corn 31$' test-suite.log
 grep '^seen corn 32$' test-suite.log
-$FGREP 'not seen' test-suite.log && Exit 1
+$FGREP 'not seen' test-suite.log && exit 1
 
 :

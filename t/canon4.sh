@@ -17,7 +17,7 @@
 # Test to make sure name canonicalization happens for static libraries.
 # Keep this in sync with sister test 'canon6.test'.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CC
@@ -35,6 +35,6 @@ END
 $ACLOCAL
 $AUTOMAKE
 
-grep '^ *libx-y.*=' Makefile.in && Exit 1
+grep '^ *libx-y.*=' Makefile.in && exit 1
 
 :

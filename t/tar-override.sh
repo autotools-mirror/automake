@@ -19,7 +19,7 @@
 # FIXME: currently this works only when the tar format used is 'v7'
 # FIXME: (which is the default one).
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cwd=$(pwd) || fatal_ "getting current working directory"
 
@@ -46,7 +46,7 @@ $AUTOMAKE
 
 $MAKE dist
 test -f $me-1.0.tar.gz
-ls | grep has-run && Exit 1
+ls | grep has-run && exit 1
 
 rm -f *.tar.* *has-run*
 

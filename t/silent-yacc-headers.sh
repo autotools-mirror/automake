@@ -18,7 +18,7 @@
 # involved (i.e., the '-d' option is in *YFLAGS).
 
 required='cc yacc'
-. ./defs || Exit 1
+. ./defs || exit 1
 
 mkdir sub
 
@@ -61,11 +61,11 @@ $FGREP '$(bar_YFLAGS)' Makefile.in
 
 ./configure --enable-silent-rules
 
-$MAKE >stdout || { cat stdout; Exit 1; }
+$MAKE >stdout || { cat stdout; exit 1; }
 cat stdout
 
-$EGREP ' (-c|-d|-o)' stdout && Exit 1
-$EGREP '(mv|ylwrap) ' stdout && Exit 1
+$EGREP ' (-c|-d|-o)' stdout && exit 1
+$EGREP '(mv|ylwrap) ' stdout && exit 1
 
 grep 'YACC  *parse\.c' stdout
 grep 'updating  *parse\.h' stdout
@@ -79,11 +79,11 @@ grep 'CCLD  *bar' stdout
 
 # Check recovering from header removal.
 rm -f parse.h bar-parse.h
-$MAKE parse.h bar-parse.h >stdout || { cat stdout; Exit 1; }
+$MAKE parse.h bar-parse.h >stdout || { cat stdout; exit 1; }
 cat stdout
 
-$EGREP ' (-c|-d|-o)' stdout && Exit 1
-$EGREP '(mv|ylwrap) ' stdout && Exit 1
+$EGREP ' (-c|-d|-o)' stdout && exit 1
+$EGREP '(mv|ylwrap) ' stdout && exit 1
 
 grep 'YACC  *parse\.c' stdout
 grep 'updating  *parse\.h' stdout
@@ -95,11 +95,11 @@ grep 'updating  *bar-parse\.h' stdout
 # different set of rules.
 $MAKE clean
 
-$MAKE >stdout || { cat stdout; Exit 1; }
+$MAKE >stdout || { cat stdout; exit 1; }
 cat stdout
 
-$EGREP ' (-c|-d|-o)' stdout && Exit 1
-$EGREP '(mv|ylwrap) ' stdout && Exit 1
+$EGREP ' (-c|-d|-o)' stdout && exit 1
+$EGREP '(mv|ylwrap) ' stdout && exit 1
 
 # Don't look for "YACC *.c" and "updating *.h", as yacc shouldn't
 # have been re-run.
@@ -110,11 +110,11 @@ grep 'CCLD  *bar' stdout
 
 # Check recovering from header removal.
 rm -f parse.h bar-parse.h
-$MAKE parse.h bar-parse.h >stdout || { cat stdout; Exit 1; }
+$MAKE parse.h bar-parse.h >stdout || { cat stdout; exit 1; }
 cat stdout
 
-$EGREP ' (-c|-d|-o)' stdout && Exit 1
-$EGREP '(mv|ylwrap) ' stdout && Exit 1
+$EGREP ' (-c|-d|-o)' stdout && exit 1
+$EGREP '(mv|ylwrap) ' stdout && exit 1
 
 grep 'YACC  *parse\.c' stdout
 grep 'updating  *parse\.h' stdout
@@ -126,7 +126,7 @@ $MAKE maintainer-clean
 
 ./configure --enable-silent-rules
 
-$MAKE V=1 >stdout || { cat stdout; Exit 1; }
+$MAKE V=1 >stdout || { cat stdout; exit 1; }
 cat stdout
 
 grep ' -c ' stdout
@@ -134,40 +134,40 @@ grep ' -o ' stdout
 grep ' -d ' stdout
 grep 'ylwrap ' stdout
 
-$EGREP '(YACC|CC|CCLD) ' stdout && Exit 1
+$EGREP '(YACC|CC|CCLD) ' stdout && exit 1
 
 # Check recovering from header removal.
 rm -f parse.h bar-parse.h
-$MAKE V=1 parse.h bar-parse.h >stdout || { cat stdout; Exit 1; }
+$MAKE V=1 parse.h bar-parse.h >stdout || { cat stdout; exit 1; }
 cat stdout
 
 grep ' -d ' stdout
 grep 'ylwrap ' stdout
 
-grep 'YACC' stdout && Exit 1
+grep 'YACC' stdout && exit 1
 
 # Cleaning and then rebuilding with the same V flag (and without
 # removing the generated sources in between) shouldn't trigger a
 # different set of rules.
 $MAKE clean
 
-$MAKE V=1 >stdout || { cat stdout; Exit 1; }
+$MAKE V=1 >stdout || { cat stdout; exit 1; }
 cat stdout
 
 # Don't look for ylwrap, as probably lex hasn't been re-run.
 grep ' -c ' stdout
 grep ' -o ' stdout
 
-$EGREP '(YACC|CC|CCLD) ' stdout && Exit 1
+$EGREP '(YACC|CC|CCLD) ' stdout && exit 1
 
 # Check recovering from header removal.
 rm -f parse.h bar-parse.h
-$MAKE V=1 parse.h bar-parse.h >stdout || { cat stdout; Exit 1; }
+$MAKE V=1 parse.h bar-parse.h >stdout || { cat stdout; exit 1; }
 cat stdout
 
 grep ' -d ' stdout
 grep 'ylwrap ' stdout
 
-grep 'YACC' stdout && Exit 1
+grep 'YACC' stdout && exit 1
 
 :

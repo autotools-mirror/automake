@@ -19,7 +19,7 @@
 # exist at automake runtime.
 # Related to automake bug#7819.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac <<END
 AC_CONFIG_HEADERS([config.h sub/config.h cfg2.h:conf2.hin])

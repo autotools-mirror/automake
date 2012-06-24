@@ -17,13 +17,13 @@
 # Various install-sh checks.
 
 am_create_testdir=empty
-. ./defs || Exit 1
+. ./defs || exit 1
 
 get_shell_script install-sh
 
 # Basic errors.
-./install-sh && Exit 1
-./install-sh -m 644 dest && Exit 1
+./install-sh && exit 1
+./install-sh -m 644 dest && exit 1
 
 # Directories.
 
@@ -76,8 +76,8 @@ test -f d4/z
 ./install-sh -T x d3/y
 test -f x
 test -f d3/y
-./install-sh -T x d3 && Exit 1
-./install-sh -T x d4// && Exit 1
+./install-sh -T x d3 && exit 1
+./install-sh -T x d4// && exit 1
 
 # Ensure that install-sh works with names that include spaces.
 touch 'a  b'
@@ -88,9 +88,9 @@ test -f 'a  b'
 
 # Ensure we do not run into 'test' operator precedence bugs with Tru64 sh.
 for c in = '(' ')' '!'; do
-  ./install-sh $c 2>stderr && { cat stderr >&2; Exit 1; }
+  ./install-sh $c 2>stderr && { cat stderr >&2; exit 1; }
   cat stderr >&2
-  grep 'test: ' stderr && Exit 1
+  grep 'test: ' stderr && exit 1
   # Skip tests if the file system is not capable.
   mkdir ./$c || continue
   rmdir ./$c

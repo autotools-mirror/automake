@@ -16,7 +16,7 @@
 
 # Make sure that Automake suggest using AM_PATH_LISPDIR to define lispdir.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 
 : TRY 1 -- We lack both EMACS and lispdir.
@@ -42,7 +42,7 @@ END
 
 $ACLOCAL
 AUTOMAKE_fails
-grep 'lispdir.*undefined' stderr && Exit 1
+grep 'lispdir.*undefined' stderr && exit 1
 grep '[Ll]isp source.*EMACS.* undefined' stderr
 grep 'define .*EMACS.* add .*AM_PATH_LISPDIR' stderr
 
@@ -56,7 +56,7 @@ END
 
 $ACLOCAL
 AUTOMAKE_fails
-grep 'EMACS.*undefined' stderr && Exit 1
+grep 'EMACS.*undefined' stderr && exit 1
 grep '[Ll]isp source.*lispdir.* undefined' stderr
 grep 'define .*lispdir.* add .*AM_PATH_LISPDIR' stderr
 

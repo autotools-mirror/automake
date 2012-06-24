@@ -17,7 +17,7 @@
 # TAP support:
 #  - some corner cases for TAP plan
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 . "$am_testauxdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"
 
@@ -37,7 +37,7 @@ END
 
 for pos in leading trailing; do
   TESTS="$pos-repeated.test" $MAKE -e check >stdout \
-    && { cat stdout; Exit 1; }
+    && { cat stdout; exit 1; }
   cat stdout
   count_test_results total=2 pass=1 fail=0 xpass=0 xfail=0 skip=0 error=1
   grep "^ERROR: $pos-repeated\\.test - multiple test plans$" stdout
@@ -60,13 +60,13 @@ ok 2
 END
 
 env TESTS="leading-repeated.test trailing-repeated.test" \
-  $MAKE -e check >stdout && { cat stdout; Exit 1; }
+  $MAKE -e check >stdout && { cat stdout; exit 1; }
 cat stdout
 count_test_results total=6 pass=3 fail=0 xpass=0 xfail=0 skip=0 error=3
 grep "^ERROR: leading-repeated\\.test - multiple test plans$" stdout
 grep "^ERROR: trailing-repeated\\.test - multiple test plans$" stdout
 grep "^ERROR: trailing-repeated\\.test 2 # AFTER LATE PLAN$" stdout
-grep "leading .*AFTER LATE PLAN" stdout && Exit 1
+grep "leading .*AFTER LATE PLAN" stdout && exit 1
 
 # -------------------------------------------------------------------------
 
@@ -91,7 +91,7 @@ cat > 4.test <<END
 END
 
 env TESTS="1.test 2.test 3.test 4.test" \
-  $MAKE -e check >stdout && { cat stdout; Exit 1; }
+  $MAKE -e check >stdout && { cat stdout; exit 1; }
 cat stdout
 count_test_results total=8 pass=0 fail=0 xpass=0 xfail=0 skip=4 error=4
 for i in 1 2 3 4; do
@@ -112,7 +112,7 @@ ok 4
 ok 5
 END
 
-$MAKE -e check >stdout && { cat stdout; Exit 1; }
+$MAKE -e check >stdout && { cat stdout; exit 1; }
 cat stdout
 count_test_results total=8 pass=5 fail=0 xpass=0 xfail=0 skip=0 error=3
 
@@ -143,7 +143,7 @@ ok 2
 ok 3
 END
 
-$MAKE -e check >stdout && { cat stdout; Exit 1; }
+$MAKE -e check >stdout && { cat stdout; exit 1; }
 cat stdout
 count_test_results total=5 pass=2 fail=0 xpass=0 xfail=0 skip=0 error=3
 
@@ -174,7 +174,7 @@ ok 4
 ok 5
 END
 
-$MAKE -e check >stdout && { cat stdout; Exit 1; }
+$MAKE -e check >stdout && { cat stdout; exit 1; }
 cat stdout
 count_test_results total=7 pass=3 fail=0 xpass=0 xfail=0 skip=0 error=4
 

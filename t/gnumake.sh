@@ -18,7 +18,7 @@
 # Report from Braden McDaniel.
 
 required=GNUmake
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_CONFIG_FILES([sub/GNUmakefile])

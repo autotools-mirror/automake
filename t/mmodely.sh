@@ -19,7 +19,7 @@
 # From Derek R. Price.
 
 required=cc
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AM_MAINTAINER_MODE

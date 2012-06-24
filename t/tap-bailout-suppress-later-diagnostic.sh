@@ -18,7 +18,7 @@
 #  - A "Bail out!" directive causes the driver to ignore any TAP
 #    diagnostic message in the rest of the following TAP stream.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 . "$am_testauxdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"
 
@@ -34,11 +34,11 @@ END
 
 # Doing the sums above, we have:
 
-$MAKE check >stdout && { cat stdout; Exit 1; }
+$MAKE check >stdout && { cat stdout; exit 1; }
 cat stdout
 
 count_test_results total=2 pass=1 fail=0 xpass=0 xfail=0 skip=0 error=1
 grep '# all.test: sanity check' stdout
-grep 'not seen' stdout && Exit 1
+grep 'not seen' stdout && exit 1
 
 :

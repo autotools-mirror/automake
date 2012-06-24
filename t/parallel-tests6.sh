@@ -19,7 +19,7 @@
 # BSD make will expand '$(TESTS:=.log)' to '.log' unless overridden.
 # See parallel-tests10.test for a similar issue.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 cat >> configure.ac << 'END'
 AC_OUTPUT
 END
@@ -33,10 +33,10 @@ $AUTOCONF
 $AUTOMAKE -a
 
 ./configure
-$MAKE check >stdout || { cat stdout; Exit 1; }
+$MAKE check >stdout || { cat stdout; exit 1; }
 cat stdout
 for x in TOTAL PASS FAIL XPASS FAIL SKIP ERROR; do
   grep "^# $x: *0$" stdout
 done
 
-Exit 0
+exit 0

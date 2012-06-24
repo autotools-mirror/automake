@@ -16,7 +16,7 @@
 
 # Make sure we diagnose non-existent AC_CONFIG_AUX_DIR names.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > configure.ac <<END
 AC_INIT([$me], [1.0])

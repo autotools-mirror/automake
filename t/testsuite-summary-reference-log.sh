@@ -17,7 +17,7 @@
 # Check that the global testsuite log file referenced in the testsuite
 # summary and in the global testsuite log itself is correct.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 mv configure.ac configure.stub
 
@@ -45,12 +45,12 @@ cd build
 
 ../configure
 
-$MAKE check >stdout && { cat stdout; Exit 1; }
+$MAKE check >stdout && { cat stdout; exit 1; }
 cat stdout
 grep '^See \./my_test_suite\.log$' stdout
 
 mkdir bar
-TEST_SUITE_LOG=bar/bar.log $MAKE -e check >stdout && { cat stdout; Exit 1; }
+TEST_SUITE_LOG=bar/bar.log $MAKE -e check >stdout && { cat stdout; exit 1; }
 cat stdout
 grep '^See \./bar/bar\.log$' stdout
 
@@ -71,16 +71,16 @@ $AUTOCONF --force
 $AUTOMAKE
 
 ./configure
-$MAKE check >stdout && { cat stdout; Exit 1; }
+$MAKE check >stdout && { cat stdout; exit 1; }
 cat stdout
 grep '^See sub/test-suite\.log$' stdout
 cd sub
-$MAKE check >stdout && { cat stdout; Exit 1; }
+$MAKE check >stdout && { cat stdout; exit 1; }
 cat stdout
 grep '^See sub/test-suite\.log$' stdout
 cd ..
 
-TEST_SUITE_LOG=foo.log $MAKE -e check >stdout && { cat stdout; Exit 1; }
+TEST_SUITE_LOG=foo.log $MAKE -e check >stdout && { cat stdout; exit 1; }
 cat stdout
 grep '^See sub/foo\.log$' stdout
 

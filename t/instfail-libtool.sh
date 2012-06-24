@@ -20,7 +20,7 @@
 # This is the libtool sister test of instfail.test
 
 required='cc libtool libtoolize'
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >>configure.ac <<END
 AM_PROG_AR
@@ -66,16 +66,16 @@ for file in liblt1.la libltn1.la
 do
   chmod a-r $file
   test ! -r $file || skip_ "cannot drop file read permissions"
-  $MAKE install-exec && Exit 1
+  $MAKE install-exec && exit 1
   chmod u+r $file
 done
 
 $MAKE unreadable-prog
-$MAKE install-exec && Exit 1
+$MAKE install-exec && exit 1
 $MAKE readable-prog
 
 $MAKE unreadable-progn
-$MAKE install-exec && Exit 1
+$MAKE install-exec && exit 1
 $MAKE readable-progn
 
 :

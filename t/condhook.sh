@@ -18,7 +18,7 @@
 # Keep this in sync with sister test condhook2.test.
 # Report by Nik A. Melchior (PR/428).
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AM_CONDITIONAL([TEST], [false])

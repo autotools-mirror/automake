@@ -16,7 +16,7 @@
 
 # Test to make sure no-installman suppresses man dir creation.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 echo AC_OUTPUT >> configure.ac
 

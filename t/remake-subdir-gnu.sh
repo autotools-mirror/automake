@@ -21,7 +21,7 @@
 # related test 'aclocal5.test'
 
 required=GNUmake
-. ./defs || Exit 1
+. ./defs || exit 1
 
 magic1='::MagicString::One::'
 magic2='__MagicString__Two__'
@@ -74,7 +74,7 @@ cd ..
 debug_info
 $FGREP $magic2 sub/GNUmakefile
 $FGREP $magic2 sub/GNUmakefile.in
-$FGREP $magic1 sub/GNUmakefile sub/GNUmakefile.in && Exit 1
-$FGREP $magic2 GNUmakefile GNUmakefile.in && Exit 1
+$FGREP $magic1 sub/GNUmakefile sub/GNUmakefile.in && exit 1
+$FGREP $magic2 GNUmakefile GNUmakefile.in && exit 1
 
 :

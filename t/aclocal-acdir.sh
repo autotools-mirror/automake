@@ -18,7 +18,7 @@
 # options.  Also check that stuff in the automake acdir takes precedence
 # over stuff in the system acdir.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 mkdir am sys
 
@@ -70,12 +70,12 @@ $ACLOCAL --automake-acdir am --system-acdir sys
 $AUTOCONF --force
 $FGREP 'fake--init--automake' configure
 $FGREP 'am--macro' configure
-$FGREP 'my--macro' configure && Exit 1 # Just to be sure.
+$FGREP 'my--macro' configure && exit 1 # Just to be sure.
 
 rm -rf autom4te*.cache
 
 # Obsolescent '--acdir' option.
-$ACLOCAL -Wobsolete --acdir am 2>stderr && { cat stderr >&2; Exit 1; }
+$ACLOCAL -Wobsolete --acdir am 2>stderr && { cat stderr >&2; exit 1; }
 cat stderr >&2
 grep '.*--acdir.*deprecated' stderr
 
@@ -88,7 +88,7 @@ $FGREP 'am--macro' configure
 
 rm -rf autom4te*.cache
 
-$ACLOCAL -Wno-obsolete --acdir sys 2>stderr && { cat stderr >&2; Exit 1; }
+$ACLOCAL -Wno-obsolete --acdir sys 2>stderr && { cat stderr >&2; exit 1; }
 cat stderr >&2
 grep 'macro .*AM_INIT_AUTOMAKE.* not found' stderr
 

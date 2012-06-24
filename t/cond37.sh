@@ -17,7 +17,7 @@
 # Check conditional local rules.
 # Report from Simon Josefsson.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >>configure.ac <<'EOF'
 AM_CONDITIONAL([CASE_A], [test -n "$case_A"])
@@ -39,19 +39,19 @@ $AUTOCONF
 $AUTOMAKE
 
 ./configure
-$MAKE check >stdout || { cat stdout; Exit 1; }
+$MAKE check >stdout || { cat stdout; exit 1; }
 cat stdout
-grep GrepMe1 stdout && Exit 1
-$MAKE install >stdout || { cat stdout; Exit 1; }
+grep GrepMe1 stdout && exit 1
+$MAKE install >stdout || { cat stdout; exit 1; }
 cat stdout
 grep GrepMe2 stdout
 
 ./configure case_A=1
-$MAKE check >stdout || { cat stdout; Exit 1; }
+$MAKE check >stdout || { cat stdout; exit 1; }
 cat stdout
 grep GrepMe1 stdout
-$MAKE install >stdout || { cat stdout; Exit 1; }
+$MAKE install >stdout || { cat stdout; exit 1; }
 cat stdout
-grep GrepMe2 stdout && Exit 1
+grep GrepMe2 stdout && exit 1
 
 :

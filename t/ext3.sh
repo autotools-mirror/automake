@@ -20,7 +20,7 @@
 # In both cases, we don't try to create a rule; but we shouldn't
 # fail either, because magic might be happening behind our back.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 END
@@ -36,4 +36,4 @@ END
 $ACLOCAL
 $AUTOMAKE
 
-Exit 0
+exit 0

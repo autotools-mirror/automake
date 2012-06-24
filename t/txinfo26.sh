@@ -18,7 +18,7 @@
 # PR/408
 
 required='makeinfo'
-. ./defs || Exit 1
+. ./defs || exit 1
 
 echo AC_OUTPUT >> configure.ac
 

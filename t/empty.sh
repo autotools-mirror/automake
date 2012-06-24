@@ -17,7 +17,7 @@
 # Test for bug where if the list of installables is empty, invalid sh
 # code is generated.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 echo AC_OUTPUT >>configure.ac
 echo 'data_DATA =' >Makefile.am

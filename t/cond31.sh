@@ -16,7 +16,7 @@
 
 # Make sure we define conditional _DEPENDENCIES correctly.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >>configure.ac <<'EOF'
 AC_SUBST([CC], [false])

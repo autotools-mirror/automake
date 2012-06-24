@@ -17,7 +17,7 @@
 # Test of yacc functionality, derived from GNU binutils
 # by Tim Van Holder.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CC
@@ -53,7 +53,7 @@ $AUTOMAKE -a
 
 # No rule needed, the default .y.c: inference rule is enough
 # (but there may be an additional dependency on a dirstamp file).
-grep '^sub/maude\.c:.*maude\.y' Makefile.in && Exit 1
+grep '^sub/maude\.c:.*maude\.y' Makefile.in && exit 1
 
 
 ## Try again with per-exe flags.
@@ -69,10 +69,10 @@ $ACLOCAL
 $AUTOMAKE -a
 
 # Rule should use maude_YFLAGS.
-grep 'AM_YFLAGS.*maude' Makefile.in && Exit 1
+grep 'AM_YFLAGS.*maude' Makefile.in && exit 1
 
 # Silly regression.
-grep 'maudec' Makefile.in && Exit 1
+grep 'maudec' Makefile.in && exit 1
 
 # Make sure the .o file is required.
 grep '^am_maude_OBJECTS.*maude' Makefile.in

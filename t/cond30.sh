@@ -16,7 +16,7 @@
 
 # For PR/352: make sure we support bin_PROGRAMS being defined conditionally.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >>configure.ac <<'EOF'
 AM_CONDITIONAL([C1], [test -z "$two"])

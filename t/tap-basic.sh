@@ -24,7 +24,7 @@
 # Note that some of the features checked here are checked in other
 # test cases too, usually in a more thorough and detailed way.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 fetch_tap_driver
 
@@ -80,7 +80,7 @@ $AUTOMAKE
 
 # Basilar usage and testsuite progress output.
 
-$MAKE check >stdout && { cat stdout; Exit 1; }
+$MAKE check >stdout && { cat stdout; exit 1; }
 cat stdout
 
 count_test_results total=20 pass=4 fail=4 xpass=4 xfail=4 skip=4 error=0
@@ -127,7 +127,7 @@ Bail out!
 ok 1
 END
 
-TESTS=bail.test $MAKE -e check >stdout && { cat stdout; Exit 1; }
+TESTS=bail.test $MAKE -e check >stdout && { cat stdout; exit 1; }
 cat stdout
 
 count_test_results total=1 pass=0 fail=0 xpass=0 xfail=0 skip=0 error=1
@@ -137,16 +137,16 @@ test -f bail.log
 test -f test-suite.log
 
 grep '^ERROR: bail\.test - Bail out!' stdout
-grep '^PASS:' stdout && Exit 1
+grep '^PASS:' stdout && exit 1
 test $($FGREP -c ': bail.test' stdout) -eq 1
-$FGREP 'success.test' stdout && Exit 1
+$FGREP 'success.test' stdout && exit 1
 
 # Override TEST_LOGS from the command line, making it point to a test
 # (ok.test) that has to be generated at make time.
 
 rm -f *.log *.test
 
-TEST_LOGS=ok.log $MAKE -e check >stdout || { cat stdout; Exit 1; }
+TEST_LOGS=ok.log $MAKE -e check >stdout || { cat stdout; exit 1; }
 cat stdout
 
 count_test_results total=3 pass=1 fail=0 xpass=0 xfail=1 skip=1 error=0
@@ -157,7 +157,7 @@ test ! -f success.log
 test ! -f bail.log
 test -f test-suite.log
 
-$EGREP '(bail|success)\.test' stdout && Exit 1
+$EGREP '(bail|success)\.test' stdout && exit 1
 
 cat > exp << 'END'
 PASS: ok.test 1

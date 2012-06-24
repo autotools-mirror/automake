@@ -22,7 +22,7 @@
 # 'subobj-clean-lt-pr10697.sh', which deals with the libtool case.
 
 required=cc
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CC
@@ -115,7 +115,7 @@ for i in 1 2; do
   for j in a b c d e f; do
     test ! -f sub$i/$j.o
     test ! -f sub$i/$j.obj
-    test -f sub$i/$j.c || Exit 99 # Sanity check
+    test -f sub$i/$j.c || exit 99 # Sanity check
   done
 done
 

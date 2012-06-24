@@ -17,7 +17,7 @@
 # Test to make sure VPATH can be overridden.
 # Report from Anthony Green.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > Makefile.am << 'END'
 VPATH = zardoz
@@ -28,6 +28,6 @@ $AUTOMAKE
 
 grep VPATH Makefile.in # For debugging.
 grep '^VPATH = zardoz$' Makefile.in
-grep 'VPATH.*@srcdir@' Makefile.in && Exit 1
+grep 'VPATH.*@srcdir@' Makefile.in && exit 1
 
 :

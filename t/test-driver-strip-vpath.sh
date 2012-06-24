@@ -17,7 +17,7 @@
 # Custom test drivers: check that the test name passed to the test
 # driver has any VPATH prefix stripped.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 ocwd=$(pwd) || fatal_ "cannot get current working directory"
 

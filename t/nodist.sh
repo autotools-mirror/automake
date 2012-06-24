@@ -16,7 +16,7 @@
 
 # Test to make sure dist_*_SOURCES and nodist_*_SOURCES work.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CC
@@ -35,6 +35,6 @@ $AUTOMAKE
 
 grep '^am_eyeball_OBJECTS' Makefile.in
 grep '^DIST_SOURCES =' Makefile.in
-grep '^DIST_SOURCES =.*nodist' Makefile.in && Exit 1
+grep '^DIST_SOURCES =.*nodist' Makefile.in && exit 1
 
 :

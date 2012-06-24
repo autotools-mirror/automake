@@ -17,7 +17,7 @@
 # Test cleaning of Java class files and timestamps.
 
 required=javac
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac <<'END'
 AC_OUTPUT
@@ -55,7 +55,7 @@ for base in '' Nobase; do
   done
 done
 $MAKE clean
-find . -name '*.class' -o -name '*.stamp' | grep . && Exit 1
+find . -name '*.class' -o -name '*.stamp' | grep . && exit 1
 # We should not remove unrelated stamp files.
 echo timestamp > classjava2.stamp
 echo timestamp > classdist_java.stamp

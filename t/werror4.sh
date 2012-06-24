@@ -16,7 +16,7 @@
 
 # -Werror and local -Werror settings should be flagged for the user.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >>configure.ac <<\END
 AC_CONFIG_FILES([sub/Makefile])
@@ -61,6 +61,6 @@ test $(grep -c 'warnings are treated as errors' stderr) -eq 1
 AUTOMAKE_run -Wno-error
 grep 'VAR multiply defined' stderr
 grep 'SUB multiply defined' stderr
-grep 'warnings are treated as errors' stderr && Exit 1
+grep 'warnings are treated as errors' stderr && exit 1
 
 :

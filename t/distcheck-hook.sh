@@ -16,7 +16,7 @@
 
 # Check basic support for distcheck-hook.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_OUTPUT
@@ -43,9 +43,9 @@ $AUTOCONF
 ./configure
 
 $MAKE
-$MAKE check && Exit 1
+$MAKE check && exit 1
 $MAKE distdir
-test -f $distdir/dc-hook-has-run && Exit 1
+test -f $distdir/dc-hook-has-run && exit 1
 $MAKE distcheck
 
 :

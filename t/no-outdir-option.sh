@@ -16,7 +16,7 @@
 
 # Check that the '-o' aka '--output-dir' option is not recognized anymore.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 : > Makefile.am
 

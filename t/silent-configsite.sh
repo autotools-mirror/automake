@@ -18,7 +18,7 @@
 # from config.site, and that this default can be overridden from
 # either the ./configure or make command line.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac <<'EOF'
 AM_SILENT_RULES

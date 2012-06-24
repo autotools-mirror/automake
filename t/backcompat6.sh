@@ -21,7 +21,7 @@
 
 required=cc
 am_create_testdir=empty
-. ./defs || Exit 1
+. ./defs || exit 1
 
 # Anyone doing something like this in a real-life package probably
 # deserves to be killed.

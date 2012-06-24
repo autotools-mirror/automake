@@ -16,7 +16,7 @@
 
 # Another test of conditional include statements.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AM_CONDITIONAL([TOBE], [false])

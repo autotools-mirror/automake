@@ -17,7 +17,7 @@
 # Check that inclusion of '.am' fragments by automake does not suffer
 # of the "deleted header problem".  Basic checks are done here.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 echo AC_OUTPUT >> configure.ac
 
@@ -49,7 +49,7 @@ mv -f t Makefile.am
 rm -f foo.am
 $MAKE Makefile
 # Sanity checks.
-$FGREP 'this is foo' Makefile.in Makefile && Exit 1
+$FGREP 'this is foo' Makefile.in Makefile && exit 1
 $FGREP 'this is bar' Makefile.in
 $FGREP 'this is bar' Makefile
 $FGREP 'this is baz' Makefile.in
@@ -62,6 +62,6 @@ $MAKE Makefile
 # Sanity checks.
 $FGREP 'empty empty' Makefile.in
 $FGREP 'empty empty' Makefile
-grep 'this is ba[rz]' Makefile Makefile.in && Exit 1
+grep 'this is ba[rz]' Makefile Makefile.in && exit 1
 
 :

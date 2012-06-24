@@ -17,7 +17,7 @@
 # Test detection of missing Python.
 
 # Python is not required for this test.
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >>configure.ac <<EOF
 AM_PATH_PYTHON
@@ -31,12 +31,12 @@ $AUTOCONF
 $AUTOMAKE --add-missing
 
 # Simulate no Python.
-./configure PYTHON=: 2>stderr && { cat stderr >&2; Exit 1; }
+./configure PYTHON=: 2>stderr && { cat stderr >&2; exit 1; }
 cat stderr >&2
 grep 'no suitable Python interpreter found' stderr
 
 # Again, but from the environment this time.
-env PYTHON=: ./configure 2>stderr && { cat stderr >&2; Exit 1; }
+env PYTHON=: ./configure 2>stderr && { cat stderr >&2; exit 1; }
 cat stderr >&2
 grep 'no suitable Python interpreter found' stderr
 

@@ -18,7 +18,7 @@
 # From Pavel Roskin.
 
 required=cc
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_CONFIG_FILES([subdir/Makefile])
@@ -43,7 +43,7 @@ END
 $ACLOCAL
 $AUTOMAKE --add-missing
 $AUTOCONF
-./configure 2>stderr || { cat stderr >&2; Exit 1; }
+./configure 2>stderr || { cat stderr >&2; exit 1; }
 cat stderr >&2
 test ! -s stderr
 

@@ -16,7 +16,7 @@
 
 # Make sure commented variables are output near their comments.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac <<'EOF'
 AC_OUTPUT

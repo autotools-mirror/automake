@@ -17,7 +17,7 @@
 # Test to make sure depcomp is installed and found properly
 # when required for multiple directories.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > configure.ac << END
 AC_INIT([$me], [1.0])

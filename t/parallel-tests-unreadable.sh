@@ -17,7 +17,7 @@
 # Check that the testsuite driver copes well with unreadable '.log'
 # and '.trs' files.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 : > t
 chmod a-r t && test ! -r t || skip_ "you can still read unreadable files"
@@ -60,7 +60,7 @@ for files in \
   $MAKE check
   rm -f test-suite.log
   chmod a-r $files
-  $MAKE test-suite.log || { ls -l; Exit 1; }
+  $MAKE test-suite.log || { ls -l; exit 1; }
   ls -l
   grep '^foofoofoo$' foo.log
   grep '^:test-result: PASS' foo.trs
@@ -68,7 +68,7 @@ for files in \
   grep '^:test-result: SKIP' bar.trs
   grep '^SKIP: bar' test-suite.log
   grep '^barbarbar$' test-suite.log
-  $EGREP ':.*foo|foofoofoo' test-suite.log && Exit 1
+  $EGREP ':.*foo|foofoofoo' test-suite.log && exit 1
   : For shells with busted 'set -e'.
 done
 

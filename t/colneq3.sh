@@ -17,7 +17,7 @@
 # Test that := definitions work as expected at make time.
 
 required=GNUmake
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_OUTPUT

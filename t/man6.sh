@@ -18,7 +18,7 @@
 # even if the 'missing' script is involved.
 
 required=help2man
-. ./defs || Exit 1
+. ./defs || exit 1
 
 # Avoid a spurious failure due to a known FreeBSD make incompatibility.
 useless_vpath_rebuild \

@@ -18,7 +18,7 @@
 # Report from Simon Josefsson.
 
 required=emacs
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > Makefile.am << 'EOF'
 lisp_LISP = am-one.el am-two.el am-three.el

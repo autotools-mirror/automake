@@ -19,7 +19,7 @@
 # third argument is empty or non-existent.
 
 am_create_testdir=empty
-. ./defs || Exit 1
+. ./defs || exit 1
 
 # A trick to make the test run muuuch faster, by avoiding repeated
 # runs of aclocal (one order of magnitude improvement in speed!).
@@ -47,7 +47,7 @@ END
   cat config.h # For debugging.
   # The non-empty third argument should prevent PACKAGE and VERSION
   # from being AC_DEFINE'd.
-  $EGREP 'pkg(name|version)' config.h && Exit 1
+  $EGREP 'pkg(name|version)' config.h && exit 1
   # This is required because even relatively-recent versions of the
   # BSD shell wrongly exit when the 'errexit' shell flag is active if
   # the last command of a compound statement fails, even if it should

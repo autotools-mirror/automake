@@ -19,14 +19,14 @@
 #    of a "plan with skip" TAP plan
 # generally true!
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 . "$am_testauxdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"
 
 echo 'Bail out! 0' > a.test
 echo 'Bail out! 0.0' > b.test
 
-TESTS='a.test b.test' $MAKE -e check >stdout && { cat stdout; Exit 1; }
+TESTS='a.test b.test' $MAKE -e check >stdout && { cat stdout; exit 1; }
 cat stdout
 
 count_test_results total=2 pass=0 fail=0 xpass=0 xfail=0 skip=0 error=2

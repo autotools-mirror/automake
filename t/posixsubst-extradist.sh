@@ -17,7 +17,7 @@
 # Test that POSIX variable expansion '$(var:str=rpl)' works when used
 # in EXTRA_DIST.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_OUTPUT

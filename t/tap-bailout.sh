@@ -17,7 +17,7 @@
 # Basic TAP test protocol support:
 #  - "Bail out!" magic
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 . "$am_testauxdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"
 
@@ -119,7 +119,7 @@ echo "ERROR: e.test - Bail out!" >> exp
 test_counts='total=12 pass=3 fail=1 xpass=1 xfail=1 skip=1 error=5'
 
 TESTS='a.test b.test c.test d.test e.test' $MAKE -e check >stdout \
-  && { cat stdout; Exit 1; }
+  && { cat stdout; exit 1; }
 cat stdout
 
 count_test_results $test_counts

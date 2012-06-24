@@ -20,7 +20,7 @@
 # tests for other primaries too?  E.g., SCRIPTS, PROGRAMS, LISP, PYTHON,
 # etc...
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 mkdir d
 : > d/f
@@ -62,7 +62,7 @@ mkdir $inst $inst/share
 : > $inst/share/foobar.txt
 
 chmod a-w $inst/share
-$MAKE uninstall >output 2>&1 && { cat output; Exit 1; }
+$MAKE uninstall >output 2>&1 && { cat output; exit 1; }
 cat output
 if test $rm_f_is_silent_on_error = yes; then
   : "rm -f" is silent on errors, skip the grepping of make output
@@ -73,7 +73,7 @@ fi
 chmod a-rwx $inst/share
 (cd $inst/share) && skip_ "cannot make directories fully unreadable"
 
-$MAKE uninstall >output 2>&1 && { cat output; Exit 1; }
+$MAKE uninstall >output 2>&1 && { cat output; exit 1; }
 cat output
 #
 # Some shells, like Solaris 10 /bin/sh and /bin/ksh, do not report

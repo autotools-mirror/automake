@@ -19,7 +19,7 @@
 # $(srcdir)/X and ./X, with the files from the later overriding the
 # files from the former.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 echo AC_OUTPUT >> configure.ac
 

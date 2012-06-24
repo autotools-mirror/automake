@@ -18,7 +18,7 @@
 # with the TESTS special variable.
 
 # For gen-testsuite-part: ==> try-with-serial-tests <==
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_OUTPUT
@@ -54,7 +54,7 @@ $AUTOCONF
 $AUTOMAKE -a
 
 ./configure
-$MAKE check >out 2>&1 && { cat out; Exit 1; }
+$MAKE check >out 2>&1 && { cat out; exit 1; }
 cat out
 ls -l
 grep '^FAIL: foo1\.test *$' out

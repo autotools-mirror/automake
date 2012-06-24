@@ -18,7 +18,7 @@
 # SUBDIRS + AM_CONDITIONAL setup from the manual.
 # Lots of lines here are duplicated in subdir-ac-subst.test.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >>configure.ac <<'END'
 AM_CONDITIONAL([COND_OPT], [test "$want_opt" = yes])

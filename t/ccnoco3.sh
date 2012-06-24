@@ -17,7 +17,7 @@
 # Test to make sure 'compile' doesn't call 'mv SRC SRC'.
 
 required=gcc
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CC
@@ -70,8 +70,8 @@ mkdir build
 cd build
 
 ../configure
-$MAKE 2>stderr || { cat stderr >&2; Exit 1; }
+$MAKE 2>stderr || { cat stderr >&2; exit 1; }
 cat stderr >&2
-grep 'mv.*the same file' stderr && Exit 1
+grep 'mv.*the same file' stderr && exit 1
 
 :

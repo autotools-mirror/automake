@@ -17,7 +17,7 @@
 # Test definition of automake-generated private Makefile variable
 # '$(am__java_sources)'.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_OUTPUT

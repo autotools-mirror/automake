@@ -17,7 +17,7 @@
 # Check that AM_INSTALLCHECK_STD_OPTIONS_EXEMPT works.
 
 required=cc
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CC
@@ -86,7 +86,7 @@ cd build
 ../configure "--prefix=$(pwd)/../inst-dir" --program-prefix=p
 $MAKE
 $MAKE install
-$MAKE installcheck && Exit 1
+$MAKE installcheck && exit 1
 $MAKE -k installcheck 2>stderr || : # Never trust the exit status of make -k.
 cat stderr >&2
 $MAKE grep-stderr

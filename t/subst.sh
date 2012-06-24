@@ -17,7 +17,7 @@
 # Test that AC_SUBST($1) does something sensible.  From Ulrich
 # Drepper.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 dnl This test used to have the following lines, which cannot have
@@ -34,6 +34,6 @@ END
 
 $ACLOCAL
 $AUTOMAKE
-grep '^\$1' Makefile.in && Exit 1
+grep '^\$1' Makefile.in && exit 1
 
 :

@@ -19,7 +19,7 @@
 # Same as acloca11.test, but without calling MACRO2.
 
 am_create_testdir=empty
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > configure.ac <<END
 AC_INIT([$me], [1.0])
@@ -39,8 +39,8 @@ EOF
 
 $ACLOCAL --verbose -I m4
 $AUTOCONF
-$FGREP ':macro11:' configure && Exit 1
-$FGREP ':macro21:' configure && Exit 1
+$FGREP ':macro11:' configure && exit 1
+$FGREP ':macro21:' configure && exit 1
 $FGREP ':macro12:' configure
 
 :

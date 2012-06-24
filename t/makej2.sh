@@ -18,7 +18,7 @@
 # without -B, it may reuse the same shell for separate commands in a
 # rule, which can lead to interesting results.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >>configure.ac <<'END'
 AC_OUTPUT
