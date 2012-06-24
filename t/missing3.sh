@@ -23,31 +23,26 @@ get_shell_script missing
 
 # b7cb8259 assumed not to exist.
 
-./missing b7cb8259 --version 2>stderr && { cat stderr >&2; Exit 1; }
-cat stderr >&2
-grep . stderr && Exit 1
-./missing b7cb8259 --grep 2>stderr && { cat stderr >&2; Exit 1; }
-cat stderr >&2
-grep WARNING stderr
+run_cmd ()
+{
+  st=0; "$@" >stdout 2>stderr || st=$?
+  cat stdout
+  cat stderr >&2
+  return $st
+}
 
-./missing --run b7cb8259 --version && Exit 1
-./missing --run b7cb8259 --grep 2>stderr && { cat stderr >&2; Exit 1; }
-cat stderr >&2
-grep WARNING stderr
+./missing b7cb8259 --version && Exit 1
+grep WARNING stderr && Exit 1
+run_cmd ./missing b7cb8259 --grep && Exit 1
+grep 'WARNING:.*missing on your system' stderr
 
 # missing itself it known to exist :)
 
-./missing ./missing --version 2>stderr && { cat stderr >&2; Exit 1; }
-cat stderr >&2
-grep . stderr && Exit 1
-./missing ./missing --grep 2>stderr && { cat stderr >&2; Exit 1; }
-cat stderr >&2
-grep WARNING stderr
-
-./missing --run ./missing --version 2>stderr || { cat stderr >&2; Exit 1; }
-cat stderr >&2
-grep . stderr && Exit 1
-./missing --run ./missing --grep 2>stderr && { cat stderr >&2; Exit 1; }
-cat stderr >&2
+run_cmd ./missing ./missing --version || Exit 1
+grep 'missing .*(GNU [aA]utomake)' stdout
+test -s stderr && Exit 1
+run_cmd ./missing ./missing --grep && Exit 1
 grep WARNING stderr && Exit 1
-grep Unknown stderr
+grep "missing:.* unknown '--grep'" stderr
+
+:

@@ -16,43 +16,35 @@
 
 # Test missing with version mismatches.
 
+am_create_testdir=empty
 . ./defs || Exit 1
-
-cat >>configure.ac <<'EOF'
-m4_include([v.m4])
-AC_OUTPUT
-EOF
-
-: > v.m4
-
-: > Makefile.am
 
 get_shell_script missing
 
+do_check ()
+{
+  progname=$1; shift;
+  ./missing "$@" 2>stderr && { cat stderr >&2; Exit 1; }
+  cat stderr >&2
+  $FGREP "WARNING: '$progname' is probably too old." stderr
+}
+
+echo 'AC_INIT([x], [1.0]) AC_PREREQ([9999])' >> configure.ac
+
+do_check autoconf               $AUTOCONF
+do_check autoheader             $AUTOHEADER
+do_check aclocal-$APIVERSION    $am_original_ACLOCAL
+
+cat > configure.ac << 'END'
+AC_INIT([x], [0])
+AM_INIT_AUTOMAKE
+AC_CONFIG_FILES([Makefile])
+END
+
+echo AUTOMAKE_OPTIONS = 9999.9999 > Makefile.am
 $ACLOCAL
-$AUTOCONF
-$AUTOMAKE --add-missing
-
-# See missing.test for explanations about this.
-MYAUTOCONF="./missing --run $AUTOCONF"
-unset AUTOCONF
-
-./configure AUTOCONF="$MYAUTOCONF"
-
-$MAKE
-$sleep
-# Hopefully the install version of Autoconf cannot compete with this one...
-echo 'AC_PREREQ(9999)' > v.m4
-$MAKE distdir
-
-# Run again, but without missing, to ensure that timestamps were updated.
-export AUTOMAKE ACLOCAL
-./configure AUTOCONF="$MYAUTOCONF"
-$MAKE
-
-# Make sure $MAKE fail when timestamps aren't updated and missing is not used.
-$sleep
-touch v.m4
-$MAKE && Exit 1
+: > install-sh
+# FIXME: this doesn't work due to a bug in automake (not 'missing').
+#do_check automake-$APIVERSION  $am_original_AUTOMAKE
 
 :

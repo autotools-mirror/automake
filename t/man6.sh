@@ -61,7 +61,7 @@ cd build
 
 ../configure
 # Sanity check.
-grep '^HELP2MAN *=.*/missing --run help2man' Makefile
+grep '^HELP2MAN *=.*/missing help2man' Makefile
 
 $MAKE
 $FGREP foobar ../foobar.1
@@ -80,7 +80,7 @@ rm -f *.1 # Remove leftover generated manpages.
 
 ./configure
 # Sanity check.
-grep '^HELP2MAN *=.*/missing --run help2man' Makefile
+grep '^HELP2MAN *=.*/missing help2man' Makefile
 
 $MAKE
 $FGREP foobar  foobar.1
