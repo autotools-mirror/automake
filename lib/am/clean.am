@@ -14,44 +14,66 @@
 ## You should have received a copy of the GNU General Public License
 ## along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-## We must test each macro because it might be empty, and an empty "rm
-## -rf" command looks disturbing.  Also, the Solaris 2.4 "rm" will
-## return an error if there are no arguments other than "-f".
+.am.clean-cmd.f = $(if $(strip $1),rm -f $(strip $1))
+.am.clean-cmd.d = $(if $(strip $1),rm -rf $(strip $1))
+
+am__mostlyclean_files += $(MOSTLYCLEANFILES)
+am__clean_files       += $(CLEANFILES)
+am__distclean_files   += $(DISTCLEANFILES)
+am__maintclean_files  += $(MAINTAINERCLEANFILES)
+
+am__mostlyclean_files += %MOSTLYCLEAN-FILES%
+am__clean_files       += %CLEAN-FILES%
+am__distclean_files   += %DISTCLEAN-FILES%
+am__maintclean_files  += %MAINTAINERCLEAN-FILES%
+
+am__mostlyclean_dirs  += %MOSTLYCLEAN-DIRS%
+am__clean_dirs        += %CLEAN-DIRS%
+am__distclean_dirs    += %DISTCLEAN-DIRS%
+am__maintclean_dirs   += %MAINTAINERCLEAN-DIRS%
+
+am__distclean_files += $(CONFIG_CLEAN_FILES)
+## Some files must be cleaned only in VPATH builds -- e.g., those linked
+## in usages like "AC_CONFIG_LINKS([GNUmakefile:GNUmakefile])".
+am__distclean_files += $(if $(filter .,$(srcdir)),,$(CONFIG_CLEAN_VPATH_FILES))
+
+## Built sources are automatically removed by maintainer-clean.
+## This is what mainline Automake does.
+am__maintclean_files += $(BUILT_SOURCES)
+
+## FIXME: These might cause command line length limits to be exceeded;
+## FIXME: we should break them on multiple invocations when there are
+## FIXME: too many files.
+
 mostlyclean-am: mostlyclean-generic
 mostlyclean-generic:
-%MOSTLYCLEAN_RMS%
+	$(call .am.clean-cmd.f,$(am__mostlyclean_files))
+	$(call .am.clean-cmd.d,$(am__mostlyclean_dirs))
 
 clean-am: clean-generic mostlyclean-am
 clean-generic:
-%CLEAN_RMS%
+	$(call .am.clean-cmd.f,$(am__clean_files))
+	$(call .am.clean-cmd.d,$(am__clean_dirs))
 
 distclean-am: distclean-generic clean-am
 distclean-generic:
-	-test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)
-	-test . = "$(srcdir)" || test -z "$(CONFIG_CLEAN_VPATH_FILES)" || rm -f $(CONFIG_CLEAN_VPATH_FILES)
-%DISTCLEAN_RMS%
-
-## Makefiles and their dependencies cannot be cleaned by
-## an -am dependency, because that would prevent other distclean
-## dependencies from calling make recursively.  (The multilib
-## cleaning rules do this.)
-##
-## If you change distclean here, you probably also want to change
-## maintainer-clean below.
-distclean:
-	-rm -f %MAKEFILE%
+	$(call .am.clean-cmd.f,$(am__distclean_files))
+	$(call .am.clean-cmd.d,$(am__distclean_dirs))
 
 maintainer-clean-am: maintainer-clean-generic distclean-am
 maintainer-clean-generic:
-## FIXME: shouldn't we really print these messages before running
-## the dependencies?
-	@echo "This command is intended for maintainers to use"
-	@echo "it deletes files that may require special tools to rebuild."
-%MAINTAINER_CLEAN_RMS%
+	$(call .am.clean-cmd.f,$(am__maintclean_files))
+	$(call .am.clean-cmd.d,$(am__maintclean_dirs))
 
-## See comment for distclean.
+## Makefiles and their dependencies cannot be cleaned by
+## an '-am' dependency, because that would prevent other distclean
+## dependencies from calling make recursively (the multilib cleaning
+## used to do this, and it's not unreasonable to expect user-defined
+## rules might do that as well).
+distclean:
+	rm -f %MAKEFILE% $(am__config_distclean_files)
 maintainer-clean:
-	-rm -f %MAKEFILE%
+	rm -f %MAKEFILE% $(am__config_distclean_files)
 
 .PHONY: clean mostlyclean distclean maintainer-clean \
 clean-generic mostlyclean-generic distclean-generic maintainer-clean-generic

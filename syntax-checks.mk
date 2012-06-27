@@ -63,6 +63,7 @@ sc_no_dotmake_target \
 sc_no_am_makeflags \
 $(sc_obsolete_requirements_rules) \
 $(sc_renamed_variables_rules) \
+$(sc_variable_typos_rules) \
 sc_no_RECHECK_LOGS \
 sc_tests_no_make_e \
 sc_docs_no_make_e \
@@ -340,6 +341,48 @@ $(sc_renamed_variables_rules): sc_no_% :
 	  echo "You should use '$(modern.$*)' instead." >&2; \
 	  exit 1; \
 	fi
+
+# Variables whose name is prone to typos.
+fixtypo.am__distfiles = am__dist_files
+fixtypo.am__distcommon = am__dist_common
+fixtypo.am__distsources = am__dist_sources
+
+define typos-for-clean
+
+fixtypo.am__mostlyclean$1 = am__mostlyclean_$1
+fixtypo.am__clean$1 = am__clean_$1
+fixtypo.am__distclean$1 = am__distclean_$1
+fixtypo.am__maintclean$1 = am__maintclean_$1
+
+fixtypo.am__mostly_clean_$1 = am__mostlyclean_$1
+fixtypo.am__dist_clean_$1 = am__distclean_$1
+
+fixtypo.am__maint_clean_$1 = am__maintclean_$1
+fixtypo.am__maintainerclean_$1 = am__maintclean_$1
+fixtypo.am__maintainer_clean_$1 = am__maintclean_$1
+
+endef
+
+$(eval $(call typos-for-clean,files))
+$(eval $(call typos-for-clean,dirs))
+
+sc_variables_typos_rules = \
+  $(patsubst fixtypo.%,sc_no_%,$(filter fixtypo.%,$(.VARIABLES)))
+
+$(sc_variable_typos_rules) : sc_no_% :
+	@files="\
+	  $(xtests) \
+	  $(pms) \
+	  $(ams) \
+	  $(srcdir)/automake.in \
+	  $(srcdir)/doc/*.texi \
+	"; \
+	if grep -E '\b$*\b' $$files; then \
+	  echo "'\$$($*)' is probably a typo." >&2; \
+	  echo "You should use '$(fixtypo.$*)' instead." >&2; \
+	  exit 1; \
+	fi
+
 
 sc_no_RECHECK_LOGS:
 	@files="\

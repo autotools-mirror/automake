@@ -525,20 +525,10 @@ my @all;
 my @check;
 my @check_tests;
 
-# Keys in this hash table are files to delete.  The associated
-# value tells when this should happen (MOSTLY_CLEAN, DIST_CLEAN, etc.)
-my %clean_files;
-
-# Keys in this hash table are object files or other files in
-# subdirectories which need to be removed.  This only holds files
-# which are created by compilations.  The value in the hash indicates
-# when the file should be removed.
-my %compile_clean_files;
-
-# Keys in this hash table are directories where we expect to build a
-# libtool object.  We use this information to decide what directories
-# to delete.
-my %libtool_clean_directories;
+# Keys in this hash table are files and directories to delete.  The
+# associated value tells when this should happen (MOSTLY_CLEAN,
+# DIST_CLEAN, etc).
+my (%clean_files, %clean_dirs);
 
 # Value of $(SOURCES), used by tags.am.
 my @sources;
@@ -655,10 +645,7 @@ sub initialize_per_input ()
     @check_tests = ();
 
     %clean_files = ();
-    %compile_clean_files = ();
-
-    # We always include '.'.  This isn't strictly correct.
-    %libtool_clean_directories = ('.' => 1);
+    %clean_dirs = ();
 
     @sources = ();
     @dist_sources = ();
@@ -1307,16 +1294,11 @@ sub handle_languages
 	    # variable expansion; generating many separate includes
 	    # seems safest.
 	    $output_rules .= "\n";
-	    foreach my $iter (@deplist)
+	    foreach my $depfile (@deplist)
 	    {
-		$output_rules .= subst ('AMDEP_TRUE') . "-include $iter\n";
+		$output_rules .= subst ('AMDEP_TRUE') . "-include $depfile\n";
+		$clean_dirs{dirname ($depfile)} = DIST_CLEAN;
 	    }
-
-	    # Compute the set of directories to remove in distclean-depend.
-	    my @depdirs = uniq (map { dirname ($_) } @deplist);
-	    $output_rules .= &file_contents ('depend',
-					     new Automake::Location,
-					     DEPDIRS => "@depdirs");
 	}
     }
     else
@@ -1841,43 +1823,33 @@ sub handle_single_transform ($$$$$%)
 	$linkers_used{$linker} = 1;
 
 	push (@result, $object);
+        $directory = '.' if $directory eq '';
 
 	if (! defined $object_map{$object})
-	{
+	  {
 	    $object_map{$object} = $full;
 
-	    # If resulting object is in subdir, we need to make
-	    # sure the subdir exists at build time.
-	    if ($object =~ /\//)
-	    {
-		# FIXME: check that $DIRECTORY is somewhere in the
-		# project
+            # For Java, the way we're handling it right now, a
+            # '..' component doesn't make sense.
+            err_am "'$full' should not contain a '..' component"
+              if $lang && $lang->name eq 'java' && $object =~ m{(/|^)\.\./};
 
-		# For Java, the way we're handling it right now, a
-		# '..' component doesn't make sense.
-		if ($lang && $lang->name eq 'java' && $object =~ /(\/|^)\.\.\//)
-		  {
-		    err_am "'$full' should not contain a '..' component";
-		  }
-
-                # Make sure *all* objects files in the subdirectory are
-                # removed by "make mostlyclean".  Not only this is more
-                # efficient than listing the object files to be removed
-                # individually (which would cause an 'rm' invocation for
-                # each of them -- very inefficient, see bug#10697), it
-                # would also leave stale object files in the subdirectory
-                # whenever a source file there is removed or renamed.
-                $compile_clean_files{"$directory/*.\$(OBJEXT)"} = MOSTLY_CLEAN;
-                if ($object =~ /\.lo$/)
-                  {
-                    # If we have a libtool object, then we also must remove
-                    # any '.lo' objects in its same subdirectory.
-                    $compile_clean_files{"$directory/*.lo"} = MOSTLY_CLEAN;
-                    # Remember to cleanup .libs/ in this directory.
-                    $libtool_clean_directories{$directory} = 1;
-                  }
-	    }
-	}
+            # Make sure *all* object files in this object's subdirectory
+            # are removed by "make mostlyclean".  Not only this is more
+            # efficient than listing the object files to be removed
+            # individually (which would cause an 'rm' invocation for each
+            # of them -- very inefficient, see bug#10697), it would also
+            # leave stale object files in the subdirectory whenever a
+            # source file there is removed or renamed.
+            $clean_files{"$directory/*.\$(OBJEXT)"} = MOSTLY_CLEAN;
+            if ($object =~ /\.lo$/)
+              {
+                # If we have a libtool object, then we also must remove
+                # any '.lo' objects in the same subdirectory.
+                $clean_files{"$directory/*.lo"} = MOSTLY_CLEAN;
+                $clean_dirs{"$directory/.libs"} = CLEAN;
+              }
+	  }
 
 	# Transform .o or $o file into .P file (for automatic
 	# dependency code).
@@ -2128,11 +2100,8 @@ sub handle_LIBOBJS_or_ALLOCA ($)
   my $dir = '';
 
   # If LIBOBJS files must be built in another directory we have
-  # to define LIBOBJDIR and ensure the files get cleaned.
-  # Otherwise LIBOBJDIR can be left undefined, and the cleaning
-  # is achieved by 'rm -f *.$(OBJEXT)' in compile.am.
-  if ($config_libobj_dir
-      && $relative_dir ne $config_libobj_dir)
+  # to define the 'LIBOBJDIR' make variable.
+  if ($config_libobj_dir && $relative_dir ne $config_libobj_dir)
     {
       # In the top-level Makefile we do not use $(top_builddir), because
       # we are already there, and since the targets are built without
@@ -2141,11 +2110,10 @@ sub handle_LIBOBJS_or_ALLOCA ($)
       $dir = "$config_libobj_dir/" if $config_libobj_dir ne '.';
       $dir = "$topsrcdir/$dir" if $relative_dir ne '.';
       define_variable ('LIBOBJDIR', INTERNAL, $dir);
-      $clean_files{"\$($var)"} = MOSTLY_CLEAN;
-      # If LTLIBOBJS is used, we must also clear LIBOBJS (which might
-      # be created by libtool as a side-effect of creating LTLIBOBJS).
-      $clean_files{"\$($var)"} = MOSTLY_CLEAN if $var =~ s/^LT//;
     }
+  $clean_files{'$(LIBOBJDIR)*.$(OBJEXT)'} = MOSTLY_CLEAN;
+  $clean_files{'$(LIBOBJDIR)*.lo'} = MOSTLY_CLEAN
+    if $var =~ /^LT/;
 
   return $dir;
 }
@@ -2236,32 +2204,9 @@ sub check_canonical_spelling
 sub handle_compile ()
 {
    return if ! $must_handle_compiled_objects;
-
-    my (@mostly_rms, @dist_rms);
-    foreach my $item (sort keys %compile_clean_files)
-    {
-	if ($compile_clean_files{$item} == MOSTLY_CLEAN)
-	{
-	    push (@mostly_rms, "\t-rm -f $item");
-	}
-	elsif ($compile_clean_files{$item} == DIST_CLEAN)
-	{
-	    push (@dist_rms, "\t-rm -f $item");
-	}
-	else
-	{
-	  prog_error 'invalid entry in %compile_clean_files';
-	}
-    }
-
-    my ($coms, $vars, $rules) =
-      &file_contents_internal (1, "$libdir/am/compile.am",
-			       new Automake::Location,
-			       ('STDINC' => ! option 'nostdinc',
-				'MOSTLYRMS' => join ("\n", @mostly_rms),
-				'DISTRMS' => join ("\n", @dist_rms)));
-    $output_vars .= $vars;
-    $output_rules .= "$coms$rules";
+   $output_rules .= file_contents ('compile',
+                                   new Automake::Location,
+                                   'STDINC' => ! option 'nostdinc');
 }
 
 # handle_libtool ()
@@ -2277,20 +2222,13 @@ sub handle_libtool
   require_conf_file_with_macro (TRUE, 'LIBTOOL', FOREIGN, @libtool_files)
     if $relative_dir eq '.' && ! $libtool_new_api;
 
-  my @libtool_rms;
-  foreach my $item (sort keys %libtool_clean_directories)
-    {
-      my $dir = ($item eq '.') ? '' : "$item/";
-      # .libs is for Unix, _libs for DOS.
-      push (@libtool_rms, "\t-rm -rf ${dir}.libs ${dir}_libs");
-    }
-
   check_user_variables 'LIBTOOLFLAGS';
 
-  # Output the libtool compilation rules.
-  $output_rules .= &file_contents ('libtool',
-				   new Automake::Location,
-				   LTRMS => join ("\n", @libtool_rms));
+  if ($relative_dir eq '.')
+    {
+      $clean_files{"libtool"} = DIST_CLEAN;
+      $clean_files{"config.lt"} = DIST_CLEAN;
+    }
 }
 
 # handle_programs ()
@@ -2353,7 +2291,7 @@ sub handle_programs
       my($xlink, $vlink) = &define_per_target_linker_variable ($linker, $xname);
       $vlink = verbose_flag ($vlink || 'GEN');
 
-      $libtool_clean_directories{dirname ($one_file)} = 1;
+      $clean_dirs{dirname ($one_file) . '/.libs'} = CLEAN;
 
       $output_rules .= &file_contents ('program',
 				       $where,
@@ -2691,9 +2629,7 @@ sub handle_ltlibraries
 	    }
 	}
 
-      # Remember to cleanup .libs/ in this directory.
-      my $dirname = dirname $onelib;
-      $libtool_clean_directories{$dirname} = 1;
+      $clean_dirs{dirname ($onelib) . '/.libs'} = CLEAN;
 
       $output_rules .= &file_contents ('ltlibrary',
 				       $where,
@@ -3703,7 +3639,6 @@ sub handle_configure ($$$@)
 
   # If we have a configure header, require it.
   my $hdr_index = 0;
-  my @distclean_config;
   foreach my $spec (@config_headers)
     {
       $hdr_index += 1;
@@ -3753,14 +3688,10 @@ sub handle_configure ($$$@)
 			   CONFIG_H_PATH    => $config_h_path,
 			   STAMP            => "$stamp");
 
-	  push @distclean_config, $cn_sans_dir, $stamp;
+           $clean_files{$cn_sans_dir} = DIST_CLEAN;
+           $clean_files{$stamp} = DIST_CLEAN;
 	}
     }
-
-  $output_rules .= file_contents ('clean-hdr',
-				  new Automake::Location,
-				  FILES => "@distclean_config")
-    if @distclean_config;
 
   my @config_h;
   foreach my $spec (@config_headers)
@@ -4026,49 +3957,30 @@ sub handle_clean ($)
 {
   my ($makefile) = @_;
 
-  # Clean the files listed in user variables if they exist.
-  $clean_files{'$(MOSTLYCLEANFILES)'} = MOSTLY_CLEAN
-    if var ('MOSTLYCLEANFILES');
-  $clean_files{'$(CLEANFILES)'} = CLEAN
-    if var ('CLEANFILES');
-  $clean_files{'$(DISTCLEANFILES)'} = DIST_CLEAN
-    if var ('DISTCLEANFILES');
-  $clean_files{'$(MAINTAINERCLEANFILES)'} = MAINTAINER_CLEAN
-    if var ('MAINTAINERCLEANFILES');
+  my @fkeys = keys %clean_files;
+  my @fmostly = grep { $clean_files{$_} == MOSTLY_CLEAN     } @fkeys;
+  my @fplain  = grep { $clean_files{$_} == CLEAN            } @fkeys;
+  my @fdist   = grep { $clean_files{$_} == DIST_CLEAN       } @fkeys;
+  my @fmaint  = grep { $clean_files{$_} == MAINTAINER_CLEAN } @fkeys;
 
-  # Built sources are automatically removed by maintainer-clean.
-  $clean_files{'$(BUILT_SOURCES)'} = MAINTAINER_CLEAN
-    if var ('BUILT_SOURCES');
-
-  # Compute a list of "rm"s to run for each target.
-  my %rms = (MOSTLY_CLEAN, [],
-	     CLEAN, [],
-	     DIST_CLEAN, [],
-	     MAINTAINER_CLEAN, []);
-
-  foreach my $file (keys %clean_files)
-    {
-      my $when = $clean_files{$file};
-      prog_error 'invalid entry in %clean_files'
-	unless exists $rms{$when};
-
-      my $rm = "rm -f $file";
-      # If file is a variable, make sure when don't call 'rm -f' without args.
-      $rm ="test -z \"$file\" || $rm"
-	if ($file =~ /^\s*\$(\(.*\)|\{.*\})\s*$/);
-
-      push @{$rms{$when}}, "\t-$rm\n";
-    }
+  my @dkeys = keys %clean_dirs;
+  my @dmostly = grep { $clean_dirs{$_} == MOSTLY_CLEAN     } @dkeys;
+  my @dplain  = grep { $clean_dirs{$_} == CLEAN            } @dkeys;
+  my @ddist   = grep { $clean_dirs{$_} == DIST_CLEAN       } @dkeys;
+  my @dmaint  = grep { $clean_dirs{$_} == MAINTAINER_CLEAN } @dkeys;
 
   $output_rules .= &file_contents
     ('clean',
      new Automake::Location,
-     MOSTLYCLEAN_RMS      => join ('', sort @{$rms{&MOSTLY_CLEAN}}),
-     CLEAN_RMS            => join ('', sort @{$rms{&CLEAN}}),
-     DISTCLEAN_RMS        => join ('', sort @{$rms{&DIST_CLEAN}}),
-     MAINTAINER_CLEAN_RMS => join ('', sort @{$rms{&MAINTAINER_CLEAN}}),
-     MAKEFILE             => basename $makefile,
-     );
+     'MOSTLYCLEAN-FILES'     => "@fmostly",
+     'CLEAN-FILES'           => "@fplain",
+     'DISTCLEAN-FILES'       => "@fdist",
+     'MAINTAINERCLEAN-FILES' => "@fmaint",
+     'MOSTLYCLEAN-DIRS'      => "@dmostly",
+     'CLEAN-DIRS'            => "@dplain",
+     'DISTCLEAN-DIRS'        => "@ddist",
+     'MAINTAINERCLEAN-DIRS'  => "@dmaint",
+     'MAKEFILE'              => basename $makefile);
 }
 
 
@@ -4220,9 +4132,6 @@ sub handle_tests
             file_contents ('parallel-tests', new Automake::Location,
                            COLOR => !! option 'color-tests',
                            CHECK_DEPS => "@check");
-	  $clean_files{'$(am__test_logs)'} = MOSTLY_CLEAN;
-	  $clean_files{'$(am__test_results)'} = MOSTLY_CLEAN;
-	  $clean_files{'$(TEST_SUITE_LOG)'} = MOSTLY_CLEAN;
 	}
     }
 }

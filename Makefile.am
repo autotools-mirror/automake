@@ -192,13 +192,11 @@ dist_am_DATA = \
   lib/am/parallel-tests.am \
   lib/am/check-typos.am \
   lib/am/color-tests.am \
-  lib/am/clean-hdr.am \
   lib/am/clean.am \
   lib/am/compile.am \
   lib/am/configure.am \
   lib/am/data.am \
   lib/am/dejagnu.am \
-  lib/am/depend.am \
   lib/am/depend2.am \
   lib/am/distdir.am \
   lib/am/footer.am \
@@ -211,7 +209,6 @@ dist_am_DATA = \
   lib/am/lex.am \
   lib/am/library.am \
   lib/am/libs.am \
-  lib/am/libtool.am \
   lib/am/lisp.am \
   lib/am/ltlib.am \
   lib/am/ltlibrary.am \
