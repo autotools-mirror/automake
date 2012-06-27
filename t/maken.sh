@@ -47,14 +47,14 @@ $AUTOCONF
 $AUTOMAKE
 ./configure
 
-echo stamp > stampfile
-$sleep
 for target in dist distcheck; do
+  echo stamp > stampfile
+  $sleep
   $MAKE -n $target
   $MAKE -n $target | grep stamp-sub-dist-hook
-  $MAKE test-no-distdir
   # No file has been actually touched or created.
   is_newest stampfile $(find .)
+  $MAKE test-no-distdir
 done
 
 :

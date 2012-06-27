@@ -21,6 +21,12 @@
 required=cc
 . ./defs || exit 1
 
+edit ()
+{
+  file=$1; shift
+  "$@" <$file >t && mv -f t $file || fatal_ "editing $file"
+}
+
 cat >> configure.ac << 'END'
 AC_PROG_CC
 AM_PROG_AR
@@ -93,17 +99,21 @@ $AUTOMAKE -a
 ./configure
 $MAKE
 
+# Sanity check the distribution.
+$MAKE distcheck
+
 # If we remove the whitelisting, failure ensues.
-$MAKE AM_VARTYPOS_WHITELIST= 2>stderr && { cat stderr; exit 1; }
+sed '/^AM_VARTYPOS_WHITELIST *=/d' <Makefile.am >t && mv -f t Makefile.am \
+  || fatal_ "editing Makefile.am"
+$MAKE 2>stderr && { cat stderr; exit 1; }
 cat stderr >&2
 grep "'copy_LDADD' is defined but no program" stderr
 grep "'remove_LDADD' is defined but no program" stderr
-$MAKE AM_VARTYPOS_WHITELIST=remove_LDADD 2>stderr && { cat stderr; exit 1; }
+
+$MAKE AM_VARTYPOS_WHITELIST=remove_LDADD AM_FORCE_SANITY_CHECK=yes \
+  2>stderr && { cat stderr; exit 1; }
 cat stderr >&2
 grep "'copy_LDADD' is defined but no program" stderr
 grep "remove_LDADD" stderr && exit 1
-
-# Sanity check the distribution.
-$MAKE distcheck
 
 :

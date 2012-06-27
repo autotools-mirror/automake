@@ -101,9 +101,16 @@ lib_LIBRARIES = libfoo.a
 lib_LTLIBRARIES = libbar.la
 END
 
-# FIXME!  We have to remake the Makefile by hand!  This is unacceptable.
-$AUTOMAKE Makefile
-./config.status Makefile
 $MAKE nihil
+
+# If further errors are introduced, they are reported.
+$sleep
+echo none_SOURCES = >> Makefile.am
+
+$MAKE nihil 2>stderr && { cat stderr >&2; Exit 1; }
+cat stderr >&2
+
+grep "variable 'none_SOURCES'" stderr
+grep "'none' as canonical name" stderr
 
 :

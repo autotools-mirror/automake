@@ -70,7 +70,8 @@ do_check ()
   srcdir=$1
   $srcdir/configure
   $MAKE
-  find $d xsrc/$d | sort > got
+  # The grep is to ignore files used internally by Automake-NG.
+  find $d xsrc/$d | grep -v '\.mk$' | sort > got
   cat $srcdir/exp
   cat got
   diff $srcdir/exp got

@@ -18,12 +18,28 @@
 ##    bin_PROGRAMS = bar
 ##    baz_SOURCES = main.c  # Should be bar_SOURCES.
 
-## FIXME: With this, we impose runtime penalty to all make runs.  Maybe we
-## FIXME: should make all these checks conditional to whether the user sets
-## FIXME: a AM_SANITY_CHECKS variable or something?
-
 ## FIXME: We should document the '.am/' namespace as reserved for automake
 ## FIXME: internals somewhere.
+
+## FIXME: we should document the user-settable AM_FORCE_SANITY_CHECKS
+## FIXME: variable, and its semantics.
+
+# Running these checks unconditionally can be quite wasteful, especially
+# for projects with lots of programs.  So run them only when the values
+# of the checked variables has possibly changed.  For the moment, we assume
+# this can only happen if the Makefile has been updated since the later
+# check.  And to give user more control, we also allow him to require these
+# checks run unconditionally, by setting AM_FORCE_SANITY_CHECKS to "yes".
+
+# The idiom we employ to implement our "lazy checking" relies on recursive
+# make invocations and creation of an auxiliary makefile fragments, and
+# such an approach do not interact very well with "make -n"; in such a case,
+# it's simpler and safer to go for "greedy checking".
+ifeq ($(am__make_dryrun),true)
+AM_FORCE_SANITY_CHECKS ?= yes
+endif
+
+ifeq ($(AM_FORCE_SANITY_CHECKS),yes)
 
 # Variables with these suffixes are candidates for typo checking.
 .am/vartypos/suffixes := _SOURCES _LIBADD _LDADD _LDFLAGS _DEPENDENCIES
@@ -49,7 +65,7 @@ ifeq "$(am__using_parallel_tests)" "yes"
 endif
 
 # Allow the user to add his own whitelist.
-# FIXME: this is still undocumtend!
+# FIXME: this is still undocumented!
 .am/vartypos/whitelisted-vars += $(AM_VARTYPOS_WHITELIST)
 
 # Canonicalized names of programs and libraries (vanilla or libtool) that
@@ -86,3 +102,32 @@ endef
 # separator" error from GNU make.
 $(eval $(foreach v,$(.am/vartypos/candidate-vars), \
                    $(call .am/vartypos/check,$v)))
+
+else # $(AM_FORCE_SANITY_CHECKS) != yes
+
+# We use "-include" rather than "include" to avoid getting, on the first
+# make run in a clean tree, the following annoying warning:
+#    Makefile: .am/check-typos-stamp.mk: No such file or directory
+# Although such a warning would *not* be an error in our setup, it still
+# is ugly and annoying enough to justify ...
+-include $(am__dir)/check-typos-stamp.mk
+
+# ... this workaround; which is required by the fact that, if a recipe
+# meant to rebuild a file included with "-include" file fails, the make
+# run itself is not considered failed (this is quite consistent with
+# the "-include" semantics).
+ifdef .am/sanity-checks-failed
+$(shell rm -f $(am__dir)/check-typos-stamp.mk)
+$(error Some Automake-NG sanity checks failed)
+else
+$(am__dir)/check-typos-stamp.mk: %MAKEFILE% | $(am__dir)
+	@if \
+	  $(MAKE) --no-print-directory AM_FORCE_SANITY_CHECKS=yes .am/nil; \
+	then \
+	  echo "# stamp" > $@; \
+	else \
+	  echo ".am/sanity-checks-failed = yes" > $@; \
+	fi
+endif
+
+endif # $(AM_FORCE_SANITY_CHECKS) != yes

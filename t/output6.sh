@@ -51,12 +51,16 @@ EOF
 
 echo 'd = D' > d.in
 
+cat > GNUmakefile << 'END'
+include foo
+END
 
 $ACLOCAL
 $AUTOCONF
 $AUTOMAKE
+
 ./configure
-$MAKE -f foo test1
+$MAKE test1
 
 $sleep
 cat >b.in <<'EOF'
@@ -66,6 +70,6 @@ c = F
 d = F
 EOF
 
-$MAKE -f foo test2
+$MAKE test2
 
 :
