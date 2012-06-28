@@ -92,9 +92,9 @@ test -f foo.trs
 test -f bar.trs
 test -f sub/zardoz.trs
 $MAKE clean
-test ! -f foo.trs
-test ! -f bar.trs
-test ! -f sub/zardoz.trs
+test ! -e foo.trs
+test ! -e bar.trs
+test ! -e sub/zardoz.trs
 # Unrelated '.trs' files shouldn't be removed.
 test -f unrelated.trs
 test -f sub/foo.trs
@@ -105,9 +105,9 @@ test -f foo.trs
 test -f bar.trs
 test -f sub/zardoz.trs
 $MAKE mostlyclean
-test ! -f foo.trs
-test ! -f bar.trs
-test ! -f sub/zardoz.trs
+test ! -e foo.trs
+test ! -e bar.trs
+test ! -e sub/zardoz.trs
 # Unrelated '.trs' files shouldn't be removed.
 test -f unrelated.trs
 test -f sub/foo.trs
@@ -118,18 +118,18 @@ test -f sub/foo.trs
 
 TESTS=foo.test $MAKE -e check
 test -f foo.trs
-test ! -f bar.trs
-test ! -f sub/zardoz.trs
+test ! -e bar.trs
+test ! -e sub/zardoz.trs
 $MAKE clean
-test ! -f foo.trs
+test ! -e foo.trs
 TESTS='foo.test bar.sh' $MAKE -e check
 test -f foo.trs
 test -f bar.trs
-test ! -f sub/zardoz.trs
+test ! -e sub/zardoz.trs
 # "make clean" shouldn't remove '.trs' files for tests not in $(TESTS).
 TESTS=bar.sh $MAKE -e clean
 test -f foo.trs
-test ! -f bar.trs
+test ! -e bar.trs
 
 $MAKE clean
 
@@ -138,20 +138,20 @@ $MAKE clean
 #
 
 TEST_LOGS=sub/zardoz.log $MAKE -e check
-test ! -f foo.trs
-test ! -f bar.trs
+test ! -e foo.trs
+test ! -e bar.trs
 test -f sub/zardoz.trs
 $MAKE clean
-test ! -f sub/zardoz.trs
+test ! -e sub/zardoz.trs
 TEST_LOGS='foo.log bar.log' $MAKE -e check
 test -f foo.trs
 test -f bar.trs
-test ! -f sub/zardoz.trs
+test ! -e sub/zardoz.trs
 # "make clean" shouldn't remove '.trs' files for tests whose log
 # is not in $(TEST_LOGS).
 TEST_LOGS=foo.log $MAKE -e clean
-test ! -f foo.trs
+test ! -e foo.trs
 test -f bar.trs
-test ! -f sub/zardoz.trs
+test ! -e sub/zardoz.trs
 
 :

@@ -43,25 +43,25 @@ $AUTOCONF
 ./configure --prefix="$(pwd)/inst"
 
 $MAKE uninstall
-test ! -d inst
+test ! -e inst
 
 rm -rf inst
 
 $MAKE install-exec
 test -f inst/bin/foo || exit 99 # Sanity check.
 $MAKE uninstall
-test ! -f inst/bin/foo
+test ! -e inst/bin/foo
 
 $MAKE install-data
 test -f inst/share/bar || exit 99 # Sanity check.
 $MAKE uninstall
-test ! -f inst/share/bar
+test ! -e inst/share/bar
 
 rm -rf inst
 
 $MAKE install-exec
 test -f inst/bin/foo || exit 99 # Sanity check.
 $MAKE uninstall
-test ! -f inst/bin/foo
+test ! -e inst/bin/foo
 
 :

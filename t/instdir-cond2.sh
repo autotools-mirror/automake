@@ -46,6 +46,6 @@ $AUTOCONF
 ./configure --prefix="$(pwd)/inst"
 
 $MAKE installdirs
-test ! -d inst || { find inst; exit 1; }
+test ! -e inst || { find inst; exit 1; }
 
 :

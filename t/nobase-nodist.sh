@@ -46,15 +46,15 @@ $AUTOMAKE -a
 $MAKE distdir
 
 ls -l $distdir $distdir/* # For debugging.
-test ! -f $distdir/foo1.el
-test ! -f $distdir/sub/foo2.el
-test ! -f $distdir/foo3.el
-test ! -f $distdir/sub/foo4.el
-test ! -f $distdir/bar1.java
-test ! -f $distdir/sub/bar2.java
-test ! -f $distdir/bar3.java
-test ! -f $distdir/sub/bar4.java
-test ! -f $distdir/baz1.py
-test ! -f $distdir/sub/baz2.py
+test ! -e $distdir/foo1.el
+test ! -e $distdir/sub/foo2.el
+test ! -e $distdir/foo3.el
+test ! -e $distdir/sub/foo4.el
+test ! -e $distdir/bar1.java
+test ! -e $distdir/sub/bar2.java
+test ! -e $distdir/bar3.java
+test ! -e $distdir/sub/bar4.java
+test ! -e $distdir/baz1.py
+test ! -e $distdir/sub/baz2.py
 
 :

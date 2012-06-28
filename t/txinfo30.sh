@@ -58,6 +58,6 @@ test -f bar.info
 # We should not create a missing bar.info.
 rm -f bar.info
 $MAKE && exit 1
-test ! -f bar.info
+test ! -e bar.info
 
 :

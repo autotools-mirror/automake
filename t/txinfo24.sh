@@ -48,7 +48,7 @@ mkdir build
 cd build
 ../configure
 $MAKE
-test ! -f ../main.info
+test ! -e ../main.info
 test -f main.info
 
 cd ..
@@ -74,7 +74,7 @@ cd build
 $MAKE
 # main.info should be rebuilt in the current directory.
 test -f main.info
-test ! -f ../main.info
+test ! -e ../main.info
 $MAKE dvi
 test -f main.dvi
 

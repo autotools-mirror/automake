@@ -35,7 +35,7 @@ EOF
 :> ChangeLog
 :> README
 
-test ! -f COPYING
+test ! -e COPYING
 
 $ACLOCAL
 $AUTOCONF

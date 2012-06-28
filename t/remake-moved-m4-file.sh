@@ -55,9 +55,9 @@ $MAKE test
 $MAKE distdir
 ls -l $distdir $distdir/*
 test -f $distdir/d2/foo.m4
-test ! -f $distdir/d1/foo.m4
+test ! -e $distdir/d1/foo.m4
 test -f $distdir/d1/macros.m4
-test ! -f $distdir/d2/macros.m4
+test ! -e $distdir/d2/macros.m4
 
 # Move both files at once.
 mv d1/macros.m4 d3/macros.m4
@@ -68,9 +68,9 @@ $MAKE distdir
 ls -l $distdir $distdir/*
 test -f $distdir/d3/foo.m4
 test -f $distdir/d3/macros.m4
-test ! -f $distdir/d1/foo.m4
-test ! -f $distdir/d2/foo.m4
-test ! -f $distdir/d1/macros.m4
-test ! -f $distdir/d2/macros.m4
+test ! -e $distdir/d1/foo.m4
+test ! -e $distdir/d2/foo.m4
+test ! -e $distdir/d1/macros.m4
+test ! -e $distdir/d2/macros.m4
 
 :

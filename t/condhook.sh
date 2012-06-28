@@ -43,6 +43,6 @@ $AUTOMAKE
 
 $MAKE install
 test -f inst/etc/mumble
-test ! -f bad
+test ! -e bad
 
 :

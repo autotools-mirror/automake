@@ -50,6 +50,6 @@ test -f $distdir/src/subdir/foo
 test -f $distdir/src/subdir2/foo
 $MAKE clean
 $MAKE distclean
-test ! -f src/subdir2/Makefile
+test ! -e src/subdir2/Makefile
 
 :

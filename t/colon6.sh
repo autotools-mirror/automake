@@ -74,7 +74,7 @@ for vpath in : false; do
   # Makefile should not depend on version.good.
   rm -f version.good
   $MAKE Makefile
-  test ! -r version.good
+  test ! -e version.good
 
   # version.good should be rebuilt from version.gin.
   $MAKE version.good
@@ -83,7 +83,7 @@ for vpath in : false; do
   # Makefile should not depend on version.gin.
   rm -f ../$srcdir/demo/version.gin
   $MAKE Makefile
-  test ! -r ../$srcdir/demo/version.gin # Sanity check.
+  test ! -e ../$srcdir/demo/version.gin # Sanity check.
 
   # version.good should depend on version.gin.
   rm -f version.good

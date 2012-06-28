@@ -103,10 +103,10 @@ for target in clean distclean; do
   ls -l
   test -f parsefoo.cxx
   test -f bar-parsebar.cc
-  test ! -r parsebaz.l++
-  test ! -r parsebaz.c++
-  test ! -r parsequx.lpp
-  test ! -r qux-parsequx.cpp
+  test ! -e parsebaz.l++
+  test ! -e parsebaz.c++
+  test ! -e parsequx.lpp
+  test ! -e qux-parsequx.cpp
 done
 
 cp config.sav config.status
@@ -116,11 +116,11 @@ $MAKE maintainer-clean
 ls -l
 test -f parsefoo.lxx
 test -f parsebar.ll
-test ! -r parsefoo.cxx
-test ! -r bar-parsebar.cc
+test ! -e parsefoo.cxx
+test ! -e bar-parsebar.cc
 test -f parsefoo.lxx
 test -f parsebar.ll
-test ! -r parsefoo.cxx
-test ! -r bar-parsebar.cc
+test ! -e parsefoo.cxx
+test ! -e bar-parsebar.cc
 
 :

@@ -409,7 +409,7 @@ useless_vpath_rebuild ()
         .a.b: ; cp $< $@
         baz: bar ; cp ../baz bar
 END
-    if $MAKE all && test ! -f foo.b && test ! -f bar; then
+    if $MAKE all && test ! -e foo.b && test ! -e bar; then
       am__useless_vpath_rebuild=no
     else
       am__useless_vpath_rebuild=yes
@@ -984,7 +984,7 @@ else
   # by the cleanup trap below if the test passes.  If the test doesn't pass,
   # this directory will be kept, to facilitate debugging.
   testSubDir=t/$me.dir
-  test ! -d $testSubDir || rm_rf_ $testSubDir \
+  test ! -e $testSubDir || rm_rf_ $testSubDir \
     || framework_failure_ "removing old test subdirectory"
   test -d t || mkdir t
   mkdir $testSubDir \

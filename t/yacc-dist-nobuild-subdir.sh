@@ -69,12 +69,12 @@ $MAKE distdir
 test   -f sub/parse.c
 test   -f sub/parse.h
 test   -f sub/bar-parse.c
-test ! -r sub/bar-parse.h
+test ! -e sub/bar-parse.h
 
 test   -f $distdir/sub/parse.c
 test   -f $distdir/sub/parse.h
 test   -f $distdir/sub/bar-parse.c
-test ! -r $distdir/sub/bar-parse.h
+test ! -e $distdir/sub/bar-parse.h
 
 # But they shouldn't be rebuilt in VPATH builds.
 

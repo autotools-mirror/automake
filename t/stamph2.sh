@@ -58,12 +58,12 @@ rm -f stamp-h*
 rm -f sdir1/stamp-h*
 
 ./config.status sdir1/7.h 2.h sdir1/4.h
-test ! -f stamp-h1
+test ! -e stamp-h1
 test -f stamp-h2
-test ! -f stamp-h3
+test ! -e stamp-h3
 test -f sdir1/stamp-h4
-test ! -f sdir1/stamp-h5
-test ! -f sdir1/stamp-h6
+test ! -e sdir1/stamp-h5
+test ! -e sdir1/stamp-h6
 test -f sdir1/stamp-h7
 
 :

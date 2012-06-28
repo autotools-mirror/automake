@@ -101,7 +101,7 @@ $ACLOCAL
 $AUTOCONF
 $AUTOMAKE -a
 ./configure
-test ! -d lib/lib
+test ! -e lib/lib
 $MAKE distcheck
 
 ## -------------------------------------------- ##
@@ -144,8 +144,8 @@ $ACLOCAL
 $AUTOCONF
 $AUTOMAKE --add-missing
 ./configure
-test ! -d src/lib
-test ! -d 'src/$(top_builddir)'
+test ! -e src/lib
+test ! -e 'src/$(top_builddir)'
 $MAKE
 $MAKE check
 $MAKE distclean

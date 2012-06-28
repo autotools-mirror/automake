@@ -58,8 +58,8 @@ test -f src/zardoz.c
 test -f src_zardoz_vala.stamp
 $MAKE distcheck
 $MAKE maintainer-clean
-test ! -f src/zardoz.c
-test ! -f src_zardoz_vala.stamp
+test ! -e src/zardoz.c
+test ! -e src_zardoz_vala.stamp
 
 mkdir build
 cd build

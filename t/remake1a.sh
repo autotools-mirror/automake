@@ -47,7 +47,7 @@ $MAKE Makefile
 cd ..
 # Check that no spurious Makefile has been created in the
 # top-level directory.
-test ! -r Makefile
+test ! -e Makefile
 # Check that the Makefile in the subdirectory has been properly
 # updated.
 $FGREP "$fingerprint" sub/Makefile

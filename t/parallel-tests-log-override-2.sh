@@ -68,10 +68,10 @@ do
   cat pass.log
   cat skip.log
   cat partial.log
-  test ! -f test-suite.log
-  test ! -f pass2.log
-  test ! -f skip2.log
-  test ! -f fail.log
+  test ! -e test-suite.log
+  test ! -e pass2.log
+  test ! -e skip2.log
+  test ! -e fail.log
   grep '^PASS: pass\.test$' stdout
   grep '^SKIP: skip\.test$' stdout
   $FGREP 'SKIP: skip' partial.log

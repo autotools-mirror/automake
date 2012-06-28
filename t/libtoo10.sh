@@ -53,8 +53,10 @@ $AUTOCONF
 ./configure
 $MAKE all check
 $MAKE clean
-test ! -d src/.libs
-test ! -d src/_libs
-test ! -d check/.libs
-test ! -d check/_libs
+test ! -e src/.libs
+test ! -e src/_libs
+test ! -e check/.libs
+test ! -e check/_libs
 $MAKE distcheck
+
+:

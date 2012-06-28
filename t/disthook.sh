@@ -72,12 +72,10 @@ $MAKE distdir
 ls -l $distdir $distdir/doc
 cd $distdir
 test "$(cat write)" = "all is ok"
-test ! -f removed
-test ! -r removed
+test ! -e removed
 test -f doc/README
 test -f doc/RELEASE-DATE
-test ! -f doc/HACING
-test ! -r doc/HACING
+test ! -e doc/HACING
 ./execute
 ./execute | grep 'I run successfully'
 cd ..

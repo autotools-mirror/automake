@@ -69,7 +69,7 @@ ls -l
 $MAKE
 ls -l
 test -f foo.c
-test ! -r foo.h
+test ! -e foo.h
 test -f foo.output
 
 $MAKE maintainer-clean
@@ -80,7 +80,7 @@ YFLAGS=-d $MAKE -e
 ls -l
 test -f foo.c
 test -f foo.h
-test ! -r foo.output
+test ! -e foo.output
 
 $MAKE maintainer-clean
 ls -l

@@ -99,9 +99,9 @@ echo 'AUTOMAKE_OPTIONS = subdir-objects' >> Makefile.am
 $AUTOMAKE -a
 ./configure
 $MAKE
-test ! -f bar.lo
-test ! -f baz.lo
-test ! -f libgoodbye_la-baz.lo
+test ! -e bar.lo
+test ! -e baz.lo
+test ! -e libgoodbye_la-baz.lo
 $MAKE distcheck
 
 :

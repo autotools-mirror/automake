@@ -86,6 +86,6 @@ $MAKE distclean
 test -f foo.c
 ./configure # Re-create 'Makefile'.
 $MAKE maintainer-clean
-test ! -f foo.c
+test ! -e foo.c
 
 :

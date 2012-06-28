@@ -61,5 +61,7 @@ cd build
 ../configure
 $MAKE distcheck
 test -f ../subdir/main.info
-test ! -f subdir/main.info
+test ! -e subdir/main.info
 test -f ../subdir/main.info.bak
+
+:

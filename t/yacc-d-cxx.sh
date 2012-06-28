@@ -220,13 +220,13 @@ test -f qux/maude-parse.cxx
 test -f qux/maude-parse.hxx
 ./configure # Re-create 'Makefile'.
 $MAKE maintainer-clean
-test ! -f foo/parse.cc
-test ! -f foo/parse.hh
-test ! -f bar/parse.cpp
-test ! -f bar/parse.hpp
-test ! -f baz/sub/parse.c++
-test ! -f baz/sub/parse.h++
-test ! -f qux/maude-parse.cxx
-test ! -f qux/maude-parse.hxx
+test ! -e foo/parse.cc
+test ! -e foo/parse.hh
+test ! -e bar/parse.cpp
+test ! -e bar/parse.hpp
+test ! -e baz/sub/parse.c++
+test ! -e baz/sub/parse.h++
+test ! -e qux/maude-parse.cxx
+test ! -e qux/maude-parse.hxx
 
 :

@@ -49,8 +49,8 @@ cat stderr >&2
 
 ls -l . sub my_aux_dir # For debugging.
 test -f my_aux_dir/test-driver
-test ! -r test-driver
-test ! -r sub/test-driver
+test ! -e test-driver
+test ! -e sub/test-driver
 
 grep '^configure\.ac:3:.*installing.*my_aux_dir/test-driver' stderr
 
@@ -84,8 +84,8 @@ cat stderr >&2
 
 ls -l . dir build-aux # For debugging.
 test -f build-aux/test-driver
-test ! -r test-driver
-test ! -r dir/test-driver
+test ! -e test-driver
+test ! -e dir/test-driver
 
 grep '^dir/GNUmakefile\.am:2:.*installing.*build-aux/test-driver' stderr
 

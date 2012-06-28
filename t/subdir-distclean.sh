@@ -66,12 +66,12 @@ test -f sub1/run
 touch sub2/oops sub1/subsub/oops
 
 $MAKE distclean
-test ! -f sub1/run
-test ! -f sub2/oops
-test ! -f sub1/subsub/oops
-test ! -f sub1/Makefile
-test ! -f sub2/Makefile
-test ! -f sub1/subsub/Makefile
+test ! -e sub1/run
+test ! -e sub2/oops
+test ! -e sub1/subsub/oops
+test ! -e sub1/Makefile
+test ! -e sub2/Makefile
+test ! -e sub1/subsub/Makefile
 
 mkdir build
 cd build
@@ -88,12 +88,12 @@ test -f sub1/run
 touch sub2/oops sub1/subsub/oops
 
 $MAKE maintainer-clean
-test ! -f sub1/run
-test ! -f sub2/oops
-test ! -f sub1/subsub/oops
-test ! -f sub1/Makefile
-test ! -f sub2/Makefile
-test ! -f sub1/subsub/Makefile
+test ! -e sub1/run
+test ! -e sub2/oops
+test ! -e sub1/subsub/oops
+test ! -e sub1/Makefile
+test ! -e sub2/Makefile
+test ! -e sub1/subsub/Makefile
 
 cd ..
 

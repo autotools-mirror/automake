@@ -46,10 +46,10 @@ lispdir=
 export lispdir
 
 $MAKE -e install
-test ! -d "$instdir"
+test ! -e "$instdir"
 $MAKE -e install DESTDIR="$destdir"
-test ! -d "$instdir"
-test ! -d "$destdir"
+test ! -e "$instdir"
+test ! -e "$destdir"
 $MAKE -e uninstall > stdout || { cat stdout; exit 1; }
 cat stdout
 grep 'rm -f' stdout && exit 1

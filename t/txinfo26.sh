@@ -48,11 +48,6 @@ $MAKE distclean
 
 abscwd=$(pwd) || fatal_ "getting current working directory"
 
-case $abscwd in
-  *\ * | *\	*)
-    skip_ "this test might fail in a directory containing white spaces";;
-esac
-
 mkdir build
 cd build
 ../configure --srcdir="$abscwd" \
@@ -62,12 +57,14 @@ cd build
 $MAKE install
 
 test -f ../main.info
-test ! -f ./main.info
+test ! -e ./main.info
 test -f _inst/info/main.info
 
 $MAKE uninstall
-test ! -f _inst/info/main.info
+test ! -e _inst/info/main.info
 test -f ../main.info
 
 # Multiple uninstall should not fail.
 $MAKE uninstall
+
+:

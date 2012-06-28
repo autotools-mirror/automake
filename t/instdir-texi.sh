@@ -60,10 +60,11 @@ infodir= htmldir= dvidir= psdir= pdfdir=
 export infodir htmldir dvidir psdir pdfdir
 
 $MAKE -e install install-html install-dvi install-ps install-pdf
-test ! -d "$instdir"
-$MAKE -e install install-html install-dvi install-ps install-pdf DESTDIR="$destdir"
-test ! -d "$instdir"
-test ! -d "$destdir"
+test ! -e "$instdir"
+$MAKE -e install install-html install-dvi install-ps install-pdf \
+         DESTDIR="$destdir"
+test ! -e "$instdir"
+test ! -e "$destdir"
 $MAKE -e uninstall > stdout || { cat stdout; exit 1; }
 cat stdout
 grep 'rm -f' stdout && exit 1

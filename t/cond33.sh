@@ -54,12 +54,12 @@ chmod a-w nowhere
 ./configure --prefix="$cwd"/nowhere --bindir="$cwd"/bin \
             --includedir="$cwd"/inc
 $MAKE installdirs
-test ! -d bin
+test ! -e bin
 test -d inc/foo
-test ! -f inc/foo/foo.h
+test ! -e inc/foo/foo.h
 rm -rf inc
 $MAKE install
-test ! -d bin
+test ! -e bin
 test -f inc/foo/foo.h
 $MAKE distdircheck
 
@@ -68,11 +68,11 @@ rm -rf inc
 ./configure two=two --prefix="$cwd"/nowhere --bindir="$cwd"/bin \
                     --includedir="$cwd"/inc
 $MAKE install
-test ! -d inc
+test ! -e inc
 test -f bin/x.sh
 rm -rf inc
 $MAKE installdirs
-test ! -d inc
+test ! -e inc
 test -d bin
 $MAKE distdircheck
 

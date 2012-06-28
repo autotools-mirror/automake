@@ -89,7 +89,7 @@ $AUTOCONF
 
 $MAKE
 ls -l
-test ! -f stdio.h
+test ! -e stdio.h
 # Also try our build rules in a VPATH build.
 $MAKE distcheck
 

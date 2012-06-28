@@ -84,8 +84,8 @@ test -f bla
 
 # "make clean" should remove HTML files.
 $MAKE clean
-test ! -f mylog.html
-test ! -f bla
+test ! -e mylog.html
+test ! -e bla
 
 # Always create the HTML output, even if there were no failures.
 rm -f mylog.html
@@ -100,8 +100,8 @@ test -f mylog.html
 # Create HTML output for an individual test.
 $MAKE foo.html
 grep 'this is .*foo\.test' foo.html
-test ! -f bar.html
-test ! -f baz.html
+test ! -e bar.html
+test ! -e baz.html
 
 # Create HTML output for individual tests.  Since the pre-existing log
 # files are expected to be used for the HTML conversion, this should
@@ -112,35 +112,35 @@ grep 'this is .*baz\.test' baz.html
 
 # HTML output removed by mostlyclean.
 $MAKE mostlyclean
-test ! -f foo.html
-test ! -f bar.html
-test ! -f baz.html
-test ! -f mylog.html
+test ! -e foo.html
+test ! -e bar.html
+test ! -e baz.html
+test ! -e mylog.html
 
 # check-html and recheck-html should cause check_SCRIPTS to be created,
 # and recheck-html should rerun no tests if check has not been run.
 
 $MAKE clean
-test ! -f mylog.html
+test ! -e mylog.html
 env TEST_LOGS=foo.log $MAKE -e check-html
 test -f bla
 test -f foo.log
-test ! -f bar.log
-test ! -f baz.log
+test ! -e bar.log
+test ! -e baz.log
 test -f mylog.html
 
 $MAKE clean
 env TESTS=foo.test $MAKE -e recheck-html
 test -f bla
-test ! -f foo.log
+test ! -e foo.log
 test -f mylog.html
 
 $MAKE clean
 $MAKE recheck-html
 test -f bla
-test ! -f foo.log
-test ! -f bar.log
-test ! -f baz.log
+test ! -e foo.log
+test ! -e bar.log
+test ! -e baz.log
 test -f mylog.html
 
 :

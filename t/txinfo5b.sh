@@ -37,6 +37,6 @@ echo '@setfilename ian.info' > ian.texi
 $ACLOCAL
 $AUTOMAKE --cygnus
 $AUTOMAKE -a --cygnus
-test ! -f texinfo.tex
+test ! -e texinfo.tex
 
 :

@@ -42,7 +42,7 @@ $AUTOCONF
 
 $MAKE check
 test -f check-target-has-run
-test ! -r all-target-has-failed
+test ! -e all-target-has-failed
 # Sanity checks.
 $MAKE && exit 1
 test -f all-target-has-failed

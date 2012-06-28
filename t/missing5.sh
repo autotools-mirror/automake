@@ -60,5 +60,5 @@ done
 PATH=$save_PATH
 export PATH
 diff output-file my--output--file-o
-test ! -f ./--file-o
-test ! -f input
+test ! -e ./--file-o
+test ! -e input

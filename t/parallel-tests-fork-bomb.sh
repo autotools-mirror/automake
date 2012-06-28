@@ -104,7 +104,7 @@ do_check ()
   cat output
   $FGREP '::OOPS::' output && exit 1 # Possible infinite recursion.
   # Check that at least we don't create a botched global log file.
-  test ! -f "$log"
+  test ! -e "$log"
   if using_gmake; then
     grep "[Cc]ircular.*dependency" output | $FGREP "$log"
     test $st -gt 0

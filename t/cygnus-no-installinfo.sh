@@ -44,9 +44,9 @@ cwd=$(pwd) || exit 1
 ./configure --prefix="$cwd"/_inst
 $MAKE
 $MAKE install
-test ! -d _inst
-test ! -r foo.info
-test ! -d _inst/share/info
+test ! -e _inst
+test ! -e foo.info
+test ! -e _inst/share/info
 $MAKE install-info
 ls -l _inst
 test -f foo.info

@@ -49,7 +49,7 @@ ls -l .
 find . -name '*.class' | grep . && exit 1
 # If we have nothing to install, we shouldn't create any installation
 # directory.  Related to automake bug#11030.
-test ! -d _inst
+test ! -e _inst
 $MAKE uninstall
 $MAKE distcheck
 

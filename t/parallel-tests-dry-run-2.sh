@@ -50,11 +50,12 @@ make_n_ ()
 files='foo.log bar.log foo.trs bar.trs'
 
 for target in check recheck test-suite.log; do
-  test ! -f foo.log
-  test ! -f foo.trs
-  test ! -f bar.log
-  test ! -f bar.trs
-  test ! -f test-suite.log
+  make_n_ $target
+  test ! -e foo.log
+  test ! -e foo.trs
+  test ! -e bar.log
+  test ! -e bar.trs
+  test ! -e test-suite.log
 done
 
 echo 'exit 0' > foo.test
@@ -101,9 +102,9 @@ rm -f foo.log bar.trs
 chmod a-w .
 for target in check recheck test-suite.log $files; do
   make_n_ $target
-  test ! -f foo.log
+  test ! -e foo.log
   test -f foo.trs
-  test ! -f bar.trs
+  test ! -e bar.trs
   test -f bar.log
 done
 

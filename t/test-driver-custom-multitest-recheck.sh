@@ -109,14 +109,14 @@ for vpath in : false; do
   : A "make recheck" in a clean tree should run no tests.
   do_recheck --pass
   cat test-suite.log
-  test ! -r a.run
-  test ! -r a.log
-  test ! -r b.run
-  test ! -r b.log
-  test ! -r c.run
-  test ! -r c.log
-  test ! -r d.run
-  test ! -r d.log
+  test ! -e a.run
+  test ! -e a.log
+  test ! -e b.run
+  test ! -e b.log
+  test ! -e c.run
+  test ! -e c.log
+  test ! -e d.run
+  test ! -e d.log
   count_test_results total=0 pass=0 fail=0 xpass=0 xfail=0 skip=0 error=0
 
   : Run the tests for the first time.
@@ -135,7 +135,7 @@ for vpath in : false; do
   do_recheck --fail
   # a.test has been successful the first time, so no need to re-run it.
   # Similar considerations apply to similar checks, below.
-  test ! -r a.run
+  test ! -e a.run
   test -f b.run
   test -f c.run
   test -f d.run
@@ -144,8 +144,8 @@ for vpath in : false; do
   : Let us make the first part of c.test pass.
   echo OK > c.pass
   do_recheck --fail
-  test ! -r a.run
-  test ! -r b.run
+  test ! -e a.run
+  test ! -e b.run
   test -f c.run
   test -f d.run
   count_test_results total=5 pass=1 fail=1 xpass=1 xfail=1 skip=1 error=0
@@ -153,8 +153,8 @@ for vpath in : false; do
   : Let us make also the second part of c.test pass.
   echo KO > c.xfail
   do_recheck --fail
-  test ! -r a.run
-  test ! -r b.run
+  test ! -e a.run
+  test ! -e b.run
   test -f c.run
   test -f d.run
   count_test_results total=5 pass=1 fail=1 xpass=0 xfail=2 skip=1 error=0
@@ -162,9 +162,9 @@ for vpath in : false; do
   : Nothing changed, so only d.test should be run.
   for i in 1 2; do
     do_recheck --fail
-    test ! -r a.run
-    test ! -r b.run
-    test ! -r c.run
+    test ! -e a.run
+    test ! -e b.run
+    test ! -e c.run
     test -f d.run
     count_test_results total=2 pass=0 fail=1 xpass=0 xfail=0 skip=1 error=0
   done
@@ -183,27 +183,27 @@ for vpath in : false; do
     echo ERROR: e 2
 END
   do_recheck --fail
-  test ! -r a.run
-  test ! -r b.run
-  test ! -r c.run
+  test ! -e a.run
+  test ! -e b.run
+  test ! -e c.run
   test -f d.run
   count_test_results total=11 pass=2 fail=4 xpass=1 xfail=0 skip=2 error=2
 
   : Let us finally make d.test pass.
   echo : > d.extra
   do_recheck --pass
-  test ! -r a.run
-  test ! -r b.run
-  test ! -r c.run
+  test ! -e a.run
+  test ! -e b.run
+  test ! -e c.run
   test -f d.run
   count_test_results total=1 pass=0 fail=0 xpass=0 xfail=0 skip=1 error=0
 
   : All tests have been successful or skipped, nothing should be re-run.
   do_recheck --pass
-  test ! -r a.run
-  test ! -r b.run
-  test ! -r c.run
-  test ! -r d.run
+  test ! -e a.run
+  test ! -e b.run
+  test ! -e c.run
+  test ! -e d.run
   count_test_results total=0 pass=0 fail=0 xpass=0 xfail=0 skip=0 error=0
 
   cd $srcdir

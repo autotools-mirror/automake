@@ -37,10 +37,10 @@ $AUTOMAKE -a
 ./configure
 
 $MAKE foobar1.log foobar2.log || exit 99
-test ! -f foobar1.log || exit 99
-test ! -f foobar1.trs || exit 99
-test ! -f foobar2.log || exit 99
-test ! -f foobar2.trs || exit 99
+test ! -e foobar1.log || exit 99
+test ! -e foobar1.trs || exit 99
+test ! -e foobar2.log || exit 99
+test ! -e foobar2.trs || exit 99
 
 $MAKE check >output 2>&1 && { cat output; exit 1; }
 cat output
@@ -48,6 +48,6 @@ grep 'test-suite\.log.*foobar1\.log' output
 grep 'test-suite\.log.*foobar1\.trs' output
 grep 'test-suite\.log.*foobar2\.log' output
 grep 'test-suite\.log.*foobar2\.trs' output
-test ! -f test-suite.log
+test ! -e test-suite.log
 
 :

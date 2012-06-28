@@ -71,12 +71,12 @@ test -r dest5
 $MAKE test
 
 $MAKE distclean
-test ! -r sdir/dest2
-test ! -r sdir/dest3
+test ! -e sdir/dest2
+test ! -e sdir/dest3
 test -r dest  # Should still exist, Automake knows nothing about it.
 test -r dest5 # Ditto.
 rm -f dest dest5
-test ! -r dest4
+test ! -e dest4
 
 mkdir build
 cd build

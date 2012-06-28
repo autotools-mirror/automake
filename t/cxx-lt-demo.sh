@@ -97,7 +97,7 @@ ls -l . ax # For debugging.
 for f in ltmain.sh depcomp config.guess config.sub; do
   test -f ax/$f && test ! -h ax/$f || exit 1
 done
-test ! -f ax/compile # Not required by C++ compilers.
+test ! -e ax/compile # Not required by C++ compilers.
 
 cat > src/main.cc << 'END'
 #include "libfoo.h++"

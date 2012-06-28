@@ -63,7 +63,7 @@ $AUTOMAKE
 $MAKE check 2>stderr && { cat stderr >&2; exit 1; }
 cat stderr >&2
 grep 'NEWS not updated' stderr
-test ! -f works
+test ! -e works
 
 echo 'alpha 1.0a released' > NEWS
 $MAKE check

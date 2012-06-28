@@ -71,6 +71,8 @@ cp main.texi sub/main.texi
 mv main.old main.texi
 $MAKE && exit 1
 test -f main
-test ! -f main-1
+test ! -e main-1
 test -f sub/main
 test -f sub/main-1
+
+:

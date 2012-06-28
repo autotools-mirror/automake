@@ -80,7 +80,7 @@ test -f parse.c
 # ... but maintainer-clean should.
 ../configure
 $MAKE maintainer-clean
-test ! -f bar.c
-test ! -f parse.c
+test ! -e bar.c
+test ! -e parse.c
 
 :

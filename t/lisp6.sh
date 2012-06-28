@@ -55,25 +55,25 @@ cwd=$(pwd) || fatal_ "getting current working directory"
 
 $MAKE
 test -f am-one.elc
-test ! -f am-two.elc
+test ! -e am-two.elc
 test -f am-three.elc
 test -f elc-stamp
 
 $MAKE install
 test -f lisp/am-one.el
 test -f lisp/am-one.elc
-test ! -f lisp/am-two.el
-test ! -f lisp/am-two.elc
-test ! -f lisp/am-three.el
-test ! -f lisp/am-three.elc
+test ! -e lisp/am-two.el
+test ! -e lisp/am-two.elc
+test ! -e lisp/am-three.el
+test ! -e lisp/am-three.elc
 
 $MAKE dist-test
 
 $MAKE distclean
-test ! -f am-one.elc
-test ! -f am-two.elc
-test ! -f am-three.elc
-test ! -f elc-stamp
+test ! -e am-one.elc
+test ! -e am-two.elc
+test ! -e am-three.elc
+test ! -e elc-stamp
 
 ./configure --with-lispdir="$cwd/lisp" want_two=1
 
@@ -96,15 +96,15 @@ test -f lisp/am-one.el
 test -f lisp/am-one.elc
 test -f lisp/am-two.el
 test -f lisp/am-two.elc
-test ! -f lisp/am-three.el
-test ! -f lisp/am-three.elc
+test ! -e lisp/am-three.el
+test ! -e lisp/am-three.elc
 
 $MAKE dist-test
 
 $MAKE distclean
-test ! -f am-one.elc
-test ! -f am-two.elc
-test ! -f am-three.elc
-test ! -f elc-stamp
+test ! -e am-one.elc
+test ! -e am-two.elc
+test ! -e am-three.elc
+test ! -e elc-stamp
 
 :

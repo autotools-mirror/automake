@@ -40,9 +40,9 @@ $AUTOMAKE
 
 ./configure create=false
 $MAKE
-test ! -f file
-test ! -f link
-test ! -f stamp
+test ! -e file
+test ! -e link
+test ! -e stamp
 
 ./configure create=:
 test -f file
