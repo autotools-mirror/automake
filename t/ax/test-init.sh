@@ -1003,7 +1003,7 @@ else
   test -d t || mkdir t
   mkdir $testSubDir \
     || framework_failure_ "creating test subdirectory"
-  # The trailing './'ris to avoid CDPATH issues.
+  # The leading './' is to avoid CDPATH issues.
   cd ./$testSubDir \
     || framework_failure_ "cannot chdir into test subdirectory"
   if test x"$am_create_testdir" != x"empty"; then
