@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CC
@@ -35,6 +35,6 @@ $FGREP '$(LEX)' Makefile.in
 
 # Test to make sure that lex source generates correct clean rule.
 # From Ralf Corsepius.
-$FGREP joel Makefile.in && Exit 1
+$FGREP joel Makefile.in && exit 1
 
 :

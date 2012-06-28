@@ -19,7 +19,7 @@
 #  - tests without explicit number get automatically numbered in the
 #    testsuite progress output on console
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 . "$am_testauxdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"
 
@@ -34,7 +34,7 @@ ok 6 # SKIP
 ok zardoz
 END
 
-$MAKE check >stdout || { cat stdout; Exit 1; }
+$MAKE check >stdout || { cat stdout; exit 1; }
 cat stdout
 count_test_results total=7 pass=4 fail=0 xpass=0 xfail=2 skip=1 error=0
 

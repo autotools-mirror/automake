@@ -16,7 +16,7 @@
 
 # Make sure that PACKAGE and VERSION are AC_DEFINEd when requested.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 # First, check that PACKAGE and VERSION are output by default.
 
@@ -49,6 +49,6 @@ $AUTOCONF
 $AUTOMAKE # Dummy call to make sure Automake grok 'no-define' silently.
 ./configure
 
-grep 'DEFS.*-DVERSION=\\"UnIqUe' output && Exit 1
+grep 'DEFS.*-DVERSION=\\"UnIqUe' output && exit 1
 
 :

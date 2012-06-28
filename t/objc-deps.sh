@@ -17,7 +17,7 @@
 # Automatic dependency tracking for Objective C.
 # See also sister test 'objcxx-deps.sh'.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_OBJC
@@ -55,7 +55,7 @@ $AUTOMAKE --add-missing
 
 ./configure --enable-dependency-tracking
 $MAKE
-cross_compiling || (./foo | $FGREP 'Hello, World') || Exit 1
+cross_compiling || (./foo | $FGREP 'Hello, World') || exit 1
 $sleep
 : > old
 echo '#define MSG "Howdy, Earth"' > baz2.h
@@ -65,7 +65,7 @@ if test -f foo; then
 else
   is_newest foo.exe old
 fi
-cross_compiling || (./foo | $FGREP 'Howdy, Earth') || Exit 1
+cross_compiling || (./foo | $FGREP 'Howdy, Earth') || exit 1
 
 $MAKE distcheck
 

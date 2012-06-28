@@ -22,7 +22,7 @@
 # big deal in practice (in fact, this test *currently fails*).  Still,
 # keeping the limitation exposed is a good idea anyway.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac <<'END'
 m4_include([foobar.m4])

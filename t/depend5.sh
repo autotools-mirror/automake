@@ -18,7 +18,7 @@
 # quoting in $CONFIG_FILES, done by newer Autoconf.
 
 required=cc
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >>configure.ac << END
 AC_PROG_CC
@@ -65,13 +65,13 @@ for arg in Makefile \
 do
   rm -rf .deps _deps
   ./config.status "$arg" depfiles >stdout 2>stderr ||
-    { cat stdout; cat stderr >&2; Exit 1; }
+    { cat stdout; cat stderr >&2; exit 1; }
   cat stdout
   cat stderr >&2
-  grep '[Nn]o such file' stderr && Exit 1
+  grep '[Nn]o such file' stderr && exit 1
 
   if test -n "$depdir"; then
-    test -d $depdir || Exit 1
+    test -d $depdir || exit 1
   fi
 done
 

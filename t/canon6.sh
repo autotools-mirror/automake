@@ -18,7 +18,7 @@
 # Keep this in sync with sister test 'canon4.test'.
 
 required='libtoolize'
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CC
@@ -37,6 +37,6 @@ END
 $ACLOCAL
 $AUTOMAKE -a
 
-grep '^ *libx-y.*=' Makefile.in && Exit 1
+grep '^ *libx-y.*=' Makefile.in && exit 1
 
 :

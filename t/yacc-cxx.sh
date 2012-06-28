@@ -19,7 +19,7 @@
 # Keep in sync with sister test 'yacc-basic.test'.
 
 required='c++ yacc'
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CXX
@@ -92,7 +92,7 @@ test -f foo4-parse4.output
 if ! cross_compiling; then
   for i in 1 2 3 4; do
     echo a | ./foo$i
-    echo b | ./foo$i && Exit 1
+    echo b | ./foo$i && exit 1
     : For shells with busted 'set -e'.
   done
 fi

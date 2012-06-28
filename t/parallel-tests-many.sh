@@ -18,7 +18,7 @@
 # an exceeded command line length when there are many tests.
 # For automake bug#7868.  This test is currently expected to fail.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_OUTPUT
@@ -67,9 +67,9 @@ for i in 1 2 3 4 5 6 7 8 9 10 12 13 14 15 16 17 18 19 29 21 22 23 24; do
   mkdir $new_deepdir || break
   tmpfile=$new_deepdir/$tname-some-more-chars-for-good-measure
   if touch $tmpfile; then
-    rm -f $tmpfile || Exit 99
+    rm -f $tmpfile || exit 99
   else
-    rmdir $new_deepdir || Exit 99
+    rmdir $new_deepdir || exit 99
   fi
   deepdir=$new_deepdir
   unset tmpfile new_deepdir
@@ -106,8 +106,8 @@ setup_data ()
             print " \\\n";
           }
       }
-  ' > list-of-tests.am || Exit 99
-  sed 20q list-of-tests.am || Exit 99 # For debugging.
+  ' > list-of-tests.am || exit 99
+  sed 20q list-of-tests.am || exit 99 # For debugging.
   $AUTOMAKE Makefile \
     || framework_failure_ "unexpected automake failure"
   ./config.status Makefile \
@@ -146,9 +146,9 @@ env TESTS=$deepdir/$tname-1.test $MAKE -e check \
   && test -f $deepdir/$tname-1.log \
   || framework_failure_ "\"make check\" with one single tests"
 
-rm -f $deepdir/* || Exit 99
+rm -f $deepdir/* || exit 99
 
-$MAKE check > stdout || { cat stdout; Exit 1; }
+$MAKE check > stdout || { cat stdout; exit 1; }
 cat stdout
 
 grep "^# TOTAL: $count$" stdout
@@ -172,7 +172,7 @@ test $(grep -c '^FAIL:' stdout) -eq 2 || st=1
 test $st -eq 0 || fatal_ "couldn't simulate failure of two tests"
 unset st
 
-$MAKE recheck > stdout || { cat stdout; Exit 1; }
+$MAKE recheck > stdout || { cat stdout; exit 1; }
 cat stdout
 grep "^PASS: .*$tname-1\.test" stdout
 grep "^PASS: .*$tname-2\.test" stdout
@@ -182,9 +182,9 @@ grep "^# PASS:  2$" stdout
 
 # "make clean" might ignore some failures, so we prefer to also grep its
 # output to ensure that no "Argument list too long" error was encountered.
-$MAKE clean >output 2>&1 || { cat output; Exit 1; }
+$MAKE clean >output 2>&1 || { cat output; exit 1; }
 cat output
-grep -i 'list.* too long' output && Exit 1
-ls $deepdir | grep '\.log$' && Exit 1
+grep -i 'list.* too long' output && exit 1
+ls $deepdir | grep '\.log$' && exit 1
 
 :

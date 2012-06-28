@@ -17,7 +17,7 @@
 # TAP support:
 #  - unplanned tests are properly reported as errors
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 . "$am_testauxdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"
 
@@ -26,7 +26,7 @@ cat > all.test <<END
 ok 1
 ok 2
 END
-$MAKE check >stdout && { cat stdout; Exit 1; }
+$MAKE check >stdout && { cat stdout; exit 1; }
 cat stdout
 count_test_results total=3 pass=1 fail=0 xpass=0 xfail=0 skip=0 error=2
 grep '^ERROR: all\.test - too many tests run (expected 1, got 2)$' stdout
@@ -38,7 +38,7 @@ ok 1
 ok 2
 ok 3
 END
-$MAKE check >stdout && { cat stdout; Exit 1; }
+$MAKE check >stdout && { cat stdout; exit 1; }
 cat stdout
 count_test_results total=4 pass=2 fail=0 xpass=0 xfail=0 skip=0 error=2
 grep '^ERROR: all\.test - too many tests run (expected 2, got 3)$' stdout
@@ -53,7 +53,7 @@ ok 3
 not ok 4
 ok 5 # SKIP
 END
-XFAIL_TESTS=all.test $MAKE -e check >stdout && { cat stdout; Exit 1; }
+XFAIL_TESTS=all.test $MAKE -e check >stdout && { cat stdout; exit 1; }
 cat stdout
 count_test_results total=6 pass=0 fail=0 xpass=0 xfail=1 skip=1 error=4
 grep '^ERROR: all\.test - too many tests run (expected 2, got 5)$' stdout
@@ -120,7 +120,7 @@ cat > t <<END
 
 END
 
-$MAKE check >stdout && { cat stdout; Exit 1; }
+$MAKE check >stdout && { cat stdout; exit 1; }
 cat stdout
 count_test_results total=22 pass=1 fail=0 xpass=0 xfail=0 skip=0 error=21
 
@@ -146,7 +146,7 @@ for x in 'ok' 'ok 3' 'not ok' 'not ok # TODO' 'ok # TODO' 'ok # SKIP'; do
     $x
     1..2
 END
-  $MAKE check >stdout && { cat stdout; Exit 1; }
+  $MAKE check >stdout && { cat stdout; exit 1; }
   cat stdout
   test $($FGREP -c ': all.test' stdout) -eq 4
   $EGREP '^PASS: all\.test 1($| )' stdout

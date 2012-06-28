@@ -17,7 +17,7 @@
 # Test to make sure preprocessed F77 works.
 # Report from Jochen Kuepper.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_F77

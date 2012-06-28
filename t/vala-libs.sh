@@ -18,7 +18,7 @@
 # And use of vapi files to call C code from Vala.
 
 required="valac cc pkg-config libtoolize GNUmake"
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CC

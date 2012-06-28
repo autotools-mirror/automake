@@ -18,7 +18,7 @@
 # AM_INIT_AUTOMAKE are both given two or more arguments.
 
 am_create_testdir=empty
-. ./defs || Exit 1
+. ./defs || exit 1
 
 empty=''
 
@@ -146,7 +146,7 @@ $MAKE got
 
 diff exp got
 
-$FGREP am_foo_quux Makefile.in Makefile configure config.status && Exit 1
+$FGREP am_foo_quux Makefile.in Makefile configure config.status && exit 1
 
 
 ### Done ###

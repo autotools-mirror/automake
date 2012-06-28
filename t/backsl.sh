@@ -16,7 +16,7 @@
 
 # Test for "\" problems.  Bug report from Joerg-Martin Schwarz.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CC
@@ -30,5 +30,5 @@ END
 $ACLOCAL
 $AUTOMAKE
 
-grep '^_SOURCE' Makefile.in && Exit 1
-Exit 0
+grep '^_SOURCE' Makefile.in && exit 1
+exit 0

@@ -18,7 +18,7 @@
 # See also sister test txinfo5.test.
 # Report from Ian Taylor.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AM_MAINTAINER_MODE

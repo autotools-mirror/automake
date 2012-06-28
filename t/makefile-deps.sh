@@ -17,13 +17,13 @@
 # Make sure we don't emit a rule with empty target if list of
 # automatically-computed dependencies for Makefile.in is empty.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 : > Makefile.am
 
 $ACLOCAL
 $AUTOMAKE
 
-grep "^ *:" Makefile.in && Exit 1
+grep "^ *:" Makefile.in && exit 1
 
 :

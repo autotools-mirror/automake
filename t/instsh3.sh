@@ -18,7 +18,7 @@
 
 am_create_testdir=empty
 required=non-root
-. ./defs || Exit 1
+. ./defs || exit 1
 
 # Solaris /usr/ucb/touch does not accept -t.
 touch -t $old_timestamp foo \

@@ -16,7 +16,7 @@
 
 # Test for error for bad syntax.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > Makefile.am << 'END'
 foo = q \

@@ -16,7 +16,7 @@
 
 # Check basic use of conditionals.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AM_CONDITIONAL([TEST], [true])
@@ -34,8 +34,8 @@ END
 $ACLOCAL
 $AUTOMAKE
 
-grep '^TEST_FALSE' Makefile.in && Exit 1
-grep '^TEST_TRUE' Makefile.in && Exit 1
+grep '^TEST_FALSE' Makefile.in && exit 1
+grep '^TEST_TRUE' Makefile.in && exit 1
 grep '^@TEST_TRUE@VAR = true$' Makefile.in
 grep '^@TEST_FALSE@VAR = false$' Makefile.in
 

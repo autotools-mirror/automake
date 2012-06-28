@@ -17,7 +17,7 @@
 # Minimal test of Java functionality.
 
 required=javac
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >>configure.ac <<'EOF'
 AC_OUTPUT

@@ -19,7 +19,7 @@
 # 'py-compile-basic2.test'.
 
 required=python
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cp "$am_scriptdir/py-compile" . \
   || fatal_ "failed to fetch auxiliary script py-compile"

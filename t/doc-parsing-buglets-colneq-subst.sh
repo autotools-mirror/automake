@@ -22,7 +22,7 @@
 # See: <http://lists.gnu.org/archive/html/automake/2010-08/msg00074.html>
 # or: <http://thread.gmane.org/gmane.comp.sysutils.automake.general/11943/focus=11962>
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > Makefile.am <<'END'
 $(FOO:=x): bar

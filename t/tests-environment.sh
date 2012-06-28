@@ -17,7 +17,7 @@
 # "Simple Tests" testsuite driver: check TESTS_ENVIRONMENT support.
 
 am_serial_tests=yes
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_OUTPUT
@@ -41,6 +41,6 @@ $AUTOMAKE -a
 ./configure
 
 FOO=bad TESTS_ENVIRONMENT='FOO=ok'  $MAKE check
-FOO=ok  TESTS_ENVIRONMENT='FOO=bad' $MAKE check && Exit 1
+FOO=ok  TESTS_ENVIRONMENT='FOO=bad' $MAKE check && exit 1
 
 :

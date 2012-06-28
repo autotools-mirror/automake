@@ -16,7 +16,7 @@
 
 # Check for false positives in automake recognition of '-d' in YFLAGS.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac <<'END'
 AC_PROG_CC
@@ -35,7 +35,7 @@ foobar_YFLAGS = - d $(foovar)-d -dd
 END
 
 $AUTOMAKE -a
-$EGREP '(foobar|zardoz)\.h.*:' Makefile.in && Exit 1
-$EGREP '(foobar|zardoz)\.h' Makefile.in | $FGREP -v '$(YLWRAP) ' && Exit 1
+$EGREP '(foobar|zardoz)\.h.*:' Makefile.in && exit 1
+$EGREP '(foobar|zardoz)\.h' Makefile.in | $FGREP -v '$(YLWRAP) ' && exit 1
 
 :

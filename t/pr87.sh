@@ -18,7 +18,7 @@
 # "make distcheck" fails when two source dirs exist.
 
 required=cc
-. ./defs || Exit 1
+. ./defs || exit 1
 
 subdirs="foo bar"
 
@@ -60,13 +60,13 @@ $AUTOMAKE -a
     if test "$line" = ".c.o:"; then
        read next
        if test -z "$next"; then
-	  Exit 1
+	  exit 1
        else
           : # For shells with broken 'set -e'.
        fi
        break
     fi
- done) < foo/Makefile.in || Exit 1
+ done) < foo/Makefile.in || exit 1
 
 cd build
 ../configure

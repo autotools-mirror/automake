@@ -17,7 +17,7 @@
 # Check support for AM_DISTCHECK_CONFIGURE_FLAGS at "make distcheck"
 # time, and its interactions with DISTCHECK_CONFIGURE_FLAGS.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_ARG_ENABLE([success], [], [success=$enableval], [success=no])
@@ -40,7 +40,7 @@ $AUTOMAKE
 $FGREP '$(DISTCHECK_CONFIGURE_FLAGS)' Makefile.in
 $FGREP '$(AM_DISTCHECK_CONFIGURE_FLAGS)' Makefile.in
 grep 'DISTCHECK_CONFIGURE_FLAGS.*AM_DISTCHECK_CONFIGURE_FLAGS' Makefile.in \
-  && Exit 1
+  && exit 1
 
 $AUTOCONF
 ./configure --enable-success sentence='it works :-)'
@@ -59,7 +59,7 @@ END
 $AUTOMAKE Makefile
 ./config.status Makefile
 
-$MAKE distcheck >output 2>&1 && { cat output; Exit 1; }
+$MAKE distcheck >output 2>&1 && { cat output; exit 1; }
 cat output
 grep "^configure:.* success='no', sentence='it works :-)'" output
 

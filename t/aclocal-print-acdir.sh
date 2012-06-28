@@ -17,7 +17,7 @@
 # Test on aclocal's '--print-ac-dir' option.
 
 am_create_testdir=empty
-. ./defs || Exit 1
+. ./defs || exit 1
 
 $ACLOCAL --print-ac-dir
 test "$($ACLOCAL --print-ac-dir)" = "$am_system_acdir"

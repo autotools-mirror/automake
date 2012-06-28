@@ -17,37 +17,37 @@
 # Test missing when running a tool's --version.
 
 am_create_testdir=empty
-. ./defs || Exit 1
+. ./defs || exit 1
 
 get_shell_script missing
 
 # b7cb8259 assumed not to exist.
 
-./missing b7cb8259 --version 2>stderr && { cat stderr >&2; Exit 1; }
+./missing b7cb8259 --version 2>stderr && { cat stderr >&2; exit 1; }
 cat stderr >&2
-grep . stderr && Exit 1
-./missing b7cb8259 --grep 2>stderr && { cat stderr >&2; Exit 1; }
+grep . stderr && exit 1
+./missing b7cb8259 --grep 2>stderr && { cat stderr >&2; exit 1; }
 cat stderr >&2
 grep WARNING stderr
 
-./missing --run b7cb8259 --version && Exit 1
-./missing --run b7cb8259 --grep 2>stderr && { cat stderr >&2; Exit 1; }
+./missing --run b7cb8259 --version && exit 1
+./missing --run b7cb8259 --grep 2>stderr && { cat stderr >&2; exit 1; }
 cat stderr >&2
 grep WARNING stderr
 
 # missing itself it known to exist :)
 
-./missing ./missing --version 2>stderr && { cat stderr >&2; Exit 1; }
+./missing ./missing --version 2>stderr && { cat stderr >&2; exit 1; }
 cat stderr >&2
-grep . stderr && Exit 1
-./missing ./missing --grep 2>stderr && { cat stderr >&2; Exit 1; }
+grep . stderr && exit 1
+./missing ./missing --grep 2>stderr && { cat stderr >&2; exit 1; }
 cat stderr >&2
 grep WARNING stderr
 
-./missing --run ./missing --version 2>stderr || { cat stderr >&2; Exit 1; }
+./missing --run ./missing --version 2>stderr || { cat stderr >&2; exit 1; }
 cat stderr >&2
-grep . stderr && Exit 1
-./missing --run ./missing --grep 2>stderr && { cat stderr >&2; Exit 1; }
+grep . stderr && exit 1
+./missing --run ./missing --grep 2>stderr && { cat stderr >&2; exit 1; }
 cat stderr >&2
-grep WARNING stderr && Exit 1
+grep WARNING stderr && exit 1
 grep Unknown stderr

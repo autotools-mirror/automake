@@ -18,7 +18,7 @@
 # Also make sure we do not bloat the Makefile with unneeded rules.
 
 required='cc libtoolize'
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CC
@@ -78,8 +78,8 @@ $AUTOMAKE --add-missing --copy
 # We need explicit rules to build 1.o and a.lo.  Make sure
 # Automake did not output additional rules for 1.lo and and a.lo.
 $FGREP '1.o:' Makefile.in
-$FGREP '1.lo:' Makefile.in && Exit 1
-$FGREP 'a.o:' Makefile.in && Exit 1
+$FGREP '1.lo:' Makefile.in && exit 1
+$FGREP 'a.o:' Makefile.in && exit 1
 $FGREP 'a.lo:' Makefile.in
 
 ./configure

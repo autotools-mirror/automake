@@ -16,7 +16,7 @@
 
 # Test exe-specific flags with dependency tracking.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CC
@@ -36,8 +36,8 @@ $ACLOCAL
 $AUTOMAKE
 
 $FGREP ' -o foo-foo' Makefile.in
-$FGREP 'foo.o.o' Makefile.in && Exit 1
-$FGREP 'foo.$(OBJEXT).$(OBJEXT)' Makefile.in && Exit 1
+$FGREP 'foo.o.o' Makefile.in && exit 1
+$FGREP 'foo.$(OBJEXT).$(OBJEXT)' Makefile.in && exit 1
 $FGREP '$(foo_CFLAGS)' Makefile.in
 
 :

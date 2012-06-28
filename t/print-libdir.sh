@@ -17,10 +17,10 @@
 # Test on automake options '--print-data-dir' and '--print-script-dir'.
 
 am_create_testdir=empty
-. ./defs || Exit 1
+. ./defs || exit 1
 
-libdir=$($AUTOMAKE --print-libdir) || Exit 1
-case $libdir in /*);; *) Exit 1;; esac
+libdir=$($AUTOMAKE --print-libdir) || exit 1
+case $libdir in /*);; *) exit 1;; esac
 test -d "$libdir"
 test "$libdir" = "$am_pkgvdatadir"
 test "$libdir" = "$am_scriptdir"

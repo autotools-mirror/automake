@@ -18,7 +18,7 @@
 # but not all.
 # Report from Ralf Corsepius.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 if using_gmake; then
   remake="$MAKE"
@@ -65,7 +65,7 @@ grep 'AUTOCONF.*=.*false' Makefile
 : > rebuild_ok
 ./configure --no-create
 $remake
-grep 'AUTOCONF.*=.*false' Makefile && Exit 1
+grep 'AUTOCONF.*=.*false' Makefile && exit 1
 
 # Make sure rebuild rules do work if --enable-maintainer-mode is given.
 ./configure --enable-maintainer-mode

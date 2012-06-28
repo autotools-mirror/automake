@@ -18,7 +18,7 @@
 # C-specific code.
 # Matthew D. Langston <langston@SLAC.Stanford.EDU>
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_F77
@@ -35,5 +35,5 @@ END
 $ACLOCAL
 $AUTOMAKE
 
-grep '[^F]CC' Makefile.in | grep -v MKDEP && Exit 1
-Exit 0
+grep '[^F]CC' Makefile.in | grep -v MKDEP && exit 1
+exit 0

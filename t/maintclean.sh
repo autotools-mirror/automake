@@ -18,7 +18,7 @@
 # This test is for in-tree builds; see sister test 'maintclean-vpath.test'
 # for VPATH builds.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_CONFIG_FILES([bar sub/Makefile])

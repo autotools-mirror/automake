@@ -17,7 +17,7 @@
 # Test per-target flags.
 
 required="pkg-config valac gcc GNUmake"
-. ./defs || Exit 1
+. ./defs || exit 1
 
 mkdir src
 

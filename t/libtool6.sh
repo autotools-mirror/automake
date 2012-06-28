@@ -18,7 +18,7 @@
 # in different directories.  PR/285.
 
 required='libtoolize'
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >>configure.ac <<'END'
 AM_CONDITIONAL([COND1], [true])

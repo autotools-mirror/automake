@@ -15,7 +15,7 @@
 # require an Objective-C++ compiler.
 # See also sister test 'objc-basic.sh'.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > Makefile.am <<'END'
 bin_PROGRAMS = hello
@@ -40,7 +40,7 @@ if $ACLOCAL; then
 elif test $? -eq 63; then
   skip_ "Object C++ support requires Autoconf 2.65 or later"
 else
-  Exit 1 # Some other aclocal failure.
+  exit 1 # Some other aclocal failure.
 fi
 
 $AUTOMAKE

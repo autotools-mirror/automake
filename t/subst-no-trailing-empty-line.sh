@@ -21,7 +21,7 @@
 # These checks have been introduced in commit 'Release-1-9-254-g9d0eaef'
 # into the former test 'subst2.test'.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 # These are deliberately quite long, so that the xxx_PROGRAMS definition
 # in Makefile.am below will be split on multiple lines, with the last
@@ -80,15 +80,15 @@ test $($EGREP -c "^[ $tab]*@$v2@ @$v3@[ $tab]*$bs?$" Makefile.in) -eq 3
   sed -n '/^am__EXEEXT.*=/,/[^\\]$/p' Makefile
 } >t-programs
 cat t-programs
-grep '^ *$' t-programs && Exit 1
+grep '^ *$' t-programs && exit 1
 
-$MAKE print-programs >stdout || { cat stdout; Exit 1; }
+$MAKE print-programs >stdout || { cat stdout; exit 1; }
 cat stdout
 grep '^BEG1: x :END1$' stdout
 grep '^BEG2: :END2$' stdout
 grep '^BEG3: zardoz x :END3$' stdout
 
-am__empty=X $MAKE -e print-programs >stdout || { cat stdout; Exit 1; }
+am__empty=X $MAKE -e print-programs >stdout || { cat stdout; exit 1; }
 cat stdout
 grep '^BEG1: x X :END1$' stdout
 grep '^BEG2: X :END2$' stdout

@@ -16,7 +16,7 @@
 
 # Test for locations in error messages.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AM_CONDITIONAL([COND1], [true])
@@ -84,7 +84,7 @@ END
 
 cat expected
 cat observed
-diff expected observed || Exit 1
+diff expected observed || exit 1
 
 AUTOMAKE_fails -Werror
 smash_useless_diffs stderr >observed
@@ -94,6 +94,6 @@ mv -f t expected
 cat expected
 cat observed
 
-diff expected observed || Exit 1
+diff expected observed || exit 1
 
 :

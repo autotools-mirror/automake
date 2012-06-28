@@ -16,7 +16,7 @@
 
 # Another AC_OUTPUT test.  From report by Ulrich Drepper.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > configure.ac <<END
 AC_INIT([$me], [1.0])
@@ -34,5 +34,5 @@ mkdir intl po misc
 $ACLOCAL
 $AUTOMAKE
 
-grep '^gettextize' Makefile.in && Exit 1
-Exit 0
+grep '^gettextize' Makefile.in && exit 1
+exit 0

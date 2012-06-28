@@ -18,7 +18,7 @@
 # François Pinard, and later by Akim Demaille.
 
 required=etags
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_CONFIG_FILES([sub/Makefile])

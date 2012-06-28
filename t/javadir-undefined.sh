@@ -20,14 +20,14 @@
 # the *.class files).
 # See automake bug#8461.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 $ACLOCAL
 
 echo java_JAVA = a.java > Makefile.am
 AUTOMAKE_fails
 grep '^Makefile\.am:1:.*java_JAVA.*javadir.* undefined' stderr
-$EGREP '(uninitialized|line) ' stderr && Exit 1
+$EGREP '(uninitialized|line) ' stderr && exit 1
 
 echo javadir = a-dummy-value >> Makefile.am
 $AUTOMAKE

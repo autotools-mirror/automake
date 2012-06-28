@@ -19,7 +19,7 @@
 
 required=cc
 am_create_testdir=empty
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > configure.ac << 'END'
 AC_INIT([GNU C Demo], [22.3.2], [bug-automake@gnu.org])

@@ -17,7 +17,7 @@
 # Make sure 'missing texinfo' does not create empty files.
 # Report from Bob Proulx.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 echo info_TEXINFOS = bar.texi >Makefile.am
 echo grepme >bar.info
@@ -57,7 +57,7 @@ test -f bar.info
 
 # We should not create a missing bar.info.
 rm -f bar.info
-$MAKE && Exit 1
+$MAKE && exit 1
 test ! -f bar.info
 
 :

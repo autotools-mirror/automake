@@ -19,7 +19,7 @@
 # Also, ensure that 'make -n dist' and 'make -n distcheck' show what
 # would happen, at least when using GNU make.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 mkdir sub
 
@@ -52,7 +52,7 @@ $sleep
 for target in dist distcheck; do
   $MAKE -n $target
   if using_gmake; then
-    $MAKE -n $target | grep stamp-sub-dist-hook || Exit 1
+    $MAKE -n $target | grep stamp-sub-dist-hook || exit 1
   fi
   $MAKE test-no-distdir
   # No file has been actually touched or created.

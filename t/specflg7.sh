@@ -17,7 +17,7 @@
 # The true/false example from the manual, plus a check for _SHORTNAME.
 
 required='cc native'
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CC

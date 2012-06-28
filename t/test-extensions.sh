@@ -18,7 +18,7 @@
 # and do not diagnose valid (albeit more unusual) ones.
 # See automake bug#9400.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac <<'END'
 AC_OUTPUT
@@ -63,9 +63,9 @@ done
 
 # Verify that we accept valid suffixes, even if intermixed with
 # invalid ones.
-$EGREP '\.(sh|test|t33)' stderr && Exit 1
+$EGREP '\.(sh|test|t33)' stderr && exit 1
 
 # Verify that we don't try to handle invalid suffixes.
-$EGREP '(LOG_COMPILER|non-POSIX var|bad character)' stderr && Exit 1
+$EGREP '(LOG_COMPILER|non-POSIX var|bad character)' stderr && exit 1
 
 :

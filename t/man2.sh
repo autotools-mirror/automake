@@ -17,7 +17,7 @@
 # Make sure that man pages listed in man_MANS are installed and
 # renamed as documented.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac <<'END'
 AC_OUTPUT

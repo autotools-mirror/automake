@@ -17,7 +17,7 @@
 # Make sure AC_LIBSOURCE and AC_LIBSOURCES work.
 
 required=cc
-. ./defs || Exit 1
+. ./defs || exit 1
 
 mv configure.ac configure.proto
 cat >> configure.proto << 'END'

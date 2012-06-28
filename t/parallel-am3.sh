@@ -22,7 +22,7 @@
 #    installation of aux files should be race-free.
 
 required=perl-threads
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > configure.ac << 'END'
 AC_INIT([parallel-am], [1.0])

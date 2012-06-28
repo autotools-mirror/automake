@@ -25,7 +25,7 @@
 # as well as tags, TAGS.
 
 # For gen-testsuite-part: ==> try-with-serial-tests <==
-. ./defs || Exit 1
+. ./defs || exit 1
 
 # Does $MAKE support the '.MAKE' special target?
 have_dotmake=false
@@ -144,33 +144,33 @@ check_targets ()
     install-info install-html install-dvi install-pdf install-ps \
     installcheck installdirs tags TAGS mostlyclean maintainer-clean
   do
-    $MAKE -n $target >stdout || { cat stdout; Exit 1; }
+    $MAKE -n $target >stdout || { cat stdout; exit 1; }
     cat stdout
     case $target in
     install-* | installdirs | tags | TAGS ) ;;
     *)
       if $have_dotmake; then
-        grep "stamp-$target$" stdout || Exit 1
+        grep "stamp-$target$" stdout || exit 1
       fi
-      test ! -f "stamp-$target$" || Exit 1
+      test ! -f "stamp-$target$" || exit 1
       ;;
     esac
     case $target in
     install-* | installdirs ) ;;
     *)
       if $have_dotmake; then
-        grep "stamp-$target-sub" stdout || Exit 1
+        grep "stamp-$target-sub" stdout || exit 1
       fi
-      test ! -f "sub/stamp-$target-sub" || Exit 1
+      test ! -f "sub/stamp-$target-sub" || exit 1
       ;;
     esac
     case $target in
     distclean | maintainer-clean ) ;;
     *)
       if $have_dotmake; then
-        grep "should-not-be-executed" stdout || Exit 1
+        grep "should-not-be-executed" stdout || exit 1
       fi
-      test ! -f "sub2/sub2-$target-should-not-be-executed" || Exit 1
+      test ! -f "sub2/sub2-$target-should-not-be-executed" || exit 1
       ;;
     esac
   done
@@ -178,7 +178,7 @@ check_targets ()
 
 $AUTOMAKE -a -Wno-override
 ./configure
-check_targets || Exit 1
+check_targets || exit 1
 
 # Now, introduce BUILT_SOURCES into the toplevel Makefile
 # TODO: add BUILT_SOURCES to sub2, fix fallout.
@@ -186,6 +186,6 @@ sed 's/##//' < Makefile.am > t
 mv -f t Makefile.am
 $AUTOMAKE -Wno-override --force Makefile
 ./configure
-check_targets || Exit 1
+check_targets || exit 1
 
-Exit 0
+exit 0

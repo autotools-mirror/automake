@@ -20,7 +20,7 @@
 # Report from Ralf Corsepius.
 
 required='makeinfo tex texi2dvi-o'
-. ./defs || Exit 1
+. ./defs || exit 1
 
 # This setting, when honored by GNU ls, used to cause an infinite loop
 # in mdate-sh.

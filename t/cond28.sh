@@ -17,7 +17,7 @@
 # Check that conditional primaries can use directories defined
 # in the same conditions (but not others).
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >>configure.ac << 'EOF'
 AM_CONDITIONAL([USE_FOO], [true])

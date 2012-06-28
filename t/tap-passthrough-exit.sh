@@ -19,7 +19,7 @@
 #    log file
 # See also related test 'tap-passthrough.test'.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > Makefile.am << 'END'
 TEST_LOG_COMPILER = $(SHELL)
@@ -44,7 +44,7 @@ st=0
 $MAKE check || st=$?
 for e in $exit_statuses; do cat exit-$e.log; done
 cat test-suite.log
-test $st -gt 0 || Exit 1
+test $st -gt 0 || exit 1
 
 for e in $exit_statuses; do
   for log in exit-$e.log test-suite.log; do
@@ -53,6 +53,6 @@ for e in $exit_statuses; do
 done
 
 env TEST_LOG_DRIVER_FLAGS='--ignore-exit' $MAKE -e check
-$FGREP ".test - exited with status" *.log && Exit 1
+$FGREP ".test - exited with status" *.log && exit 1
 
 :

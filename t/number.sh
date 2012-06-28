@@ -17,7 +17,7 @@
 # Test to make sure _OBJECTS is only generated once.  Bug reported by
 # Joerg-Martin Schwarz.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CC

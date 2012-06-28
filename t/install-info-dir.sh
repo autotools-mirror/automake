@@ -22,7 +22,7 @@
 # FIXME: and could be merged with 'txinfo27.test'.
 
 required=makeinfo
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cwd=$(pwd) || fatal_ "cannot get current working directory"
 
@@ -92,7 +92,7 @@ if test $have_installinfo = yes; then
 
   $MAKE uninstall
   test ! -f $instdir/info/foo.info
-  $FGREP 'but has a nice name' $instdir/info/dir && Exit 1
+  $FGREP 'but has a nice name' $instdir/info/dir && exit 1
 
   dir="$destdir/$cwd/$instdir/info"
 
@@ -102,7 +102,7 @@ if test $have_installinfo = yes; then
   $FGREP 'Does nothing at all, but has a nice name' "$dir"/dir
   $MAKE DESTDIR="$cwd/$destdir" uninstall
   test ! -f "$dir"/foo.info
-  $FGREP 'but has a nice name' "$dir"/dir && Exit 1
+  $FGREP 'but has a nice name' "$dir"/dir && exit 1
 
   unset dir
 
@@ -118,11 +118,11 @@ echo error from install-info >&2
 exit 127
 END
 chmod a+x bin/install-info
-$MAKE install-info >output 2>&1 || { cat output; Exit 1; }
+$MAKE install-info >output 2>&1 || { cat output; exit 1; }
 cat output
 test -f $instdir/info/foo.info
 test ! -f $instdir/info/dir
-grep 'error from install-info' output && Exit 1
+grep 'error from install-info' output && exit 1
 
 rm -rf $instdir output
 
@@ -146,7 +146,7 @@ END
   $MAKE uninstall
   test ! -f $instdir/info/foo.info
   test -f $instdir/info/dir
-  $FGREP 'but has a nice name' $instdir/info/dir && Exit 1
+  $FGREP 'but has a nice name' $instdir/info/dir && exit 1
   : For shells with busted 'set -e'.
 fi
 
@@ -181,7 +181,7 @@ if test $have_installinfo = yes; then
     test -f $instdir/info/dir
     env AM_UPDATE_INFO_DIR="$val" $MAKE uninstall
     test ! -f $instdir/info/foo.info
-    $FGREP 'but has a nice name' $instdir/info/dir && Exit 1
+    $FGREP 'but has a nice name' $instdir/info/dir && exit 1
     : For shells with busted 'set -e'.
   done
 fi

@@ -17,7 +17,7 @@
 # Make sure we give a sensible error message when AC_INIT and
 # AM_INIT_AUTOMAKE are both given less than two arguments.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 for ac_init_args in '' '([x])'; do
   for am_init_args in '' '([1.10])'; do
@@ -28,9 +28,9 @@ for ac_init_args in '' '([x])'; do
 END
     cat configure.ac # For debugging.
     # The error message should mention AC_INIT, not AC_PACKAGE_VERSION.
-    ($ACLOCAL && $AUTOCONF) 2>stderr && { cat stderr >&2; Exit 1; }
+    ($ACLOCAL && $AUTOCONF) 2>stderr && { cat stderr >&2; exit 1; }
     cat stderr >&2
-    $FGREP AC_PACKAGE_VERSION stderr && Exit 1
+    $FGREP AC_PACKAGE_VERSION stderr && exit 1
     grep 'configure\.ac:.* AC_INIT .*arguments' stderr
   done
 done

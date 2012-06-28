@@ -20,7 +20,7 @@
 # check for tests that are binary executables.
 # See also the more generic test 'check-fd-redirect.test'.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_OUTPUT
@@ -64,6 +64,6 @@ cat bar.log
 test $st -eq 0
 grep "^ foofoofoo$" stdout
 grep "^ barbarbar$" stdout
-$EGREP '(foofoofoo|barbarbar)' *.log && Exit 1
+$EGREP '(foofoofoo|barbarbar)' *.log && exit 1
 
 :

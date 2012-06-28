@@ -16,7 +16,7 @@
 
 # PROGRAMS and LIBRARIES can be installed in (pkg)libexecdir.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > Makefile.am << 'END'
 libexec_PROGRAMS = foo

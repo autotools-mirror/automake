@@ -20,7 +20,7 @@
 # FIXME: performance is too low, and FAIL accordingly; it just offers
 # FIXME: an easy way verify how effective a performance optimization is.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 count=10000
 
@@ -63,7 +63,7 @@ $AUTOMAKE -a
 
 ./configure
 
-$MAKE test-suite.log >stdout || { cat stdout; Exit 1; }
+$MAKE test-suite.log >stdout || { cat stdout; exit 1; }
 cat stdout
 
 # Sanity checks.

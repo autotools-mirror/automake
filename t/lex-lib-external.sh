@@ -18,7 +18,7 @@
 # library, if that's available.
 
 required='cc lex'
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CC
@@ -71,7 +71,7 @@ $MAKE have-lexlib || skip_ "no system-wide lex library found"
 $MAKE all
 if ! cross_compiling; then
   echo GOOD | ./lexer
-  echo BAD | ./lexer && Exit 1
+  echo BAD | ./lexer && exit 1
   : For shells with busted 'set -e'.
 fi
 yl_distcheck

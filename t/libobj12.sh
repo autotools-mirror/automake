@@ -17,7 +17,7 @@
 # Test if a file can be mentioned in LIBOBJS and explicitly.
 # (See libobj13.test for the LTLIBRARIES check.)
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CC

@@ -16,7 +16,7 @@
 
 # Another test to make sure no-dependencies option does the right thing.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > Makefile.am << 'END'
 bin_PROGRAMS = foo
@@ -45,6 +45,6 @@ END
 $ACLOCAL
 $AUTOMAKE
 
-grep DEPMODE Makefile.in && Exit 1
+grep DEPMODE Makefile.in && exit 1
 
 :

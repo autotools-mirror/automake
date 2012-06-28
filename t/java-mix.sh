@@ -19,7 +19,7 @@
 # modifiers.  Also check that '.java' files are not distributed by
 # default.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_OUTPUT
@@ -50,7 +50,7 @@ $AUTOCONF
 # Automake used to display non-fatal warnings with this test, but
 # they were unexpected, so we want to consider them as failures in
 # this test.
-$AUTOMAKE 2>stderr || { cat stderr >&2; Exit 1; }
+$AUTOMAKE 2>stderr || { cat stderr >&2; exit 1; }
 cat stderr >&2
 test ! -s stderr
 

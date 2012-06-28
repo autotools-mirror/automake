@@ -18,7 +18,7 @@
 # See also sister test 'objc-minidemo.sh'.
 
 required=native
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 dnl Support for Object C++ was introduced only in Autoconf 2.65.
@@ -62,7 +62,7 @@ if $ACLOCAL; then
 elif test $? -eq 63; then
   skip_ "Object C++ support requires Autoconf 2.65 or later"
 else
-  Exit 1 # Some other aclocal failure.
+  exit 1 # Some other aclocal failure.
 fi
 $AUTOCONF
 $AUTOHEADER

@@ -17,7 +17,7 @@
 # An empty "foo_PRIMARY" declaration should *not* cause "make install"
 # to create directory $(foodir).  See automake bug#10997 and bug#11030.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac <<'END'
 AC_SUBST([CC], [whatever])
@@ -106,14 +106,14 @@ doinst ()
 
 ./configure --prefix="$cwd/inst"
 doinst
-test ! -d inst || { find inst; Exit 1; }
+test ! -d inst || { find inst; exit 1; }
 $MAKE uninstall
 doinst bin_SCRIPTS=foo.sh AM_MAKEFLAGS='bin_SCRIPTS=foo.sh'
 test -f inst/bin/foo.sh
 
 ./configure
 doinst DESTDIR="$cwd/dest"
-test ! -d dest || { find dest; Exit 1; }
+test ! -d dest || { find dest; exit 1; }
 $MAKE uninstall
 doinst DESTDIR="$cwd/dest" bin_SCRIPTS=foo.sh AM_MAKEFLAGS='bin_SCRIPTS=foo.sh'
 test -f dest/usr/local/bin/foo.sh

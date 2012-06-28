@@ -17,7 +17,7 @@
 # Test that installing under $exec_prefix is handled by install-exec.
 # Testing with headers for instance.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >Makefile.am << 'EOF'
 # User directories.
@@ -62,7 +62,7 @@ pkgdata_SCRIPTS = script
 ##pkginclude_SCRIPTS = script
 EOF
 
-$ACLOCAL || Exit 1
+$ACLOCAL || exit 1
 $AUTOMAKE
 
 # install-SCRIPTS targets.
@@ -86,4 +86,4 @@ EOF
 
 diff expected produced
 
-Exit 0
+exit 0

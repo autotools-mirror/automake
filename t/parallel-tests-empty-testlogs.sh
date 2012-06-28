@@ -18,7 +18,7 @@
 # - empty TESTS
 # - empty TEST_LOGS
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_CONFIG_FILES([sub1/Makefile sub2/Makefile])
@@ -62,7 +62,7 @@ $AUTOMAKE -a
 
 no_test_has_run ()
 {
-  ls -1 *.log | grep -v '^test-suite\.log$' | grep . && Exit 1
+  ls -1 *.log | grep -v '^test-suite\.log$' | grep . && exit 1
   grep '^# TOTAL: *0$' test-suite.log
   :
 }

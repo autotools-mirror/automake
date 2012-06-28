@@ -18,7 +18,7 @@
 # Similar to txinfo25.test.
 
 required='makeinfo tex texi2dvi-o dvips'
-. ./defs || Exit 1
+. ./defs || exit 1
 
 mkdir sub
 
@@ -84,8 +84,8 @@ test -f sub/another.ps
 
 $MAKE mostlyclean
 
-ls *.aux && Exit 1
-ls sub/*.aux && Exit 1
+ls *.aux && exit 1
+ls sub/*.aux && exit 1
 
 test -f main.dvi
 test -f main.ps

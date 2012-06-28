@@ -16,7 +16,7 @@
 
 # Test to make sure that 'automake --force-missing' works.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 rm -f install-sh
 
@@ -29,6 +29,6 @@ $AUTOMAKE --add-missing --force-missing
 
 ls -l install-sh
 test -f install-sh
-grep zot install-sh && Exit 1
+grep zot install-sh && exit 1
 
 :

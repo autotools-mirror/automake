@@ -17,7 +17,7 @@
 # Make sure automake -Woverride suggests using TARGET-local instead
 # of TARGET when possible.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > Makefile.am << 'END'
 install:
@@ -34,11 +34,11 @@ $ACLOCAL
 $AUTOMAKE -Wno-override
 AUTOMAKE_fails
 # There is no such thing as 'install-local'.
-grep ':.*install-local' stderr && Exit 1
+grep ':.*install-local' stderr && exit 1
 grep ':.*installcheck-local' stderr
 grep ':.*html-local' stderr
 # Make sure overriding *-am targets suggest using *-local, not *-am.
-grep ':.*clean-am-local' stderr && Exit 1
+grep ':.*clean-am-local' stderr && exit 1
 grep ':.*clean-local' stderr
 
 :

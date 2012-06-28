@@ -17,7 +17,7 @@
 # TAP support:
 #  - out-of-order test results
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 . "$am_testauxdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"
 
@@ -58,7 +58,7 @@ ok 17
 END
 
 TESTS='a.test b.test c.test d.test' $MAKE -e check >stdout \
-  && { cat stdout; Exit 1; }
+  && { cat stdout; exit 1; }
 cat stdout
 
 count_test_results total=17 pass=8 fail=0 xpass=0 xfail=1 skip=0 error=8

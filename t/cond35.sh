@@ -18,7 +18,7 @@
 # Report from Roman Fietze.
 
 required='cc lex yacc'
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >>configure.ac <<'EOF'
 AM_CONDITIONAL([CASE_A], [test -z "$case_B"])

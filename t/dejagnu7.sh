@@ -18,7 +18,7 @@
 # (to detect TCL errors) on a file with TCL errors.
 
 required=runtest
-. ./defs || Exit 1
+. ./defs || exit 1
 
 runtest --help | grep '.*--status' \
   || skip_ "dejagnu lacks support for '--status'"
@@ -54,7 +54,7 @@ $AUTOMAKE --add-missing
 
 ./configure
 
-$MAKE check && Exit 1
+$MAKE check && exit 1
 test -f failtcl.log
 test -f failtcl.sum
 $FGREP 'missing close-brace' failtcl.sum

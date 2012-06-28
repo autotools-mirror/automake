@@ -20,7 +20,7 @@
 # AUTOUPDATE='autoupdate --verbose'.
 set x ${AUTOUPDATE-autoupdate}
 required=$2
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > configure.ac << 'END'
 AC_INIT
@@ -29,8 +29,8 @@ END
 $PERL -ne '/AU_DEFUN\(\[(\w+)\]/ && print "$1\n"' \
   "$am_automake_acdir/obsolete.m4" > obs
 cat obs >> configure.ac
-$PERL -ne 'chomp; print "grep $_ output || Exit 1\n"; ' obs > obs.1
-$PERL -ne 'chomp; print "grep $_ configure.ac && Exit 1\n"; ' obs > obs.2
+$PERL -ne 'chomp; print "grep $_ output || exit 1\n"; ' obs > obs.1
+$PERL -ne 'chomp; print "grep $_ configure.ac && exit 1\n"; ' obs > obs.2
 echo : >> obs.1 # Since it will be sourced, it must end with a success.
 echo : >> obs.2 # Likewise.
 
@@ -44,7 +44,7 @@ test $(wc -l <configure.ac) -gt 1
 $ACLOCAL
 
 # Expect Autoconf to complain about each of the macros in obs.
-$AUTOCONF -Wobsolete >output 2>&1 || { cat output; Exit 1; }
+$AUTOCONF -Wobsolete >output 2>&1 || { cat output; exit 1; }
 cat output
 . ./obs.1
 # Make sure Autoupdate remove each of these macros.

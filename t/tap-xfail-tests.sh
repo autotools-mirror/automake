@@ -17,7 +17,7 @@
 # TAP and $(XFAIL_TESTS): test results without directives are turned from
 # PASS to XPASS and from FAIL to XFAIL; other results are unchanged.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 . "$am_testauxdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"
 
@@ -36,7 +36,7 @@ not ok 6 # SKIP
 Bail out!
 END
 
-$MAKE check >stdout && { cat stdout; Exit 1; }
+$MAKE check >stdout && { cat stdout; exit 1; }
 cat stdout
 
 count_test_results total=7 pass=0 fail=0 xpass=2 xfail=3 skip=1 error=1
@@ -59,7 +59,7 @@ ok 2 # SKIP
 not ok 3 # TODO
 END
 
-$MAKE check >stdout || { cat stdout; Exit 1; }
+$MAKE check >stdout || { cat stdout; exit 1; }
 cat stdout
 
 count_test_results total=3 pass=0 fail=0 xpass=0 xfail=2 skip=1 error=0

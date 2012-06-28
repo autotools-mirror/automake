@@ -18,7 +18,7 @@
 # From Ralf Corsepius.
 
 required=GNUmake
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AM_MAKE_INCLUDE
@@ -49,4 +49,4 @@ for flag in '' -w; do
    rm -f config.cache
 done
 
-Exit 0
+exit 0

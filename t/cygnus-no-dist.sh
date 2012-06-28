@@ -16,7 +16,7 @@
 
 # Check that cygnus mode forbids creation of distribution tarball.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 echo AM_MAINTAINER_MODE >> configure.ac
 mv -f configure.ac configure.stub
@@ -35,7 +35,7 @@ $AUTOMAKE --cygnus -Wno-obsolete
 $MAKE
 
 for target in dist distdir distcheck dist-all dist-gzip; do
-  $MAKE -n $target >out 2>&1 && { cat out; Exit 1; }
+  $MAKE -n $target >out 2>&1 && { cat out; exit 1; }
   cat out
   grep $target out
 done
@@ -70,7 +70,7 @@ $AUTOMAKE
 ./configure
 $MAKE
 cd sub2
-$MAKE -n distdir >out 2>&1 && { cat out; Exit 1; }
+$MAKE -n distdir >out 2>&1 && { cat out; exit 1; }
 grep distdir out
 cd ..
 

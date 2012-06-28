@@ -18,7 +18,7 @@
 # Related to automake bug#11146.
 
 required='makeinfo tex texi2dvi-o dvips'
-. ./defs || Exit 1
+. ./defs || exit 1
 
 mkdir sub
 
@@ -93,7 +93,7 @@ for fmt in info pdf ps dvi html all; do
   $MAKE $fmt
   ls -l . sub # For debugging.
   ls -d foo* baz* sub/bar* > lst
-  $EGREP -v '^(foo|sub/bar|baz)\.(texi|dvi|ps|pdf|html|info)$' lst && Exit 1
+  $EGREP -v '^(foo|sub/bar|baz)\.(texi|dvi|ps|pdf|html|info)$' lst && exit 1
   $MAKE clean
 done
 

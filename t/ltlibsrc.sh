@@ -17,7 +17,7 @@
 # Test to make sure a sensible default source for libraries is used.
 
 required='cc libtool'
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CC

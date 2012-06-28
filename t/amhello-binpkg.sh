@@ -18,7 +18,7 @@
 # using DESTDIR to build simple, no-frills binary packages.
 
 am_create_testdir=empty
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cp "$am_docdir"/amhello-1.0.tar.gz . \
   || fatal_ "cannot get amhello tarball"

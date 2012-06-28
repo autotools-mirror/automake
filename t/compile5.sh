@@ -17,7 +17,7 @@
 # Make sure the file name translation in the 'compile' script works
 # correctly
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 get_shell_script compile
 
@@ -73,7 +73,7 @@ for sp in '' ' '; do
   res=$(./compile ./cl -L${sp}"$cwd" | sed -e 's/-link -LIBPATH://')
   case $res in
     ?:[\\/]*) ;;
-    *) Exit 1 ;;
+    *) exit 1 ;;
   esac
 done
 

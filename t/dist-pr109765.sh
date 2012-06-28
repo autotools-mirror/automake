@@ -19,7 +19,7 @@
 # so that the latter ones fail.
 
 required=bzip2
-. ./defs || Exit 1
+. ./defs || exit 1
 
 echo AC_OUTPUT >> configure.ac
 : > Makefile.am
@@ -31,9 +31,9 @@ $AUTOMAKE || fatal_ "automake failed"
 ./configure
 $MAKE dist-gzip dist-bzip2
 
-gzip -dc $distdir.tar.gz | tar tf - > one || { cat one; Exit 1; }
+gzip -dc $distdir.tar.gz | tar tf - > one || { cat one; exit 1; }
 cat one
-bzip2 -dc $distdir.tar.gz | tar tf - > two || { cat two; Exit 1; }
+bzip2 -dc $distdir.tar.gz | tar tf - > two || { cat two; exit 1; }
 cat two
 
 $FGREP "$distdir/Makefile.am" one

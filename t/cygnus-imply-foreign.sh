@@ -16,7 +16,7 @@
 
 # Check that 'cygnus' mode imply 'foreign' mode.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac <<'END'
 # This is *required* in cygnus mode

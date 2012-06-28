@@ -17,7 +17,7 @@
 # TAP support:
 #  - TAP errors following a "TAP plan with SKIP" are still diagnosed.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 . "$am_testauxdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"
 
@@ -30,7 +30,7 @@ a non-TAP line
 1..1
 END
 
-$MAKE check >stdout && { cat stdout; Exit 1; }
+$MAKE check >stdout && { cat stdout; exit 1; }
 cat stdout
 
 count_test_results total=4 pass=0 fail=0 xpass=0 xfail=0 skip=1 error=3

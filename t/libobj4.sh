@@ -17,7 +17,7 @@
 # Test to make sure LIBOBJS error only occurs if LIBOBJS seen.  Report
 # from Jim Meyering.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > Makefile.am << 'END'
 bin_PROGRAMS = foo

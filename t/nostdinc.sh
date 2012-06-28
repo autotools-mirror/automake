@@ -21,7 +21,7 @@
 # just skip the rest of the test if configure fails to find a working C
 # compiler.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CC
@@ -37,7 +37,7 @@ END
 $ACLOCAL
 $AUTOMAKE
 
-$EGREP '(-I *\.|-I.*srcdir|am__isrc)' Makefile.in && Exit 1
+$EGREP '(-I *\.|-I.*srcdir|am__isrc)' Makefile.in && exit 1
 
 # We'll test the fully-processed Makefile too.
 $AUTOCONF
@@ -45,12 +45,12 @@ $AUTOCONF
 # Test with $builddir != $srcdir
 mkdir build
 cd build
-../configure || Exit $?
-$EGREP '.*-I *(\.|\$.srcdir.)' Makefile && Exit 1
+../configure || exit $?
+$EGREP '.*-I *(\.|\$.srcdir.)' Makefile && exit 1
 
 # Test with $builddir = $srcdir
 cd ..
-./configure || Exit $?
-$EGREP '.*-I *(\.|\$.srcdir.)' Makefile && Exit 1
+./configure || exit $?
+$EGREP '.*-I *(\.|\$.srcdir.)' Makefile && exit 1
 
-Exit 0
+exit 0

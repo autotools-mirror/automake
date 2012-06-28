@@ -19,7 +19,7 @@
 # used.
 
 am_serial_tests=yes
-. ./defs || Exit 1
+. ./defs || exit 1
 
 echo 'TESTS = foo.test' > Makefile.am
 
@@ -27,8 +27,8 @@ $ACLOCAL
 
 for opts in '' '-a' '--add-missing --copy'; do
   $AUTOMAKE $opts
-  $FGREP 'test-driver' Makefile.in && Exit 1
-  find . | $FGREP 'test-driver' && Exit 1
+  $FGREP 'test-driver' Makefile.in && exit 1
+  find . | $FGREP 'test-driver' && exit 1
   : For shells with busted 'set -e'.
 done
 

@@ -16,7 +16,7 @@
 
 # Make sure we can override a program rule.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CC

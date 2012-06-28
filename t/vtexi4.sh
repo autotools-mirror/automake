@@ -22,7 +22,7 @@
 # texi2dvi.
 
 required='makeinfo tex texi2dvi-o grep-nonprint'
-. ./defs || Exit 1
+. ./defs || exit 1
 
 test $(LC_ALL=C date '+%u') -gt 0 && test $(LC_ALL=C date '+%u') -lt 8 \
   && day=$(LC_ALL=C date '+%d')   && test -n "$day" \

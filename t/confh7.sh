@@ -17,7 +17,7 @@
 # Test to make sure several config headers are allowed.
 # See also sister "semantic" test 'confh8.test'.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AM_CONFIG_HEADER([config.h two.h])

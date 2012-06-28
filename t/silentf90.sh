@@ -18,7 +18,7 @@
 # Keep this ins sync with the sister test silentf77.test.
 
 required=fortran
-. ./defs || Exit 1
+. ./defs || exit 1
 
 mkdir sub
 
@@ -59,15 +59,15 @@ $AUTOMAKE --add-missing
 $AUTOCONF
 
 ./configure --enable-silent-rules
-$MAKE >stdout || { cat stdout; Exit 1; }
+$MAKE >stdout || { cat stdout; exit 1; }
 cat stdout
 # Avoid spurious failures with SunStudio Fortran compilers.
 sed '/^NOTICE:/d' stdout > t
 mv -f t stdout
 cat stdout
 
-$EGREP ' (-c|-o)' stdout && Exit 1
-grep 'mv ' stdout && Exit 1
+$EGREP ' (-c|-o)' stdout && exit 1
+grep 'mv ' stdout && exit 1
 
 grep 'FC .*foo\.'  stdout
 grep 'FC .*bar\.'  stdout
@@ -76,17 +76,17 @@ grep 'FCLD .*bar1' stdout
 grep 'FCLD .*foo2' stdout
 grep 'FCLD .*bar2' stdout
 
-$EGREP '(F77|F77LD) ' stdout && Exit 1
+$EGREP '(F77|F77LD) ' stdout && exit 1
 
 # Ensure a clean rebuild.
 $MAKE clean
 
-$MAKE V=1 >stdout || { cat stdout; Exit 1; }
+$MAKE V=1 >stdout || { cat stdout; exit 1; }
 cat stdout
 
 grep ' -c ' stdout
 grep ' -o ' stdout
 
-$EGREP '(F77|FC|LD) ' stdout && Exit 1
+$EGREP '(F77|FC|LD) ' stdout && exit 1
 
 :

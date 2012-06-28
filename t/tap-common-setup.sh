@@ -16,7 +16,7 @@
 
 # Auxiliary test to set up common data used by many tests on TAP support.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << END
 AC_OUTPUT

@@ -17,7 +17,7 @@
 # Check to make sure EXTRA_DIST can contain a directory or
 # a subdirectory, in $(builddir) or $(srcdir).
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 echo AC_OUTPUT >> configure.ac
 

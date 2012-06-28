@@ -16,7 +16,7 @@
 
 # Test the optional argument of AM_PROG_AR.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AM_PROG_AR([
@@ -30,7 +30,7 @@ END
 $ACLOCAL
 $AUTOCONF
 
-./configure AR=/bin/false >stdout || { cat stdout; Exit 1; }
+./configure AR=/bin/false >stdout || { cat stdout; exit 1; }
 cat stdout
 grep '^checking.* archiver .*interface.*\.\.\. unknown$' stdout
 grep '^checking for something else\.\.\. found it$' stdout

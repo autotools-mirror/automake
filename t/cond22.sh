@@ -17,7 +17,7 @@
 # Regression test for bug when sources listed in conditional.
 # Report from Richard Boulton.  PR/326.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 CC=false; AC_SUBST([CC])

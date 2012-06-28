@@ -16,7 +16,7 @@
 
 # Test missing with version mismatches.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >>configure.ac <<'EOF'
 AC_OUTPUT
@@ -61,6 +61,6 @@ $MAKE
 # Make sure $MAKE fails when timestamps aren't updated and missing is not used.
 $sleep
 touch aclocal.m4
-$MAKE && Exit 1
+$MAKE && exit 1
 
 :

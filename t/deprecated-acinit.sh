@@ -17,7 +17,7 @@
 # Check that automake and autoconf complain about an old-style AC_INIT
 # call used with a new-style AM_AUTOMAKE_INIT call.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 : > Makefile.am
 
@@ -37,11 +37,11 @@ for ac_init in AC_INIT 'AC_INIT([Makefile.am])'; do
         AC_CONFIG_FILES([Makefile])
 END
     cat configure.ac # For debugging.
-    $ACLOCAL 2>stderr && { cat stderr >&2; Exit 1; }
+    $ACLOCAL 2>stderr && { cat stderr >&2; exit 1; }
     cat stderr >&2
     grep "^configure\\.ac:.* $errmsg" stderr
     cp aclocal-m4.sav aclocal.m4
-    $AUTOCONF 2>stderr && { cat stderr >&2; Exit 1; }
+    $AUTOCONF 2>stderr && { cat stderr >&2; exit 1; }
     cat stderr >&2
     grep "^configure\\.ac:.* $errmsg" stderr
     AUTOMAKE_fails

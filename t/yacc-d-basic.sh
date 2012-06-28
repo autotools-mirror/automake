@@ -19,7 +19,7 @@
 # Keep in sync with sister test 'yacc-d-cxx.test'.
 
 required='cc yacc'
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CC
@@ -75,7 +75,7 @@ $ACLOCAL
 $AUTOCONF
 
 $AUTOMAKE -a
-$FGREP parse.h foo/Makefile.in bar/Makefile.in baz/Makefile.in && Exit 1
+$FGREP parse.h foo/Makefile.in bar/Makefile.in baz/Makefile.in && exit 1
 
 cat >> foo/Makefile.am <<END
 BUILT_SOURCES = parse.h

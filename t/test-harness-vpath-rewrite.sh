@@ -17,7 +17,7 @@
 # Check that our concurrent test harness is not subject to spurious VPATH
 # rewrites.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_OUTPUT
@@ -51,7 +51,7 @@ test -f bar.trs
 test -f baz.log
 test -f baz.trs
 # We don't want VPATH rewrites, really.
-$MAKE check -n | $EGREP '\.\./(foo|bar|baz)( |$)' && Exit 1
+$MAKE check -n | $EGREP '\.\./(foo|bar|baz)( |$)' && exit 1
 $MAKE distcheck
 
 :

@@ -25,7 +25,7 @@
 # of the older non-parallel 'simple-tests' driver.
 
 required='java javac'
-. ./defs || Exit 1
+. ./defs || exit 1
 
 echo "AC_SUBST([PATH_SEPARATOR], ['$PATH_SEPARATOR'])" >> configure.ac
 

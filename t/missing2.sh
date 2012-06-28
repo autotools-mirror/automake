@@ -16,7 +16,7 @@
 
 # Test missing with version mismatches.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >>configure.ac <<'EOF'
 m4_include([v.m4])
@@ -53,6 +53,6 @@ $MAKE
 # Make sure $MAKE fail when timestamps aren't updated and missing is not used.
 $sleep
 touch v.m4
-$MAKE && Exit 1
+$MAKE && exit 1
 
 :

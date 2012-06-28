@@ -18,7 +18,7 @@
 # automake: Makefile.am: required file "../../install-sh" not found; installing
 # This also makes sure that install-sh is created in the correct directory.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 : > Makefile.am
 rm -f install-sh
@@ -34,6 +34,6 @@ $AUTOMAKE --add-missing > output 2>&1
 
 # Only one '/' should appear in the output.
 cat output
-grep '/.*/' output && Exit 1
+grep '/.*/' output && exit 1
 
 test -f install-sh

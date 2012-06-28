@@ -21,7 +21,7 @@
 # See also related tests 'test-driver-custom-multitest-recheck.test' and
 # 'parallel-tests-recheck-override.test'.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cp "$am_testauxdir"/trivial-test-driver . \
   || fatal_ "failed to fetch auxiliary script trivial-test-driver"
@@ -83,7 +83,7 @@ for vpath in : false; do
   $srcdir/configure
 
   : Run the tests for the first time.
-  $MAKE check >stdout && { cat stdout; Exit 1; }
+  $MAKE check >stdout && { cat stdout; exit 1; }
   cat stdout
   # All the test scripts should have run.
   test -f a.run
@@ -95,7 +95,7 @@ for vpath in : false; do
 
   : An empty '$(TESTS)' or '$(TEST_LOGS)' means that no test should be run.
   for var in TESTS TEST_LOGS; do
-    env "$var=" $MAKE -e recheck >stdout || { cat stdout; Exit 1; }
+    env "$var=" $MAKE -e recheck >stdout || { cat stdout; exit 1; }
     cat stdout
     count_test_results total=0 pass=0 fail=0 xpass=0 xfail=0 skip=0 error=0
     test ! -r a.run
@@ -106,7 +106,7 @@ for vpath in : false; do
 
   : a.test was successful the first time, no need to re-run it.
   env TESTS=a.test $MAKE -e recheck >stdout \
-    || { cat stdout; Exit 1; }
+    || { cat stdout; exit 1; }
   cat stdout
   count_test_results total=0 pass=0 fail=0 xpass=0 xfail=0 skip=0 error=0
   test ! -r a.run
@@ -116,7 +116,7 @@ for vpath in : false; do
   : b.test failed, it should be re-run.  And make it pass this time.
   echo OK > b.ok
   TEST_LOGS=b.log $MAKE -e recheck >stdout \
-    || { cat stdout; Exit 1; }
+    || { cat stdout; exit 1; }
   cat stdout
   test ! -r a.run
   test -f b.run
@@ -127,14 +127,14 @@ for vpath in : false; do
 
   : No need to re-run a.test or b.test anymore.
   TEST_LOGS=b.log $MAKE -e recheck >stdout \
-    || { cat stdout; Exit 1; }
+    || { cat stdout; exit 1; }
   cat stdout
   count_test_results total=0 pass=0 fail=0 xpass=0 xfail=0 skip=0 error=0
   test ! -r a.run
   test ! -r b.run
   test ! -r c.run
   TESTS='a.test b.test' $MAKE -e recheck >stdout \
-    || { cat stdout; Exit 1; }
+    || { cat stdout; exit 1; }
   cat stdout
   count_test_results total=0 pass=0 fail=0 xpass=0 xfail=0 skip=0 error=0
   test ! -r a.run
@@ -148,7 +148,7 @@ for vpath in : false; do
   # a ':' away after the first iteration, even if it is redirected.
   echo dummy > c.err
   env TEST_LOGS='a.log c.log' $MAKE -e recheck >stdout \
-    && { cat stdout; Exit 1; }
+    && { cat stdout; exit 1; }
   cat stdout
   count_test_results total=1 pass=0 fail=0 xpass=0 xfail=0 skip=0 error=1
   test ! -r a.run
@@ -162,7 +162,7 @@ for vpath in : false; do
   # Use 'echo', not ':'; see comments above for why.
   echo dummy > c.ok
   env TESTS='c.test a.test' $MAKE -e recheck >stdout \
-    || { cat stdout; Exit 1; }
+    || { cat stdout; exit 1; }
   cat stdout
   count_test_results total=1 pass=1 fail=0 xpass=0 xfail=0 skip=0 error=0
   test ! -r a.run
@@ -173,7 +173,7 @@ for vpath in : false; do
 
   : Nothing should be rerun anymore, as all tests have been eventually
   : successful.
-  $MAKE recheck >stdout || { cat stdout; Exit 1; }
+  $MAKE recheck >stdout || { cat stdout; exit 1; }
   cat stdout
   count_test_results total=0 pass=0 fail=0 xpass=0 xfail=0 skip=0 error=0
   test ! -r a.run

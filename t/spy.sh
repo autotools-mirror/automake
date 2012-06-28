@@ -67,7 +67,7 @@
 # So it seems only non-overlapping ::-rule may be portable.  This is
 # what we check now.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >Makefile <<\EOF
 a :: b

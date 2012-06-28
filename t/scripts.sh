@@ -17,7 +17,7 @@
 # Test for bug reported by Jim Meyering.
 # AC_PROG_INSTALL was required when only noinst_SCRIPTS was defined.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > Makefile.am << 'END'
 noinst_SCRIPTS = foo

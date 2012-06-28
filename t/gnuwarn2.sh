@@ -16,7 +16,7 @@
 
 # Check diagnostics about no-installman being disallowed in 'gnu'.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > configure.ac << 'END'
 AC_INIT([gnuwarn2], [1.0])

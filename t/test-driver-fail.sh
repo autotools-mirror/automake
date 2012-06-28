@@ -22,7 +22,7 @@
 # (like our dummy one in this test) might leave around a test log even
 # in case of internal failures.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac <<'END'
 AC_OUTPUT
@@ -45,7 +45,7 @@ $AUTOMAKE
 ./configure
 
 # The testsuite driver does not exist.
-$MAKE check && Exit 1
+$MAKE check && exit 1
 test ! -f test-suite.log
 
 # The testsuite driver exists and create the test log files, but fails.
@@ -58,7 +58,7 @@ exit 1
 END
 chmod a+x oops
 
-$MAKE check && Exit 1
+$MAKE check && exit 1
 test ! -f test-suite.log
 
 :

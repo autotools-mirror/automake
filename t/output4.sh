@@ -16,7 +16,7 @@
 
 # It's hard to believe there are so many AC_OUTPUT-related bugs.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > configure.ac <<END
 AC_INIT([$me], [1.0])
@@ -31,5 +31,5 @@ mkdir tests
 $ACLOCAL
 $AUTOMAKE
 
-grep tests/defs.in tests/Makefile.in && Exit 1
-Exit 0
+grep tests/defs.in tests/Makefile.in && exit 1
+exit 0

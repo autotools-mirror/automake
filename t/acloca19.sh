@@ -18,7 +18,7 @@
 # more than just variable definitions.
 # Report from Peter Breitenlohner (PR/450).
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >configure.ac <<'END'
 AC_INIT([acloca19], [1.0])
@@ -39,11 +39,11 @@ END
 
 $ACLOCAL
 $AUTOCONF
-./configure >stdout || { cat stdout; Exit 1; }
+./configure >stdout || { cat stdout; exit 1; }
 cat stdout
 grep GREPME stdout
-grep 'aconfig\.ac' aclocal.m4 && Exit 1
-grep 'bconfig\.ac' aclocal.m4 && Exit 1
+grep 'aconfig\.ac' aclocal.m4 && exit 1
+grep 'bconfig\.ac' aclocal.m4 && exit 1
 grep with-grepme configure
 
 :

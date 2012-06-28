@@ -18,7 +18,7 @@
 # PR/338, reported by Charles Wilson.
 
 required='gettext'
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >>configure.ac <<END
 AM_GNU_GETTEXT([external])
@@ -49,7 +49,7 @@ $AUTOMAKE --add-missing
 
 # Don't try running ./configure --with-included-gettext if the
 # user is using AM_GNU_GETTEXT([external]).
-grep 'with-included-gettext' Makefile.in && Exit 1
+grep 'with-included-gettext' Makefile.in && exit 1
 
 # intl/ isn't wanted with AM_GNU_GETTEXT([external]).
 

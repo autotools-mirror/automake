@@ -17,7 +17,7 @@
 # Test to make sure the Fortran 90 linker is used when appropriate.
 # (copied from link_f_only.test) Mike Nolta <mrnolta@princeton.edu>
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_FC
@@ -38,7 +38,7 @@ $AUTOMAKE
 grep '.\$(FCLINK)' Makefile.in
 
 # We should not see these patterns:
-grep '.\$(CXXLINK)' Makefile.in && Exit 1
-grep '.\$(LINK)'    Makefile.in && Exit 1
+grep '.\$(CXXLINK)' Makefile.in && exit 1
+grep '.\$(LINK)'    Makefile.in && exit 1
 
-Exit 0
+exit 0

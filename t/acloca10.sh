@@ -24,7 +24,7 @@
 # TODO: puts third-party macros directly into 'acdir'.
 
 am_create_testdir=empty
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > configure.ac << 'END'
 AC_INIT
@@ -78,7 +78,7 @@ $AUTOCONF
 $FGREP ':macro11:' configure
 $FGREP ':macro21:' configure
 $FGREP ':macro33:' configure
-grep MACRO3 aclocal.m4 && Exit 1
+grep MACRO3 aclocal.m4 && exit 1
 test -f m4_1/macro.m4
 test ! -f m4_2/macro.m4
 cp aclocal.m4 copy.m4
@@ -91,8 +91,8 @@ $AUTOCONF
 $FGREP ':macro11:' configure
 $FGREP ':macro21:' configure
 $FGREP ':macro33:' configure
-grep MACRO3 aclocal.m4 && Exit 1
-grep GREPME m4_1/macro.m4 && Exit 1
+grep MACRO3 aclocal.m4 && exit 1
+grep GREPME m4_1/macro.m4 && exit 1
 test -f m4_1/macro.m4
 test ! -f m4_2/macro.m4
 diff aclocal.m4 copy.m4

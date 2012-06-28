@@ -18,7 +18,7 @@
 # if (AM_)?YFLAGS do not contain -d.  Requested by Jim Meyering.
 # See also the related semantic test 'yacc-d-basic.test'.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CC
@@ -39,7 +39,7 @@ cp Makefile.am Makefile.src
 
 $AUTOMAKE -a
 # If zardoz.h IS mentioned, fail.
-$FGREP 'zardoz.h' Makefile.in && Exit 1
+$FGREP 'zardoz.h' Makefile.in && exit 1
 
 cp Makefile.src Makefile.am
 echo 'AM_YFLAGS = -d' >> Makefile.am
@@ -51,7 +51,7 @@ cp Makefile.src Makefile.am
 echo 'AM_YFLAGS = ' >> Makefile.am
 $AUTOMAKE
 # If zardoz.h IS mentioned, fail.
-$FGREP 'zardoz.h' Makefile.in && Exit 1
+$FGREP 'zardoz.h' Makefile.in && exit 1
 
 cp Makefile.src Makefile.am
 echo 'YFLAGS = -d' >> Makefile.am
@@ -67,6 +67,6 @@ cp Makefile.src Makefile.am
 echo 'YFLAGS = ' >> Makefile.am
 $AUTOMAKE -Wno-gnu
 # If zardoz.h IS mentioned, fail.
-$FGREP 'zardoz.h' Makefile.in && Exit 1
+$FGREP 'zardoz.h' Makefile.in && exit 1
 
 :

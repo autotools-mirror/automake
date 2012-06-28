@@ -18,7 +18,7 @@
 # This test also works as a mild stress-test on the python support.
 
 required='cc python virtualenv'
-. ./defs || Exit 1
+. ./defs || exit 1
 
 # In case the user's config.site defines pythondir or pyexecdir.
 CONFIG_SITE=/dev/null; export CONFIG_SITE
@@ -181,7 +181,7 @@ $MAKE install
 python -c 'import am_foo; print(am_foo.__file__)'
 python -c 'import am_virtenv; print(am_virtenv.__file__)'
 deactivate "nondestructive"
-python -c 'import am_foo' && Exit 1
-python -c 'import am_virtenv' && Exit 1
+python -c 'import am_foo' && exit 1
+python -c 'import am_virtenv' && exit 1
 
 :

@@ -17,7 +17,7 @@
 # Test to make sure 3rd arg to AM_INIT_AUTOMAKE not picked up in
 # version.  From Joel Weber.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > configure.ac << 'END'
 AC_INIT

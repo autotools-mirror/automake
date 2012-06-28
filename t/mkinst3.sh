@@ -17,7 +17,7 @@
 # Test mkinstalldirs with spaces in directory names.
 
 am_create_testdir=empty
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cwd=$(pwd) || fatal_ "getting current working directory"
 

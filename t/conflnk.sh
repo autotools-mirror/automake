@@ -17,7 +17,7 @@
 # Test to make sure links created by AC_CONFIG_LINKS get removed with
 # 'make distclean'
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 echo 'SUBDIRS = sdir' > Makefile.am
 : > src
@@ -60,11 +60,11 @@ $MAKE distclean
 test -f src
 test -f sdir/src2
 
-test -r dest && Exit 1
-test -r dest2 && Exit 1
-test -r sdir/dest3 && Exit 1
-test -r dest4 && Exit 1
-test -r sdir/dest5 && Exit 1
-test -r sdir-no-make/dest6 && Exit 1
+test -r dest && exit 1
+test -r dest2 && exit 1
+test -r sdir/dest3 && exit 1
+test -r dest4 && exit 1
+test -r sdir/dest5 && exit 1
+test -r sdir-no-make/dest6 && exit 1
 
 :

@@ -17,7 +17,7 @@
 # Test for bug with conditional library.
 # From Harlan Stenn.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_RANLIB
@@ -40,5 +40,5 @@ END
 $ACLOCAL
 $AUTOMAKE
 
-$FGREP librsaref.a.c Makefile.in && Exit 1
-Exit 0
+$FGREP librsaref.a.c Makefile.in && exit 1
+exit 0

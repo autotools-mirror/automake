@@ -17,7 +17,7 @@
 # TAP support:
 #  - the string "0" as a test description
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 . "$am_testauxdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"
 
@@ -35,7 +35,7 @@ ok 9 0 # SKIP
 ok - 0 # SKIP
 END
 
-$MAKE check >stdout && { cat stdout; Exit 1; }
+$MAKE check >stdout && { cat stdout; exit 1; }
 cat stdout
 
 count_test_results total=10 pass=2 fail=2 xpass=2 xfail=2 skip=2 error=0

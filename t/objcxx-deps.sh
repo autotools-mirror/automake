@@ -17,7 +17,7 @@
 # Automatic dependency tracking for Objective C++.
 # See also sister test 'objc-deps.sh'.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 dnl Support for Object C++ was introduced only in Autoconf 2.65.
@@ -55,14 +55,14 @@ if $ACLOCAL; then
 elif test $? -eq 63; then
   skip_ "Object C++ support requires Autoconf 2.65 or later"
 else
-  Exit 1 # Some other aclocal failure.
+  exit 1 # Some other aclocal failure.
 fi
 $AUTOCONF
 $AUTOMAKE --add-missing
 
 ./configure --enable-dependency-tracking
 $MAKE
-cross_compiling || (./foo | $FGREP 'Hello, World') || Exit 1
+cross_compiling || (./foo | $FGREP 'Hello, World') || exit 1
 
 $sleep
 : > old
@@ -73,7 +73,7 @@ if test -f foo; then
 else
   is_newest foo.exe old
 fi
-cross_compiling || (./foo | $FGREP 'Howdy, Earth') || Exit 1
+cross_compiling || (./foo | $FGREP 'Howdy, Earth') || exit 1
 
 $MAKE distcheck
 

@@ -17,7 +17,7 @@
 # Test Objective C++ compilation flags.
 # See also sister test 'objc-flags.sh'.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 dnl Support for Object C++ was introduced only in Autoconf 2.65.
@@ -55,16 +55,16 @@ if $ACLOCAL; then
 elif test $? -eq 63; then
   skip_ "Object C++ support requires Autoconf 2.65 or later"
 else
-  Exit 1 # Some other aclocal failure.
+  exit 1 # Some other aclocal failure.
 fi
 
 $AUTOCONF
 $AUTOMAKE -a
 
 $FGREP OBJCXXFLAGS Makefile.in # For debugging.
-grep '\$(OBJCXXFLAGS).*\$(AM_OBJCXXFLAGS)'       Makefile.in && Exit 1
-grep '\$(OBJCXXFLAGS).*\$(foo.*_OBJCXXFLAGS)'    Makefile.in && Exit 1
-grep '\$(foo.*_OBJCXXFLAGS).*\$(AM_OBJCXXFLAGS)' Makefile.in && Exit 1
+grep '\$(OBJCXXFLAGS).*\$(AM_OBJCXXFLAGS)'       Makefile.in && exit 1
+grep '\$(OBJCXXFLAGS).*\$(foo.*_OBJCXXFLAGS)'    Makefile.in && exit 1
+grep '\$(foo.*_OBJCXXFLAGS).*\$(AM_OBJCXXFLAGS)' Makefile.in && exit 1
 
 ./configure OBJCXXFLAGS=-UERROR
 $MAKE 

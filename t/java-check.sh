@@ -19,7 +19,7 @@
 # See automake bug#8234.
 
 required=javac
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_OUTPUT
@@ -46,7 +46,7 @@ inst=$(pwd)/_inst
 ./configure --prefix="$inst"
 
 $MAKE
-ls | $EGREP '\.(class|stamp)$' && Exit 1
+ls | $EGREP '\.(class|stamp)$' && exit 1
 
 # Make Two.java compilable.
 echo '}' >> Two.java
@@ -57,8 +57,8 @@ ls -l # For debugging.
 test -f One.class
 test -f Two.class
 # ... but should *not* install them.
-$FGREP checkdir Makefile && Exit 1
+$FGREP checkdir Makefile && exit 1
 $MAKE install
-test -d _inst && Exit 1
+test -d _inst && exit 1
 
 :

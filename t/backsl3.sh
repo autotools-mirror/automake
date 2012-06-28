@@ -17,7 +17,7 @@
 # Make sure we diagnose trailing backslash at the end of a file.
 # Report from Akim Demaile <akim@epita.fr>.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > Makefile.am << 'END'
 foo = \

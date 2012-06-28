@@ -17,7 +17,7 @@
 # TAP support: more unusual forms for valid TAP input.
 # See also related test 'tap-fancy.test'.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 . "$am_testauxdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"
 
@@ -125,11 +125,11 @@ total=$(($total + 3))
 # And add the test plan!
 echo 1..$total >> all.test
 
-$MAKE check >stdout && { cat stdout; Exit 1; }
+$MAKE check >stdout && { cat stdout; exit 1; }
 cat stdout
 
-$EGREP '^(PASS|FAIL|SKIP).*#.*TODO' stdout && Exit 1
-$EGREP '^X?(PASS|FAIL).*#.*SKIP' stdout && Exit 1
+$EGREP '^(PASS|FAIL|SKIP).*#.*TODO' stdout && exit 1
+$EGREP '^X?(PASS|FAIL).*#.*SKIP' stdout && exit 1
 
 count_test_results total=$total pass=$pass fail=$fail skip=$skip \
                    xpass=$xpass xfail=$xfail error=$error

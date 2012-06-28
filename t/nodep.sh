@@ -17,7 +17,7 @@
 # Test to make sure no-dependencies option does the right thing.
 # Bug report from Greg A. Woods.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > Makefile.am << 'END'
 AUTOMAKE_OPTIONS = no-dependencies
@@ -36,5 +36,5 @@ mkdir x
 $ACLOCAL
 $AUTOMAKE
 
-grep '%' Makefile.in && Exit 1
-Exit 0
+grep '%' Makefile.in && exit 1
+exit 0

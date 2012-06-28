@@ -17,7 +17,7 @@
 # Make sure Automake uses the _first_ @setfilname it sees.
 # Report from Karl Berry.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > Makefile.am << 'END'
 info_TEXINFOS = texinfo.texi
@@ -35,5 +35,5 @@ END
 $ACLOCAL
 $AUTOMAKE --add-missing
 
-grep 'example' Makefile.in && Exit 1
+grep 'example' Makefile.in && exit 1
 grep 'texinfo:' Makefile.in

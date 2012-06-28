@@ -19,7 +19,7 @@
 # FIXME: the features tested by this script has been moved in contrib.
 # FIXME: We should move this script accordingly.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > configure.ac <<END
 AC_INIT([$me], [1.0])

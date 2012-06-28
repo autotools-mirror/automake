@@ -17,7 +17,7 @@
 # Make sure programs with only Fortran 77 source are handled properly.
 # Matthew D. Langston <langston@SLAC.Stanford.EDU>
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_F77

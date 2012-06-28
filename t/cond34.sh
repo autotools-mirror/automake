@@ -17,7 +17,7 @@
 # Check for _DEPENDENCIES definition with conditional _LDADD.
 # Report from Elena A. Vengerova.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >>configure.ac <<'EOF'
 AM_CONDITIONAL([TWO], [test -n "$two"])
@@ -54,21 +54,21 @@ $AUTOCONF
 $AUTOMAKE
 ./configure
 
-$MAKE dep-test1 >stdout || { cat stdout; Exit 1; }
+$MAKE dep-test1 >stdout || { cat stdout; exit 1; }
 cat stdout
 $FGREP 'BEG: one.z somethingelse.a :END' stdout
 
-$MAKE dep-test2 >stdout || { cat stdout; Exit 1; }
+$MAKE dep-test2 >stdout || { cat stdout; exit 1; }
 cat stdout
 $FGREP 'BEG: three.z :END' stdout
 
 ./configure two=2
 
-$MAKE dep-test1 >stdout || { cat stdout; Exit 1; }
+$MAKE dep-test1 >stdout || { cat stdout; exit 1; }
 cat stdout
 $FGREP 'BEG: two.z somethingelse.a :END' stdout
 
-$MAKE dep-test2 >stdout || { cat stdout; Exit 1; }
+$MAKE dep-test2 >stdout || { cat stdout; exit 1; }
 cat stdout
 $FGREP 'BEG: two.z somethingelse.a :END' stdout
 

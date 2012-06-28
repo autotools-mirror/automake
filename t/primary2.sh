@@ -16,7 +16,7 @@
 
 # Test to make sure errors in am_install_var work.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 echo AC_PROG_CC >> configure.ac
 

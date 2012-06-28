@@ -16,7 +16,7 @@
 
 # Test to make sure config substitution in _SOURCES fails.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 echo AC_PROG_CC >> configure.ac
 

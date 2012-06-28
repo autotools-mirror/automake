@@ -21,7 +21,7 @@
 
 am_serial_tests=yes
 am_create_testdir=empty
-. ./defs || Exit 1
+. ./defs || exit 1
 
 makefiles='hacky/Makefile src/Makefile data/Makefile tests/Makefile'
 

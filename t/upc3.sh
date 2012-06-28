@@ -16,7 +16,7 @@
 
 # Test that C and Unified Parallel C link safely.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CC
@@ -59,7 +59,7 @@ $ACLOCAL
 $AUTOMAKE
 $AUTOCONF
 
-./configure || Exit $?
+./configure || exit $?
 $MAKE distcheck
 
 :

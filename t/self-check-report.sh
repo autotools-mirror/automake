@@ -21,34 +21,34 @@
 unset stderr_fileno_ || :
 
 am_create_testdir=empty
-. ./defs || Exit 1
+. ./defs || exit 1
 
 set +e
 
 exec 5>&1
 
-(warn_ foobar) 2>&1 1>&5 | grep '^foobar$'             || Exit 1
-(fail_ foo); test $? -eq 1                             || Exit 1
-(fail_ foo) 2>&1 1>&5 | grep "^$me: failed test: foo"  || Exit 1
-(skip_ foo); test $? -eq 77                            || Exit 1
-(skip_ foo) 2>&1 1>&5 | grep "^$me: skipped test: foo" || Exit 1
-(fatal_ foo); test $? -eq 99                           || Exit 1
-(fatal_ foo) 2>&1 1>&5 | grep "^$me: hard error: foo"  || Exit 1
-(framework_failure_ foo); test $? -eq 99               || Exit 1
+(warn_ foobar) 2>&1 1>&5 | grep '^foobar$'             || exit 1
+(fail_ foo); test $? -eq 1                             || exit 1
+(fail_ foo) 2>&1 1>&5 | grep "^$me: failed test: foo"  || exit 1
+(skip_ foo); test $? -eq 77                            || exit 1
+(skip_ foo) 2>&1 1>&5 | grep "^$me: skipped test: foo" || exit 1
+(fatal_ foo); test $? -eq 99                           || exit 1
+(fatal_ foo) 2>&1 1>&5 | grep "^$me: hard error: foo"  || exit 1
+(framework_failure_ foo); test $? -eq 99               || exit 1
 (framework_failure_ foo) 2>&1 1>&5 \
-  | grep "^$me: set-up failure: foo"                   || Exit 1
+  | grep "^$me: set-up failure: foo"                   || exit 1
 
 stderr_fileno_=6
 
-(warn_ foobar) 6>&1 1>&5 | grep '^foobar$'             || Exit 1
-(fail_ foo); test $? -eq 1                             || Exit 1
-(fail_ foo) 6>&1 1>&5 | grep "^$me: failed test: foo"  || Exit 1
-(skip_ foo); test $? -eq 77                            || Exit 1
-(skip_ foo) 6>&1 1>&5 | grep "^$me: skipped test: foo" || Exit 1
-(fatal_ foo); test $? -eq 99                           || Exit 1
-(fatal_ foo) 6>&1 1>&5 | grep "^$me: hard error: foo"  || Exit 1
-(framework_failure_ foo); test $? -eq 99               || Exit 1
+(warn_ foobar) 6>&1 1>&5 | grep '^foobar$'             || exit 1
+(fail_ foo); test $? -eq 1                             || exit 1
+(fail_ foo) 6>&1 1>&5 | grep "^$me: failed test: foo"  || exit 1
+(skip_ foo); test $? -eq 77                            || exit 1
+(skip_ foo) 6>&1 1>&5 | grep "^$me: skipped test: foo" || exit 1
+(fatal_ foo); test $? -eq 99                           || exit 1
+(fatal_ foo) 6>&1 1>&5 | grep "^$me: hard error: foo"  || exit 1
+(framework_failure_ foo); test $? -eq 99               || exit 1
 (framework_failure_ foo) 6>&1 1>&5 \
-  | grep "^$me: set-up failure: foo"                   || Exit 1
+  | grep "^$me: set-up failure: foo"                   || exit 1
 
 :

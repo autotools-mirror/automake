@@ -24,7 +24,7 @@
 #       manual for the ugliness in this area, when VPATH comes into
 #       play.  :-/
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_OUTPUT

@@ -16,7 +16,7 @@
 
 # Check that 'dist-hook' works.  See automake bug#10878.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 echo AC_OUTPUT >> configure.ac
 

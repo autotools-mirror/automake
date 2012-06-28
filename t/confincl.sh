@@ -18,7 +18,7 @@
 # If config.h is not used, @CONFIG_INCLUDE_SPEC@ should not appear
 # in Makefile.in.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CC
@@ -31,6 +31,6 @@ END
 $ACLOCAL
 $AUTOMAKE
 
-$FGREP '@CONFIG_INCLUDE_SPEC@' Makefile.in && Exit 1
+$FGREP '@CONFIG_INCLUDE_SPEC@' Makefile.in && exit 1
 
 :

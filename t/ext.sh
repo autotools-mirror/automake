@@ -16,7 +16,7 @@
 
 # Test to make sure extensions are set correctly for various languages.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_F77
@@ -41,7 +41,7 @@ $AUTOMAKE
 
 for ext in f for f90 f95 F F90 F95 r m mm upc; do
    grep "^\.$ext\.o:" Makefile.in
-   grep "^$ext\.o:" Makefile.in && Exit 1
+   grep "^$ext\.o:" Makefile.in && exit 1
    : For shells with busted 'set -e'.
 done
 

@@ -16,7 +16,7 @@
 
 # Make sure an AC_CONFIG_FILES ignore filenames with shell variables.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << \END
 AC_SUBST([FOO], [foo])
@@ -53,7 +53,7 @@ $ACLOCAL
 $AUTOCONF
 $AUTOMAKE
 
-$FGREP ' $file' Makefile.in sub/Makefile.in && Exit 1
+$FGREP ' $file' Makefile.in sub/Makefile.in && exit 1
 
 ./configure
 $MAKE distcheck

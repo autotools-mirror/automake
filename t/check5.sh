@@ -18,7 +18,7 @@
 
 # For gen-testsuite-part: ==> try-with-serial-tests <==
 required='cc native'
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CC
@@ -52,11 +52,11 @@ cp one.c two.c
 ./configure
 $MAKE check
 test -f ok
-EXEEXT=.bin $MAKE -e print-tests >stdout || { cat stdout; Exit 1; }
+EXEEXT=.bin $MAKE -e print-tests >stdout || { cat stdout; exit 1; }
 cat stdout
 $FGREP 'BEG: one.bin two.bin :END' stdout
 # No am__EXEEXT_* variable is needed.
-grep '_EXEEXT_[1-9]' Makefile.in && Exit 1
+grep '_EXEEXT_[1-9]' Makefile.in && exit 1
 $FGREP 'TESTS = $(check_PROGRAMS)' Makefile.in
 
 :

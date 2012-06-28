@@ -17,7 +17,7 @@
 # Test install when a conditional install-*-hook is defined.
 # Keep this in sync with sister test condhook.test.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AM_CONDITIONAL([TEST], [true])

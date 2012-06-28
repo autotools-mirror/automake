@@ -16,7 +16,7 @@
 
 # Make sure we don't override the user's site.exp rule.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac <<'END'
 AC_OUTPUT

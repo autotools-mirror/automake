@@ -17,7 +17,7 @@
 # Check use of absolute paths in dirlist.
 
 am_create_testdir=empty
-. ./defs || Exit 1
+. ./defs || exit 1
 
 mkdir acdir-more sub sub/acdir
 echo "$(pwd)/acdir-more" > sub/acdir/dirlist
@@ -35,7 +35,7 @@ $ACLOCAL --system-acdir acdir
 $AUTOCONF
 
 # Only -I directories are subject to file inclusion.
-grep m4_include aclocal.m4 && Exit 1
+grep m4_include aclocal.m4 && exit 1
 
 grep 'foo-foo--foo' configure
 

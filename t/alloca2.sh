@@ -16,7 +16,7 @@
 
 # Make sure we complain if @LTALLOCA@ is used without being set in configure.ac
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac <<'END'
 AC_PROG_CC

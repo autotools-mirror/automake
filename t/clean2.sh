@@ -17,7 +17,7 @@
 # Make sure distclean works in cygnus mode.
 # Report from Daniel Jacobowitz.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AM_MAINTAINER_MODE

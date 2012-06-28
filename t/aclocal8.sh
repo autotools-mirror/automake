@@ -17,7 +17,7 @@
 # Make sure aclocal does not require unused macros.
 
 am_create_testdir=empty
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > configure.ac << 'END'
 AC_INIT
@@ -34,9 +34,9 @@ EOF
 echo 'AC_DEFUN([MACRO1],)' >m4/macro1.m4
 echo 'AC_DEFUN([MACRO2], [AC_REQUIRE([AM_UNUSED_MACRO])])' >m4/macro2.m4
 
-$ACLOCAL -I m4 >output 2>&1 || { cat output; Exit 1; }
+$ACLOCAL -I m4 >output 2>&1 || { cat output; exit 1; }
 test 0 -eq $(wc -l <output)
 grep macro1.m4 aclocal.m4
-grep macro2.m4 aclocal.m4 && Exit 1
+grep macro2.m4 aclocal.m4 && exit 1
 
 :

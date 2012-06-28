@@ -18,7 +18,7 @@
 # PR automake/483.
 
 am_create_testdir=empty
-. ./defs || Exit 1
+. ./defs || exit 1
 
 get_shell_script missing
 

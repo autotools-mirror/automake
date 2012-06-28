@@ -16,7 +16,7 @@
 
 # Make sure non-empty, non-info suffixes are diagnosed.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > Makefile.am << 'END'
 info_TEXINFOS = textutils.texi

@@ -16,7 +16,7 @@
 
 # Test for bug in conditionals.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 dnl Define a macro with the same name as the conditional to exhibit
@@ -65,7 +65,7 @@ mkdir foo bar
 
 $ACLOCAL
 $AUTOCONF
-grep "meaningless;characters" configure && Exit 1
+grep "meaningless;characters" configure && exit 1
 $AUTOMAKE
 ./configure
 $MAKE test

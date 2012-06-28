@@ -17,7 +17,7 @@
 # Test to make sure config.h can be in subdir.
 # Also, make sure config.h is properly rebuilt.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_CONFIG_FILES([subdir/Makefile])
@@ -43,7 +43,7 @@ $AUTOMAKE
 #
 # cd $(top_builddir) && $(SHELL) ./config.status subdir/config.h
 ($FGREP 'subdir/config.h' subdir/Makefile.in |
-   $FGREP -v 'cd $(top_builddir)') && Exit 1
+   $FGREP -v 'cd $(top_builddir)') && exit 1
 
 $AUTOCONF
 ./configure

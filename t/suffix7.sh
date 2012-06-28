@@ -17,7 +17,7 @@
 # Test to make sure Automake supports implicit rules "confusing"
 # extensions.  Inspired by a mail from Alex Hornby.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > Makefile.am << 'END'
 SUFFIXES = .idl S.cpp C.h
@@ -31,7 +31,7 @@ $AUTOMAKE
 
 # Make sure Automake has NOT recognized .cpp and .idlC as two new
 # extensions.
-grep 'SUFFIXES.* \.cpp' Makefile.in && Exit 1
-grep 'SUFFIXES.* \.idlC' Makefile.in && Exit 1
+grep 'SUFFIXES.* \.cpp' Makefile.in && exit 1
+grep 'SUFFIXES.* \.idlC' Makefile.in && exit 1
 
 :

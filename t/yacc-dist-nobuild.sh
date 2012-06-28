@@ -19,7 +19,7 @@
 # See automake bug#7884.
 
 required='cc yacc'
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CC
@@ -83,7 +83,7 @@ chmod a-w $distdir
 mkdir build2
 cd build2
 ../$distdir/configure
-$MAKE >out 2>&1 && { cat out; Exit 1; }
+$MAKE >out 2>&1 && { cat out; exit 1; }
 cat out
 $FGREP parse.c out
 

@@ -17,7 +17,7 @@
 # Test that substitutions in variables work.
 # From Lars J. Aas.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_CONFIG_SOURCE([fakelib.c])

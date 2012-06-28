@@ -23,7 +23,7 @@
 #  in the HEADERS variable for *all* generated Makefile.ins in the
 #  project.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_SUBST([MY_HEADERS])
@@ -41,5 +41,5 @@ END
 $ACLOCAL
 $AUTOMAKE
 
-grep '[^@]MY_HEADERS' Makefile.in && Exit 1
-Exit 0
+grep '[^@]MY_HEADERS' Makefile.in && exit 1
+exit 0

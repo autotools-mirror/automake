@@ -17,7 +17,7 @@
 # Make sure that, if AC_CONFIG_AUX_DIR is not specified, Automake tries
 # to use '.', '..' and '../..', in precisely that order.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 nil=__no_such_program
 
@@ -65,7 +65,7 @@ $AUTOMAKE
 out=out0 $MAKE test
 cat out0
 grep "%%d0%%.*$nil" out0
-grep '%%d[123]' out0 && Exit 1
+grep '%%d[123]' out0 && exit 1
 
 rm -f missing install-sh
 
@@ -87,7 +87,7 @@ $AUTOMAKE
 out=out1 $MAKE test
 cat out1
 grep "%%d1%%.*$nil" out1
-grep '%%d[023]' out1 && Exit 1
+grep '%%d[023]' out1 && exit 1
 
 rm -f ../missing ../install-sh
 
@@ -116,7 +116,7 @@ $AUTOMAKE
 out=out2 $MAKE test
 cat out2
 grep "%%d2%%.*$nil" out2
-grep '%%d[013]' out2 && Exit 1
+grep '%%d[013]' out2 && exit 1
 
 rm -f ../../missing ../../install-sh
 

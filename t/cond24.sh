@@ -17,7 +17,7 @@
 # Check that conditional redefinitions of AC_SUBST'ed variables are detected.
 # Report from Patrik Weiskircher.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >>configure.ac <<EOF
 AC_SUBST([foo], [bar])

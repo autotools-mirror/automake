@@ -18,7 +18,7 @@
 # pattern is null.
 # Report from Richard Boulton.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_SUBST([CC], [whocares])
@@ -48,7 +48,7 @@ $MAKE test
 # This is unrelated to the rest of this test.  But while we are
 # at it, make sure we don't use am__helldl_SOURCES_DIST here, since
 # it's not needed.  DIST_SOURCES should contain $(helldl_SOURCES).
-grep am__helldl_SOURCES_DIST Makefile && Exit 1
+grep am__helldl_SOURCES_DIST Makefile && exit 1
 grep 'DIST_SOURCES.*\$(helldl_SOURCES)' Makefile
 
 :

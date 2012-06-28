@@ -18,7 +18,7 @@
 # it's in BUILT_SOURCES.  Reported by Erez Zadok.
 
 required=cc
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CC

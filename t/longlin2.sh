@@ -17,7 +17,7 @@
 # Long lines should be wrapped.
 # Report from Albert Chin.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 n=1 files= match=
 while test $n -le 100
@@ -42,7 +42,7 @@ EOF
 $ACLOCAL
 $AUTOMAKE
 
-grep $match Makefile.in && Exit 1
+grep $match Makefile.in && exit 1
 grep 'filenameb100 grepme' Makefile.in
 
 :

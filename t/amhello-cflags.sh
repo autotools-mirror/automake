@@ -20,7 +20,7 @@
 
 am_create_testdir=empty
 required=gcc
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cp "$am_docdir"/amhello-1.0.tar.gz . \
   || fatal_ "cannot get amhello tarball"
@@ -45,6 +45,6 @@ for exeext in '' .exe :; do
   test -f optim/src/hello$exeext && break
   test "$exeext" = : && fatal_ "cannot determine extension of executables"
 done
-cmp optim/src/hello$exeext debug/src/hello$exeext && Exit 1
+cmp optim/src/hello$exeext debug/src/hello$exeext && exit 1
 
 :

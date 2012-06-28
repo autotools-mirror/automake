@@ -19,7 +19,7 @@
 # required '.am' file from a distribution tarball.
 # See discussion about automake bug#9768.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 echo AC_OUTPUT >> configure.ac
 
@@ -54,12 +54,12 @@ for vpath in false :; do
     cd $distdir
     ./configure
   fi
-  $MAKE >output 2>&1 && { cat output; Exit 1; }
+  $MAKE >output 2>&1 && { cat output; exit 1; }
   cat output
   # This error comes from automake, not make, so we can be stricter
   # in our grepping of it.
   grep 'cannot open.*zardoz\.am' output
-  grep 'foobar\.am' output && Exit 1 # No spurious error, please.
+  grep 'foobar\.am' output && exit 1 # No spurious error, please.
   cd "$ocwd" || fatal_ "cannot chdir back to top-level test directory"
 done
 

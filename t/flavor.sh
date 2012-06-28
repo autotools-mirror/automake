@@ -18,7 +18,7 @@
 # options like '--ignore-deps' and '--silent-rules' are preserved across
 # automake reruns.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AM_MAINTAINER_MODE

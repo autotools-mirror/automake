@@ -22,7 +22,7 @@
 # containing a '$' on the left hand side of an assignment are not
 # portable in practice, even though POSIX allows them.  :-/
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >Makefile.am <<'EOF'
 x = 1
@@ -56,8 +56,8 @@ grep 'Makefile.am:2' stderr
 grep 'Makefile.am:3' stderr
 grep 'Makefile.am:4' stderr
 grep 'Makefile.am:5' stderr
-grep 'Makefile.am:6' stderr && Exit 1
-grep 'Makefile.am:7' stderr && Exit 1
+grep 'Makefile.am:6' stderr && exit 1
+grep 'Makefile.am:7' stderr && exit 1
 
 
 :

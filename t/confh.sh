@@ -17,7 +17,7 @@
 # Test to make sure config.h works in a subdir.
 # Report from Alexandre Oliva.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AM_CONFIG_HEADER([include/config.h])

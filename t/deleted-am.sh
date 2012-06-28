@@ -19,7 +19,7 @@
 # erroring out when a still-required file is missing.
 # See also discussion about automake bug#9768.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 echo AC_OUTPUT >> configure.ac
 
@@ -36,12 +36,12 @@ $MAKE
 
 rm -f zardoz.am
 $sleep # Required to avoid racy failures with FreeBSD make.
-$MAKE >output 2>&1 && { cat output; Exit 1; }
+$MAKE >output 2>&1 && { cat output; exit 1; }
 cat output
 # This error will come from automake, not make, so we can be stricter
 # in our grepping of it.
 grep 'cannot open.*zardoz\.am' output
-grep 'foobar\.am' output && Exit 1 # No spurious error, please.
+grep 'foobar\.am' output && exit 1 # No spurious error, please.
 
 # Try with one less indirection.
 : > foobar.am
@@ -50,7 +50,7 @@ $AUTOMAKE Makefile
 $MAKE # Sanity check.
 rm -f foobar.am
 $sleep # Required to avoid racy failures with FreeBSD make.
-$MAKE >output 2>&1 && { cat output; Exit 1; }
+$MAKE >output 2>&1 && { cat output; exit 1; }
 cat output
 # This error will come from automake, not make, so we can be stricter
 # in our grepping of it.

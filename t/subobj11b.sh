@@ -26,7 +26,7 @@
 # See also "semantic" sister test 'subobj11a.test', and related test
 # 'subobj11c.test'.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CC
@@ -61,7 +61,7 @@ $AUTOMAKE -a
 
 # Be lax in the regexp, to account for automake conditionals, the
 # use of @am__include@, and similar stuff.
-grep 'include.*//.*foobar' Makefile.in && Exit 1
+grep 'include.*//.*foobar' Makefile.in && exit 1
 
 # These checks depend on automake internals, but presently this is
 # the only way to test the code path we are interested in.

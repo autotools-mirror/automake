@@ -18,7 +18,7 @@
 # explicitly terminate the option list for 'py-compile'.
 
 required=python
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cp "$am_scriptdir/py-compile" . \
   || fatal_ "failed to fetch auxiliary script py-compile"

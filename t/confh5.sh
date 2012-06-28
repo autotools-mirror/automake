@@ -16,7 +16,7 @@
 
 # Make sure we do not distribute header sources when they are built.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_SUBST([FOO], [NameToBeGrepped])

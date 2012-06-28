@@ -16,7 +16,7 @@
 
 # Test to make sure all-local and other -local targets work correctly.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 $ACLOCAL
 
@@ -25,7 +25,7 @@ for target in $targets; do
   : Doing $target
   echo "${target}-local:" > Makefile.am
   $AUTOMAKE
-  grep "${target}-local ${target}-local" Makefile.in && Exit 1
+  grep "${target}-local ${target}-local" Makefile.in && exit 1
   grep "${target}-am:.*${target}-local" Makefile.in
 done
 

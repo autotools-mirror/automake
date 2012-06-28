@@ -18,7 +18,7 @@
 # That feature will be removed in the next major Automake release.
 # See automake bug#11034.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 warn_rx='support for Cygnus.*trees.*deprecated'
 

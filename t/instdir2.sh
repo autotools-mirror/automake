@@ -18,7 +18,7 @@
 # This test ensures this also if $(foo_PRIMARY) is nonempty, see
 # instdir.test.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >>configure.ac <<'END'
 AC_SUBST([foodir], ['${datadir}'/foo])
@@ -85,9 +85,9 @@ test ! -d "$instdir"
 $MAKE -e install DESTDIR="$destdir"
 test ! -d "$instdir"
 test ! -d "$destdir"
-$MAKE -e uninstall > stdout || { cat stdout; Exit 1; }
+$MAKE -e uninstall > stdout || { cat stdout; exit 1; }
 cat stdout
-grep 'rm -f' stdout && Exit 1
+grep 'rm -f' stdout && exit 1
 $MAKE -e uninstall DESTDIR="$destdir"
 
 :

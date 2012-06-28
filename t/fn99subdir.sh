@@ -17,7 +17,7 @@
 # PR 507: Check the filename-length-max=99 option
 # in conjunction with AC_CONFIG_SUBDIRS.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 # The name is so that 99 is exactly hit (including final \0).
 subdirname='cnfsubdir'
@@ -46,9 +46,9 @@ AUTOMAKE_OPTIONS = filename-length-max=99
 EXTRA_DIST = 12345678
 END
 
-(cd $subdirname || Exit 1
+(cd $subdirname || exit 1
 for i in 1 2 3 4 5 6 7 8; do
-  mkdir -p 12345678 && cd 12345678 && touch x || Exit 1
+  mkdir -p 12345678 && cd 12345678 && touch x || exit 1
 done) || skip_ "failed to create deep directory hierarchy"
 
 # AIX 5.3 'cp -R' is too buggy for 'make dist'.
@@ -68,12 +68,12 @@ $AUTOMAKE
 ./configure
 $MAKE distcheck
 
-(cd $subdirname || Exit 1
+(cd $subdirname || exit 1
 for i in 1 2 3 4 5 6 7 8 9; do
-  mkdir -p 12345678 && cd 12345678 && touch x || Exit 1
+  mkdir -p 12345678 && cd 12345678 && touch x || exit 1
 done) || skip_ "failed to create deeper directory hierarchy"
 
-$MAKE dist 2>stderr && { cat stderr >&2; Exit 1; }
+$MAKE dist 2>stderr && { cat stderr >&2; exit 1; }
 cat stderr >&2
 grep 'filenames are too long' stderr
 test 1 -eq $(grep -c 12345678 stderr)

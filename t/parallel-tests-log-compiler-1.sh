@@ -19,7 +19,7 @@
 #   and xxx_LOG_FLAGS), also with AC_SUBST'd stuff.
 # See also related test 'parallel-tests-log-compiler-2.test'.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_SUBST([acsubst_compiler], [t-compiler])
@@ -101,7 +101,7 @@ $AUTOCONF
 $AUTOMAKE -a
 
 ./configure
-$MAKE check || { cat test-suite.log; Exit 1; }
+$MAKE check || { cat test-suite.log; exit 1; }
 ls -l . sub
 cat test-suite.log
 test -f foo.log
@@ -111,13 +111,13 @@ test -f bla.log
 test -f bli.suff.log
 test -f sub/test.log
 
-T_LOG_FLAGS=--bad $MAKE -e check && Exit 1
+T_LOG_FLAGS=--bad $MAKE -e check && exit 1
 cat test-suite.log
 cat bla.log
 # With the above flag overridden, bla.t should fail ...
 $EGREP '(^ *|/)t-compiler:.* invalid .*--bad' bla.log
 # ... but no other test should.
-grep -v '^FAIL: bla\.t ' bla.log | grep 'FAIL:' && Exit 1
+grep -v '^FAIL: bla\.t ' bla.log | grep 'FAIL:' && exit 1
 
 # Try also with a VPATH build.
 $MAKE distcheck

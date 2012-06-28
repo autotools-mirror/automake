@@ -19,7 +19,7 @@
 #  - the '--ignore-exit' option causes the TAP test driver to ignore
 #    exit statuses of the test scripts.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 echo TESTS = > Makefile.am
 for st in 1 2 77 99; do
@@ -36,7 +36,7 @@ chmod a+x *.test
 
 . "$am_testauxdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"
 
-$MAKE check >stdout && { cat stdout; Exit 1; }
+$MAKE check >stdout && { cat stdout; exit 1; }
 cat stdout
 count_test_results total=8 pass=4 fail=0 xpass=0 xfail=0 skip=0 error=4
 
@@ -46,7 +46,7 @@ grep '^ERROR: exit77\.test - exited with status 77$' stdout
 grep '^ERROR: exit99\.test - exited with status 99$' stdout
 
 echo TEST_LOG_DRIVER_FLAGS = --ignore-exit >> Makefile
-$MAKE check >stdout || { cat stdout; Exit 1; }
+$MAKE check >stdout || { cat stdout; exit 1; }
 cat stdout
 count_test_results total=4 pass=4 fail=0 xpass=0 xfail=0 skip=0 error=0
 

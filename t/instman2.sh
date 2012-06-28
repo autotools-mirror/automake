@@ -17,7 +17,7 @@
 # Test to make sure mkinstalldirs invocation correct in install-man
 # target.  Bug reported by Gordon Irlam <gordoni@cygnus.com>.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > Makefile.am << 'EOF'
 man8_MANS = frob.8

@@ -23,7 +23,7 @@
 # Please keep this in sync with sister test 'yaccvapth.test'.
 
 required='cc lex'
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > lexoutroot.in << 'END'
 LEX_OUTPUT_ROOT='@LEX_OUTPUT_ROOT@'

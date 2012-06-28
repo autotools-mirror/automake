@@ -17,7 +17,7 @@
 # Make sure block comments are not double-spaced.
 # Report from François Pinard.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > Makefile.am << 'END'
 #START
@@ -30,5 +30,5 @@ END
 $ACLOCAL
 $AUTOMAKE
 
-(sed -e '/^#START/,/^#END/ !d' Makefile.in | grep -v '^#') && Exit 1
-Exit 0
+(sed -e '/^#START/,/^#END/ !d' Makefile.in | grep -v '^#') && exit 1
+exit 0

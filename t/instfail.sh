@@ -20,7 +20,7 @@
 # This test has a few sister tests, for java, info, libtool.
 
 required=cc
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >>configure.ac <<END
 AC_PROG_CC
@@ -71,22 +71,22 @@ for file in lib1.a libn1.a
 do
   chmod a-r $file
   test ! -r $file || skip_ "cannot drop file read permissions"
-  $MAKE install-exec && Exit 1
+  $MAKE install-exec && exit 1
   chmod u+r $file
 done
 
 $MAKE unreadable-prog
-$MAKE install-exec && Exit 1
+$MAKE install-exec && exit 1
 $MAKE readable-prog
 
 $MAKE unreadable-progn
-$MAKE install-exec && Exit 1
+$MAKE install-exec && exit 1
 $MAKE readable-progn
 
 if ! grep "^EMACS = no" Makefile; then
   for file in lisp1.el lisp1.elc; do
     chmod a-r $file
-    $MAKE install-data && Exit 1
+    $MAKE install-data && exit 1
     chmod u+r $file
   done
 fi

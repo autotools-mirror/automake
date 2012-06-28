@@ -17,7 +17,7 @@
 # Sanity check on the function used by the automake testsuite to
 # analyze output of "configure --help".
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 # FIXME: this test is a good candidate for a conversion to TAP.
 
@@ -167,11 +167,11 @@ END
 
 compare_extracted_help ()
 {
-  cat > exp || Exit 99
-  extract_configure_help "$1" help > got || Exit 1
+  cat > exp || exit 99
+  extract_configure_help "$1" help > got || exit 1
   cat exp
   cat got
-  diff exp got || Exit 1
+  diff exp got || exit 1
 }
 
 compare_extracted_help --disable-libcap <<'END'

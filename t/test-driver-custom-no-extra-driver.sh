@@ -18,7 +18,7 @@
 # installed or referenced if it's not used, i.e., if the user has
 # defined his own '*LOG_DRIVER' variables.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac <<'END'
 AC_PROG_CC
@@ -55,8 +55,8 @@ $ACLOCAL
 
 for opts in '' '--add-missing' '-a -c'; do
   $AUTOMAKE $opts
-  $FGREP test-driver Makefile.in sub[12]/Makefile.in && Exit 1
-  find . | $FGREP test-driver && Exit 1
+  $FGREP test-driver Makefile.in sub[12]/Makefile.in && exit 1
+  find . | $FGREP test-driver && exit 1
   : For shells with busted 'set -e'.
 done
 

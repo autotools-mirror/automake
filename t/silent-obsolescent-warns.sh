@@ -16,7 +16,7 @@
 
 # Some checks about silent-rules mode and warnings.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >>configure.ac <<'EOF'
 AM_SILENT_RULES

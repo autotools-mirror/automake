@@ -16,7 +16,7 @@
 
 # Make sure Automake simplify conditions in diagnostics.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >>configure.ac <<EOF
 AC_PROG_CC

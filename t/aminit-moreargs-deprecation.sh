@@ -17,7 +17,7 @@
 # Check that automake warns against old-style usages of AM_INIT_AUTOMAKE
 # (i.e., calls with two or three arguments).
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 warn_rx='AM_INIT_AUTOMAKE.* two-.* three-arguments form.*deprecated'
 
@@ -33,10 +33,10 @@ do_check()
 {
   rm -rf autom4te*.cache
   for cmd in "$AUTOCONF" "$AUTOMAKE"; do
-    $cmd -Werror -Wnone -Wobsolete 2>stderr && { cat stderr; Exit 1; }
+    $cmd -Werror -Wnone -Wobsolete 2>stderr && { cat stderr; exit 1; }
     cat stderr >&2
     grep "^configure\.ac:2:.*$warn_rx" stderr
-    $cmd -Werror -Wall -Wno-obsolete || Exit 1
+    $cmd -Werror -Wall -Wno-obsolete || exit 1
   done
 }
 

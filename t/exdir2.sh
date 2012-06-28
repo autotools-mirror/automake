@@ -16,7 +16,7 @@
 
 # Test to make sure undefined directories are invalid.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > Makefile.am << 'EOF'
 quuz_DATA = zot.html
@@ -25,5 +25,5 @@ EOF
 
 $ACLOCAL
 AUTOMAKE_fails
-grep 'pkgdatadir' stderr && Exit 1
+grep 'pkgdatadir' stderr && exit 1
 grep 'Makefile.am:1:.*quuzdir.*undefined' stderr

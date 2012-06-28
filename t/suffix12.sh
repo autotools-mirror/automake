@@ -18,7 +18,7 @@
 # Reported by John Ratliff.
 
 required=cc
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >>configure.ac <<EOF
 AC_PROG_CC

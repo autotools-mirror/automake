@@ -16,7 +16,7 @@
 
 # Check dirlist support.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > configure.ac <<EOF
 AC_INIT
@@ -45,13 +45,13 @@ $AUTOCONF
 # There should be no m4_include in aclocal.m4, even though m4/dirlist
 # contains './dirlist-test' as a relative directory.  Only -I directories
 # are subject to file inclusion.
-grep m4_include aclocal.m4 && Exit 1
+grep m4_include aclocal.m4 && exit 1
 
 grep 'GUILE-VERSION' configure
 
 # This bug can occur only when we do a VPATH build of Automake
 # (because of the '-I' passed to aclocal in tests/defs/aclocal.in) but
 # it's OK because VPATH builds are done by 'make distcheck'.
-grep 'I should not be included' configure && Exit 1
+grep 'I should not be included' configure && exit 1
 
 :

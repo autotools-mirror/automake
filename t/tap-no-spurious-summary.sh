@@ -18,7 +18,7 @@
 #  - ':test-results:' directives in test scripts' output doesn't
 #    originate spurious results in the testsuite summary
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 . "$am_testauxdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"
 
@@ -34,7 +34,7 @@ cat > all.test <<'END'
 ok 1
 END
 
-$MAKE check >stdout || { cat stdout; Exit 1; }
+$MAKE check >stdout || { cat stdout; exit 1; }
 cat stdout
 
 count_test_results total=1 pass=1 fail=0 xpass=0 xfail=0 skip=0 error=0

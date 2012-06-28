@@ -17,7 +17,7 @@
 # Test error reporting for AC_CONFIG_LIBOBJ_DIR.
 # See also sister tests 'libobj20a.test' and 'libobj20b.test' .
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_CONFIG_LIBOBJ_DIR([libobj-dir])

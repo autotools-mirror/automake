@@ -17,7 +17,7 @@
 # Test for subdir lexers.
 
 required='cc lex'
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CC

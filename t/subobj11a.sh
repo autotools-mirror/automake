@@ -27,7 +27,7 @@
 # 'subobj11c.test'.
 
 required=cc
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CC
@@ -62,7 +62,7 @@ if test x"$depdir" != x; then
   depdir=src/$depdir
 else
   echo "$me: cannot extract value of DEPDIR from Makefile" >&2
-  Exit 1
+  exit 1
 fi
 
 ls -l "$depdir"

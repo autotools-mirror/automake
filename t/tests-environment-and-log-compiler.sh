@@ -18,7 +18,7 @@
 # by TESTS_ENVIRONMENT and AM_TESTS_ENVIRONMENT in LOG_COMPILER and
 # LOG_FLAGS (for tests both with and without registered extensions).
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_OUTPUT

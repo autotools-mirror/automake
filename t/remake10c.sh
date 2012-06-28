@@ -18,7 +18,7 @@
 # aclocal.m4.
 # Keep in sync with sister tests 'remake10a.test' and 'remake10b.test'.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 magic1=::MagicStringOne::
 magic2=__MagicStringTwo__
@@ -77,7 +77,7 @@ for vpath in : false; do
   echo "AC_DEFUN([my_fingerprint], [$magic2])" > $top_srcdir/m4/foo.m4
   $remake
   $FGREP FINGERPRINT Makefile # For debugging.
-  $FGREP $magic1 Makefile && Exit 1
+  $FGREP $magic1 Makefile && exit 1
   $FGREP $magic2 Makefile
 
   $sleep
@@ -85,15 +85,15 @@ for vpath in : false; do
   echo "AC_DEFUN([my_fingerprint], [$magic3])" > $top_srcdir/m4/bar.m4
   $remake
   $FGREP FINGERPRINT Makefile # For debugging.
-  $FGREP $magic1 Makefile && Exit 1
-  $FGREP $magic2 Makefile && Exit 1
+  $FGREP $magic1 Makefile && exit 1
+  $FGREP $magic2 Makefile && exit 1
   $FGREP $magic3 Makefile
 
   $sleep
   echo "AC_DEFUN([my_fingerprint], [$magic1])" > $top_srcdir/m4/bar.m4
   $remake
-  $FGREP $magic2 Makefile && Exit 1
-  $FGREP $magic3 Makefile && Exit 1
+  $FGREP $magic2 Makefile && exit 1
+  $FGREP $magic3 Makefile && exit 1
   $FGREP $magic1 Makefile
 
   $sleep
@@ -101,9 +101,9 @@ for vpath in : false; do
   echo "AC_DEFUN([AM_UNUSED], [NoSuchMacro])" > $top_srcdir/m4/bar.m4
   using_gmake || $remake
   $MAKE distcheck
-  $FGREP $magic1 Makefile && Exit 1 # Sanity check.
-  $FGREP $magic2 Makefile && Exit 1 # Likewise.
-  $FGREP $magic3 Makefile && Exit 1 # Likewise.
+  $FGREP $magic1 Makefile && exit 1 # Sanity check.
+  $FGREP $magic2 Makefile && exit 1 # Likewise.
+  $FGREP $magic3 Makefile && exit 1 # Likewise.
 
   $MAKE distclean
 

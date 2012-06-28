@@ -17,7 +17,7 @@
 # Make sure that our macro 'AM_PATH_LISPDIR' adds proper text to
 # the configure help screen.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > configure.ac <<END
 AC_INIT([$me], [1.0])
@@ -27,7 +27,7 @@ END
 $ACLOCAL
 $AUTOCONF
 
-./configure --help >stdout || { cat stdout; Exit 1; }
+./configure --help >stdout || { cat stdout; exit 1; }
 cat stdout
 
 grep_configure_help --with-lispdir ' override.*lisp directory'
