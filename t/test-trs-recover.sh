@@ -30,9 +30,8 @@ TESTS = foo.test bar.test baz.test
 TEST_LOG_COMPILER = $(SHELL)
 END
 
-# Creative quoting below to please maintainer-check.
-echo exit '$TEST_STATUS' > foo.test
-echo exit '$TEST_STATUS' > bar.test
+echo 'exit $TEST_STATUS' > foo.test
+echo 'exit $TEST_STATUS' > bar.test
 : > baz.test
 
 TEST_STATUS=0; export TEST_STATUS

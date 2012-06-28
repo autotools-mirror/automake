@@ -22,19 +22,6 @@
 # Enable the errexit shell flag early.
 set -e
 
-# The name of the current test (without the '.sh' or '.tap' suffix).
-# Test scripts can override it if they need to (but this should
-# be done carefully).
-if test -z "$me"; then
-  # Strip all directory components.
-  me=${argv0##*/}
-  # Strip test suffix.
-  case $me in
-    *.tap) me=${me%.tap};;
-     *.sh) me=${me%.sh} ;;
-  esac
-fi
-
 
 ## --------------------- ##
 ##  Early sanity checks. ##
@@ -479,7 +466,8 @@ fetch_tap_driver ()
   # TODO: we should devise a way to make the shell TAP driver tested also
   # TODO: with /bin/sh, for better coverage.
   case $am_tap_implementation in
-    perl)
+    # Extra quoting required to avoid maintainer-check spurious failures.
+   'perl')
       $PERL -MTAP::Parser -e 1 \
         || skip_all_ "cannot import TAP::Parser perl module"
       sed "1s|#!.*|#! $PERL -w|" "$am_scriptdir"/tap-driver.pl >tap-driver
@@ -698,7 +686,8 @@ do
       fi
       unset priv_check_temp overwrite_status
       ;;
-    perl-threads)
+    # Extra quoting required to avoid maintainer-check spurious failures.
+    'perl-threads')
       if test "$WANT_NO_THREADS" = "yes"; then
         skip_all_ "Devel::Cover cannot cope with threads"
       fi
@@ -775,31 +764,6 @@ do
       ;;
   esac
 done
-
-# Using just $am_top_builddir for the check here is ok, since the
-# further temporary subdirectory where the test will be run is
-# ensured not to contain any whitespace character.
-case $am_top_builddir in
-  *\ *|*\	*)
-    case " $required " in
-      *' libtool '* | *' libtoolize '* )
-        skip_all_ "libtool has problems with spaces in builddir name";;
-    esac
-    ;;
-esac
-
-# This test is necessary, although Automake's configure script bails out
-# when $srcdir contains spaces.  This is because $am_top_srcdir is in not
-# configure-time $srcdir, but is instead configure-time $abs_srcdir, and
-# that is allowed to contain spaces.
-case $am_top_srcdir in
-  *\ * |*\	*)
-    case " $required " in
-      *' libtool '* | *' libtoolize '* | *' gettext '* )
-        skip_all_ "spaces in srcdir name: libtool/gettext tests won't work";;
-   esac
-   ;;
-esac
 
 # We might need extra macros, e.g., from Libtool or Gettext.
 case " $required " in *\ libtool*) . ./t/libtool-macros.dir/get.sh;; esac
@@ -889,7 +853,7 @@ else
   test -d t || mkdir t
   mkdir $testSubDir \
     || framework_failure_ "creating test subdirectory"
-  # The trailing './'ris to avoid CDPATH issues.
+  # The leading './' is to avoid CDPATH issues.
   cd ./$testSubDir \
     || framework_failure_ "cannot chdir into test subdirectory"
   if test x"$am_create_testdir" != x"empty"; then

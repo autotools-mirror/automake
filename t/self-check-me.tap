@@ -15,13 +15,12 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Sanity check for the automake testsuite.
-# Make sure that $me gets automatically defined by './defs', and that it
-# can be overridden by the test script.
+# Make sure that $me gets automatically defined by './defs'.
 
 am_create_testdir=no
 . ./defs || exit 1
 
-plan_ 14
+plan_ 12
 
 AM_TESTS_REEXEC=no; export AM_TESTS_REEXEC
 
@@ -46,28 +45,16 @@ done
 do_check foo.bar 'foo\.bar'
 do_check abc. 'abc\.'
 
-# If we override $me, ./defs should not modify it.
+# A definition of $me in the environment should be ignored.
 
-s=$($AM_TEST_RUNNER_SHELL -c 'me=foo.sh && . ./defs && echo me=$me' bad.sh)
+s=$(me=bad $AM_TEST_RUNNER_SHELL -c '. ./defs && echo me=$me' foo.sh)
 command_ok_ "override of \$me before ./defs causes no error" \
             test $? -eq 0
 
 r='ok'
-printf '%s\n' "$s" | grep '^me=foo\.sh$' || r='not ok'
-printf '%s\n' "$s" | grep 'me=bad'       && r='not ok'
-result_ "$r" "override of \$me before ./defs is honored"
-unset r
-
-# Overriding $me after sourcing ./defs-static should work.
-s=$($AM_TEST_RUNNER_SHELL -c '. ./defs-static && me=zardoz &&
-                              . ./defs && echo me=$me' bad.sh)
-command_ok_ "override of \$me after ./defs-static causes no error" \
-            test $? -eq 0
-
-r='ok'
-printf '%s\n' "$s" | grep '^me=zardoz$' || r='not ok'
-printf '%s\n' "$s" | grep 'me=bad'      && r='not ok'
-result_ "$r" "override of \$me after ./defs-static is honored"
+printf '%s\n' "$s" | grep '^me=foo$' || r='not ok'
+printf '%s\n' "$s" | grep 'me=bad'   && r='not ok'
+result_ "$r" "\$me from the environment is ignored"
 unset r
 
 :
