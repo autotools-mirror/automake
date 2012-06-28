@@ -124,26 +124,13 @@ all-local:
 	: > run
 END
 
-echo dummy: > Makefile
-if using_gmake; then
-  jobs=-j12
-elif $MAKE -j12; then
-  jobs=-j12
-elif $MAKE -j 12; then
-  jobs="-j 12"
-else
-  jobs=none
-fi
-rm -f Makefile
-
 $ACLOCAL
 $AUTOCONF
 $AUTOMAKE -c --add-missing
 
 ./configure
 
-for j in '' "$jobs"; do
-  test x"$j" = x"none" && continue
+for j in '' '-j12'; do
   $MAKE $j
   test -f run
   test -f sub0/run
