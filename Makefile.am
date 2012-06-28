@@ -336,7 +336,6 @@ TESTS = ## Will be updated later.
 # test scripts, but not from the environment.
 AM_TESTS_ENVIRONMENT = \
   for v in \
-    me \
     required \
     am_using_tap \
     am_serial_tests \

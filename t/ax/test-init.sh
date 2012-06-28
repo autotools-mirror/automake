@@ -22,19 +22,6 @@
 # Enable the errexit shell flag early.
 set -e
 
-# The name of the current test (without the '.sh' or '.tap' suffix).
-# Test scripts can override it if they need to (but this should
-# be done carefully).
-if test -z "$me"; then
-  # Strip all directory components.
-  me=${argv0##*/}
-  # Strip test suffix.
-  case $me in
-    *.tap) me=${me%.tap};;
-     *.sh) me=${me%.sh} ;;
-  esac
-fi
-
 
 ## --------------------- ##
 ##  Early sanity checks. ##
