@@ -591,7 +591,8 @@ fetch_tap_driver ()
   # TODO: we should devise a way to make the shell TAP driver tested also
   # TODO: with /bin/sh, for better coverage.
   case $am_tap_implementation in
-    perl)
+    # Extra quoting required to avoid maintainer-check spurious failures.
+   'perl')
       $PERL -MTAP::Parser -e 1 \
         || skip_all_ "cannot import TAP::Parser perl module"
       sed "1s|#!.*|#! $PERL -w|" "$am_scriptdir"/tap-driver.pl >tap-driver
@@ -829,7 +830,8 @@ do
       fi
       unset priv_check_temp overwrite_status
       ;;
-    perl-threads)
+    # Extra quoting required to avoid maintainer-check spurious failures.
+    'perl-threads')
       if test "$WANT_NO_THREADS" = "yes"; then
         skip_all_ "Devel::Cover cannot cope with threads"
       fi
