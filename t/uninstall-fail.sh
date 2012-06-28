@@ -76,21 +76,21 @@ chmod a-rwx $inst/share
 $MAKE uninstall >output 2>&1 && { cat output; exit 1; }
 cat output
 #
-# Some shells, like Solaris 10 /bin/sh and /bin/ksh, do not report
-# the name of the 'cd' builtin upon a chdir error:
+# Some shells, like Solaris 10 /bin/ksh and /usr/xpg4/bin/sh, do not
+# report the name of the 'cd' builtin upon a chdir error:
 #
-#   $ /bin/sh -c 'cd /none'
-#   /bin/sh: /none: does not exist
+#   $ /bin/ksh -c 'cd /none'
+#   /bin/ksh: /none: not found
 #
-# In addition, some shells, like Solaris 10 /usr/xpg4/bin/sh, also print
-# a line number in the error message *if the command contains newlines*:
+# and also print a line number in the error message *if the command
+# contains newlines*:
 #
-#   $ /usr/xpg4/bin/sh -c 'cd unreadable'
-#   /usr/xpg4/bin/sh: unreadable: permission denied
-#   $ /usr/xpg4/bin/sh -c '\
+#   $ /bin/ksh -c 'cd unreadable'
+#   /bin/ksh: unreadable: permission denied
+#   $ /bin/ksh -c '\
 #   > \
 #   > cd unreadable'
-#   /usr/xpg4/bin/sh[3]: unreadable: permission denied
+#   /bin/ksh[3]: unreadable: permission denied
 #
 $EGREP "(cd|sh)(\[[0-9]*[0-9]\])?: .*$inst/share" output
 
