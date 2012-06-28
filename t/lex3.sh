@@ -19,7 +19,7 @@
 # From Matthew D. Langston.
 
 required='cc lex'
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CC
@@ -68,7 +68,7 @@ $AUTOMAKE -a
 $MAKE
 if ! cross_compiling; then
   echo GOOD | ./foo
-  echo BAD | ./foo && Exit 1
+  echo BAD | ./foo && exit 1
   : For shells with busted 'set -e'.
 fi
 

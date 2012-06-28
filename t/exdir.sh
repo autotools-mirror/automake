@@ -16,7 +16,7 @@
 
 # Check to make sure new extended directory mechanism works.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > Makefile.am << 'EOF'
 htmldir = $(prefix)/html

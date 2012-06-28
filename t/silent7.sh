@@ -17,7 +17,7 @@
 # Check user extensibility of silent-rules mode.
 # Aslo check that silent rules are disabled by default.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 echo AC_OUTPUT >> configure.ac
 
@@ -42,46 +42,46 @@ $AUTOCONF
 # Silent rules are disabled by default, since we haven't called
 # "AM_SILENT_RULES([yes])" explicitly.
 ./configure
-$MAKE >stdout || { cat stdout; Exit 1; }
+$MAKE >stdout || { cat stdout; exit 1; }
 cat stdout
-grep 'GEN ' stdout && Exit 1
+grep 'GEN ' stdout && exit 1
 grep 'cp ' stdout
 grep 'echo ' stdout
 
 $MAKE clean
-$MAKE V=1 >stdout || { cat stdout; Exit 1; }
+$MAKE V=1 >stdout || { cat stdout; exit 1; }
 cat stdout
-grep 'GEN ' stdout && Exit 1
+grep 'GEN ' stdout && exit 1
 grep 'cp ' stdout
 grep 'echo ' stdout
 
 $MAKE clean
-$MAKE V=0 >stdout || { cat stdout; Exit 1; }
+$MAKE V=0 >stdout || { cat stdout; exit 1; }
 cat stdout
 grep 'GEN .*foo' stdout
-grep 'cp ' stdout && Exit 1
-grep 'echo ' stdout && Exit 1
+grep 'cp ' stdout && exit 1
+grep 'echo ' stdout && exit 1
 
 $MAKE distclean
 
 ./configure --enable-silent-rules
-$MAKE >stdout || { cat stdout; Exit 1; }
+$MAKE >stdout || { cat stdout; exit 1; }
 cat stdout
 grep 'GEN .*foo' stdout
-grep 'cp ' stdout && Exit 1
-grep 'echo ' stdout && Exit 1
+grep 'cp ' stdout && exit 1
+grep 'echo ' stdout && exit 1
 
 $MAKE clean
-$MAKE V=0 >stdout || { cat stdout; Exit 1; }
+$MAKE V=0 >stdout || { cat stdout; exit 1; }
 cat stdout
 grep 'GEN .*foo' stdout
-grep 'cp ' stdout && Exit 1
-grep 'echo ' stdout && Exit 1
+grep 'cp ' stdout && exit 1
+grep 'echo ' stdout && exit 1
 
 $MAKE clean
-$MAKE V=1 >stdout || { cat stdout; Exit 1; }
+$MAKE V=1 >stdout || { cat stdout; exit 1; }
 cat stdout
-grep 'GEN ' stdout && Exit 1
+grep 'GEN ' stdout && exit 1
 grep 'cp ' stdout
 grep 'echo ' stdout
 

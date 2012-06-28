@@ -17,7 +17,7 @@
 # Test remake rules when Makefile.am or its prerequisites change.
 # Keep in sync with the other sister tests 'remake9*.test'.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 if using_gmake; then
   remake_() { $MAKE nil; }
@@ -89,7 +89,7 @@ for vpath in : false; do
     > $srcdir/tweak-makefile-am
   remake_
   $FGREP FINGERPRINT Makefile # For debugging.
-  $FGREP $magic1 Makefile && Exit 1
+  $FGREP $magic1 Makefile && exit 1
   $FGREP $magic2 Makefile
   test x"$(./foo.sh)" = x"$magic2"
 
@@ -99,8 +99,8 @@ for vpath in : false; do
   mv -f t $srcdir/Makefile.am
   using_gmake || remake_
   $MAKE distcheck
-  $FGREP $magic1 Makefile && Exit 1 # Sanity check.
-  $FGREP $magic2 Makefile && Exit 1 # Likewise.
+  $FGREP $magic1 Makefile && exit 1 # Sanity check.
+  $FGREP $magic2 Makefile && exit 1 # Likewise.
 
   $MAKE distclean
 

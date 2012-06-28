@@ -16,7 +16,7 @@
 
 # Test '+=' functionality.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > Makefile.am << 'END'
 data_DATA = zar

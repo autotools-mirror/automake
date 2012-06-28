@@ -20,7 +20,7 @@
 # See also sister test 'yacc-cxx-clean.test'.
 
 required='cc yacc'
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CC

@@ -17,7 +17,7 @@
 # Test EXTRA_*_DEPENDENCIES, libtool version; see extradep.test.
 
 required='cc libtoolize'
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CC
@@ -67,12 +67,12 @@ $AUTOCONF
 : >foodep
 : >foodep2
 : >bardep
-$MAKE >stdout || { cat stdout; Exit 1; }
+$MAKE >stdout || { cat stdout; exit 1; }
 cat stdout
 grep 'making libfoodep' stdout
 
 rm -f bardep
-$MAKE && Exit 1
+$MAKE && exit 1
 : >bardep
 
 $MAKE

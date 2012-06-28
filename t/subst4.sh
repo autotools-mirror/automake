@@ -16,7 +16,7 @@
 
 # Test AM_SUBST_NOTMAKE.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac <<'EOF'
 myrule="\

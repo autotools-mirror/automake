@@ -19,7 +19,7 @@
 # FIXME: performance is too low, and FAIL accordingly; it just offers an
 # FIXME: easy way to verify how effective a performance optimization is.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 count=5000
 

@@ -20,7 +20,7 @@
 #   2. '-Wno-portability' must imply '-Wno-extra-portability'.
 #   3. '-Wall' must imply '-Wextra-portability'.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 # We want (almost) complete control over automake options.
 AUTOMAKE="$am_original_AUTOMAKE --foreign -Werror"
@@ -77,16 +77,16 @@ grep 'requires.*AM_PROG_AR' stderr
 # Disabling extra-portability leaves portability intact (1).
 AUTOMAKE_fails -Wportability -Wno-extra-portability
 grep 'requires.*AM_PROG_CC_C_O' stderr
-grep 'requires.*AM_PROG_AR' stderr && Exit 1
+grep 'requires.*AM_PROG_AR' stderr && exit 1
 # Disabling extra-portability leaves portability intact (2).
 AUTOMAKE_fails -Wall -Wno-extra-portability
 grep 'requires.*AM_PROG_CC_C_O' stderr
-grep 'requires.*AM_PROG_AR' stderr && Exit 1
+grep 'requires.*AM_PROG_AR' stderr && exit 1
 
 # Enabling portability does not enable extra-portability.
 AUTOMAKE_fails -Wportability
 grep 'requires.*AM_PROG_CC_C_O' stderr
-grep 'requires.*AM_PROG_AR' stderr && Exit 1
+grep 'requires.*AM_PROG_AR' stderr && exit 1
 
 # Disabling portability disables extra-portability.
 $AUTOMAKE -Wno-portability

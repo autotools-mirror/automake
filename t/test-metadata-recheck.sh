@@ -17,7 +17,7 @@
 # Test the "make recheck" semantics for custom test drivers, as documented
 # in the Automake manual.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_OUTPUT
@@ -144,7 +144,7 @@ $AUTOMAKE
 
 # The ':test-result:' fields should be ignored by "make recheck",
 # but should cause the testsuite report to detect errors.
-$MAKE check && Exit 1
+$MAKE check && exit 1
 ls -l
 for t in $tests; do test -f $t.run; done
 rm -f *.run
@@ -156,7 +156,7 @@ for iteration in 1 2; do
   $MAKE recheck
   ls -l
   for t in $rechecked; do test -f $t.run; done
-  find . -name 'n-*.run' | grep . && Exit 1
+  find . -name 'n-*.run' | grep . && exit 1
   : For shells with busted 'set -e'.
 done
 

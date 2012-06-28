@@ -18,7 +18,7 @@
 # are correct even when there is no upper-level Makefile.
 # TODO: we should really add also functional tests for this!
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > configure.ac <<END
 AC_INIT([$me], [1.0])

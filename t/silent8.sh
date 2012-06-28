@@ -17,7 +17,7 @@
 # Check texinfo rules in silent-rules mode.
 
 required='makeinfo tex texi2dvi dvips'
-. ./defs || Exit 1
+. ./defs || exit 1
 
 echo AC_OUTPUT >> configure.ac
 
@@ -41,23 +41,23 @@ $AUTOCONF
 ./configure --disable-silent-rules
 
 # Make sure that all labels work in silent-mode.
-$MAKE V=0 dvi html info ps pdf >stdout || { cat stdout; Exit 1; }
+$MAKE V=0 dvi html info ps pdf >stdout || { cat stdout; exit 1; }
 cat stdout
-grep 'DVIPS    foo.ps' stdout || Exit 1
-grep 'MAKEINFO foo.html' stdout || Exit 1
+grep 'DVIPS    foo.ps' stdout || exit 1
+grep 'MAKEINFO foo.html' stdout || exit 1
 # NetBSD make will print './foo.info' instead of 'foo.info'.
-grep 'MAKEINFO.*foo.info' stdout || Exit 1
-grep 'TEXI2DVI foo.dvi' stdout || Exit 1
-grep 'TEXI2PDF foo.pdf' stdout || Exit 1
+grep 'MAKEINFO.*foo.info' stdout || exit 1
+grep 'TEXI2DVI foo.dvi' stdout || exit 1
+grep 'TEXI2PDF foo.pdf' stdout || exit 1
 
 # Now make sure the labels don't appear in verbose mode.
-$MAKE clean || Exit 1
-$MAKE V=1 dvi html info ps pdf >stdout || { cat stdout; Exit 1; }
+$MAKE clean || exit 1
+$MAKE V=1 dvi html info ps pdf >stdout || { cat stdout; exit 1; }
 cat stdout
-grep 'DVIPS    foo.ps' stdout && Exit 1
-grep 'MAKEINFO foo.html' stdout && Exit 1
-grep 'MAKEINFO.*foo.info' stdout && Exit 1
-grep 'TEXI2DVI foo.dvi' stdout && Exit 1
-grep 'TEXI2PDF foo.pdf' stdout && Exit 1
+grep 'DVIPS    foo.ps' stdout && exit 1
+grep 'MAKEINFO foo.html' stdout && exit 1
+grep 'MAKEINFO.*foo.info' stdout && exit 1
+grep 'TEXI2DVI foo.dvi' stdout && exit 1
+grep 'TEXI2PDF foo.pdf' stdout && exit 1
 
 :

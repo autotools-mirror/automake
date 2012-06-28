@@ -16,12 +16,12 @@
 
 # Check test counts in the testsuite summary.
 
-. ./defs-static || Exit 1
+. ./defs-static || exit 1
 
 use_colors=no
 use_vpath=no
 
-. "$am_testauxdir"/testsuite-summary-checks.sh || Exit 99
+. "$am_testauxdir"/testsuite-summary-checks.sh || exit 99
 
 ./configure
 

@@ -22,7 +22,7 @@
 # to debug the problem.
 # Note that this should be also in the documentation.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > Makefile.am << 'EOF'
 if NEVER_TRUE
@@ -51,7 +51,7 @@ $AUTOMAKE -a
 
 cd build
 # configure should fail since we've done something invalid.
-../configure 2>stderr && { cat stderr >&2; Exit 1; }
+../configure 2>stderr && { cat stderr >&2; exit 1; }
 cat stderr >&2
 grep 'conditional.*NEVER_TRUE' stderr
 

@@ -155,22 +155,24 @@ am_keeping_testdirs ()
   esac
 }
 
-# This is used in 'Exit' and in the exit trap.  See comments in the latter
-# for more information,
+# This is used in '_am_exit' and in the exit trap.  See comments in
+# the latter for more information.
 am__test_skipped=no
 
 # We use a trap below for cleanup.  This requires us to go through
 # hoops to get the right exit status transported through the signal.
-# So use "Exit STATUS" instead of "exit STATUS" inside of the tests.
 # Turn off errexit here so that we don't trip the bug with OSF1/Tru64
-# sh inside this function.
-Exit ()
+# sh inside this function (FIXME: is this still relevant now that we
+# require a POSIX shell?).
+_am_exit ()
 {
   set +e
   # See comments in the exit trap for the reason we do this.
   test 77 = $1 && am__test_skipped=yes
-  (exit $1); exit $1
+  # Spurious escaping to ensure we do not call our 'exit' alias.
+  (\exit $1); \exit $1
 }
+alias exit=_am_exit
 
 if test $am_using_tap = yes; then
   am_funcs_file=tap-functions.sh
@@ -181,11 +183,11 @@ fi
 if test -f "$am_testauxdir/$am_funcs_file"; then
   . "$am_testauxdir/$am_funcs_file" || {
     echo "$me: error sourcing $am_testauxdir/$am_funcs_file" >&2
-    Exit 99
+    exit 99
   }
 else
   echo "$me: $am_testauxdir/$am_funcs_file not found" >&2
-  Exit 99
+  exit 99
 fi
 unset am_funcs_file
 
@@ -257,7 +259,7 @@ AUTOMAKE_run ()
   cat stderr >&2
   cat stdout
   if test $am_using_tap != yes; then
-    test $am__got_rc -eq $am__exp_rc || Exit 1
+    test $am__got_rc -eq $am__exp_rc || exit 1
     return
   fi
   if test -z "$am__desc"; then
@@ -321,12 +323,12 @@ extract_configure_help ()
 grep_configure_help ()
 {
   ./configure --help > am--all-help \
-    || { cat am--all-help; Exit 1; }
+    || { cat am--all-help; exit 1; }
   cat am--all-help
   extract_configure_help "$1" am--all-help > am--our-help \
-    || { cat am--our-help; Exit 1; }
+    || { cat am--our-help; exit 1; }
   cat am--our-help
-  $EGREP "$2" am--our-help || Exit 1
+  $EGREP "$2" am--our-help || exit 1
 }
 
 # using_gmake
@@ -966,7 +968,8 @@ trap 'exit_status=$?
   am_keeping_testdirs || rm_rf_ $testSubDir
   set +x
   echo "$me: exit $exit_status"
-  exit $exit_status
+  # Spurious escaping to ensure we do not call our "exit" alias.
+  \exit $exit_status
 ' 0
 trap "fatal_ 'caught signal SIGHUP'" 1
 trap "fatal_ 'caught signal SIGINT'" 2

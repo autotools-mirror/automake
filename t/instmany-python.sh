@@ -19,7 +19,7 @@
 # This is the python sister test of instmany.test, see there for details.
 
 required='python'
-. ./defs || Exit 1
+. ./defs || exit 1
 
 limit=2500
 subdir=long_subdir_name_with_many_characters
@@ -116,14 +116,14 @@ for file in python3.py python$nfiles.py
 do
   chmod a-r $srcdir/$file
   test ! -r $srcdir/$file || skip_ "cannot drop file read permissions"
-  $MAKE install && Exit 1
+  $MAKE install && exit 1
   chmod u+r $srcdir/$file
 done
 
 for file in npython3.py npython$nfiles.py
 do
   chmod a-r $srcdir/$file
-  $MAKE install && Exit 1
+  $MAKE install && exit 1
   chmod u+r $srcdir/$file
 done
 

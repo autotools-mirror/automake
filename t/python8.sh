@@ -17,7 +17,7 @@
 # Test ACTION-IF-TRUE in AM_PATH_PYTHON.
 
 required=python
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >>configure.ac <<'EOF'
 # $PYTHON is supposed to be properly set in ACTION-IF-TRUE.

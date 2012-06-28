@@ -18,7 +18,7 @@
 # dependency tracking, it adds proper text to the configure help screen.
 # Keep this in sync with sister test 'help-depend.test'
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > configure.ac <<END
 AC_INIT([$me], [1.0])

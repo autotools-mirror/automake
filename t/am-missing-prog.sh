@@ -16,7 +16,7 @@
 
 # Test AM_MISSING_PROG.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac <<'END'
 AM_MISSING_PROG([NO_SUCH_COMMAND],    [am-none-none])

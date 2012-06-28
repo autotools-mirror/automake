@@ -18,7 +18,7 @@
 # dependencies.  See also related the tests 'remake-deleted-m4-file.test'
 # and 'remake-renamed-m4-macro-and-file.test'.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >>configure.ac <<EOF
 FOO
@@ -41,13 +41,13 @@ $AUTOCONF
 ./configure
 $MAKE
 grep GREPFOO Makefile
-grep GREPBAR Makefile && Exit 1
+grep GREPBAR Makefile && exit 1
 
 sed 's/FOO/BAR/' < configure.ac > t
 mv -f t configure.ac
 rm -f foo.m4
 $MAKE
-grep GREPFOO Makefile && Exit 1
+grep GREPFOO Makefile && exit 1
 grep GREPBAR Makefile
 
 :

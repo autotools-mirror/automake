@@ -20,7 +20,7 @@
 # This test has a few sister tests, for java, info, libtool.
 
 required='makeinfo'
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >>configure.ac <<END
 AC_OUTPUT
@@ -56,7 +56,7 @@ for file in info1.info
 do
   chmod a-r $file
   test ! -r $file || skip_ "cannot drop file read permissions"
-  $MAKE install-data && Exit 1
+  $MAKE install-data && exit 1
   chmod u+r $file
 done
 

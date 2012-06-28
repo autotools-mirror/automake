@@ -18,7 +18,7 @@
 #  - non-existent scripts listed in TESTS get diagnosed
 # See also related test 'test-missing2.test'.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_OUTPUT
@@ -37,7 +37,7 @@ $AUTOMAKE -a
 
 ./configure
 
-$MAKE check >output 2>&1 && { cat output; Exit 1; }
+$MAKE check >output 2>&1 && { cat output; exit 1; }
 cat output
 test -f ok.log
 grep '^PASS: ok\.test' output
@@ -45,13 +45,13 @@ $FGREP 'zardoz.log' output
 test ! -f test-suite.log
 
 TESTS='zardoz2.test' $MAKE -e check >output 2>&1 \
-  && { cat output; Exit 1; }
+  && { cat output; exit 1; }
 cat output
 $FGREP 'zardoz2.log' output
 test ! -f test-suite.log
 
 TEST_LOGS='zardoz3.log' $MAKE -e check >output 2>&1 \
-  && { cat output; Exit 1; }
+  && { cat output; exit 1; }
 cat output
 $FGREP 'zardoz3.log' output
 test ! -f test-suite.log
@@ -63,7 +63,7 @@ test ! -f test-suite.log
 $MAKE check
 rm -f zardoz.test
 
-$MAKE check >output 2>&1 && { cat output; Exit 1; }
+$MAKE check >output 2>&1 && { cat output; exit 1; }
 cat output
 $FGREP 'zardoz.log' output
 test ! -f test-suite.log

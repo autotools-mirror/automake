@@ -17,7 +17,7 @@
 # Test that 'automake -a' output order is stable.
 # From report by Bruno Haible.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >>configure.ac <<'END'
 AC_OUTPUT
@@ -41,7 +41,7 @@ END
 $ACLOCAL
 $AUTOCONF
 rm -f missing install-sh
-$AUTOMAKE --add-missing --copy 2>stderr || { cat stderr >&2; Exit 1; }
+$AUTOMAKE --add-missing --copy 2>stderr || { cat stderr >&2; exit 1; }
 cat stderr >&2
 
 for i in 1 2 3 4 5 6; do

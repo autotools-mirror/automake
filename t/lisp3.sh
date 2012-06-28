@@ -17,7 +17,7 @@
 # Test that compiling interdependent elisp files works.
 
 required=emacs
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > Makefile.am << 'EOF'
 lisp_LISP = am-one.el am-two.el am-three.el
@@ -63,7 +63,7 @@ find _inst # For debugging.
 # Keep thin in sync with m4/lispdir.m4.
 for dir in lib/emacs lib/xemacs share/emacs share/xemacs :; do
   if test $dir = :; then
-    Exit 1
+    exit 1
   elif test -d _inst/$dir/site-lisp; then
     break
   fi
@@ -77,14 +77,14 @@ test -f _inst/$dir/site-lisp/am-three.el
 test -f _inst/$dir/site-lisp/am-three.elc
 
 $MAKE uninstall
-find _inst | $EGREP '\.elc?$' && Exit 1
+find _inst | $EGREP '\.elc?$' && exit 1
 
 # Make sure we build all files when any of them change.
 # (We grep a message to make sure the compilation happens.)
 unique=0a3346e2af8a689b85002b53df09142a
 $sleep
 echo "(message \"$unique\")(provide 'am-three)" > am-three.el
-$MAKE >output 2>&1 || { cat output; Exit 1; }
+$MAKE >output 2>&1 || { cat output; exit 1; }
 cat output
 grep $unique output
 

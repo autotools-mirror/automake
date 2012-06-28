@@ -16,7 +16,7 @@
 
 # Test that '+=' works with standard header-vars.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_SUBST([ZZZ])

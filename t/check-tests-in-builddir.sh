@@ -18,7 +18,7 @@
 # well as in builddir, and that is prefers those in the builddir.
 
 # For gen-testsuite-part: ==> try-with-serial-tests <==
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_OUTPUT
@@ -52,28 +52,28 @@ exit 0
 END
 chmod a+x bar.test
 
-$MAKE check >out 2>&1 || { cat out; Exit1; }
+$MAKE check >out 2>&1 || { cat out; exit 1; }
 cat out
 # The serial test driver does not strip VPATH components from
 # the name of the test, but the parallel driver should.
 if test x"$am_serial_tests" = x"yes"; then
   grep '^PASS: .*foo\.test *$' out
 else
-  grep '\.\./foo' out && Exit 1
+  grep '\.\./foo' out && exit 1
   grep '^PASS: foo\.test *$' out
 fi
 grep '^PASS: bar\.test *$' out
 
 rm -f test-suite.log foo.log bar.log
 
-FOO_EXIT_STATUS=1 $MAKE check >out 2>&1 && { cat out; Exit1; }
+FOO_EXIT_STATUS=1 $MAKE check >out 2>&1 && { cat out; exit 1; }
 cat out
 # The serial test driver does not strip VPATH components from
 # the name of the test, but the parallel driver should.
 if test x"$am_serial_tests" = x"yes"; then
   grep '^FAIL: .*foo\.test *$' out
 else
-  grep '\.\./foo' out && Exit 1
+  grep '\.\./foo' out && exit 1
   grep '^FAIL: foo\.test *$' out
 fi
 grep '^PASS: bar\.test *$' out
@@ -83,7 +83,7 @@ rm -f test-suite.log foo.log bar.log
 # Check that if the same test is present in srcdir and builddir,
 # the one in builddir is preferred.
 cp bar.test foo.test
-FOO_EXIT_STATUS=1 $MAKE check >out 2>&1 || { cat out; Exit1; }
+FOO_EXIT_STATUS=1 $MAKE check >out 2>&1 || { cat out; exit 1; }
 cat out
 grep '^PASS: foo\.test *$' out
 grep '^PASS: bar\.test *$' out

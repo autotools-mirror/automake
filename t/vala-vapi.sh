@@ -17,7 +17,7 @@
 # Test and that vapi files are correctly handled by Vala support.
 
 required='valac cc GNUmake'
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac <<'END'
 AC_PROG_CC
@@ -70,18 +70,18 @@ $MAKE
 ls -l        # For debugging.
 cat zardoz.c # Likewise.
 grep 'BARBAR' zardoz.c
-cross_compiling || $MAKE test1 || Exit 1
+cross_compiling || $MAKE test1 || exit 1
 
 # Simple check on remake rules.
 $sleep
 echo '#define BAZBAZ "Quux!\n"' > foo.h
-sed 's/BARBAR/BAZBAZ/' zardoz.vala > t && mv -f t zardoz.vala || Exit 99
-$MAKE && Exit 1
-sed 's/BARBAR/BAZBAZ/' foo.vapi > t && mv -f t foo.vapi || Exit 99
+sed 's/BARBAR/BAZBAZ/' zardoz.vala > t && mv -f t zardoz.vala || exit 99
+$MAKE && exit 1
+sed 's/BARBAR/BAZBAZ/' foo.vapi > t && mv -f t foo.vapi || exit 99
 $MAKE
 cat zardoz.c # For debugging.
 grep 'BAZBAZ' zardoz.c
-cross_compiling || $MAKE test2 || Exit 1
+cross_compiling || $MAKE test2 || exit 1
 
 # Check the distribution.
 $MAKE distcheck

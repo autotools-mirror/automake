@@ -17,7 +17,7 @@
 # Test to make sure libtool library dependencies are correct.
 # Report from Lars J. Aas.
 required=libtool
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AM_PROG_AR
@@ -57,5 +57,5 @@ END
 $ACLOCAL
 $AUTOMAKE
 
-grep 'OBJECTS =$' Makefile.in && Exit 1
-Exit 0
+grep 'OBJECTS =$' Makefile.in && exit 1
+exit 0

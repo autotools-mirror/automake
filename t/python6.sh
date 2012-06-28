@@ -18,7 +18,7 @@
 # Same as python4.test, but using a custom ACTION-IF-NOT-FOUND.
 
 # Python is not required for this test.
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >>configure.ac <<\EOF
 AM_PATH_PYTHON(,, [echo "$PYTHON" > py])

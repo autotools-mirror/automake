@@ -17,7 +17,7 @@
 # Test various variable definitions that include an '=' sign.
 # From Raja R Harinath.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > Makefile.am << 'END'
 MY_FLAGS_1=-DABC=345

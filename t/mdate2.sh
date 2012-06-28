@@ -16,7 +16,7 @@
 
 # Test to make sure mdate-sh is included in distribution.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > Makefile.am << 'END'
 info_TEXINFOS = textutils.texi

@@ -18,7 +18,7 @@
 # non-bytecompiled *.el files.
 
 required=emacs
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > Makefile.am << 'EOF'
 lisp_DATA = am-one.el am-two.el am-three.el

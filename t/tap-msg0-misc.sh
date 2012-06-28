@@ -18,7 +18,7 @@
 #  - literal "0" and "0.0" in a test description and a TODO/SKIP message
 #    at the same time
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 . "$am_testauxdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"
 
@@ -45,7 +45,7 @@ ok 14 0.0 # SKIP 0.0
 
 END
 
-$MAKE check >stdout && { cat stdout; Exit 1; }
+$MAKE check >stdout && { cat stdout; exit 1; }
 cat stdout
 
 count_test_results total=14 pass=2 fail=0 xpass=4 xfail=4 skip=4 error=0

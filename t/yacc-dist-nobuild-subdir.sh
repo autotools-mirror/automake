@@ -19,7 +19,7 @@
 # Exposes automake bug#8485.
 
 required='cc yacc'
-. ./defs || Exit 1
+. ./defs || exit 1
 
 # This test is bounded to fail for any implementation that
 # triggers automake bug#7884.
@@ -86,7 +86,7 @@ chmod u+w .
 # extractors, to improve coverage.
 ../configure --enable-dependency-tracking YACC=false
 $MAKE
-ls -l sub/*.[ch] && Exit 1
+ls -l sub/*.[ch] && exit 1
 
 env DISTCHECK_CONFIGURE_FLAGS='YACC=false' $MAKE distcheck
 

@@ -19,7 +19,7 @@
 # This test exercises the prog and libs code paths.
 
 required=cc
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >>configure.ac <<'END'
 AC_PROG_CC
@@ -75,13 +75,13 @@ test ! -d "$instdir"
 $MAKE -e install DESTDIR="$destdir"
 test ! -d "$instdir"
 test ! -d "$destdir"
-$MAKE -e uninstall > stdout || { cat stdout; Exit 1; }
+$MAKE -e uninstall > stdout || { cat stdout; exit 1; }
 cat stdout
 # Creative quoting below to please maintainer-check.
-grep 'rm'' ' stdout && Exit 1
-$MAKE -e uninstall DESTDIR="$destdir" > stdout || { cat stdout; Exit 1; }
+grep 'rm'' ' stdout && exit 1
+$MAKE -e uninstall DESTDIR="$destdir" > stdout || { cat stdout; exit 1; }
 cat stdout
 # Creative quoting below to please maintainer-check.
-grep 'rm'' ' stdout && Exit 1
+grep 'rm'' ' stdout && exit 1
 
 :

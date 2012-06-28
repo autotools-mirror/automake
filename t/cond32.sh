@@ -16,7 +16,7 @@
 
 # Make sure the user can override a conditional _DEPENDENCIES.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >>configure.ac <<'EOF'
 AM_CONDITIONAL([C1], [test -z "$two"])

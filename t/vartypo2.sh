@@ -18,7 +18,7 @@
 # Libtool variant.
 
 required=libtoolize
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >>configure.ac <<'END'
 AM_PROG_AR
@@ -53,7 +53,7 @@ AUTOMAKE_fails --add-missing
 # Makefile.am:5: warning: variable 'libfoo_la_DEPENDENCIES' is defined but no program or
 # Makefile.am:5: library has 'libfoo_la' as canonical name (possible typo)
 
-grep 'as canonical' stderr | grep -v ' .libfoo_la. ' && Exit 1
+grep 'as canonical' stderr | grep -v ' .libfoo_la. ' && exit 1
 test $(grep -c 'variable.*is defined but' stderr) -eq 6
 
 # If we add a global -Wnone, all warnings should disappear.

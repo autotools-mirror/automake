@@ -17,7 +17,7 @@
 # TAP support:
 #  - which log files get copied in the global log?
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 . "$am_testauxdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"
 
@@ -105,7 +105,7 @@ END
 TESTS="$(echo *.test)" $MAKE -e check || :
 cat test-suite.log
 
-grep ':.*ok|not seen' test-suite.log && Exit 1
+grep ':.*ok|not seen' test-suite.log && exit 1
 
 for s in skip todo fail xpass bail error; do
   $FGREP "::$s::" test-suite.log
@@ -117,7 +117,7 @@ test_suite_contents=$(cat test-suite.log)
 hodgepodge_contents=$(cat hodgepodge)
 case $test_suite_contents in
   *"$hodgepodge_contents"*) ;;
-  *) Exit 1;;
+  *) exit 1;;
 esac
 
 :

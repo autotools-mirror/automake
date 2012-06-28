@@ -18,7 +18,7 @@
 # Also check basic support for AM_LIBTOOLFLAGS/LIBTOOLFLAGS
 
 required='cc libtoolize'
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CC
@@ -81,7 +81,7 @@ $AUTOMAKE --add-missing --copy
 ./configure "--prefix=$(pwd)/_inst"
 env LIBTOOLFLAGS=--silent $MAKE print >output 2>&1 || {
   cat output
-  Exit 1
+  exit 1
 }
 cat output
 grep '1BEG: libmod1.la mod2.la :END1' output
@@ -92,7 +92,7 @@ $MAKE
 
 env LIBTOOLFLAGS=--silent $MAKE install >output 2>&1 || {
   cat output
-  Exit 1
+  exit 1
 }
 cat output
 grep 'silent.*silent.*prg' output
@@ -100,7 +100,7 @@ grep 'silent.*silent.*libmod1' output
 
 env LIBTOOLFLAGS=--silent $MAKE uninstall >output 2>&1 || {
   cat output
-  Exit 1
+  exit 1
 }
 cat output
 grep 'silent.*silent.*libmod1' output

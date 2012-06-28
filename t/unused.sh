@@ -16,7 +16,7 @@
 
 # Test for failing check for unused macros.  From Johan Danielsson.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 MACRO_1
@@ -30,6 +30,6 @@ AC_DEFUN([MACRO_1_2], echo 12)
 AC_DEFUN([MACRO_1_2_3], echo 123)
 END
 
-$ACLOCAL 2>stderr || { cat stderr >&2; Exit 1; }
+$ACLOCAL 2>stderr || { cat stderr >&2; exit 1; }
 cat stderr >&2
 test ! -s stderr

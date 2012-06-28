@@ -18,7 +18,7 @@
 # This handle the case in which the makefiles are not called 'Makefile'.
 # See also sister test 'remake-all-1.test'.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 mkfile=foobar
 
@@ -53,7 +53,7 @@ $EGREP "^all-am:.* $mkfile( |$)" $mkfile.in sub/$mkfile.in
 $AUTOCONF
 ./configure
 
-$FGREP "$magic1" mkfile.in && Exit 1 # Sanity check.
+$FGREP "$magic1" mkfile.in && exit 1 # Sanity check.
 
 # Two code paths in configure.am:
 

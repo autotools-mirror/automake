@@ -16,7 +16,7 @@
 
 # Check that dependencies are included when there are many header files.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 echo AC_PROG_CC >> configure.ac
 

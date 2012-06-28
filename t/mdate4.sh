@@ -17,7 +17,7 @@
 # Test to make sure that mdate-sh is added to the right directory.
 # Report from Kevin Dalley.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_CONFIG_FILES([sub/Makefile])

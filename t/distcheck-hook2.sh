@@ -18,7 +18,7 @@
 # Automake, and that a used-defined 'distcheck-hook' is *not* honored
 # in a subpackage Makefile.am.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_CONFIG_SUBDIRS([subpkg])
@@ -63,14 +63,14 @@ cd ..
 # For debugging.
 $FGREP 'distcheck-hook' Makefile.in subpkg/Makefile.in
 
-$FGREP 'distcheck-hook' subpkg/Makefile.in && Exit 1
+$FGREP 'distcheck-hook' subpkg/Makefile.in && exit 1
 $FGREP '$(MAKE) $(AM_MAKEFLAGS) distcheck-hook' Makefile.in
 grep '^distcheck-hook:' Makefile.in
 
 ./configure
 
 $MAKE
-$MAKE check && Exit 1
+$MAKE check && exit 1
 cd subpkg
 $MAKE check
 cd ..

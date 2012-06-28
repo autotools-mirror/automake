@@ -18,7 +18,7 @@
 # programs, but not to @substitutions@.
 
 # For gen-testsuite-part: ==> try-with-serial-tests <==
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AM_CONDITIONAL([COND], [test -n "$cond"])

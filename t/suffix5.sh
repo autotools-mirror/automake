@@ -19,7 +19,7 @@
 # Based on a report from Arkadiusz Miskiewicz <misiek@pld.ORG.PL>.
 
 required='cc libtool'
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_SUBST([LINK], [:])

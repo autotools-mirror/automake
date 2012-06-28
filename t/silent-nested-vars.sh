@@ -17,7 +17,7 @@
 # Check silent-rules mode, on 'make' implementations that do not
 # support nested variables (Bug#9928, Bug#10237).
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >>configure.ac <<'EOF'
 AM_SILENT_RULES
@@ -96,31 +96,31 @@ a = $(b$(c))
 all:
 	touch bar
 END
-$MAKE && Exit 99
+$MAKE && exit 99
 mv -f Makefile foo.mk
-$MAKE -f foo.mk && Exit 99
-cat foo.mk | $MAKE -f - && Exit 99
-test -f bar && Exit 99
+$MAKE -f foo.mk && exit 99
+cat foo.mk | $MAKE -f - && exit 99
+test -f bar && exit 99
 sed '/a =/d' foo.mk > Makefile
-$MAKE && test -f bar || Exit 99
+$MAKE && test -f bar || exit 99
 rm -f bar Makefile foo.mk
 
 $ACLOCAL
 $AUTOMAKE --add-missing
 $AUTOCONF
 
-./configure --enable-silent-rules >stdout || { cat stdout; Exit 1; }
+./configure --enable-silent-rules >stdout || { cat stdout; exit 1; }
 cat stdout
 grep '^checking whether \./mymake supports nested variables\.\.\. no *$' \
   stdout
 $EGREP 'CC|AM_V|GEN' Makefile # For debugging.
 grep '^AM_V_CC =  *\$(am__v_CC_0) *$' Makefile
 grep '^AM_V_GEN =  *\$(am__v_GEN_0) *$' Makefile
-$MAKE >stdout || { cat stdout; Exit 1; }
+$MAKE >stdout || { cat stdout; exit 1; }
 cat stdout
-$EGREP ' (-c|-o)' stdout && Exit 1
-grep 'mv ' stdout && Exit 1
-grep 'echo .*oop' stdout && Exit 1
+$EGREP ' (-c|-o)' stdout && exit 1
+grep 'mv ' stdout && exit 1
+grep 'echo .*oop' stdout && exit 1
 grep 'CC .*foo\.' stdout
 grep 'CC .*bar\.' stdout
 grep 'CCLD .*foo' stdout
@@ -128,7 +128,7 @@ grep 'CCLD .*bar' stdout
 grep 'PKG-GEN .*oop' stdout
 $MAKE distclean
 
-./configure --disable-silent-rules > stdout || { cat stdout; Exit 1; }
+./configure --disable-silent-rules > stdout || { cat stdout; exit 1; }
 cat stdout
 grep '^checking whether \./mymake supports nested variables\.\.\. no *$' \
   stdout
@@ -136,12 +136,12 @@ $EGREP 'CC|AM_V|GEN' Makefile # For debugging.
 grep '^AM_V_CC =  *\$(am__v_CC_1) *$' Makefile
 grep '^AM_V_GEN =  *\$(am__v_GEN_1) *$' Makefile
 
-$MAKE >stdout || { cat stdout; Exit 1; }
+$MAKE >stdout || { cat stdout; exit 1; }
 cat stdout
 grep ' -c' stdout
 grep ' -o foo' stdout
 grep ' -o bar' stdout
 grep 'echo .*>oop' stdout
-$EGREP '(CC|LD) ' stdout && Exit 1
+$EGREP '(CC|LD) ' stdout && exit 1
 
 :

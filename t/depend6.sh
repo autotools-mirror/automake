@@ -17,7 +17,7 @@
 # Check for _AM_OUTPUT_DEPENDENCY_COMMANDS grouping bug,
 # reported by Markus Duft.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >>configure.ac << END
 AC_PROG_CC
@@ -38,9 +38,9 @@ $ACLOCAL
 $AUTOMAKE
 $AUTOCONF
 ./configure --disable-dependency-tracking 2>stderr || {
-  stat=$?; cat stderr >&2; Exit $stat;
+  stat=$?; cat stderr >&2; exit $stat;
 }
 cat stderr >&2
-grep shift stderr && Exit 1
+grep shift stderr && exit 1
 
 :

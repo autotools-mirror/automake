@@ -18,7 +18,7 @@
 #  - option '--diagnostic-string' to customize the string introducing
 #    TAP diagnostics
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 fetch_tap_driver
 
@@ -81,13 +81,13 @@ $AUTOMAKE
 
 ./configure
 
-$MAKE check >stdout || { cat stdout; Exit 1; }
+$MAKE check >stdout || { cat stdout; exit 1; }
 cat stdout
 count_test_results total=$i pass=$i fail=0 xpass=0 xfail=0 skip=0 error=0
 
 cat later.mk >> Makefile
-$MAKE check >stdout || { cat stdout; Exit 1; }
+$MAKE check >stdout || { cat stdout; exit 1; }
 cat stdout
-$FGREP 'blah blah' stdout && Exit 1
+$FGREP 'blah blah' stdout && exit 1
 
 :

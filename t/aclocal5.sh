@@ -17,7 +17,7 @@
 # Test to make sure that aclocal.m4's dependencies are honored in
 # sub-directories.  See also related tests 'remake-subdir*.test'.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AM_TEST([GREPME])

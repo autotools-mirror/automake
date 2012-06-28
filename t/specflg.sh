@@ -16,7 +16,7 @@
 
 # Test of flags specific to executable.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CC
@@ -40,12 +40,12 @@ grep 'required.*compile' stderr
 $AUTOMAKE
 
 # Look for $(COMPILE) -c in .c.o rule.
-grep 'COMPILE. [^-]' Makefile.in && Exit 1
+grep 'COMPILE. [^-]' Makefile.in && exit 1
 
 # Look for foo-foo.o.
-grep '[^-]foo\.o' Makefile.in && Exit 1
+grep '[^-]foo\.o' Makefile.in && exit 1
 
 # Regression test for missing space.
-$FGREP ')-c' Makefile.in && Exit 1
+$FGREP ')-c' Makefile.in && exit 1
 
-Exit 0
+exit 0

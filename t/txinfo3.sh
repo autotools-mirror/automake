@@ -17,7 +17,7 @@
 # Test to make sure .info-less @setfilename works.
 
 required='makeinfo tex texi2dvi'
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_OUTPUT
@@ -44,7 +44,7 @@ grep '^INFO_DEPS.*textutils$' Makefile.in
 
 # We should not use single suffix inference rules (with separate
 # dependencies), this confuses Solaris make.
-grep '^\.texi:$' Makefile.in && Exit 1
+grep '^\.texi:$' Makefile.in && exit 1
 grep 'textutils: *textutils\.texi' Makefile.in
 
 ./configure

@@ -16,7 +16,7 @@
 
 # Make sure --help and --version work, even when the current directory
 # contains a broken configure.ac and a broken acinclude.m4.
-. ./defs || Exit 1
+. ./defs || exit 1
 
 # Ensure we run in a new, clean directory.
 mkdir cleandir
@@ -36,14 +36,14 @@ $ACLOCAL --version
 $ACLOCAL --help
 
 # Sanity check: aclocal cannot work with broken acinclude.m4.
-$ACLOCAL 2>stderr && { cat stderr >&2; Exit 1; }
+$ACLOCAL 2>stderr && { cat stderr >&2; exit 1; }
 cat stderr >&2
 $FGREP acinclude.m4 stderr
 
 rm -f acinclude.m4
 
 # Sanity checks: aclocal and automake cannot work with broken configure.ac.
-$ACLOCAL 2>stderr && { cat stderr >&2; Exit 1; }
+$ACLOCAL 2>stderr && { cat stderr >&2; exit 1; }
 cat stderr >&2
 $FGREP configure.ac stderr
 AUTOMAKE_fails

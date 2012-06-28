@@ -16,7 +16,7 @@
 
 # The $(SUDBIRS) entries are processed in the order they are specified.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_CONFIG_FILES([
@@ -152,7 +152,7 @@ for j in '' "$jobs"; do
   test -f sub3/a/run
   test -f sub3/b/run
   $MAKE clean
-  find . | grep 'run$' && Exit 1
+  find . | grep 'run$' && exit 1
   : # For shells with busted 'set -e'
 done
 

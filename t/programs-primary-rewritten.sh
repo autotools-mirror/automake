@@ -18,7 +18,7 @@
 # checks have been introduced in commit 'Release-1-9-254-g9d0eaef' into
 # the former test 'subst2.test'.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_SUBST([FOO], [c])

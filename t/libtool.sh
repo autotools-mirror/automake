@@ -18,7 +18,7 @@
 # Report from Kevin Dalley.
 
 required=libtool
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_LIBTOOL_DLOPEN

@@ -18,7 +18,7 @@
 # From Adam J. Richter.
 
 required=libtool
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_SUBST([LTLIBOBJS])

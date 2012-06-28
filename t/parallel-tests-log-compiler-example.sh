@@ -18,7 +18,7 @@
 # LOG_COMPILER and LOG_FLAGS given in the manual.
 
 required=python
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac <<END
 AC_SUBST([PERL], ['$PERL'])
@@ -58,7 +58,7 @@ $MAKE check || st=$?
 cat foo.log
 cat bar.log
 cat baz.log
-test $st -eq 0 || Exit $st
+test $st -eq 0 || exit $st
 
 # Check that the wrappers have been run with the expected flags.
 grep '[rR]eversed.*+=.*operator.*foo\.pl' foo.log

@@ -20,7 +20,7 @@
 # See discussion about automake bug#9768.
 # See also sister test 'dist-missing-included-m4.test'.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac <<'END'
 m4_pattern_forbid([^MY_])
@@ -58,12 +58,12 @@ for vpath in false :; do
     cd $distdir
     ./configure
   fi
-  $MAKE >output 2>&1 && { cat output; Exit 1; }
+  $MAKE >output 2>&1 && { cat output; exit 1; }
   cat output
   # This error will come from autoconf, not make, so we can be stricter
   # in our grepping of it.
   grep 'possibly undefined .*MY_ZARDOZ' output
-  grep 'MY_FOOBAR' output && Exit 1 # No spurious error, please.
+  grep 'MY_FOOBAR' output && exit 1 # No spurious error, please.
   cd "$ocwd" || fatal_ "cannot chdir back to top-level test directory"
 done
 

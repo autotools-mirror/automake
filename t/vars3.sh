@@ -17,7 +17,7 @@
 # Check that Automake warns about variables containing spaces
 # and other non-POSIX characters.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >Makefile.am <<'EOF'
 L01 = $(shell echo *)
@@ -37,18 +37,18 @@ EOF
 $ACLOCAL
 # Make sure this warning is print in the 'portability' category.
 $AUTOMAKE --warnings=no-error,none,portability 2>stderr \
-  || { cat stderr >&2; Exit 1; }
+  || { cat stderr >&2; exit 1; }
 cat stderr >&2
 
 # Lines number are printed in error message.
 # Use them to make sure errors are diagnosed against the right lines.
 
 # No error expected apart from those on these lines.
-grep -v '^Makefile\.am:[145789]:' stderr | grep . && Exit 1
+grep -v '^Makefile\.am:[145789]:' stderr | grep . && exit 1
 
 # Now check some individual values.
 grep ':1:.*shell echo' stderr
-grep 'nextvariableisbad' stderr && Exit 1
+grep 'nextvariableisbad' stderr && exit 1
 grep ':4:.*addsuffix' stderr
 grep ':5:.*bad boy' stderr
 grep ':7:.*three errors' stderr
@@ -58,7 +58,7 @@ grep ':8:.*o u c h' stderr
 grep ':8:.*wildcard' stderr
 grep ':9:.*another Error' stderr
 
-$EGREP 'ok|thisis|here' stderr && Exit 1
+$EGREP 'ok|thisis|here' stderr && exit 1
 
 # None of these errors be diagnosed with '-Wno-portability'.
 $AUTOMAKE -Wno-portability

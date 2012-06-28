@@ -19,7 +19,7 @@
 
 am_create_testdir=empty
 required=i586-mingw32msvc-gcc
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cp "$am_docdir"/amhello-1.0.tar.gz . \
   || fatal_ "cannot get amhello tarball"
@@ -33,7 +33,7 @@ gzip -dc amhello-1.0.tar.gz | tar xf -
 cd amhello-1.0
 
 ./configure --build "$build" --host "$host" > stdout \
-  || { cat stdout ; Exit 1; }
+  || { cat stdout ; exit 1; }
 cat stdout
 grep '^checking for i586-mingw32msvc-strip\.\.\.' stdout
 grep '^checking for i586-mingw32msvc-gcc\.\.\.' stdout
@@ -48,6 +48,6 @@ file hello.exe > whatis
 cat whatis
 $EGREP 'DOS|Win' whatis
 grep 'executable' whatis
-grep 'ELF' whatis && Exit 1
+grep 'ELF' whatis && exit 1
 
 :

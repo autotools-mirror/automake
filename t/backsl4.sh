@@ -17,7 +17,7 @@
 # Make sure we diagnose and fix white spaces following backslash.
 # Report from Peter Muir.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 echo AC_OUTPUT >>configure.ac
 

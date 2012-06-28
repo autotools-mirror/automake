@@ -18,7 +18,7 @@
 # "global test result" in '*.trs' files, as documented in the automake
 # manual.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_OUTPUT
@@ -122,7 +122,7 @@ cat > zar-doz.x << 'END'
 :test-result: XFAIL
 END
 
-$MAKE check && Exit 1
+$MAKE check && exit 1
 cat test-suite.log
 
 have_result <<END
@@ -143,7 +143,7 @@ cat > foo.test << 'END'
 END
 : > zar-doz.x
 
-$MAKE check && Exit 1
+$MAKE check && exit 1
 cat test-suite.log
 
 have_result <<END

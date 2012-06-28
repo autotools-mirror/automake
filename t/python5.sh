@@ -18,7 +18,7 @@
 # Same as python4.test, but requiring a version.
 
 # Python is not required for this test.
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >>configure.ac <<EOF
 # Hopefully the Python team will never release such a version.
@@ -35,7 +35,7 @@ $AUTOMAKE --add-missing
 ./configure >stdout 2>stderr && {
   cat stdout
   cat stderr >&2
-  Exit 1
+  exit 1
 }
 cat stdout
 cat stderr >&2

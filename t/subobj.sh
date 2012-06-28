@@ -16,7 +16,7 @@
 
 # Test of subdir objects with C.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CC
@@ -30,14 +30,14 @@ wish_SOURCES = generic/a.c generic/b.c
 END
 
 $ACLOCAL
-$AUTOMAKE --add-missing 2>stderr || { cat stderr >&2; Exit 1; }
+$AUTOMAKE --add-missing 2>stderr || { cat stderr >&2; exit 1; }
 cat stderr >&2
 # Make sure compile is installed, and that Automake says so.
 grep 'install.*compile' stderr
 test -f compile
 
 grep '^generic/a\.\$(OBJEXT):' Makefile.in
-grep '[^/]a\.\$(OBJEXT)' Makefile.in && Exit 1
+grep '[^/]a\.\$(OBJEXT)' Makefile.in && exit 1
 
 # Opportunistically test for a different bug.
 grep '^generic/b\.\$(OBJEXT):.*dirstamp' Makefile.in

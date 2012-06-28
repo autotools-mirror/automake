@@ -18,7 +18,7 @@
 #  - interactions between "TAP plan with SKIP" and logging of earlier or
 #    later TAP or non-TAP text
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 . "$am_testauxdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"
 
@@ -46,7 +46,7 @@ a later non-TAP line
 END
 
 TESTS='foo.test foo2.test bar.test' $MAKE -e check >stdout \
-  || { cat stdout; Exit 1; }
+  || { cat stdout; exit 1; }
 cat stdout
 
 count_test_results total=3 pass=0 fail=0 xpass=0 xfail=0 skip=3 error=0

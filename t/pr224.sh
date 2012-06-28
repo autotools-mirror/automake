@@ -24,7 +24,7 @@
 # should be '$(top_builddir)/bar/.deps'.
 
 required=cc
-. ./defs || Exit 1
+. ./defs || exit 1
 
 mkdir foo
 
@@ -59,6 +59,6 @@ cd build
 $MAKE
 test -d foo/.deps
 $MAKE distclean
-test -d foo/.deps && Exit 1
+test -d foo/.deps && exit 1
 
 :

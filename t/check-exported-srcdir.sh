@@ -19,7 +19,7 @@
 # environment of the tests.  This is documented in the manual.
 
 # For gen-testsuite-part: ==> try-with-serial-tests <==
-. ./defs || Exit 1
+. ./defs || exit 1
 
 show_info ()
 {
@@ -58,7 +58,7 @@ $AUTOMAKE -a
 cd ../BuildDir
 ../SrcDir/configure
 
-$MAKE check || { show_info; Exit 1; }
+$MAKE check || { show_info; exit 1; }
 show_info
 
 :

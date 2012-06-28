@@ -16,7 +16,7 @@
 
 # Make sure changes to m4_included files also cause aclocal.m4 to change.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 m4_include([somefile.m4])
@@ -47,13 +47,13 @@ EOF
 
 $ACLOCAL -I m4
 grep version2 aclocal.m4
-grep version1 aclocal.m4 && Exit 1
+grep version1 aclocal.m4 && exit 1
 
 $sleep
 echo MACRO2 >somefile.m4
 
 $ACLOCAL -I m4
-grep version2 aclocal.m4 && Exit 1
+grep version2 aclocal.m4 && exit 1
 grep version1 aclocal.m4
 
 $sleep

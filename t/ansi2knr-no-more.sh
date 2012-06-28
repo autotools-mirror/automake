@@ -17,7 +17,7 @@
 # Check that any attempt to use the obsolete de-ANSI-fication support
 # is diagnosed.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 warn_rx='automatic de-ANSI-fication.*removed'
 
@@ -28,12 +28,12 @@ cp configure.ac configure.sav
 
 echo AM_C_PROTOTYPES >> configure.ac
 
-$ACLOCAL -Wnone 2>stderr && { cat stderr >&2; Exit 1; }
+$ACLOCAL -Wnone 2>stderr && { cat stderr >&2; exit 1; }
 cat stderr >&2
 grep "^configure\\.ac:5:.*$warn_rx" stderr
 
 cat aclocal.sav "$am_automake_acdir"/protos.m4 > aclocal.m4
-$AUTOCONF -Wnone 2>stderr && { cat stderr >&2; Exit 1; }
+$AUTOCONF -Wnone 2>stderr && { cat stderr >&2; exit 1; }
 cat stderr >&2
 grep "^configure\\.ac:5:.*$warn_rx" stderr
 

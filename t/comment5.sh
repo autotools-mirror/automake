@@ -17,7 +17,7 @@
 # Test for PR/280.
 # (Automake should complain about trailing backslashes in comments.)
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac <<'EOF'
 AC_OUTPUT

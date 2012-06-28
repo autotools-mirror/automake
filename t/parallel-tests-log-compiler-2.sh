@@ -20,7 +20,7 @@
 # See also related test 'parallel-tests-log-compiler-1.test'.
 
 required='cc native'
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CC
@@ -82,7 +82,7 @@ $AUTOMAKE -a
 ./configure
 
 $MAKE
-$MAKE check || { cat test-suite.log; Exit 1; }
+$MAKE check || { cat test-suite.log; exit 1; }
 ls -l . sub
 cat test-suite.log
 grep 'chk-compiler  *1  *2' foo.log

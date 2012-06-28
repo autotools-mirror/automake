@@ -319,27 +319,18 @@ sc_tests_command_subst:
 	  exit 1; \
 	fi
 
-## Tests should never call exit directly, but use Exit.
-## This is so that the exit status is transported correctly across the 0 trap.
-## Ignore comments and our testsuite's own self tests.
+## Tests should no more call 'Exit', just 'exit'.  That's because we
+## now have in place a better workaround to ensure the exit status is
+## transported correctly across the exit trap.
 sc_tests_Exit_not_exit:
-	@found=false; for file in $(xtests); do \
-	  case $$file in */self-check-*) continue;; esac; \
-	  res=`sed -n -e '/^#/d' -e '/<<.*END/,/^END/b' -e '/<<.*EOF/,/^EOF/b' \
-	              -e '/exit [$$0-9]/p' $$file`; \
-	  if test -n "$$res"; then \
-	    echo "$$file:$$res"; \
-	    found=true; \
-	  fi; \
-	done; \
-	if $$found; then \
-	  echo 'Do not call plain "exit", use "Exit" instead, in above tests.' 1>&2; \
+	@if grep 'Exit' $(xtests) $(xdefs) | grep -Ev '^[^:]+: *#' | grep .; then \
+	  echo "Use 'exit', not 'Exit'; it's obsolete now." 1>&2; \
 	  exit 1; \
 	fi
 
 ## Use AUTOMAKE_fails when appropriate
 sc_tests_automake_fails:
-	@if grep -v '^#' $(xtests) | grep '\$$AUTOMAKE.*&&.*[eE]xit'; then \
+	@if grep -v '^#' $(xtests) | grep '\$$AUTOMAKE.*&&.*exit'; then \
 	  echo 'Use AUTOMAKE_fails + grep to catch automake failures in the above tests.' 1>&2;  \
 	  exit 1; \
 	fi

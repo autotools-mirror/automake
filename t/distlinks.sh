@@ -17,7 +17,7 @@
 # Check that distributed symlinks in the source tree will be expanded
 # as regular files in $(distdir).
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 echo text > file
 

@@ -16,7 +16,7 @@
 
 # Make sure remaking rules fail when they should.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_CONFIG_FILES([sub/Makefile])
@@ -40,30 +40,30 @@ $sleep
 # Fail for broken input files.
 
 echo "if FOO" > sub/Makefile.am
-$MAKE && Exit 1
+$MAKE && exit 1
 
 : >sub/Makefile.am
 $MAKE
 
 mv Makefile.am backup
 echo "if FOO" > Makefile.am
-$MAKE && Exit 1
+$MAKE && exit 1
 
 # Fail for missing input files, with or without missing
 # Makefile.in files.
 
 cp backup Makefile.am
 mv sub/Makefile.am sub/backup
-$MAKE && Exit 1
+$MAKE && exit 1
 
 rm -f sub/Makefile.in
-$MAKE && Exit 1
+$MAKE && exit 1
 
 mv sub/backup sub/Makefile.am
 rm -f Makefile.am
-$MAKE && Exit 1
+$MAKE && exit 1
 
 rm -f Makefile.in
-$MAKE && Exit 1
+$MAKE && exit 1
 
 :

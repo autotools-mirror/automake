@@ -16,7 +16,7 @@
 
 # Test for bug where mkinstalldirs variable can be set incorrectly.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > Makefile.am << 'END'
 pkgdata_DATA =
@@ -27,5 +27,5 @@ END
 $ACLOCAL
 $AUTOMAKE ././Makefile
 
-grep ' /mkinstalldirs' Makefile.in && Exit 1
-Exit 0
+grep ' /mkinstalldirs' Makefile.in && exit 1
+exit 0

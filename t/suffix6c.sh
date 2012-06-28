@@ -17,7 +17,7 @@
 # Test to make sure that '.o' and '.obj' are handled like '.$(OBJEXT)'.
 # See also related "grepping" test suffix6.test.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 # $(LINK) is not defined automatically by Automake, since the *_SOURCES

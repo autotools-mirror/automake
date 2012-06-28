@@ -16,7 +16,7 @@
 
 # Make sure we warn about possible variable typos when we should.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >>configure.ac <<'END'
 AC_PROG_RANLIB
@@ -72,7 +72,7 @@ AUTOMAKE_fails -Wno-extra-portability
 # Makefile.am:13: library has 'libfoo_a' as canonical name (possible typo)
 
 grep 'as canonical' stderr | grep -v ' .foo. ' | grep -v ' .libfoo_a. ' \
-  && Exit 1
+  && exit 1
 test $(grep -c 'variable.*is defined but' stderr) -eq 13
 
 # If we add a global -Wnone, all warnings should disappear.

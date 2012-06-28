@@ -19,7 +19,7 @@
 #  foo_flags = -d
 #  AM_YFLAGS = $(foo_flags)
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac <<'END'
 AC_PROG_CC

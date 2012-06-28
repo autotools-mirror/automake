@@ -18,7 +18,7 @@
 # This test is for multiple ":"s.
 # See also sister test 'colon2.test'.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > configure.ac <<END
 AC_INIT([$me], [1.0])
@@ -47,7 +47,7 @@ $FGREP 'zardoz.am' zardoz.in
 $FGREP 'zardoz.in' zardoz.in
 sed -e 's|zardoz\.am|zrdz.am|g' \
     -e 's|zardoz\.in|zrdz.in|g' \
-  <zardoz.in | $FGREP 'zardoz' && Exit 1
+  <zardoz.in | $FGREP 'zardoz' && exit 1
 
 # The configure-generated Makefile should depend on zardoz.in, two.in and
 # three.in.  The automake-generated zardoz.in should depend on zardoz.am.
@@ -64,7 +64,7 @@ test -f Makefile # Sanity check.
 $MAKE dummy
 # Again, make sure that the generated Makefile do not unduly
 # refer to 'zardoz' .
-$MAKE -n zardoz && Exit 1
+$MAKE -n zardoz && exit 1
 
 $sleep
 cat >> zardoz.am <<END

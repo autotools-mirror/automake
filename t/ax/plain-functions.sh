@@ -29,10 +29,10 @@
 
 # Copied from Gnulib's 'tests/init.sh'.
 warn_ () { echo "$@" 1>&$stderr_fileno_; }
-fail_ () { warn_ "$me: failed test: $@"; Exit 1; }
-skip_ () { warn_ "$me: skipped test: $@"; Exit 77; }
-fatal_ () { warn_ "$me: hard error: $@"; Exit 99; }
-framework_failure_ () { warn_ "$me: set-up failure: $@"; Exit 99; }
+fail_ () { warn_ "$me: failed test: $@"; exit 1; }
+skip_ () { warn_ "$me: skipped test: $@"; exit 77; }
+fatal_ () { warn_ "$me: hard error: $@"; exit 99; }
+framework_failure_ () { warn_ "$me: set-up failure: $@"; exit 99; }
 
 # For compatibility with TAP functions.
 skip_all_ () { skip_ "$@"; }

@@ -18,7 +18,7 @@
 # Diagnose if both configure.in and configure.ac are present, prefer
 # configure.ac.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >configure.ac <<EOF
 AC_INIT([$me], [1.0])
@@ -34,11 +34,11 @@ EOF
 
 : >Makefile.am
 
-$ACLOCAL 2>stderr && { cat stderr >&2; Exit 1; }
+$ACLOCAL 2>stderr && { cat stderr >&2; exit 1; }
 cat stderr >&2
 grep 'configure\.ac.*configure\.in.*both present' stderr
 
-$ACLOCAL -Wno-error 2>stderr || { cat stderr >&2; Exit 1; }
+$ACLOCAL -Wno-error 2>stderr || { cat stderr >&2; exit 1; }
 cat stderr >&2
 grep 'configure\.ac.*configure\.in.*both present' stderr
 grep 'proceeding.*configure\.ac' stderr

@@ -17,7 +17,7 @@
 # Test to make sure that -Wportability turns on portability-recursive,
 # likewise for -Wno-...
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 #
 # First, try a setup where we have a 'portability-recursive' warning,
@@ -80,12 +80,12 @@ $AUTOMAKE -Wno-portability
 # 'portability' warnings.
 AUTOMAKE_fails -Wportability -Wno-portability-recursive
 grep AM_PROG_CC_C_O stderr
-grep 'recursive variable expansion' stderr && Exit 1
+grep 'recursive variable expansion' stderr && exit 1
 
 # Enabling 'portability-recursive' warnings should not enable
 # all the 'portability' warning.
 AUTOMAKE_fails -Wno-portability -Wportability-recursive
-grep AM_PROG_CC_C_O stderr && Exit 1
+grep AM_PROG_CC_C_O stderr && exit 1
 grep 'recursive variable expansion' stderr
 
 :

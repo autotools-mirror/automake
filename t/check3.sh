@@ -18,7 +18,7 @@
 # PR/359.
 
 # For gen-testsuite-part: ==> try-with-serial-tests <==
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_CONFIG_FILES([dir/Makefile])
@@ -58,10 +58,10 @@ $AUTOCONF
 $AUTOMAKE -a
 ./configure --prefix "$(pwd)/inst"
 
-$MAKE check >stdout || { cat stdout; Exit 1; }
+$MAKE check >stdout || { cat stdout; exit 1; }
 cat stdout
 grep '^PASS: subrun\.sh *$' stdout
-grep 'PASS.*echo\.sh' stdout && Exit 1
+grep 'PASS.*echo\.sh' stdout && exit 1
 
 # check should depend directly on $(BUILT_SOURCES) (similar tests
 # are in check.test and check2.test).

@@ -20,7 +20,7 @@
 # This test expect the user to be unable to write on files lacking
 # write permissions -- so it won't work if the user is 'root'.
 required='non-root cc'
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CC
@@ -53,10 +53,10 @@ $AUTOMAKE
 ./configure
 $MAKE distdir
 ls -l $distdir # For debugging.
-test -f foo.c && test ! -w foo.c || Exit 1
-(echo x > foo.c) && Exit 1
-test -f bar.txt && test ! -w bar.txt || Exit 1
-(echo x > bar.txt) && Exit 1
+test -f foo.c && test ! -w foo.c || exit 1
+(echo x > foo.c) && exit 1
+test -f bar.txt && test ! -w bar.txt || exit 1
+(echo x > bar.txt) && exit 1
 $MAKE distcheck
 
 :

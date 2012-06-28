@@ -17,7 +17,7 @@
 # Check that the first among --help and --version to be specified on
 # the command line takes precedence over the following one.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 # Ensure we run in an empty directory.
 mkdir emptydir
@@ -31,24 +31,24 @@ AUTOMAKE=$am_original_AUTOMAKE
 escape_dots () { sed 's/\./\\./g'; } # Avoid issues with "\" in backquotes.
 apiversion_rx=$(echo "$APIVERSION" | escape_dots)
 
-$ACLOCAL --version --help >stdout || { cat stdout; Exit 1; }
+$ACLOCAL --version --help >stdout || { cat stdout; exit 1; }
 cat stdout
 grep "^aclocal.*$apiversion_rx" stdout
-grep "^Usage" stdout && Exit 1
+grep "^Usage" stdout && exit 1
 
-$ACLOCAL --help --version >stdout || { cat stdout; Exit 1; }
+$ACLOCAL --help --version >stdout || { cat stdout; exit 1; }
 cat stdout
 grep "^Usage" stdout
-grep "^aclocal.*$apiversion_rx" stdout && Exit 1
+grep "^aclocal.*$apiversion_rx" stdout && exit 1
 
-$AUTOMAKE --version --help >stdout || { cat stdout; Exit 1; }
+$AUTOMAKE --version --help >stdout || { cat stdout; exit 1; }
 cat stdout
 grep "^automake.*$apiversion_rx" stdout
-grep "^Usage" stdout && Exit 1
+grep "^Usage" stdout && exit 1
 
-$AUTOMAKE --help --version >stdout || { cat stdout; Exit 1; }
+$AUTOMAKE --help --version >stdout || { cat stdout; exit 1; }
 cat stdout
 grep "^Usage" stdout
-grep "^automake.*$apiversion_rx" stdout && Exit 1
+grep "^automake.*$apiversion_rx" stdout && exit 1
 
 :

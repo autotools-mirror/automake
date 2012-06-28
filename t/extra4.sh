@@ -16,7 +16,7 @@
 
 # Check to make sure EXTRA_DATA can be specified.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 echo 'AC_SUBST(CODICIL)' >> configure.ac
 

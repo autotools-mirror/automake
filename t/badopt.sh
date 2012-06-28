@@ -16,7 +16,7 @@
 
 # Test to make sure bad options cause error.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 echo 'AUTOMAKE_OPTIONS = zardoz' > Makefile.am
 

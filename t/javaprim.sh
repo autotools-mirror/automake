@@ -16,7 +16,7 @@
 
 # Test to make sure JAVA variable can be defined by AC_SUBST.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_SUBST([JAVA])

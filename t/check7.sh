@@ -18,7 +18,7 @@
 
 # For gen-testsuite-part: ==> try-with-serial-tests <==
 required=cc
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CC
@@ -60,7 +60,7 @@ $AUTOMAKE -a
 
 ./configure
 $MAKE check
-EXEEXT=.bin $MAKE -e print-xfail-tests >stdout || {  cat stdout; Exit 1; }
+EXEEXT=.bin $MAKE -e print-xfail-tests >stdout || {  cat stdout; exit 1; }
 cat stdout
 $FGREP 'BEG: a.bin b c.bin d.bin :END' stdout
 

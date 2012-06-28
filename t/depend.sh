@@ -18,7 +18,7 @@
 # In some cases the auto-dependency can get confused and try
 # to '-include' a directory (if a backslash-newline appears in _SOURCES).
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 echo AC_PROG_CC >> configure.ac
 

@@ -16,7 +16,7 @@
 
 # Test of subdir objects with C++.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CXX
@@ -32,7 +32,7 @@ $ACLOCAL
 $AUTOMAKE
 
 $FGREP 'generic/a.$(OBJEXT)' Makefile.in
-grep '[^/]a\.\$(OBJEXT)' Makefile.in && Exit 1
+grep '[^/]a\.\$(OBJEXT)' Makefile.in && exit 1
 grep '.*-c -o' Makefile.in
 
 :

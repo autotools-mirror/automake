@@ -17,7 +17,7 @@
 # Check that yacc sources with many dots in their name are handled
 # correctly.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CC

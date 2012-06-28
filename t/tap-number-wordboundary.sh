@@ -18,7 +18,7 @@
 #  - TAP result numbers terminated by a non-whitespace "word boundary"
 #    character are recognized
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 . "$am_testauxdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"
 
@@ -31,7 +31,7 @@ not ok 4?&%$ foo4 # TODO
 ok 5"`!! foo5 # TODO
 END
 
-$MAKE check >stdout && { cat stdout; Exit 1; }
+$MAKE check >stdout && { cat stdout; exit 1; }
 cat stdout
 
 count_test_results total=5 pass=1 fail=1 skip=1 xpass=1 xfail=1 error=0
@@ -49,7 +49,7 @@ not ok 1!
 ok 476$ # SKIP
 END
 
-$MAKE check >stdout && { cat stdout; Exit 1; }
+$MAKE check >stdout && { cat stdout; exit 1; }
 cat stdout
 
 count_test_results total=3 pass=0 fail=0 skip=0 xpass=0 xfail=0 error=3
@@ -102,7 +102,7 @@ cat all.test
 # Sanity check.
 grep "^ok 1'$" all.test || framework_failure_ "creating all.test"
 
-$MAKE check >stdout || { cat stdout; Exit 1; }
+$MAKE check >stdout || { cat stdout; exit 1; }
 cat stdout
 
 count_test_results total=$planned pass=$planned \

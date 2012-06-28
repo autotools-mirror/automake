@@ -18,7 +18,7 @@
 # From Pavel Roskin.
 
 am_create_testdir=empty
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > configure.ac << END
 AC_INIT([$me], [1.0])
@@ -46,7 +46,7 @@ test ! -r Makefile.am || skip_ "cannot drop file read permissions"
 
 # 'dist' should fail because we can't copy Makefile.am.
 if $MAKE dist; then
-  Exit 1
+  exit 1
 else
-  Exit 0
+  exit 0
 fi

@@ -17,7 +17,7 @@
 # Check that automake complains about *_YFLAGS variables which have
 # conditional content.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac <<'END'
 AC_PROG_CC
@@ -135,7 +135,7 @@ grep '^Makefile4\.am:8:.*zardoz_YFLAGS.* conditional contents' stderr
 AUTOMAKE_fails -Wno-gnu Makefile5
 grep -v '^Makefile5\.am:.*zardoz_YFLAGS' stderr \
  | grep -v ': warnings are treated as errors' \
- | grep . && Exit 1
+ | grep . && exit 1
 
 # Disable 'gnu' warnings because we override the user variable 'YFLAGS'.
 $AUTOMAKE -Wno-gnu Makefile6

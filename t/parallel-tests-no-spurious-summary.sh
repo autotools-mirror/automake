@@ -17,7 +17,7 @@
 # Check that ':test-results:' directives in test scripts' output doesn't
 # originate spurious results in the testsuite summary.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_OUTPUT
@@ -55,7 +55,7 @@ cat stdout
 cat test-suite.log
 cat foo.log
 cat bar.log
-test $st -eq 0 || Exit $st
+test $st -eq 0 || exit $st
 
 grep '^:test-result:XFAIL$'  foo.log
 grep '^:test-result: SKIP$'  foo.log

@@ -17,7 +17,7 @@
 # Test to ensure std-options checking is correct.
 
 required='cc native'
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CC
@@ -98,7 +98,7 @@ $ACLOCAL
 $AUTOCONF
 $AUTOMAKE -a
 
-grep README-alpha Makefile.in && Exit 1
+grep README-alpha Makefile.in && exit 1
 
 mkdir build
 cd build

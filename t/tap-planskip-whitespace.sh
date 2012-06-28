@@ -18,7 +18,7 @@
 #  - normalization of whitespace in console testsuite progress associated
 #    with a SKIP directive in the TAP plan
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 . "$am_testauxdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"
 
@@ -35,7 +35,7 @@ cat > baz.test <<END
 END
 
 TESTS='foo.test bar.test baz.test' $MAKE -e check > stdout \
-  || { cat stdout; Exit 1; }
+  || { cat stdout; exit 1; }
 cat stdout
 
 count_test_results total=3 pass=0 fail=0 error=0 xpass=0 xfail=0 skip=3

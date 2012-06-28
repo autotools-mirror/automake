@@ -16,7 +16,7 @@
 
 # Test to make sure there are no spurious acinclude warnings.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >configure.ac <<EOF
 AC_INIT([$me], [1.0])
@@ -31,6 +31,6 @@ module=[$1]
 AC_SUBST(module)])
 END
 
-$ACLOCAL >output 2>&1 || { cat output; Exit 1; }
+$ACLOCAL >output 2>&1 || { cat output; exit 1; }
 cat output
 test ! -s output

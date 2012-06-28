@@ -16,7 +16,7 @@
 
 # Test if AM_PROG_AR installs ar-lib.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CC
@@ -29,7 +29,7 @@ wish_SOURCES = a.c
 END
 
 $ACLOCAL
-$AUTOMAKE --add-missing 2>stderr || { cat stderr >&2; Exit 1; }
+$AUTOMAKE --add-missing 2>stderr || { cat stderr >&2; exit 1; }
 cat stderr >&2
 # Make sure ar-lib is installed, and that Automake says so.
 grep '^configure\.ac:.*install.*ar-lib' stderr

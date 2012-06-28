@@ -17,7 +17,7 @@
 # Check that the user can force automake to use *_YFLAGS variables
 # which have conditional content.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac <<'END'
 AC_SUBST([CC], [false])
@@ -67,7 +67,7 @@ cat bar-foo.c
 
 $FGREP ' __am_cond_yes__ ' foo.c
 $FGREP ' __bar_cond_yes__ ' bar-foo.c
-$FGREP 'cond_no' foo.c bar-foo.c && Exit 1
+$FGREP 'cond_no' foo.c bar-foo.c && exit 1
 
 $MAKE maintainer-clean
 ls -l
@@ -80,6 +80,6 @@ cat bar-foo.c
 
 $FGREP ' __am_cond_no__ ' foo.c
 $FGREP ' __bar_cond_no__ ' bar-foo.c
-$FGREP 'cond_yes' foo.c bar-foo.c && Exit 1
+$FGREP 'cond_yes' foo.c bar-foo.c && exit 1
 
 :

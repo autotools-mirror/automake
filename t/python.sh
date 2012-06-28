@@ -16,7 +16,7 @@
 
 # Test to make sure py_compile and am__py_compile are correctly defined.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 echo 'AM_PATH_PYTHON' >> configure.ac
 

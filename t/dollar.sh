@@ -21,7 +21,7 @@
 # Require GNU make for this test.  SunOS Make does not support
 # '$$' in a target or a dependency (it outputs the empty string instead).
 required=GNUmake
-. ./defs || Exit 1
+. ./defs || exit 1
 
 echo AC_OUTPUT >> configure.ac
 

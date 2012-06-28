@@ -17,7 +17,7 @@
 # Test for bug reported by Nyul Laszlo.  When using the ":" syntax in
 # AC_OUTPUT, Automake fails to find the correct file.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac <<'END'
 AC_CONFIG_FILES([foo.h:foo.hin])

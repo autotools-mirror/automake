@@ -19,7 +19,7 @@
 # to fix the Makefiles.)
 
 required='libtoolize'
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > configure.ac << 'END'
 AC_INIT([req2], [1.0])

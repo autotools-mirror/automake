@@ -17,7 +17,7 @@
 # Make sure Fortran 77 files are rewritten to ".o" and not just "o".
 # Matthew D. Langston <langston@SLAC.Stanford.EDU>
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_F77

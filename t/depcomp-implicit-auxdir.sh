@@ -17,7 +17,7 @@
 # Make sure a top-level depcomp file is found when
 # AC_CONFIG_AUX_DIR is not specified.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 mkdir lib src
 
@@ -65,6 +65,6 @@ $AUTOMAKE --gnu
 # so that more files are included in lib's DIST_COMMON definition,
 # then you must handle the case in which depcomp is listed on a
 # continued line.
-grep '^DIST_COMMON.*depcomp' lib/Makefile.in && Exit 1
+grep '^DIST_COMMON.*depcomp' lib/Makefile.in && exit 1
 
 :

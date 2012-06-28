@@ -18,7 +18,7 @@
 # mixed source objects.
 # (copied from compile_f_c_cxx.test) Mike Nolta <mrnolta@princeton.edu>
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CC

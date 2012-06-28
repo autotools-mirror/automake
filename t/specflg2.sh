@@ -16,7 +16,7 @@
 
 # Test library-specific flags.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CC
@@ -46,14 +46,14 @@ grep 'required.*compile' stderr
 $AUTOMAKE
 
 # Look for $(COMPILE) -c in .c.o rule.
-grep 'COMPILE. [^-]' Makefile.in && Exit 1
+grep 'COMPILE. [^-]' Makefile.in && exit 1
 
 # Look for libfoo_a-foo.o.
 grep foo Makefile.in
-grep '[^-]foo\.o' Makefile.in && Exit 1
+grep '[^-]foo\.o' Makefile.in && exit 1
 
 # Look for libfoo_a-bar.o.
 grep bar Makefile.in
-grep '[^-]bar\.o' Makefile.in && Exit 1
+grep '[^-]bar\.o' Makefile.in && exit 1
 
-Exit 0
+exit 0

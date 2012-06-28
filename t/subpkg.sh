@@ -17,7 +17,7 @@
 # Check subpackage handling.
 
 required=cc
-. ./defs || Exit 1
+. ./defs || exit 1
 
 mkdir m4
 

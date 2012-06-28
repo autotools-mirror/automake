@@ -18,7 +18,7 @@
 # (pr401b.test and pr401c.test do the same for LTLIBOBJS and ALLOCA)
 
 required=cc
-. ./defs || Exit 1
+. ./defs || exit 1
 
 mkdir lib src
 

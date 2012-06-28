@@ -16,7 +16,7 @@
 
 # Check support for DISTCHECK_CONFIGURE_FLAGS at "make distcheck" time.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_ARG_ENABLE([success], [], [success=$enableval], [success=no])
@@ -47,7 +47,7 @@ $MAKE distcheck \
   DISTCHECK_CONFIGURE_FLAGS="--enable-success=yes sentence='it works :-)'"
 
 # Sanity check.
-$MAKE distcheck >output 2>&1 && { cat output; Exit 1; }
+$MAKE distcheck >output 2>&1 && { cat output; exit 1; }
 cat output
 grep "^configure:.* success='no', sentence=''" output
 

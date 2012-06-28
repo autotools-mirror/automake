@@ -18,7 +18,7 @@
 # automake-generated Makefile.
 
 required=runtest
-. ./defs || Exit 1
+. ./defs || exit 1
 
 write_check_for ()
 {
@@ -78,7 +78,7 @@ set baz "/foo/"
 set qux "/foo/"
 END
 
-$MAKE check && { cat site.exp; Exit 1; }
+$MAKE check && { cat site.exp; exit 1; }
 grep 'PASS: test_foo' tool.sum
 grep 'FAIL: test_bar' tool.sum
 grep 'FAIL: test_baz' tool.sum
@@ -104,7 +104,7 @@ $sleep
 $AUTOMAKE Makefile
 ./config.status Makefile
 
-$MAKE check || { cat site.exp; Exit 1; }
+$MAKE check || { cat site.exp; exit 1; }
 cat site.exp
 cat bar.dir/bar
 $FGREP '/bar/' site.exp
@@ -147,7 +147,7 @@ grep 'zardoz.*/quux/' site.exp
 $MAKE check
 grep 'PASS: test_zardoz' tool.sum
 grep 'zardoz: /zardoz/' tool.log
-grep 'zardoz.*quux' tool.log && Exit 1
+grep 'zardoz.*quux' tool.log && exit 1
 
 # Check that files in $(EXTRA_DEJAGNU_SITE_CONFIG) are not distributed
 # by default.

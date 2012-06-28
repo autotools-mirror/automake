@@ -20,7 +20,7 @@
 # See discussion about automake bug#9768.
 # See also sister test 'dist-missing-m4.test'.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac <<'END'
 m4_include([foobar.m4])
@@ -56,12 +56,12 @@ for vpath in false :; do
     cd $distdir
     ./configure
   fi
-  $MAKE >output 2>&1 && { cat output; Exit 1; }
+  $MAKE >output 2>&1 && { cat output; exit 1; }
   cat output
   # This error will come from automake, not make, so we can be stricter
   # in our grepping of it.
   grep 'zardoz\.m4.*does not exist' output
-  grep 'foobar\.m4' output && Exit 1 # No spurious error, please.
+  grep 'foobar\.m4' output && exit 1 # No spurious error, please.
   cd "$ocwd" || fatal_ "cannot chdir back to top-level test directory"
 done
 

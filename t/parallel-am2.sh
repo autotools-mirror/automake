@@ -21,7 +21,7 @@
 #    warnings should be omitted in the same way as without threads.
 
 required=perl-threads
-. ./defs || Exit 1
+. ./defs || exit 1
 
 mkdir sub
 

@@ -18,7 +18,7 @@
 # Report from Guillermo Ontañón.
 
 required='cc libtoolize'
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AM_PROG_AR

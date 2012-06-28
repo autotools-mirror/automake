@@ -16,7 +16,7 @@
 
 # Test if configure bails out if $AR does not work and AM_PROG_AR is used.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AM_PROG_AR
@@ -32,6 +32,6 @@ test $st -eq 1
 
 grep '^checking.* archiver .*interface.*\.\.\. unknown' stdout
 grep '^configure: error: could not determine /bin/false interface' stderr
-ls *conftest* && Exit 1
+ls *conftest* && exit 1
 
 :

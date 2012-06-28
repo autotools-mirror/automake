@@ -18,7 +18,7 @@
 #  - a "Bail out!" directive causes an hard error, even if coming after
 #    a "SKIP plan" (e.g., "1..0 # SKIP").
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 . "$am_testauxdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"
 
@@ -27,7 +27,7 @@ cat > all.test <<END
 Bail out!
 END
 
-$MAKE check >stdout && { cat stdout; Exit 1; }
+$MAKE check >stdout && { cat stdout; exit 1; }
 cat stdout
 count_test_results total=2 pass=0 fail=0 xpass=0 xfail=0 skip=1 error=1
 grep '^ERROR: all\.test - Bail out!' stdout

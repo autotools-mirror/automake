@@ -16,7 +16,7 @@
 
 # Test to make sure -Werror and --add-missing work together.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 : > Makefile.am
 

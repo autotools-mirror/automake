@@ -17,7 +17,7 @@
 # Check that the parallel test harness creates parent directories for
 # the log files when needed.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_OUTPUT

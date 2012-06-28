@@ -17,7 +17,7 @@
 # Check that there are no duplicates in the list of files automatically
 # distributed by automake.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 re='Files .*automatically distributed.*if found'
 
@@ -47,4 +47,4 @@ for i in 1 2; do
   diff files$i.lst files$i.uniq || st=1
 done
 
-Exit $st
+exit $st

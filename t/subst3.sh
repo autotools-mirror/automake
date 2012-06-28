@@ -17,7 +17,7 @@
 # Test installation with substitutions.  This test is based on nobase.test.
 
 required=cc
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac <<'EOF'
 AC_PROG_CC

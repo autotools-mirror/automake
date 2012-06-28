@@ -19,7 +19,7 @@
 # up for greater exposure of nobase.test.
 
 required='cc libtoolize'
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac <<'EOF'
 AC_PROG_CC

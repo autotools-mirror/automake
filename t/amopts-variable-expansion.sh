@@ -16,7 +16,7 @@
 
 # Check that AUTOMAKE_OPTIONS support variable expansion.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 # We want complete control over automake options.
 AUTOMAKE=$am_original_AUTOMAKE
@@ -46,7 +46,7 @@ END
 $ACLOCAL
 AUTOMAKE_run
 grep '^Makefile\.am:.*:=.*not portable' stderr
-grep README stderr && Exit 1
-$EGREP '(install|override)' stderr && Exit 1
+grep README stderr && exit 1
+$EGREP '(install|override)' stderr && exit 1
 
 :

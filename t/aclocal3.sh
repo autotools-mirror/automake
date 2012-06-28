@@ -17,7 +17,7 @@
 # Test to make sure include of include detects missing macros
 
 am_create_testdir=empty
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac <<END
 AC_INIT([$me], [1.0])
@@ -34,7 +34,7 @@ AC_DEFUN([GNOME_X_CHECKS], [
 ])
 END
 
-$ACLOCAL -I macros 2>stderr && { cat stderr >&2; Exit 1; }
+$ACLOCAL -I macros 2>stderr && { cat stderr >&2; exit 1; }
 cat stderr
 grep '^macros/gnome\.m4:4:.*AM__PATH__GTK.*not found' stderr
 

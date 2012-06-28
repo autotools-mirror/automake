@@ -16,7 +16,7 @@
 
 # SUDBIRS with $fail set in the environment.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 mkdir sub
 

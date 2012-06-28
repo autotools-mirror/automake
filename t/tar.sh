@@ -16,7 +16,7 @@
 
 # Check the tar-ustar option.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > configure.ac << 'END'
 AC_INIT([tar], [1.0])

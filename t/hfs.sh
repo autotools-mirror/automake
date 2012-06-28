@@ -20,7 +20,7 @@
 # Darwin).
 # Report from Peter O'Gorman.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 echo AC_OUTPUT >>configure.ac
 
 : >CHANGELOG

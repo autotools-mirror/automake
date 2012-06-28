@@ -17,7 +17,7 @@
 # Regression test for install-recursive appearing in a non recursive Makefile.
 # Report from Bruno Haible.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > Makefile.am << 'END'
 noinst_SCRIPTS = hostname
@@ -27,6 +27,6 @@ END
 
 $ACLOCAL
 $AUTOMAKE
-grep 'install-recursive' Makefile.in && Exit 1
+grep 'install-recursive' Makefile.in && exit 1
 
 :

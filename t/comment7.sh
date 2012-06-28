@@ -17,7 +17,7 @@
 # Make sure comment for conditional variables are output near the
 # corresponding conditional definitions.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac <<'EOF'
 AM_CONDITIONAL([COND], [true])

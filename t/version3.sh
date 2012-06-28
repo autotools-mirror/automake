@@ -16,7 +16,7 @@
 
 # Test to make sure version in AUTOMAKE_OPTIONS works.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > Makefile.am << 'END'
 AUTOMAKE_OPTIONS = 9.9x

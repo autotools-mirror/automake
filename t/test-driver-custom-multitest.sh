@@ -19,7 +19,7 @@
 # only checks implementation details in Automake's custom test drivers
 # support, but also serves as a "usability test" for our APIs.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cp "$am_testauxdir"/trivial-test-driver . \
   || fatal_ "failed to fetch auxiliary script trivial-test-driver"
@@ -119,14 +119,14 @@ for vpath in : false; do
 
   $srcdir/configure
 
-  $MAKE check >stdout && { cat stdout; cat test-suite.log; Exit 1; }
+  $MAKE check >stdout && { cat stdout; cat test-suite.log; exit 1; }
   cat stdout
   cat test-suite.log
   # Couple of sanity checks.  These might need to be updated if the
   # 'trivial-test-driver' script is changed.
-  $FGREP INVALID.NAME stdout test-suite.log && Exit 1
-  test -f BAD.LOG && Exit 1
-  test -f BAD.TRS && Exit 1
+  $FGREP INVALID.NAME stdout test-suite.log && exit 1
+  test -f BAD.LOG && exit 1
+  test -f BAD.TRS && exit 1
   # These log files must all have been created by the testsuite.
   cat pass.log
   cat fail.log
@@ -159,7 +159,7 @@ for vpath in : false; do
   test $(grep -c '%% ' test-suite.log) -eq 4
 
   TESTS='pass.t pass3-skip2-xfail.t' $MAKE -e check >stdout \
-    || { cat stdout; cat test-suite.log; Exit 1; }
+    || { cat stdout; cat test-suite.log; exit 1; }
   cat test-suite.log
   cat stdout
   count_test_results total=7 pass=4 fail=0 skip=2 xfail=1 xpass=0 error=0

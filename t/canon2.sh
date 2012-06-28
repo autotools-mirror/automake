@@ -16,7 +16,7 @@
 
 # Test to make sure name canonicalization happens for texinfo.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > Makefile.am << 'END'
 info_TEXINFOS = zar-doz.texi
@@ -30,6 +30,6 @@ echo '@setfilename frob' > frob.texi
 $ACLOCAL
 $AUTOMAKE
 
-grep zar-doz_TEXINFOS Makefile.in && Exit 1
+grep zar-doz_TEXINFOS Makefile.in && exit 1
 
 :

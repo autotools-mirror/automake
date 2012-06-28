@@ -16,7 +16,7 @@
 
 # Test to make sure depcomp isn't always required.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 rm -f depcomp
 

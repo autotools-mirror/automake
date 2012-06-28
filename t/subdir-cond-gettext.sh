@@ -17,7 +17,7 @@
 # It is ok to have a conditional SUBDIRS when using gettext.
 
 required=gettext
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AM_GNU_GETTEXT

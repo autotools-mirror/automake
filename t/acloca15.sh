@@ -18,7 +18,7 @@
 # PR/319.
 
 am_create_testdir=empty
-. ./defs || Exit 1
+. ./defs || exit 1
 
 # Start macros with AM_ because that causes aclocal to complain if it
 # cannot find them.
@@ -39,8 +39,8 @@ echo 'AC_DEFUN([AM_SOME_DEF])' > somedef.m4
 echo 'AC_DEFUN([AM_MORE_MACRO], [AC_REQUIRE([AM_SOME_DEF])])' > m4/more.m4
 
 $ACLOCAL -I m4
-$FGREP AM_SOME_MACRO aclocal.m4 && Exit 1
-$FGREP AM_MORE_MACRO aclocal.m4 && Exit 1
+$FGREP AM_SOME_MACRO aclocal.m4 && exit 1
+$FGREP AM_MORE_MACRO aclocal.m4 && exit 1
 $FGREP 'm4_include([m4/more.m4])' aclocal.m4
 test 1 = $(grep m4_include aclocal.m4 | wc -l)
 

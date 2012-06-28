@@ -19,7 +19,7 @@
 # included makefile fragments (containing dependency info).
 # See also related tests 'subobj11a.test' and 'subobj11b.test'.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CC

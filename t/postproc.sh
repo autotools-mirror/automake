@@ -18,7 +18,7 @@
 # and renamed.
 
 required=cc
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >configure.ac <<END
 AC_INIT([$me], [1.0])
@@ -43,6 +43,6 @@ cat myMakefile.old >> myMakefile.in
 
 ./configure
 
-test -f .deps/fred.Po || test -f _deps/fred.Po || Exit 1
+test -f .deps/fred.Po || test -f _deps/fred.Po || exit 1
 
 :

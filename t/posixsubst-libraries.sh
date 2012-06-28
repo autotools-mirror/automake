@@ -19,7 +19,7 @@
 # Keep this in sync with sister test 'posixsubst-ltlibraries.test'.
 
 required=cc
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CC

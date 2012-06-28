@@ -18,7 +18,7 @@
 # automatically distributed when placed in a subdirectory.
 # Related to automake bug#7819.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac <<END
 AC_CONFIG_FILES([sub/Makefile])

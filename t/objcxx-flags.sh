@@ -17,7 +17,7 @@
 # Test Objective C++ compilation flags.
 # See also sister test 'objc-flags.sh'.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_OBJCXX
@@ -53,9 +53,9 @@ $AUTOCONF
 $AUTOMAKE -a
 
 $FGREP OBJCXXFLAGS Makefile.in # For debugging.
-grep '\$(OBJCXXFLAGS).*\$(AM_OBJCXXFLAGS)'       Makefile.in && Exit 1
-grep '\$(OBJCXXFLAGS).*\$(foo.*_OBJCXXFLAGS)'    Makefile.in && Exit 1
-grep '\$(foo.*_OBJCXXFLAGS).*\$(AM_OBJCXXFLAGS)' Makefile.in && Exit 1
+grep '\$(OBJCXXFLAGS).*\$(AM_OBJCXXFLAGS)'       Makefile.in && exit 1
+grep '\$(OBJCXXFLAGS).*\$(foo.*_OBJCXXFLAGS)'    Makefile.in && exit 1
+grep '\$(foo.*_OBJCXXFLAGS).*\$(AM_OBJCXXFLAGS)' Makefile.in && exit 1
 
 ./configure OBJCXXFLAGS=-UERROR
 $MAKE

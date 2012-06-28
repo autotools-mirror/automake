@@ -18,7 +18,7 @@
 #  - we shouldn't spuriously recognize as TAP result numbers what it
 #    not, even if it seems pretty close
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 . "$am_testauxdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"
 

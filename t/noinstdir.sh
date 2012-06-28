@@ -17,7 +17,7 @@
 # Test to make sure that noinst_* and check_* are not installed.
 # From Pavel Roskin.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > Makefile.am << 'END'
 noinst_SCRIPTS = foo.sh
@@ -43,7 +43,7 @@ END
 $ACLOCAL
 $AUTOMAKE
 
-grep 'noinstdir' Makefile.in && Exit 1
-grep 'checkdir' Makefile.in && Exit 1
+grep 'noinstdir' Makefile.in && exit 1
+grep 'checkdir' Makefile.in && exit 1
 
 :

@@ -19,7 +19,7 @@
 # Incidentally, this test also checks that the testsuite summary doesn't
 # give any bug-report address if it's not defined.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 for s in trivial-test-driver extract-testsuite-summary.pl; do
   cp "$am_testauxdir/$s" . || fatal_ "failed to fetch auxiliary script $s"
@@ -97,6 +97,6 @@ test -f make.fail
 $PERL extract-testsuite-summary.pl stdout > summary.got
 cat summary.exp
 cat summary.got
-diff summary.exp summary.got || Exit 1
+diff summary.exp summary.got || exit 1
 
 :

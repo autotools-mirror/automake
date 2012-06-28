@@ -19,7 +19,7 @@
 # 'subdir8.test' do it from a subdirectory.
 # PR automake/46
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_OUTPUT

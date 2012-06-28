@@ -20,7 +20,7 @@
 # Please keep this file in sync with silent3.test and silent9.test.
 
 required="libtoolize gcc"
-. ./defs || Exit 1
+. ./defs || exit 1
 
 mkdir sub
 
@@ -63,10 +63,10 @@ $AUTOMAKE --add-missing
 $AUTOCONF
 
 ./configure am_cv_CC_dependencies_compiler_type=gcc --enable-silent-rules
-$MAKE >stdout || { cat stdout; Exit 1; }
+$MAKE >stdout || { cat stdout; exit 1; }
 cat stdout
-$EGREP ' (-c|-o)' stdout && Exit 1
-grep 'mv ' stdout && Exit 1
+$EGREP ' (-c|-o)' stdout && exit 1
+grep 'mv ' stdout && exit 1
 grep ' CC .*foo\.' stdout
 grep ' CC .*bar\.' stdout
 grep ' CC .*baz\.' stdout
@@ -77,11 +77,11 @@ grep ' CCLD .*baz' stdout
 grep ' CCLD .*bla' stdout
 
 $MAKE clean
-$MAKE V=1 >stdout || { cat stdout; Exit 1; }
+$MAKE V=1 >stdout || { cat stdout; exit 1; }
 cat stdout
 grep ' -c' stdout
 grep ' -o libfoo' stdout
 # The libtool command line can contain e.g. a '--tag=CC' option.
-sed 's/--tag=[^ ]*/--tag=x/g' stdout | $EGREP '(CC|LD) ' && Exit 1
+sed 's/--tag=[^ ]*/--tag=x/g' stdout | $EGREP '(CC|LD) ' && exit 1
 
 :

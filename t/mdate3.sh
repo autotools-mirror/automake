@@ -16,7 +16,7 @@
 
 # Test to make sure mdate-sh run correctly.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > configure.ac << END
 AC_INIT([$me], [1.0])
@@ -45,5 +45,5 @@ mv missing foo
 $ACLOCAL
 $AUTOMAKE
 
-grep '[^/]mdate-sh' Makefile.in && Exit 1
-Exit 0
+grep '[^/]mdate-sh' Makefile.in && exit 1
+exit 0

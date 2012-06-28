@@ -16,7 +16,7 @@
 
 # Another multi-":" test, this time from Doug Evans.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > configure.ac <<END
 AC_INIT([$me], [1.0])
@@ -50,8 +50,8 @@ $AUTOMAKE
 
 ./configure
 
-grep '=GrEpMe_am=' Makefile && Exit 1  # Sanity check.
-grep '=GrEpMe_dep=' Makefile && Exit 1 # Likewise.
+grep '=GrEpMe_am=' Makefile && exit 1  # Sanity check.
+grep '=GrEpMe_dep=' Makefile && exit 1 # Likewise.
 
 $MAKE test-distcommon
 $MAKE test-distdir

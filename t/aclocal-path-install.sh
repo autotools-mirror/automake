@@ -17,7 +17,7 @@
 # ACLOCAL_PATH and '--install' interactions.
 
 am_create_testdir=empty
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > configure.ac << 'END'
 AC_INIT
@@ -39,7 +39,7 @@ END
 
 # The '--install' option should never cause anything to be installed
 # in a directory specified in ACLOCAL_PATH.
-$ACLOCAL --install 2>stderr && { cat stderr >&2; Exit 1; }
+$ACLOCAL --install 2>stderr && { cat stderr >&2; exit 1; }
 cat stderr >&2
 grep ' no -I was supplied' stderr
 test ! -f pdir/foo.m4

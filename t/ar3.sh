@@ -17,7 +17,7 @@
 # Make sure that AR, ARFLAGS, etc. works also when the macro AM_PROG_AR
 # is used.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CC

@@ -17,7 +17,7 @@
 # Make sure Automake diagnoses conflicting installations.
 
 required='libtoolize'
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >>configure.ac <<'END'
 AM_CONDITIONAL([COND1], [true])
@@ -46,7 +46,7 @@ END
 libtoolize
 $ACLOCAL
 AUTOMAKE_fails --add-missing
-grep libb stderr && Exit 1
+grep libb stderr && exit 1
 grep 'Makefile.am:3:.*libc.la.*multiply defined' stderr
 grep "Makefile.am:9:.*'pkglib" stderr
 grep "Makefile.am:2:.*'lib" stderr

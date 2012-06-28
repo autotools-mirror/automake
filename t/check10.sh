@@ -18,7 +18,7 @@
 
 # This test only makes sense for the older serial testsuite driver.
 am_serial_tests=yes
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_OUTPUT
@@ -71,15 +71,15 @@ $AUTOMAKE -a
   env TESTS='pass skip xfail' $MAKE -e check
   $MAKE check
   :
-) >stdout || { cat stdout; Exit 1; }
+) >stdout || { cat stdout; exit 1; }
 cat stdout
 
-grep '1 [tT]ests' stdout && Exit 1
-grep '[02-9] [tT]est ' stdout && Exit 1
-grep '1 .* were ' stdout && Exit 1
-grep '[02-9].* was .*run' stdout && Exit 1
-grep 'All 1 ' stdout && Exit 1
-$EGREP '1 (un)?expected (failures|passes)' stdout && Exit 1
-$EGREP '[^1] (un)?expected (failure|pass)\)' stdout && Exit 1
+grep '1 [tT]ests' stdout && exit 1
+grep '[02-9] [tT]est ' stdout && exit 1
+grep '1 .* were ' stdout && exit 1
+grep '[02-9].* was .*run' stdout && exit 1
+grep 'All 1 ' stdout && exit 1
+$EGREP '1 (un)?expected (failures|passes)' stdout && exit 1
+$EGREP '[^1] (un)?expected (failure|pass)\)' stdout && exit 1
 
 :

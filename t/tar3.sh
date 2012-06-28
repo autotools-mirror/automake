@@ -16,7 +16,7 @@
 
 # Check the tar options diagnostics.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > configure.ac << 'END'
 AC_INIT([tar2], [1.0])

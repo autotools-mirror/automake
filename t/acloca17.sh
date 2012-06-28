@@ -17,7 +17,7 @@
 # Make sure aclocal report unused required macros.
 
 am_create_testdir=empty
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > configure.ac << 'END'
 AC_INIT
@@ -34,7 +34,7 @@ EOF
 # FIXME: We want autom4te's 'undefined required macro' warning to be fatal,
 # but have no means to say so to aclocal.  We use WARNINGS=error instead.
 
-WARNINGS=error $ACLOCAL -I m4 2>stderr && { cat stderr >&2; Exit 1; }
+WARNINGS=error $ACLOCAL -I m4 2>stderr && { cat stderr >&2; exit 1; }
 cat stderr >&2
 grep '^configure\.ac:2:.*UNDEFINED_MACRO' stderr
 

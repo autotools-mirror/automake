@@ -17,7 +17,7 @@
 # Try a DIST_SUBDIRS subpackage with no SUBDIRS.
 # Report from Gary V. Vaughan.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 mkdir m4
 

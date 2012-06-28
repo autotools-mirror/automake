@@ -18,7 +18,7 @@
 # to the test cases requiring them.
 # See also automake bug#9807.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 extract_program_version ()
 {

@@ -16,7 +16,7 @@
 
 # Check rebuild rules for autoheader.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >>configure.ac <<EOF
 m4_include([foo.m4])

@@ -20,7 +20,7 @@
 #  - test results without number get automatically numbered in the
 #    console progress output
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 . "$am_testauxdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"
 
@@ -44,7 +44,7 @@ not ok
 ok
 END
 
-TESTS=all.test $MAKE -e check >stdout && { cat stdout; Exit 1; }
+TESTS=all.test $MAKE -e check >stdout && { cat stdout; exit 1; }
 cat stdout
 count_test_results total=14 pass=6 fail=5 xpass=1 xfail=1 skip=1 error=0
 

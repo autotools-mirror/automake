@@ -16,7 +16,7 @@
 
 # Check support for $(JAVACFLAGS) and $(AM_JAVACFLAGS).
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > fake-javac <<'END'
 #!/bin/sh
@@ -44,7 +44,7 @@ END
 $ACLOCAL
 $AUTOMAKE
 
-grep '\$(JAVACFLAGS).*\$(AM_JAVACFLAGS)' Makefile.in && Exit 1
+grep '\$(JAVACFLAGS).*\$(AM_JAVACFLAGS)' Makefile.in && exit 1
 
 : > bar.java
 

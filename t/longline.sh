@@ -17,7 +17,7 @@
 # Long lines of += should be wrapped.
 # Report from Simon Josefsson.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 (echo DUMMY = some_long_filename_1;
 for i in 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20;

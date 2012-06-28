@@ -22,7 +22,7 @@
 # 'silent-many-generic.test', which should work with generic compilers.
 
 required='gcc g++ gfortran lex yacc'
-. ./defs || Exit 1
+. ./defs || exit 1
 
 # Avoids too much code duplication.
 do_and_check_silent_build ()
@@ -32,15 +32,15 @@ do_and_check_silent_build ()
             *) rebuild=false;;
   esac
 
-  $MAKE >stdout || { cat stdout; Exit 1; }
+  $MAKE >stdout || { cat stdout; exit 1; }
   cat stdout
   # Avoid spurious failures with SunStudio Fortran compilers.
   sed '/^NOTICE:/d' stdout > t
   mv -f t stdout
   cat stdout
 
-  $EGREP ' (-c|-o)' stdout && Exit 1
-  $EGREP '(mv|ylwrap) ' stdout && Exit 1
+  $EGREP ' (-c|-o)' stdout && exit 1
+  $EGREP '(mv|ylwrap) ' stdout && exit 1
 
   grep 'CXX .*foo1\.' stdout
   grep 'CXX .*baz1\.' stdout
@@ -76,17 +76,17 @@ do_and_check_verbose_build ()
             *) rebuild=false;;
   esac
 
-  $MAKE V=1 >stdout || { cat stdout; Exit 1; }
+  $MAKE V=1 >stdout || { cat stdout; exit 1; }
   cat stdout
 
   grep ' -c ' stdout
   grep ' -o ' stdout
 
-  $EGREP '(CC|CXX|FC|F77|LD) ' stdout && Exit 1
+  $EGREP '(CC|CXX|FC|F77|LD) ' stdout && exit 1
 
   if ! $rebuild; then
     grep 'ylwrap ' stdout
-    $EGREP '(LEX|YACC) ' stdout && Exit 1
+    $EGREP '(LEX|YACC) ' stdout && exit 1
   fi
 
   unset rebuild

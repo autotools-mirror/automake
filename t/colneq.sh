@@ -16,7 +16,7 @@
 
 # Test that := definitions produce warnings, but otherwise work.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > Makefile.am << 'END'
 ICONS := $(wildcard *.xbm)

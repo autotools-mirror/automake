@@ -18,7 +18,7 @@
 # in a subdirectory even when there is no Makefile for that subdirectory.
 # See also sister functional test 'remake3a.test'.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_CONFIG_FILES([sub/foo])

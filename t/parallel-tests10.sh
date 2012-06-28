@@ -18,7 +18,7 @@
 # - trailing whitespace in TESTS
 # GNU make 3.80 may expand trailing white space to '.log'.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_OUTPUT

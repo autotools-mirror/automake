@@ -17,7 +17,7 @@
 # Test to make sure the Fortran 77 linker is used when appropriate.
 # Matthew D. Langston <langston@SLAC.Stanford.EDU>
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_F77
@@ -38,7 +38,7 @@ $AUTOMAKE
 grep '.\$(F77LINK)' Makefile.in
 
 # We should not see these patterns:
-grep '.\$(CXXLINK)' Makefile.in && Exit 1
-grep '.\$(LINK)'    Makefile.in && Exit 1
+grep '.\$(CXXLINK)' Makefile.in && exit 1
+grep '.\$(LINK)'    Makefile.in && exit 1
 
-Exit 0
+exit 0

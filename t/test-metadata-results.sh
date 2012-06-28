@@ -17,7 +17,7 @@
 # Parallel testsuite harness: check APIs for the registering of test
 # results in '*.trs' files, as documented in the automake manual.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_OUTPUT
@@ -53,10 +53,10 @@ mk_check ()
   $MAKE check >stdout || st=$?
   cat stdout
   # Our dummy driver make no testsuite progress report.
-  grep ': .*\.test' stdout && Exit 1
+  grep ': .*\.test' stdout && exit 1
   # Nor it writes to the log files.
-  test -s foo.log && Exit 1
-  test -s bar.log && Exit 1
+  test -s foo.log && exit 1
+  test -s bar.log && exit 1
   return $st
 }
 
@@ -74,7 +74,7 @@ count_test_results ()
   grep "^# FAIL:  *$fail$"   stdout || rc=1
   grep "^# XPASS:  *$xpass$" stdout || rc=1
   grep "^# ERROR:  *$error$" stdout || rc=1
-  test $st -eq 0 || Exit 1
+  test $st -eq 0 || exit 1
 }
 
 $ACLOCAL
@@ -99,7 +99,7 @@ cat > bar.test <<END
 :test-result: SKIP
 :test-global-result: ERROR
 END
-mk_check && Exit 1
+mk_check && exit 1
 count_test_results total=2 pass=0 fail=1 xpass=0 xfail=0 skip=1 error=0
 
 cat > foo.test <<END
@@ -118,7 +118,7 @@ END
 cat > bar.test <<END
 :test-global-result: PASS
 END
-mk_check && Exit 1
+mk_check && exit 1
 count_test_results total=1 pass=0 fail=1 xpass=0 xfail=0 skip=0 error=0
 
 cat > foo.test <<END
@@ -147,11 +147,11 @@ cat > foo.test <<END
 :test-result: ERROR
 END
 : > bar.test
-mk_check && Exit 1
+mk_check && exit 1
 count_test_results total=6 pass=1 fail=1 xpass=1 xfail=1 skip=1 error=1
 
 cp foo.test bar.test
-mk_check && Exit 1
+mk_check && exit 1
 count_test_results total=12 pass=2 fail=2 xpass=2 xfail=2 skip=2 error=2
 
 # Check that we are liberal w.r.t. whitespace use.
@@ -169,7 +169,7 @@ END
 done
 cat foo.test # For debugging.
 cat bar.test # Likewise.
-mk_check && Exit 1
+mk_check && exit 1
 count_test_results total=30 pass=5 fail=5 xpass=5 xfail=5 skip=5 error=5
 
 :

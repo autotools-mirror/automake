@@ -16,7 +16,7 @@
 
 # Test for an odd conditional bug.  Report from Pavel Roskin.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 compat=yes
@@ -35,5 +35,5 @@ END
 $ACLOCAL
 $AUTOMAKE
 
-grep '^[^#].*002' Makefile.in && Exit 1
-Exit 0
+grep '^[^#].*002' Makefile.in && exit 1
+exit 0

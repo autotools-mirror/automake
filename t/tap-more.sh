@@ -24,7 +24,7 @@
 #    correct test script(s)
 #  - "make distcheck" works
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 fetch_tap_driver
 
@@ -122,7 +122,7 @@ for try in 0 1; do
   # since Solaris 10 /bin/sh would try to optimize a ':' away after the
   # first iteration, even if it is redirected.
   echo " " >stdout
-  $run_make check >>stdout || { cat stdout; Exit 1; }
+  $run_make check >>stdout || { cat stdout; exit 1; }
   cat stdout
   count_test_results total=6 pass=4 fail=0 xpass=0 xfail=1 skip=1 error=0
   grep '^PASS: 1\.test 1 - mu$' stdout
@@ -147,7 +147,7 @@ for try in 0 1; do
   # since Solaris 10 /bin/sh would try to optimize a ':' away after the
   # first iteration, even if it is redirected.
   echo " " >stdout
-  $run_make check >>stdout && { cat stdout; Exit 1; }
+  $run_make check >>stdout && { cat stdout; exit 1; }
   cat stdout
   count_test_results total=7 pass=4 fail=1 xpass=0 xfail=1 skip=0 error=1
   grep '^PASS: 1\.test 1 - mu$' stdout
