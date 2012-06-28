@@ -40,7 +40,7 @@ test $? -eq 77 || Exit 1
 run_dummy_test 'sh -c "exit 77"' am_explicit_skips=no
 test $? -eq 77 || Exit 1
 
-run_dummy_test '(exit 77); exit 77' am_explicit_skips=yes 
+run_dummy_test '(exit 77); exit 77' am_explicit_skips=yes
 test $? -eq 78 || Exit 1
 
 run_dummy_test 'sh -c "exit 77"' am_explicit_skips=y

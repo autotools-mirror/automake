@@ -54,4 +54,4 @@ sed -n '/^#.*VAR.*COND_FALSE/ {
         }' Makefile.in |
   grep '@COND_FALSE@VAR = bar'
 
-: 
+:

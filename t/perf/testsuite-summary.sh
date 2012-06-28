@@ -45,7 +45,7 @@ for i in $(seq_ 1 $count); do
   echo :test-result: PASS >> $i.trs
   echo :copy-in-global-log: yes >> $i.trs
   echo TESTS += $i.t
-done >> Makefile.am 
+done >> Makefile.am
 
 # Re-enable shell traces.
 set -x
