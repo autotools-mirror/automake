@@ -800,8 +800,8 @@ do
       priv_check_temp=priv-check.$$
       touch $priv_check_temp && chmod a-w $priv_check_temp \
         || framework_failure_ "creating unwritable file $priv_check_temp"
-      # Not a useless use of subshell: lesser shells like Solaris /bin/sh
-      # can exit if a builtin fails.
+      # Not a useless use of subshell: lesser shells might bail
+      # out if a builtin fails.
       overwrite_status=0
       (echo foo >> $priv_check_temp) || overwrite_status=$?
       rm -f $priv_check_temp
@@ -833,8 +833,8 @@ do
       ro_dir_temp=ro_dir.$$
       mkdir $ro_dir_temp && chmod a-w $ro_dir_temp \
         || framework_failure_ "creating unwritable directory $ro_dir_temp"
-      # Not a useless use of subshell: lesser shells like Solaris /bin/sh
-      # can exit if a builtin fails.
+      # Not a useless use of subshell: lesser shells might bail
+      # out if a builtin fails.
       create_status=0
       (: > $ro_dir_temp/probe) || create_status=$?
       rm -rf $ro_dir_temp
@@ -950,7 +950,6 @@ trap "fatal_ 'caught signal SIGTERM'" 15
 # OTOH, at least these shells that do *not* exhibit that behaviour:
 #  - modern version of the Almquist Shell (at least 0.5.5.1), on
 #    both Solaris and GNU/Linux
-#  - Solaris 10 /bin/sh
 #  - public domain Korn Shell, version 5.2.14, on Debian GNU/Linux
 trap "fatal_ 'caught signal SIGQUIT'" 3
 # Ignore further SIGPIPE in the trap code.  This is required to avoid

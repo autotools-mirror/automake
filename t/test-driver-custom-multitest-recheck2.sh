@@ -144,8 +144,6 @@ for vpath in : false; do
   : No need to re-run a.test anymore, but c.test should be rerun,
   : as it contained an XPASS.  And this time, make it fail with
   : an hard error.
-  # Use 'echo' here, since Solaris 10 /bin/sh would try to optimize
-  # a ':' away after the first iteration, even if it is redirected.
   echo dummy > c.err
   env TEST_LOGS='a.log c.log' $MAKE -e recheck >stdout \
     && { cat stdout; exit 1; }
