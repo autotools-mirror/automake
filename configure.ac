@@ -334,6 +334,11 @@ AC_DEFUN([_AM_CHECK_CANDIDATE_SHELL],
       [rm -f conftest-alias.sh],
       [rm -f conftest-alias.sh; am_score=1; break])
 
+    _AM_CHECK_SHELL_FEATURE([$1],
+      [supports "test -e"],
+      [test -e configure && test -e . && test ! -e nonesuch],
+      [], [am_score=1; break])
+
     break
   done])
 
