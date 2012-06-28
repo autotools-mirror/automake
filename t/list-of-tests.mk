@@ -126,7 +126,7 @@ t/amhello-cross-compile.sh \
 t/amhello-binpkg.sh \
 t/aminit-moreargs-no-more.sh \
 t/amassign.sh \
-t/ammissing.sh \
+t/am-macro-not-found.sh \
 t/amopt.sh \
 t/amopts-location.sh \
 t/amopts-variable-expansion.sh \
@@ -669,6 +669,7 @@ t/mdate5.sh \
 t/mdate6.sh \
 t/missing-version-mismatch.sh \
 t/missing3.sh \
+t/am-missing-prog.sh \
 t/missing-auxfile-stops-makefiles-creation.sh \
 t/mkinstall.sh \
 t/mkinst2.sh \
