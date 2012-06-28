@@ -297,23 +297,12 @@ AC_DEFUN([_AM_CHECK_CANDIDATE_SHELL],
       [], [am_score=1; break])
 
     _AM_CHECK_SHELL_FEATURE([$1],
-      [supports \${var@%:@glob}],
-      [v=a/b/c; test ${v@%:@*/} = b/c],
-      [], [am_score=1; break])
-
-    _AM_CHECK_SHELL_FEATURE([$1],
-      [supports \${var@%:@@%:@glob}],
-      [v=a/b/c; test ${v@%:@@%:@*/} = c],
-      [], [am_score=1; break])
-
-    _AM_CHECK_SHELL_FEATURE([$1],
-      [supports \${var%glob}],
-      [v=a.b.c; test ${v%.*} = a.b],
-      [], [am_score=1; break])
-
-    _AM_CHECK_SHELL_FEATURE([$1],
-      [supports \${var%%glob}],
-      [v=a.b.c; test ${v%%.*} = a],
+      [supports \${var@%:@glob} and \${var%glob}],
+      [v=a/b/c \
+        && test ${v@%:@*/} = b/c \
+        && test ${v@%:@@%:@*/} = c \
+        && test ${v%/*} = a/b \
+        && test ${v%%/*} = a],
       [], [am_score=1; break])
 
     _AM_CHECK_SHELL_FEATURE([$1],
