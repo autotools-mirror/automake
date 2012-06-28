@@ -51,13 +51,11 @@ o = $@-stdout
 e = $@-stderr
 
 debug_info = grep . $@-stdout $@-stderr
-status_is = $(debug_info); echo $@: st=$$st; : test $$st -eq
+status_is = $(debug_info); echo $@: st=$$st; test $$st -eq
 
 w_mis = 'am-none-none' is needed, and is missing on your system
 w_old = 'am-exit-63' is needed, and is probably too old
 
-# FIXME: make this test stricter w.r.t. the exit statuses once
-# FIXME: we are merged to master!
 test1:
 	st=0; $(NO_SUCH_COMMAND) >$o 2>$e || st=$$?; $(status_is) 127
         grep "^WARNING: $(w_mis)" $e
