@@ -915,31 +915,6 @@ do
   esac
 done
 
-# Using just $am_top_builddir for the check here is ok, since the
-# further temporary subdirectory where the test will be run is
-# ensured not to contain any whitespace character.
-case $am_top_builddir in
-  *\ *|*\	*)
-    case " $required " in
-      *' libtool '* | *' libtoolize '* )
-        skip_all_ "libtool has problems with spaces in builddir name";;
-    esac
-    ;;
-esac
-
-# This test is necessary, although Automake's configure script bails out
-# when $srcdir contains spaces.  This is because $am_top_srcdir is in not
-# configure-time $srcdir, but is instead configure-time $abs_srcdir, and
-# that is allowed to contain spaces.
-case $am_top_srcdir in
-  *\ * |*\	*)
-    case " $required " in
-      *' libtool '* | *' libtoolize '* | *' gettext '* )
-        skip_all_ "spaces in srcdir name: libtool/gettext tests won't work";;
-   esac
-   ;;
-esac
-
 # We might need extra macros, e.g., from Libtool or Gettext.
 case " $required " in *\ libtool*) . ./t/libtool-macros.dir/get.sh;; esac
 case " $required " in *\ gettext*) . ./t/gettext-macros.dir/get.sh;; esac
