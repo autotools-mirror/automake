@@ -52,7 +52,7 @@ $ACLOCAL
 $AUTOCONF
 $AUTOMAKE -a
 
-./configure --prefix="`pwd`/inst"
+./configure --prefix="$(pwd)/inst"
 
 $MAKE check
 ls -l # For debugging.

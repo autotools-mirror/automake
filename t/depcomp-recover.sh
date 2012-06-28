@@ -76,7 +76,7 @@ for vpath in : false; do
 
   $srcdir/configure --enable-dependency-tracking
   $MAKE
-  depdir=`$MAKE -s --no-print-directory get-depdir` \
+  depdir=$($MAKE -s --no-print-directory get-depdir) \
     && test -n "$depdir" \
     && test -d $depdir \
     && test -d sub/src/$depdir \

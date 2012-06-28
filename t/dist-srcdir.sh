@@ -19,7 +19,7 @@
 am_create_testdir=empty
 . ./defs || exit 1
 
-ocwd=`pwd` || fatal_ "cannot get current working directory"
+ocwd=$(pwd) || fatal_ "cannot get current working directory"
 
 mkdir src
 cd src

@@ -57,7 +57,7 @@ END
 $ACLOCAL
 $AUTOCONF
 $AUTOMAKE
-./configure --prefix "`pwd`/inst"
+./configure --prefix "$(pwd)/inst"
 
 # Now make sure these two files are rebuilt during make install.
 $MAKE install

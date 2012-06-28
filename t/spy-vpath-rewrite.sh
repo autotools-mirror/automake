@@ -20,7 +20,7 @@
 
 . ./defs || exit 1
 
-ocwd=`pwd` || fatal_ "couldn't get current working directory"
+ocwd=$(pwd) || fatal_ "couldn't get current working directory"
 
 mkdir src
 cd src

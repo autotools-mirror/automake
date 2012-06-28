@@ -41,17 +41,17 @@ test ! -f rdir/foo
 : > pfile
 mkdir pdir
 $MAKE pdir pfile
-test "`cat pfile`" = bar
-test "`cat pdir/foo`" = foo
+test "$(cat pfile)" = bar
+test "$(cat pdir/foo)" = foo
 
 $MAKE other
-test "`cat dummy`" = baz
+test "$(cat dummy)" = baz
 $MAKE other
-test "`cat dummy`" = "baz${nl}baz"
+test "$(cat dummy)" = "baz${nl}baz"
 
 echo not run > indirect
 $MAKE indirect
-test "`cat indirect`" = run
-test "`cat dummy`" = "baz${nl}baz${nl}baz"
+test "$(cat indirect)" = run
+test "$(cat dummy)" = "baz${nl}baz${nl}baz"
 
 :

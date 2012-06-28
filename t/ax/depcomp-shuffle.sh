@@ -112,7 +112,7 @@ $srcdir/configure --enable-dependency-tracking
 $MAKE
 grep_prog_out foofoofoo # Sanity check.
 
-EXEEXT=`$MAKE -s --no-print-directory get-exeext` \
+EXEEXT=$($MAKE -s --no-print-directory get-exeext) \
   || fatal_ "cannot get \$EXEEXT"
 
 # Modify an header file.

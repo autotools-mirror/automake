@@ -118,7 +118,7 @@ grep '^SKIP: fu\.sh$'      stdout
 grep '^SKIP: mu$'          stdout
 
 $MAKE mostlyclean
-test "`find . -name *.log`" = ./config.log
+test "$(find . -name '*.log')" = ./config.log
 
 $MAKE distcheck > stdout || { cat stdout; exit 1; }
 cat stdout
@@ -138,7 +138,7 @@ grep '^PASS: t00-foo\.sh' stdout
 grep '^XFAIL: t98S\.sh'   stdout
 
 $MAKE mostlyclean
-test "`find . -name *.log`" = ./config.log
+test "$(find . -name '*.log')" = ./config.log
 
 $MAKE check TESTS='$(shell echo t00 | sed "s/$$/-foo/") t99'
 test -f t00-foo.log

@@ -91,7 +91,7 @@ cd build
 $MAKE test-vpath
 cd ..
 
-ocwd=`pwd` || fatal_ "couldn't get current working directory"
+ocwd=$(pwd) || fatal_ "couldn't get current working directory"
 mkdir build2 build2/subbuild
 cd build2/subbuild
 "$ocwd"/configure

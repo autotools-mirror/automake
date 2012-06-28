@@ -132,8 +132,8 @@ grep '^## unmodified$' Makefile.in
 grep '^xyz = \\$' Makefile.in
 
 $EGREP 'foo|bar' Makefile.in # For debugging.
-test `grep -c '^foo +=' Makefile.in` -eq 2
-test `grep -c '^bar =' Makefile.in` -eq 3
+test $(grep -c '^foo +=' Makefile.in) -eq 2
+test $(grep -c '^bar ='  Makefile.in) -eq 3
 
 $AUTOCONF
 ./configure

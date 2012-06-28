@@ -52,7 +52,7 @@ for vpath in : false; do
   $MAKE
   diff $srcdir/bar/one.in ./foo/one.out
   diff $srcdir/two/z ./two.sh
-  test `cat mu.py` = True
+  test "$(cat mu.py)" = True
   cd $srcdir
 done
 

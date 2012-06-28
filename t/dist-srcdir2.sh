@@ -44,6 +44,6 @@ grep 'filename-that-is-easy-to-grep' stderr
 
 echo good > ../filename-that-is-easy-to-grep
 $MAKE distdir
-test "`cat $distdir/filename-that-is-easy-to-grep`" = good
+test "$(cat $distdir/filename-that-is-easy-to-grep)" = good
 
 :

@@ -20,7 +20,7 @@
 required=cc
 . ./defs || exit 1
 
-ocwd=`pwd` || fatal_ "couldn't get current working directory"
+ocwd=$(pwd) || fatal_ "couldn't get current working directory"
 
 cat >> configure.ac <<'END'
 AC_PROG_CC

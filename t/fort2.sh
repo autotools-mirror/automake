@@ -82,7 +82,7 @@ grep ' fake-fc .* --@08 .* sub/bonjour\.f08 ' out
 grep ' fake-fc .* --gby .* --@95 .* bye\.f95 ' out
 grep ' fake-fc .* --gby .* --@90 .* sub/baz\.f90 ' out
 
-test `grep -c '.*--gby.*\.f' out` -eq 2
+test $(grep -c '.*--gby.*\.f' out) -eq 2
 
 $EGREP 'fake-fc.*--@(95|03|08).*\.f90' out && exit 1
 $EGREP 'fake-fc.*--@(90|03|08).*\.f95' out && exit 1
