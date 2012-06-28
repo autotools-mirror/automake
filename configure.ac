@@ -317,12 +317,12 @@ AC_DEFUN([_AM_CHECK_CANDIDATE_SHELL],
       [], [am_score=1; break])
 
     _AM_CHECK_SHELL_FEATURE([$1],
-      ["set -e" preserves exit traps],
+      [preserves exit traps with "set -e"],
       [set -e; trap 'exit $?' 0; (exit 77); exit 77],
       [], [am_score=1; break])
 
     _AM_CHECK_SHELL_FEATURE([$1],
-      ["set -x" corrupts stderr],
+      [corrupts stderr with "set -x"],
       [(set -x; P=1 true 2>&3) 3>&1 2>/dev/null | grep P=1],
       [am_score=9], [])
 
