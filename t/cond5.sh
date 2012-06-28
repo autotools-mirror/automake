@@ -16,7 +16,7 @@
 
 # Yet another sources-in-conditional test.  Report from Tim Goodwin.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CC
@@ -60,10 +60,10 @@ while test $try -le 30; do
     cat stderr >&2
     # Automake must fail with a proper error message.
     grep 'variable.*OPT_SRC.*recursively defined' stderr
-    Exit 0
+    exit 0
   fi
 done
 # The automake process probably hung.  Kill it, and exit with failure.
 echo "$me: Automake process $pid hung"
 kill $pid
-Exit 1
+exit 1

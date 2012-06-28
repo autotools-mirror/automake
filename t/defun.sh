@@ -16,7 +16,7 @@
 
 # Make sure aclocal picks up on all macro definitions.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > acinclude.m4 << 'END'
 AC_DEFUN([AM_FUNC_THREE])

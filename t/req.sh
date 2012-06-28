@@ -16,7 +16,7 @@
 
 # Test to make sure macro used in m4 file is included.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > configure.ac <<EOF
 AC_INIT([$me], [1.0])

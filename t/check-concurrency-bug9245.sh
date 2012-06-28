@@ -20,7 +20,7 @@
 # keep the test anyway, for extra safety.
 # See automake bug#9245.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_OUTPUT
@@ -45,13 +45,13 @@ $AUTOMAKE -a
 ./configure
 
 for j in '' -j1 -j2; do
-  $MAKE $j check && Exit 1
-  $MAKE $j TESTS=foo.test check && Exit 1
-  $MAKE $j recheck && Exit 1
-  $MAKE $j TESTS=foo check && Exit 1
+  $MAKE $j check                && exit 1
+  $MAKE $j TESTS=foo.test check && exit 1
+  $MAKE $j recheck              && exit 1
+  $MAKE $j TESTS=foo check      && exit 1
   rm -f test-suite.log
-  $MAKE $j test-suite.log && Exit 1
-  test -f test-suite.log || Exit 1
+  $MAKE $j test-suite.log       && exit 1
+  test -f test-suite.log        || exit 1
 done
 
 :

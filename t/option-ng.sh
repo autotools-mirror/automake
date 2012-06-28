@@ -16,7 +16,7 @@
 
 # Automake-NG should recognize the (no-op) 'ng' option.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > configure.ac <<END
 AC_INIT([$me], [1.0])

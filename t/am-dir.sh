@@ -26,7 +26,7 @@
 #  * cleaning rules and "make distcheck" interaction.
 #
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 d=.am
 

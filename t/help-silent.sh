@@ -17,7 +17,7 @@
 # Make sure configure options relative to automake silent rules are
 # added to the configure help screen.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 : > Makefile.am
 $ACLOCAL

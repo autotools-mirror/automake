@@ -19,7 +19,7 @@
 # This is used at least in our 'parallel-tests' support.
 
 am_create_testdir=empty
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > Makefile <<'END'
 default:

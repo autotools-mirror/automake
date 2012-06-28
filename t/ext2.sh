@@ -18,7 +18,7 @@
 # Using different extensions for the same language should not
 # output the build rules several times.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >>configure.ac <<EOF
 AC_PROG_CXX

@@ -19,7 +19,7 @@
 # For now, require the GNU compilers (to avoid some Libtool/Autoconf
 # issues).
 required='g77 gfortran'
-. ./defs || Exit 1
+. ./defs || exit 1
 
 mkdir sub
 
@@ -89,7 +89,7 @@ END
 $ACLOCAL
 $AUTOMAKE -a
 # The Fortran 77 linker should be preferred:
-grep '.\$(FCLINK)' Makefile.in && Exit 1
+grep '.\$(FCLINK)' Makefile.in && exit 1
 
 $AUTOCONF
 # ./configure may exit with status 77 if no compiler is found,

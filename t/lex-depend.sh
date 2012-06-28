@@ -18,7 +18,7 @@
 # Test suggested by PR automake/6.
 
 required='cc lex'
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CC
@@ -79,7 +79,7 @@ $AUTOCONF
 
 $MAKE
 $MAKE test-deps-exist
-cross_compiling || test "$(./zoo)" = 'Hello, World!' || Exit 1
+cross_compiling || test "$(./zoo)" = 'Hello, World!' || exit 1
 
 $sleep
 cat >> my-hdr.h << 'END'
@@ -88,6 +88,6 @@ cat >> my-hdr.h << 'END'
 END
 $MAKE test-obj-updated
 $MAKE
-cross_compiling || test "$(./zoo)" = 'Howdy, Earth!' || Exit 1
+cross_compiling || test "$(./zoo)" = 'Howdy, Earth!' || exit 1
 
 :

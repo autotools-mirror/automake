@@ -18,7 +18,7 @@
 
 required='libtoolize c++'
 am_create_testdir=empty
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > configure.ac << 'END'
 AC_INIT([GNU C++/Libtool Demo], [0.73], [bug-automake@gnu.org])
@@ -95,7 +95,7 @@ $AUTOMAKE --add-missing --copy
 
 ls -l . ax # For debugging.
 for f in ltmain.sh depcomp config.guess config.sub; do
-  test -f ax/$f && test ! -h ax/$f || Exit 1
+  test -f ax/$f && test ! -h ax/$f || exit 1
 done
 test ! -f ax/compile # Not required by C++ compilers.
 

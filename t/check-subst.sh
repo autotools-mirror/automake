@@ -20,7 +20,7 @@
 # See also sister test 'check-subst-prog.test'.
 
 # For gen-testsuite-part: ==> try-with-serial-tests <==
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_SUBST([script_tests], ['subst-pass-script.sh subst-xfail-script.sh'])

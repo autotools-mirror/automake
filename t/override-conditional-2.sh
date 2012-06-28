@@ -18,7 +18,7 @@
 # This test is still xfailing; see the FIXME in Automake::Rule::define.
 # Once that is fixed, the test should succeed.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AM_CONDITIONAL([COND], [:])

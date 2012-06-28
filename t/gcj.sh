@@ -17,7 +17,7 @@
 # Test of compiled java.
 
 required='gcc gcj'
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 # FIXME: AM_PROG_GCJ should cause OBJEXT and EXEEXT to be set, but

@@ -17,7 +17,7 @@
 # Test _PYTHON with conditionals.
 
 required=python
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >>configure.ac <<'EOF'
 AM_PATH_PYTHON

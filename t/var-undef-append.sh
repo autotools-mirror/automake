@@ -20,7 +20,7 @@
 # to it should get overridden as well.
 # See also "spy" test 'spy-var-append.sh'.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AM_CONDITIONAL([COND_NO], [false])
@@ -91,7 +91,7 @@ $AUTOCONF
 
 checkit ()
 {
-  $MAKE "$@" 2>stderr && test ! -s stderr || { cat stderr >&2; Exit 1; }
+  $MAKE "$@" 2>stderr && test ! -s stderr || { cat stderr >&2; exit 1; }
 }
 
 checkit test1

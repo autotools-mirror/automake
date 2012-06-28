@@ -18,7 +18,7 @@
 
 # For gen-testsuite-part: ==> try-with-serial-tests <==
 required='cc native'
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CC
@@ -65,7 +65,7 @@ $AUTOMAKE -a
 
 ./configure
 AM_COLOR_TESTS=always $MAKE check >stdout 2>stderr \
-  && { cat stdout; cat stderr >&2; Exit 1; }
+  && { cat stdout; cat stderr >&2; exit 1; }
 cat stdout
 cat stderr >&2
 grep 'XPASS.* foo$' stdout
@@ -76,15 +76,15 @@ grep '^[^X]*FAIL.* baz' stdout
 grep 'XFAIL.* sub/baz' stdout
 # The parallel test driver should cause circular dependencies.
 # Look for known warnings from a couple of 'make' implementations.
-grep -i 'circular.*dependency' stderr && Exit 1
-grep -i 'graph cycles' stderr && Exit 1
+grep -i 'circular.*dependency' stderr && exit 1
+grep -i 'graph cycles' stderr && exit 1
 
 $MAKE distclean
 
 mkdir build
 cd build
 ../configure
-$MAKE check >stdout && { cat stdout; Exit 1; }
+$MAKE check >stdout && { cat stdout; exit 1; }
 cat stdout
 # Note: we are not grepping for the space in the lines from the 'foo'
 # tests, due to the Solaris make VPATH rewriting (if we fix that, we

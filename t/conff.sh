@@ -17,7 +17,7 @@
 # Make sure rebuild rules work even when AC_CONFIG_FILES uses colons.
 # Report from Alexander Turbov.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_CONFIG_FILES([bar/Makefile:bar/Makefile.in:Makefile.bot])
@@ -47,10 +47,10 @@ $AUTOMAKE
 $MAKE
 
 cd bar
-$MAKE top-rule >stdout || { cat stdout; Exit 1; }
+$MAKE top-rule >stdout || { cat stdout; exit 1; }
 cat stdout
 grep 'top rule' stdout
-$MAKE bot-rule >stdout || { cat stdout; Exit 1; }
+$MAKE bot-rule >stdout || { cat stdout; exit 1; }
 cat stdout
 grep 'bot rule' stdout
 cd ..
@@ -64,10 +64,10 @@ END
 $MAKE
 
 cd bar
-$MAKE top-rule >stdout || { cat stdout; Exit 1; }
+$MAKE top-rule >stdout || { cat stdout; exit 1; }
 cat stdout
 grep 'top2 rule' stdout
-$MAKE bot-rule >stdout || { cat stdout; Exit 1; }
+$MAKE bot-rule >stdout || { cat stdout; exit 1; }
 cat stdout
 grep 'bot rule' stdout
 cd ..
@@ -81,10 +81,10 @@ END
 $MAKE
 
 cd bar
-$MAKE top-rule >stdout || { cat stdout; Exit 1; }
+$MAKE top-rule >stdout || { cat stdout; exit 1; }
 cat stdout
 grep 'top2 rule' stdout
-$MAKE bot-rule >stdout || { cat stdout; Exit 1; }
+$MAKE bot-rule >stdout || { cat stdout; exit 1; }
 cat stdout
 grep 'bot2 rule' stdout
 cd ..

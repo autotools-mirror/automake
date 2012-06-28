@@ -17,7 +17,7 @@
 # Test the '--basedir' option of the 'py-compile' script,
 
 required=python
-. ./defs || Exit 1
+. ./defs || exit 1
 
 # We'll need to create files in '..', so we need one more subdirectory
 # level in order not to clutter up the top-level tests directory.
@@ -34,7 +34,7 @@ for d in foo foo/bar "$(pwd)/foo" . .. ../foo ''; do
   else
     d2=$d
   fi
-  ../install-sh -d "$d2" "$d2/sub" || Exit 99
+  ../install-sh -d "$d2" "$d2/sub" || exit 99
   : > "$d2/$f.py"
   : > "$d2/sub/$f.py"
   ./py-compile --basedir "$d" "$f.py" "sub/$f.py"
@@ -44,7 +44,7 @@ for d in foo foo/bar "$(pwd)/foo" . .. ../foo ''; do
   test -f "$d2/sub/$f.pyc"
   test -f "$d2/sub/$f.pyo"
   rm -f "$d2/$f.pyc" "$d2/$f.pyo" "$d2/sub/$f.pyc" "$d2/sub/$f.pyo"
-  find . | grep '\.py[co]$' && Exit 1
+  find . | grep '\.py[co]$' && exit 1
 done
 
 :

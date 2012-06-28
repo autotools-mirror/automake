@@ -18,14 +18,14 @@
 #  - literal strings "0" and "0.0" as the reason of the skip in a "TAP
 #    plan with skip" (i.e., "1..0 # SKIP ...").
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 . "$am_testauxdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"
 
 echo '1..0 # SKIP 0' > a.test
 echo '1..0 # SKIP 0.0' > b.test
 
-$MAKE TESTS='a.test b.test' check >stdout || { cat stdout; Exit 1; }
+$MAKE TESTS='a.test b.test' check >stdout || { cat stdout; exit 1; }
 cat stdout
 
 count_test_results total=2 pass=0 fail=0 xpass=0 xfail=0 skip=2 error=0

@@ -19,7 +19,7 @@
 # succeed if make is run a second time immediately afterwards.
 # Report from Harlan Stenn.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 echo AC_OUTPUT >> configure.ac
 
@@ -41,7 +41,7 @@ foo_SOURCES = unused
 END
 
 # This repetition is deliberate; see heading comments.
-$MAKE && Exit 1
-$MAKE && Exit 1
+$MAKE && exit 1
+$MAKE && exit 1
 
 :

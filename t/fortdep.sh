@@ -17,7 +17,7 @@
 # Test to make sure dependency tracking doesn't interfere with Fortran.
 # For PR 75.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_CONFIG_SRCDIR([foo.f])
@@ -35,5 +35,5 @@ END
 $ACLOCAL
 $AUTOMAKE
 
-grep 'foo\.Po' Makefile.in && Exit 1
-Exit 0
+grep 'foo\.Po' Makefile.in && exit 1
+exit 0

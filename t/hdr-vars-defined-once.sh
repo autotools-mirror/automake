@@ -17,7 +17,7 @@
 # Test to make sure header vars defined only once when including.
 # Report from Marcus G. Daniels.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac <<END
 AC_OUTPUT

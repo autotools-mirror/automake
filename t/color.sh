@@ -19,7 +19,7 @@
 
 required='grep-nonprint'
 # For gen-testsuite-part: ==> try-with-serial-tests <==
-. ./defs || Exit 1
+. ./defs || exit 1
 
 # Escape '[' for grep, below.
 red="$esc\[0;31m"
@@ -91,7 +91,7 @@ test_no_color ()
 {
   # Not a useless use of cat; see above comments "grep-nonprinting"
   # requirement in 'test-init.sh'.
-  cat stdout | grep "$esc" && Exit 1
+  cat stdout | grep "$esc" && exit 1
   :
 }
 
@@ -110,11 +110,11 @@ for vpath in false :; do
   # Forced colorization should take place also with non-ANSI terminals;
   # hence the "TERM=dumb" definition.
   $MAKE check AM_COLOR_TESTS=always TERM=dumb >stdout \
-    && { cat stdout; Exit 1; }
+    && { cat stdout; exit 1; }
   cat stdout
   test_color
 
-  $MAKE check TERM=ansi >stdout && { cat stdout; Exit 1; }
+  $MAKE check TERM=ansi >stdout && { cat stdout; exit 1; }
   cat stdout
   test_no_color
 

@@ -17,7 +17,7 @@
 # Check against automake bug#9579: distcheck does not always detect
 # incomplete uninstall as advertised.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_OUTPUT
@@ -54,7 +54,7 @@ $MAKE uninstall
 test -f inst/share/dir
 rm -rf inst
 
-$MAKE distcheck 2>stderr && { cat stderr >&2; Exit 1; }
+$MAKE distcheck 2>stderr && { cat stderr >&2; exit 1; }
 cat stderr >&2
 
 grep 'ERROR: files left after uninstall:' stderr
@@ -86,7 +86,7 @@ test -f inst/mu/share/info/dir
 test -f inst/share/info/more/dir
 rm -rf inst
 
-$MAKE distcheck 2>stderr && { cat stderr >&2; Exit 1; }
+$MAKE distcheck 2>stderr && { cat stderr >&2; exit 1; }
 cat stderr >&2
 
 grep 'ERROR: files left after uninstall:' stderr

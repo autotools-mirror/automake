@@ -18,7 +18,7 @@
 # From Eric Magnien.
 
 required=cc
-. ./defs || Exit 1
+. ./defs || exit 1
 
 rm -f configure.ac
 

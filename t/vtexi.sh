@@ -17,7 +17,7 @@
 # Basic checks and some regressions testing on 'version.texi'
 # support for texinfo files.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > Makefile.am << 'END'
 info_TEXINFOS = textutils.texi

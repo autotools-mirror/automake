@@ -16,7 +16,7 @@
 
 # Another check for per-target flag substitutions.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CC
@@ -36,10 +36,10 @@ $AUTOMAKE --add-missing
 
 $FGREP '$(AM_CFLAGS)' Makefile.in
 
-$FGREP '$(zzfoo_CFLAGS)' Makefile.in && Exit 1
-$FGREP '$(zzfoo_CPPFLAGS)' Makefile.in && Exit 1
+$FGREP '$(zzfoo_CFLAGS)' Makefile.in && exit 1
+$FGREP '$(zzfoo_CPPFLAGS)' Makefile.in && exit 1
 
-$FGREP '$(zzbar_CFLAGS)' Makefile.in && Exit 1
+$FGREP '$(zzbar_CFLAGS)' Makefile.in && exit 1
 $FGREP '$(zzbar_CPPFLAGS)' Makefile.in
 
 :

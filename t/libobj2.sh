@@ -18,7 +18,7 @@
 # Bug from Josh MacDonald.
 
 required=cc
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_CONFIG_FILES([subdir/Makefile])

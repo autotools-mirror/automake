@@ -18,7 +18,7 @@
 # even if the 'missing' script is involved.
 
 required=help2man
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > Makefile.am << 'END'
 dist_man_MANS = $(srcdir)/foobar.1 bazquux.1 zardoz.1

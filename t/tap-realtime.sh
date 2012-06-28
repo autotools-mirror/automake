@@ -22,7 +22,7 @@
 # children, and is pretty hacky and complex; is there a better way to
 # accomplish the checks done here?
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >expect-check <<'END'
 eval spawn $env(SHELL) -c ":"
@@ -30,7 +30,7 @@ expect eof
 END
 expect -f expect-check || {
     echo "$me: failed to find a working expect program" >&2
-    Exit 77
+    exit 77
 }
 rm -f expect-check
 

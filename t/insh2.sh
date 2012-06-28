@@ -16,7 +16,7 @@
 
 # Test for bug where install-sh not included in distribution.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 echo AC_OUTPUT >> configure.ac
 

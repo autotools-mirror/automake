@@ -18,7 +18,7 @@
 # old-style usages of AM_INIT_AUTOMAKE (i.e., calls with two or three
 # arguments).
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 warn_rx='AM_INIT_AUTOMAKE.* old-style two-.* three-arguments form.*unsupported'
 
@@ -36,7 +36,7 @@ do_check()
   rm -rf autom4te*.cache
   for cmd in "$ACLOCAL" "$AUTOCONF" "$AUTOMAKE"; do
     cp aclocal.sav aclocal.m4
-    $cmd -Wnone -Wno-error 2>stderr && { cat stderr; Exit 1; }
+    $cmd -Wnone -Wno-error 2>stderr && { cat stderr; exit 1; }
     cat stderr >&2
     grep "^configure\.ac:2:.*$warn_rx" stderr
   done

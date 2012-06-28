@@ -17,7 +17,7 @@
 # PR 492: Test asm subdir objects.
 
 required=gcc
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AM_PROG_AS

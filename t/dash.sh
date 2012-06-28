@@ -17,7 +17,7 @@
 # Test to make sure '-' can be used in path.
 # Report from Matthew D. Langston.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > Makefile.am << 'END'
 include Make-lang

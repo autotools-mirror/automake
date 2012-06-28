@@ -16,7 +16,7 @@
 
 # Test to make sure sub-sub-dirs work correctly.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 mkdir one
 mkdir one/two

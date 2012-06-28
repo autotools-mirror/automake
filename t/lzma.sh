@@ -16,7 +16,7 @@
 
 # Check support for no-dist-gzip with lzma.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 errmsg='support for lzma.*removed'
 

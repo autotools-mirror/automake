@@ -16,7 +16,7 @@
 
 # TEST_EXTENSIONS with contents dynamically determined at make time
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_SUBST([suf], [.tap])

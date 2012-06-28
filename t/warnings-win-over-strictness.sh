@@ -17,7 +17,7 @@
 # Check that, on the command line, explicitly-defined warnings take
 # precedence over implicit strictness-implied warnings.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 # We want complete control over automake options.
 AUTOMAKE=$am_original_AUTOMAKE

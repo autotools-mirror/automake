@@ -20,7 +20,7 @@
 # FIXME: the features tested by this script has been moved in contrib.
 # FIXME: We should move this script accordingly.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 # Try the variants that are tried in check-html.am.
 while :; do
@@ -77,7 +77,7 @@ $AUTOMAKE -a
 
 ./configure
 
-$MAKE check-html && Exit 1
+$MAKE check-html && exit 1
 test -f mylog.html
 # check-html should cause check_SCRIPTS to be created.
 test -f bla

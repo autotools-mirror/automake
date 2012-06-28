@@ -19,7 +19,7 @@
 # We do so with the help of "${prefix}LOG_DEPENDENCIES" variables.
 # See the last wishlist in automake bug#11287.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac <<'END'
 AC_SUBST([EXEEXT], [.bin])

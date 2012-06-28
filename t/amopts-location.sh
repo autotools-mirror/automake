@@ -17,7 +17,7 @@
 # Check that errors about AUTOMAKE_OPTIONS refers to correct
 # locations.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > Makefile.am <<'END'
 # comment \
@@ -78,6 +78,6 @@ cat stderr \
   | grep -v '^Makefile1\.am:1:' \
   | grep -v '^Makefile2\.am:6:' \
   | grep -v '^Makefile3\.am:2:' \
-  | grep . && Exit 1
+  | grep . && exit 1
 
 :

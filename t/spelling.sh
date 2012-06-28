@@ -16,7 +16,7 @@
 
 # Test to make sure that misspelled prefixes actually cause error.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > Makefile.am << 'EOF'
 bni_PROGRAMS = zot

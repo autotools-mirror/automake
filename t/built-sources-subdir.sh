@@ -19,7 +19,7 @@
 # all-recursive-am which depended on BUILT_SOURCES.
 
 required=cc
-. ./defs || Exit 1
+. ./defs || exit 1
 
 mkdir lib
 

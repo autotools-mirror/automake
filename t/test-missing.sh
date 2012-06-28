@@ -16,7 +16,7 @@
 
 # parallel-tests: non-existent scripts listed in TESTS get diagnosed.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_OUTPUT
@@ -35,19 +35,19 @@ $AUTOMAKE -a
 
 ./configure
 
-$MAKE check >stdout 2>stderr && { cat stdout; cat stderr >&2; Exit 1; }
+$MAKE check >stdout 2>stderr && { cat stdout; cat stderr >&2; exit 1; }
 cat stdout; cat stderr >&2
 test -f ok.log
 grep '^PASS: ok\.test' stdout
 $FGREP 'zardoz.log' stderr
 test ! -f test-suite.log
 
-$MAKE TESTS='zardoz2.test' check 2>stderr && { cat stderr >&2; Exit 1; }
+$MAKE TESTS='zardoz2.test' check 2>stderr && { cat stderr >&2; exit 1; }
 cat stderr
 $FGREP 'zardoz2.log' stderr
 test ! -f test-suite.log
 
-$MAKE TESTS='zardoz3' check 2>stderr && { cat stderr >&2; Exit 1; }
+$MAKE TESTS='zardoz3' check 2>stderr && { cat stderr >&2; exit 1; }
 cat stderr >&2
 $FGREP 'zardoz3.log' stderr
 test ! -f test-suite.log
@@ -59,7 +59,7 @@ test ! -f test-suite.log
 $MAKE check
 rm -f zardoz.test
 
-$MAKE check 2>stderr && { cat stderr >&2; Exit 1; }
+$MAKE check 2>stderr && { cat stderr >&2; exit 1; }
 cat stderr >&2
 $FGREP 'zardoz.log' stderr
 test ! -f test-suite.log

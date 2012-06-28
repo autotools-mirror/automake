@@ -18,7 +18,7 @@
 # build a source with the same name but without the $(srcdir).
 
 required=cc
-. ./defs || Exit 1
+. ./defs || exit 1
 
 ocwd=`pwd` || fatal_ "couldn't get current working directory"
 

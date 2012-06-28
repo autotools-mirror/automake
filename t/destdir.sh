@@ -21,7 +21,7 @@
 # It will only work for non-root users.
 required='ro-dir'
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac <<'EOF'
 AC_OUTPUT
@@ -45,6 +45,6 @@ $ACLOCAL
 $AUTOCONF
 $AUTOMAKE -a
 ./configure
-$MAKE distcheck && Exit 1
+$MAKE distcheck && exit 1
 
 :

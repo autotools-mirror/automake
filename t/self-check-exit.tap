@@ -20,7 +20,7 @@
 # Also check that the 'errexit' shell flag is active.
 
 am_create_testdir=no
-. ./defs || Exit 99
+. ./defs || exit 99
 
 plan_ 34
 
@@ -35,15 +35,17 @@ AM_TESTS_REEXEC=no; export AM_TESTS_REEXEC
 # ./defs, i.e., when 'set -e' is not active yet, for the benefit of shells
 # (like Bash 2.05 and Solaris 10 /bin/ksh) that returns a non-zero status
 # when unsetting an already-unset variable.
-init='stderr_fileno_=2; unset am_explicit_skips; . ./defs'
+# Add an extra newline at the end so that the aliases defined by 'defs'
+# can take effect.  Yes, this is truly required.
+init="stderr_fileno_=2; unset am_explicit_skips; . ./defs${nl}"
 
 # Required so that the code in defs doesn't go crazy trying to creating a
 # temporary directory in the absolute dir of $AM_TEST_RUNNER_SHELL.
 dummy_test_script=t/$me.sh
 
 for st in 1 2 3 4 5 77 99 126 127 128 129 130 255; do
-  for exit_cmd in "Exit $st" "sh -c 'exit $st'"; do
-    $AM_TEST_RUNNER_SHELL -c "$init; $exit_cmd; :" "$dummy_test_script"
+  for exit_cmd in "exit $st" "sh -c 'exit $st'"; do
+    $AM_TEST_RUNNER_SHELL -c "$init $exit_cmd; :" "$dummy_test_script"
     command_ok_ "$exit_cmd" test $? -eq $st
   done
 done
@@ -59,7 +61,7 @@ for sig in 1 2 13 15; do
     # <http://lists.gnu.org/archive/html/bug-autoconf/2011-09/msg00004.html>
     trap : 2
   fi
-  $AM_TEST_RUNNER_SHELL -c "$init; kill -$sig \$\$; :" "$dummy_test_script"
+  $AM_TEST_RUNNER_SHELL -c "$init kill -$sig \$\$; :" "$dummy_test_script"
   rc=$?
   if test $sig -eq 2; then
     # Reset default SIGINT handler as portably as possible.
@@ -84,20 +86,20 @@ if $AM_TEST_RUNNER_SHELL -c 'set -e; trap "exit \$?" 0; non-existent-program'; t
 else
   maybe_todo="" reason=""
 fi
-$AM_TEST_RUNNER_SHELL -c "$init; non-existent-prog; :" "$dummy_test_script"
+$AM_TEST_RUNNER_SHELL -c "$init non-existent-prog; :" "$dummy_test_script"
 command_ok_ "command not found" -D "$maybe_todo" -r "$reason" \
             -- test $? -gt 0
 
 : Non-executable command.
 test -f Makefile && test ! -x Makefile || \
   framowork_failure_ "no proper Makefile in the current directory"
-$AM_TEST_RUNNER_SHELL -c "$init; ./Makefile; :" "$dummy_test_script"
+$AM_TEST_RUNNER_SHELL -c "$init ./Makefile; :" "$dummy_test_script"
 command_ok_ "permission denied" test $? -gt 0
 
 : Syntax errors in the test code.
-$AM_TEST_RUNNER_SHELL -c "$init; if :; then" "$dummy_test_script"
+$AM_TEST_RUNNER_SHELL -c "$init if :; then" "$dummy_test_script"
 command_ok_ "syntax error 1" test $? -gt 0
-$AM_TEST_RUNNER_SHELL -c "$init; true ( true )" "$dummy_test_script"
+$AM_TEST_RUNNER_SHELL -c "$init true ( true )" "$dummy_test_script"
 command_ok_ "syntax error 2" test $? -gt 0
 
 :

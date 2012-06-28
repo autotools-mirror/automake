@@ -16,7 +16,7 @@
 
 # Check for support for colon-separated input files in AC_CONFIG_FILES.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > configure.ac << END
 AC_INIT([$me], [1.0])

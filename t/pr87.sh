@@ -18,7 +18,7 @@
 # "make distcheck" fails when two source dirs exist.
 
 required=cc
-. ./defs || Exit 1
+. ./defs || exit 1
 
 subdirs="foo bar"
 

@@ -17,7 +17,7 @@
 # Check that the '.PHONY' semantics we expect truly hold.
 
 am_create_testdir=empty
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > Makefile <<'END'
 .PHONY: pdir pfile

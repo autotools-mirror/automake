@@ -19,7 +19,7 @@
 
 required='grep-nonprint'
 # For gen-testsuite-part: ==> try-with-serial-tests <==
-. ./defs || Exit 1
+. ./defs || exit 1
 
 # Escape '[' for grep, below.
 red="$esc\[0;31m"
@@ -30,8 +30,7 @@ mgn="$esc\[0;35m"
 std="$esc\[m"
 
 # This test requires a working a working 'expect' program.
-# Creative quoting required to avoid spurious maintainer-check failure.
-(set +e; expect -c 'exit ''77'; test $? -eq 77) \
+(set +e; expect -c 'exit 77'; test $? -eq 77) \
   || skip_ "requires a working expect program"
 
 # Do the tests.
@@ -98,7 +97,7 @@ test_no_color ()
 {
   # Not a useless use of cat; see above comments "grep-nonprinting"
   # requirement in 'test-init.sh'.
-  cat stdout | grep "$esc" && Exit 1
+  cat stdout | grep "$esc" && exit 1
   :
 }
 
@@ -120,17 +119,17 @@ for vpath in false :; do
   $srcdir/configure
 
   TERM=ansi MAKE=$MAKE expect -f $srcdir/expect-make >stdout \
-    || { cat stdout; Exit 1; }
+    || { cat stdout; exit 1; }
   cat stdout
   test_color
 
   TERM=dumb MAKE=$MAKE expect -f $srcdir/expect-make >stdout \
-    || { cat stdout; Exit 1; }
+    || { cat stdout; exit 1; }
   cat stdout
   test_no_color
 
   AM_COLOR_TESTS=no MAKE=$MAKE expect -f $srcdir/expect-make >stdout \
-    || { cat stdout; Exit 1; }
+    || { cat stdout; exit 1; }
   cat stdout
   test_no_color
 

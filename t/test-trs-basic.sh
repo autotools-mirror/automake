@@ -18,7 +18,7 @@
 #  - creation and removal of '.trs' auxiliary files
 #  - check some internals regarding the use of '.trs' files.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac <<END
 AC_OUTPUT
@@ -100,7 +100,7 @@ test -f unrelated.trs
 test -f sub/foo.trs
 
 # The files should be properly created in case of testsuite failure too.
-FOO_STATUS=1 $MAKE check && Exit 1
+FOO_STATUS=1 $MAKE check && exit 1
 test -f foo.trs
 test -f bar.trs
 test -f sub/zardoz.trs

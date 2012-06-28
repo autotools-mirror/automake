@@ -18,7 +18,7 @@
 # program.  Functional test.  See automake bug#10894.
 
 required='valac cc c++'
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac <<'END'
 AC_PROG_CC
@@ -89,13 +89,13 @@ have_generated_files
 
 # Remake rules are not uselessly triggered.
 $MAKE -q
-$MAKE -n | $FGREP vala.stamp && Exit 1
+$MAKE -n | $FGREP vala.stamp && exit 1
 
 # But are triggered when they should.
 for file in zardoz.vala foo.h bar.c baz.c zen.hh master.cxx; do
   $sleep
   echo '& choke me !' >> $file
-  $MAKE && Exit 1
+  $MAKE && exit 1
   $sleep
   sed '$d' $file > t
   mv -f t $file
@@ -115,6 +115,6 @@ have_generated_files
 # behaviour w.r.t. intermediate C files is still unclear, and
 # better left undefined for the moment).
 $MAKE maintainer-clean
-ls *vala*.stamp | grep . && Exit 1
+ls *vala*.stamp | grep . && exit 1
 
 :

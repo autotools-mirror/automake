@@ -17,7 +17,7 @@
 # The parallel-tests harness do not cause the same test to be
 # uselessly run multiple times.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 echo AC_OUTPUT >> configure.ac
 echo TESTS = foo.test > Makefile.am
@@ -34,10 +34,10 @@ $AUTOMAKE -a
 
 ./configure
 
-$MAKE -j1 check || { cat test-suite.log; Exit 1; }
+$MAKE -j1 check || { cat test-suite.log; exit 1; }
 rmdir bar
-$MAKE -j2 check || { cat test-suite.log; Exit 1; }
+$MAKE -j2 check || { cat test-suite.log; exit 1; }
 rmdir bar
-$MAKE -j4 check || { cat test-suite.log; Exit 1; }
+$MAKE -j4 check || { cat test-suite.log; exit 1; }
 
 :

@@ -16,7 +16,7 @@
 
 # Check that automake complains about unknown warnings.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 # We want (almost) complete control over automake options.
 AUTOMAKE="$am_original_AUTOMAKE --foreign -Werror"

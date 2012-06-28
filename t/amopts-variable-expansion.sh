@@ -17,7 +17,7 @@
 # Check that AUTOMAKE_OPTIONS support variable expansion.
 
 am_create_testdir=empty
-. ./defs || Exit 1
+. ./defs || exit 1
 
 # We want complete control over automake options.
 AUTOMAKE=$am_original_AUTOMAKE
@@ -55,8 +55,8 @@ END
 $ACLOCAL
 AUTOMAKE_run
 grep '^Makefile\.am:.*sub/foo\.c.*requires.*AM_PROG_CC_C_O' stderr
-grep README stderr && Exit 1
-$EGREP '(install|override)' stderr && Exit 1
-$EGREP 'distdir|\.tar' Makefile.in && Exit 1
+grep README stderr && exit 1
+$EGREP '(install|override)' stderr && exit 1
+$EGREP 'distdir|\.tar' Makefile.in && exit 1
 
 :

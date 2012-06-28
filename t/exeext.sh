@@ -22,7 +22,7 @@
 # aren't left around.  Report from Jim Meyering.
 
 required=cc
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CC
@@ -65,11 +65,11 @@ grep '^rmt$(EXEEXT):' Makefile.in
 test $(grep -c '^bin_PROGRAMS =' Makefile.in) -eq 1
 
 # Make sure $(EXEEXT) gets stripped before canonicalization.
-grep 'maude3__EXEEXT__OBJECTS' Makefile.in && Exit 1
+grep 'maude3__EXEEXT__OBJECTS' Makefile.in && exit 1
 
 ./configure
 
-$MAKE EXEEXT=.foo print > stdout || { cat stdout; Exit 1; }
+$MAKE EXEEXT=.foo print > stdout || { cat stdout; exit 1; }
 cat stdout
 
 grep '1BEG: maude.foo mt.foo :END1' stdout
@@ -79,7 +79,7 @@ grep '4BEG: rmt.foo :END4' stdout
 
 ./configure revert=yes
 
-$MAKE EXEEXT=.foo print > stdout || { cat stdout; Exit 1; }
+$MAKE EXEEXT=.foo print > stdout || { cat stdout; exit 1; }
 cat stdout
 
 grep '1BEG: maude.foo :END1' stdout

@@ -17,7 +17,7 @@
 # Test the '--destdir' option of the 'py-compile' script,
 
 required=python
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cp "$am_scriptdir/py-compile" . \
   || fatal_ "failed to fetch auxiliary script py-compile"
@@ -32,12 +32,12 @@ echo 'def bar (): return "bar"' > $destdir/sub/bar.py
 
 ./py-compile --destdir $destdir foo.py sub/bar.py
 ls -l $destdir $destdir/sub # For debugging.
-ls . sub | grep '\.py[co]$' && Exit 1
+ls . sub | grep '\.py[co]$' && exit 1
 test -f $destdir/foo.pyc
 test -f $destdir/foo.pyo
 test -f $destdir/sub/bar.pyc
 test -f $destdir/sub/bar.pyo
 strings $destdir/*.py[co] $destdir/sub/*.py[co] || : # For debugging.
-$FGREP $destdir $destdir/*.py[co] $destdir/sub/*.py[co] && Exit 1
+$FGREP $destdir $destdir/*.py[co] $destdir/sub/*.py[co] && exit 1
 
 :

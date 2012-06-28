@@ -17,7 +17,7 @@
 # Regression test for install-recursive appearing in a non recursive Makefile.
 # Report from Bruno Haible.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > Makefile.am << 'END'
 noinst_SCRIPTS = hostname
@@ -32,7 +32,7 @@ $AUTOCONF
 ./configure
 
 for t in all check install; do
-  $MAKE -n $t-recursive 2>stderr && { cat stderr >&2; Exit 1; }
+  $MAKE -n $t-recursive 2>stderr && { cat stderr >&2; exit 1; }
   cat stderr >&2
   grep " [Nn]o rule to make target.*[\`\"']$t-recursive" stderr
 done

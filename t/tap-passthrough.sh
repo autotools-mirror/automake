@@ -20,7 +20,7 @@
 #  - TAP errors are reported in the log file too
 # See also related test 'tap-passthrough-exit.test'.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 weirdchars=\''"\$@!&()[]<>#;,:.^?*/'
 
@@ -46,7 +46,7 @@ ok # SKIP who cares?
 $weirdchars
 END
 
-$MAKE TESTS=ok.test check || { cat ok.log; Exit 1; }
+$MAKE TESTS=ok.test check || { cat ok.log; exit 1; }
 cat ok.log
 
 for rx in \
@@ -123,7 +123,7 @@ cat ko.log
 cat bail.log
 cat skip.log
 cat err.log
-test $st -gt 0 || Exit 1
+test $st -gt 0 || exit 1
 
 grep '^1\.\.1$' tiny.log
 grep '^ok$' tiny.log

@@ -17,7 +17,7 @@
 # Make sure install-info works even if no-installinfo is given.
 
 required='makeinfo'
-. ./defs || Exit 1
+. ./defs || exit 1
 
 echo AC_OUTPUT >> configure.ac
 

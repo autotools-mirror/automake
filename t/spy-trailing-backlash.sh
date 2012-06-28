@@ -18,7 +18,7 @@
 # semantic we expect.
 
 am_create_testdir=empty
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > Makefile << 'END'
 default:
@@ -63,7 +63,7 @@ END
 $MAKE
 $MAKE ok
 $MAKE ok | grep ':--#--:'
-$MAKE rule1 && Exit 1
+$MAKE rule1 && exit 1
 $MAKE rule2
 test -f sentinel
 $MAKE rule3

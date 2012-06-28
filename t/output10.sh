@@ -18,7 +18,7 @@
 # This is comparable to output9.test, but testing Makefile rules.
 # PR/411
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << END
 AC_SUBST([FOO], [top])

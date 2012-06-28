@@ -18,7 +18,7 @@
 # Lex + C++ support for a program built only from lex sources.
 
 required='c++ yacc'
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CXX
@@ -101,9 +101,9 @@ test -f bar.cxx
 
 if cross_compiling; then :; else
   echo a | ./foo
-  echo b | ./foo && Exit 1
+  echo b | ./foo && exit 1
   echo x | ./bar
-  echo y | ./bar && Exit 1
+  echo y | ./bar && exit 1
   : # Don't trip on 'set -e'.
 fi
 

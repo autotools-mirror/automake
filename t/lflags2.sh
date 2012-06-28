@@ -19,7 +19,7 @@
 # Please keep this in sync with the sister tests lflags.test, yflags.test
 # and yflags2.test.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >fake-lex <<'END'
 #!/bin/sh
@@ -49,8 +49,8 @@ END
 $ACLOCAL
 $AUTOMAKE -a
 
-grep '\$(LFLAGS).*\$(bar_LFLAGS)' Makefile.in && Exit 1
-grep '\$(LFLAGS).*\$(AM_LFLAGS)' Makefile.in && Exit 1
+grep '\$(LFLAGS).*\$(bar_LFLAGS)' Makefile.in && exit 1
+grep '\$(LFLAGS).*\$(AM_LFLAGS)' Makefile.in && exit 1
 
 : > foo.ll
 : > bar.l++

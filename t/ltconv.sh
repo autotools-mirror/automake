@@ -18,7 +18,7 @@
 # This example is taken from the manual.
 
 required='cc native libtoolize'
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >>configure.ac <<'END'
 AC_PROG_CC
@@ -134,7 +134,7 @@ test -f installcheck-ok
 rm -f installcheck-ok
 
 find empty -type f -print > empty.lst
-test -s empty.lst && { cat empty.lst; Exit 1; }
+test -s empty.lst && { cat empty.lst; exit 1; }
 
 $MAKE clean
 test ! -f libtop.la
@@ -151,7 +151,7 @@ rm -f installcheck-ok
 $MAKE uninstall
 for d in lib bin; do
   find $d -type f -print > $d.lst
-  test -s $d.lst && { cat $d.lst; Exit 1; }
+  test -s $d.lst && { cat $d.lst; exit 1; }
   : For shells with busted 'set -e'.
 done
 

@@ -17,7 +17,7 @@
 # Another check for README-alpha support.  This time it is requested
 # from configure.ac.  Report from Akim Demaille.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > configure.ac << 'END'
 AC_INIT([alpha], [1.0b])

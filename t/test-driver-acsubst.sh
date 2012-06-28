@@ -17,7 +17,7 @@
 # parallel-tests:
 #  - LOG_DRIVER variables can be AC_SUBST'd
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 mkdir test-drivers
 
@@ -66,7 +66,7 @@ $AUTOCONF
 cat > foo <<'END'
 #!/bin/sh
 echo "PASS: from $0"
-exit 1 # Exit status should be ignored by the trivial-test-driver.
+exit 1 # exit status should be ignored by the trivial-test-driver.
 END
 
 cat > bar.test <<'END'
@@ -88,7 +88,7 @@ cat test-suite.log
 cat foo.log
 cat bar.log
 cat baz.log
-test $st -eq 0 || Exit 1
+test $st -eq 0 || exit 1
 count_test_results total=3 pass=1 fail=0 skip=1 xfail=1 xpass=0 error=0
 
 :

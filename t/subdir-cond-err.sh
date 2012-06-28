@@ -16,7 +16,7 @@
 
 # Check SUBDIRS set based on conditionals.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AM_CONDITIONAL([TEST], [true])

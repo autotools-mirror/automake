@@ -21,7 +21,7 @@
 # limitation should be explained in depth in comments in file
 # 'lib/am/distdir.am').
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 echo AC_OUTPUT >> configure.ac
 
@@ -38,7 +38,7 @@ cd build
 ../configure
 
 echo bad > filename-that-is-easy-to-grep
-$MAKE distdir 2>stderr && { cat stderr >&2; Exit 1; }
+$MAKE distdir 2>stderr && { cat stderr >&2; exit 1; }
 cat stderr >&2
 grep 'filename-that-is-easy-to-grep' stderr
 

@@ -86,22 +86,19 @@ sub line_match ($$)
 sub write_wrapper_script ($$$)
 {
   my ($file_handle, $wrapped_test, $shell_setup_code, $creator_name) = @_;
-  # FIXME: we use some creative quoting in the generated scripts,
-  # FIXME: to please maintainer-check.
   print $file_handle unindent <<EOF;
     #! /bin/sh
     # This file has been automatically generated.  DO NOT EDIT BY HAND!
-    . ./defs-static || exit '99';
+    . ./defs-static || exit 1
     $shell_setup_code
     w="\$am_top_srcdir/$wrapped_test"
     if test -f "\$w"; then
       echo "\$0: will source '\$w'"
       . "\$w"
-      exit "\$?"
-    else
-      echo "\$0: cannot find wrapped test '\$w'" >&2
-      exit '99'
+      exit \$?
     fi
+    echo "\$0: cannot find wrapped test '\$w'" >&2
+    exit 99
 EOF
 }
 
@@ -356,7 +353,7 @@ foreach my $lt (TRUE, FALSE)
               # Automatically generated test.  DO NOT EDIT BY HAND!
               @vars_init
               required="@required"
-              . ./defs || Exit 1
+              . ./defs || exit 1
               plan_ $planned
               . "\$am_testauxdir/depcomp.sh"; exit "\$?"
 EOF

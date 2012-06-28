@@ -19,7 +19,7 @@
 # levels are "catch-all warnings" (such as '-Wall' and '-Wnone').
 # Since we are at it, also throw in *.am and *.m4 file inclusions.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 # We want complete control over automake options.
 AUTOMAKE=$am_original_AUTOMAKE

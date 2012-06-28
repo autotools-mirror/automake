@@ -17,7 +17,7 @@
 # Long lines of = and += should be wrapped.
 # Report from Simon Josefsson.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 i=0
 while test $i -lt 30; do

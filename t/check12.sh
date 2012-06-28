@@ -19,7 +19,7 @@
 
 # For gen-testsuite-part: ==> try-with-serial-tests <==
 required=runtest
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_OUTPUT
@@ -158,15 +158,15 @@ for vpath in : false; do
   mv -f config-status.sav config.status
   ./config.status
 
-  NAIL=screw $MAKE check && Exit 1
+  NAIL=screw $MAKE check && exit 1
   test -f hammer.log
   test -f hammer.sum
   test -f spanner.log
   test -f spanner.sum
   grep 'FAIL: test_hammer' hammer.sum
-  grep 'FAIL:' spanner.sum && Exit 1
+  grep 'FAIL:' spanner.sum && exit 1
 
-  B_EXIT_STATUS=1 $MAKE check && Exit 1
+  B_EXIT_STATUS=1 $MAKE check && exit 1
   if test x"$am_serial_tests" != x"yes"; then
     cat test-suite.log
     cat a.log
@@ -175,21 +175,21 @@ for vpath in : false; do
     grep '^b\.test: exit status: 1$' b.log
     grep '^FAIL: b$' test-suite.log
     grep '^b\.test: exit status: 1$' test-suite.log
-    grep '^a\.test' test-suite.log && Exit 1
+    grep '^a\.test' test-suite.log && exit 1
     : For shells with busted 'set -e'.
   fi
 
-  CHECKLOCAL_EXIT_STATUS=1 $MAKE check && Exit 1
+  CHECKLOCAL_EXIT_STATUS=1 $MAKE check && exit 1
   grep 'check-local failed :-(' local.log
 
   env NAIL=screw B_EXIT_STATUS=23 CHECKLOCAL_EXIT_STATUS=1 \
-      $MAKE -k check && Exit 1
+      $MAKE -k check && exit 1
   test -f hammer.log
   test -f hammer.sum
   test -f spanner.log
   test -f spanner.sum
   grep 'FAIL: test_hammer' hammer.sum
-  grep 'FAIL:' spanner.sum && Exit 1
+  grep 'FAIL:' spanner.sum && exit 1
   if test x"$am_serial_tests" != x"yes"; then
     cat test-suite.log
     cat a.log
@@ -198,7 +198,7 @@ for vpath in : false; do
     grep '^b\.test: exit status: 23$' b.log
     grep '^FAIL: b$' test-suite.log
     grep '^b\.test: exit status: 23$' test-suite.log
-    grep '^a\.test' test-suite.log && Exit 1
+    grep '^a\.test' test-suite.log && exit 1
     : For shells with busted 'set -e'.
   fi
   grep 'check-local failed :-(' local.log

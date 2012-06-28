@@ -16,7 +16,7 @@
 
 # Test to make sure line numbers are correct in some error reports.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 echo 'AM_CONDITIONAL(FOO, true)' >> configure.ac
 

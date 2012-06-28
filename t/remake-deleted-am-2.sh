@@ -18,7 +18,7 @@
 # of the "deleted header problem".  This test checks deeper inclusion
 # stacks, and use VPATH builds.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 echo AC_OUTPUT >> configure.ac
 
@@ -60,7 +60,7 @@ echo '# this is baz' > $srcdir/baz.am
 rm -f $srcdir/fnord.am
 $MAKE
 # Sanity checks.
-$FGREP 'you are not seeing this' $srcdir/Makefile.in Makefile && Exit 1
+$FGREP 'you are not seeing this' $srcdir/Makefile.in Makefile && exit 1
 $FGREP 'this is baz' $srcdir/Makefile.in
 $FGREP 'this is baz' Makefile
 
@@ -69,7 +69,7 @@ rm -rf $srcdir/sub $srcdir/foo.am $srcdir/baz.am
 echo '# no more inclusions' > $srcdir/Makefile.am
 $MAKE
 # Sanity checks.
-$EGREP 'this is (foo|bar|baz)' Makefile $srcdir/Makefile.in && Exit 1
+$EGREP 'this is (foo|bar|baz)' Makefile $srcdir/Makefile.in && exit 1
 $FGREP 'no more inclusions' Makefile
 
 :

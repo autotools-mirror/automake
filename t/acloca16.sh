@@ -18,7 +18,7 @@
 # evaluated.
 
 am_create_testdir=empty
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > configure.ac << 'END'
 AC_SUBST([POM])
@@ -31,6 +31,6 @@ AC_DEFUN([AM_SOME_MACRO],
 EOF
 
 $ACLOCAL -I m4
-grep m4/some.m4 aclocal.m4 && Exit 1
+grep m4/some.m4 aclocal.m4 && exit 1
 
 :

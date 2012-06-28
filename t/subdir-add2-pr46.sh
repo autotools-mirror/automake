@@ -19,7 +19,7 @@
 # when make is run from the top-level directory.
 # PR automake/46
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 m4_include([confiles.m4])

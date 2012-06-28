@@ -19,7 +19,7 @@
 # (related to PR/37)
 
 required='cc libtoolize yacc'
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >>configure.ac <<EOF
 AC_PROG_CC

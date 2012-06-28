@@ -16,7 +16,7 @@
 
 # Make sure we warn about possible variable typos when we should.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 : > ltmain.sh
 
@@ -86,11 +86,11 @@ $AUTOCONF
 $AUTOMAKE -a
 
 ./configure
-$MAKE nihil 2>stderr && { cat stderr >&2; Exit 1; }
+$MAKE nihil 2>stderr && { cat stderr >&2; exit 1; }
 cat stderr >&2
 
 $FGREP 'as canonical' stderr \
-  | $EGREP -v " '(foo|libfoo_a|libbar_la)' " && Exit 1
+  | $EGREP -v " '(foo|libfoo_a|libbar_la)' " && exit 1
 test 36 -eq $(grep -c 'variable.*is defined but' stderr)
 
 # If matching programs or libraries are defined, all errors should

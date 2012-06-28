@@ -17,7 +17,7 @@
 # Test to make sure multiple source files with the same object
 # file causes error.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > Makefile.am << 'END'
 bin_PROGRAMS = zardoz

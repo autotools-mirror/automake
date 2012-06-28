@@ -19,7 +19,7 @@
 # check that this still works when we override $(TESTS) at make runtime.
 # See also related tests 'test-driver-custom-multitest-recheck.test'.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cp "$am_testauxdir"/trivial-test-driver . \
   || fatal_ "failed to fetch auxiliary script trivial-test-driver"
@@ -70,6 +70,7 @@ $AUTOCONF
 $AUTOMAKE -a
 
 for vpath in : false; do
+
   if $vpath; then
     mkdir build
     cd build
@@ -81,7 +82,7 @@ for vpath in : false; do
   $srcdir/configure
 
   : Run the tests for the first time.
-  $MAKE check >stdout && { cat stdout; Exit 1; }
+  $MAKE check >stdout && { cat stdout; exit 1; }
   cat stdout
   # All the test scripts should have run.
   test -f a.run
@@ -92,7 +93,7 @@ for vpath in : false; do
   rm -f *.run
 
   : An empty '$(TESTS)' means that no test should be run.
-  $MAKE TESTS= recheck >stdout || { cat stdout; Exit 1; }
+  $MAKE TESTS= recheck >stdout || { cat stdout; exit 1; }
   cat stdout
   count_test_results total=0 pass=0 fail=0 xpass=0 xfail=0 skip=0 error=0
   test ! -r a.run
@@ -100,7 +101,7 @@ for vpath in : false; do
   test ! -r c.run
 
   : a.test was successful the first time, no need to re-run it.
-  $MAKE TESTS=a.test recheck >stdout || { cat stdout; Exit 1; }
+  $MAKE TESTS=a.test recheck >stdout || { cat stdout; exit 1; }
   cat stdout
   count_test_results total=0 pass=0 fail=0 xpass=0 xfail=0 skip=0 error=0
   test ! -r a.run
@@ -109,7 +110,7 @@ for vpath in : false; do
 
   : b.test failed, it should be re-run.  And make it pass this time.
   echo OK > b.ok
-  $MAKE TESTS=b recheck >stdout || { cat stdout; Exit 1; }
+  $MAKE TESTS=b recheck >stdout || { cat stdout; exit 1; }
   cat stdout
   test ! -r a.run
   test -f b.run
@@ -119,13 +120,13 @@ for vpath in : false; do
   rm -f *.run
 
   : No need to re-run a.test or b.test anymore.
-  $MAKE TESTS=b recheck >stdout || { cat stdout; Exit 1; }
+  $MAKE TESTS=b recheck >stdout || { cat stdout; exit 1; }
   cat stdout
   count_test_results total=0 pass=0 fail=0 xpass=0 xfail=0 skip=0 error=0
   test ! -r a.run
   test ! -r b.run
   test ! -r c.run
-  $MAKE TESTS='a.test b.test' recheck >stdout || { cat stdout; Exit 1; }
+  $MAKE TESTS='a.test b.test' recheck >stdout || { cat stdout; exit 1; }
   cat stdout
   count_test_results total=0 pass=0 fail=0 xpass=0 xfail=0 skip=0 error=0
   test ! -r a.run
@@ -138,7 +139,7 @@ for vpath in : false; do
   # Use 'echo' here, since Solaris 10 /bin/sh would try to optimize
   # a ':' away after the first iteration, even if it is redirected.
   echo dummy > c.err
-  $MAKE TESTS='a.test c' recheck >stdout && { cat stdout; Exit 1; }
+  $MAKE TESTS='a.test c' recheck >stdout && { cat stdout; exit 1; }
   cat stdout
   count_test_results total=1 pass=0 fail=0 xpass=0 xfail=0 skip=0 error=1
   test ! -r a.run
@@ -151,7 +152,7 @@ for vpath in : false; do
   : This time, make it pass
   # Use 'echo', not ':'; see comments above for why.
   echo dummy > c.ok
-  $MAKE TESTS='c.test a.test' recheck >stdout || { cat stdout; Exit 1; }
+  $MAKE TESTS='c.test a.test' recheck >stdout || { cat stdout; exit 1; }
   cat stdout
   count_test_results total=1 pass=1 fail=0 xpass=0 xfail=0 skip=0 error=0
   test ! -r a.run
@@ -162,7 +163,7 @@ for vpath in : false; do
 
   : Nothing should be rerun anymore, as all tests have been eventually
   : successful.
-  $MAKE recheck >stdout || { cat stdout; Exit 1; }
+  $MAKE recheck >stdout || { cat stdout; exit 1; }
   cat stdout
   count_test_results total=0 pass=0 fail=0 xpass=0 xfail=0 skip=0 error=0
   test ! -r a.run

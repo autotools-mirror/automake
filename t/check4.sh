@@ -17,7 +17,7 @@
 # Make sure 'make -k check' processes all directories.
 
 # For gen-testsuite-part: ==> try-with-serial-tests <==
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_CONFIG_FILES([dir/Makefile])
@@ -51,18 +51,18 @@ $AUTOMAKE --add-missing
 
 ./configure --prefix "$(pwd)/inst"
 
-$MAKE check >stdout && { cat stdout; Exit 1; }
+$MAKE check >stdout && { cat stdout; exit 1; }
 cat stdout
 grep '^FAIL: fail\.sh *$' stdout
-grep '^PASS: ok\.sh *$' stdout && Exit 1
+grep '^PASS: ok\.sh *$' stdout && exit 1
 
-$MAKE -k check >stdout && { cat stdout; Exit 1; }
+$MAKE -k check >stdout && { cat stdout; exit 1; }
 cat stdout
 grep '^FAIL: fail\.sh *$' stdout
 grep '^PASS: ok\.sh *$' stdout
 
 # Should also works when -k is not in first position.
-$MAKE -s -k check >stdout && { cat stdout; Exit 1; }
+$MAKE -s -k check >stdout && { cat stdout; exit 1; }
 cat stdout
 grep '^FAIL: fail\.sh *' stdout
 grep '^PASS: ok\.sh *' stdout
@@ -70,7 +70,7 @@ grep '^PASS: ok\.sh *' stdout
 # Try with a long-option that do not have a short option equivalent
 # (here, --no-print-directory).  That should cause all options to
 # appear verbatim in MAKEFLAGS.
-$MAKE --no-print-directory -k check >stdout && { cat stdout; Exit 1; }
+$MAKE --no-print-directory -k check >stdout && { cat stdout; exit 1; }
 cat stdout
 grep '^FAIL: fail\.sh *$' stdout
 grep '^PASS: ok\.sh *$' stdout

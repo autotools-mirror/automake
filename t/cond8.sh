@@ -17,7 +17,7 @@
 # Test to make sure _PROGRAMS conditionals can be written in a useful
 # way.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CC
@@ -61,7 +61,7 @@ cp x.c y.c
 instdir=$(pwd)/_inst || fatal_ "cannot get current directory"
 
 # Skip the rest of the test in case of e.g. missing C compiler.
-./configure --prefix="$instdir" x=yes || Exit $?
+./configure --prefix="$instdir" x=yes || exit $?
 $MAKE install
 $MAKE get-built
 $MAKE get-installed

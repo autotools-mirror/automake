@@ -17,7 +17,7 @@
 # TAP support:
 #  - empty diagnostic messages are discarder
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 . "$am_testauxdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"
 
@@ -30,11 +30,11 @@ ok 1$
 #   ${tab} $tab${tab}$
 END
 
-$MAKE check >stdout || { cat stdout; Exit 1; }
+$MAKE check >stdout || { cat stdout; exit 1; }
 cat stdout
 
 grep '^PASS:.*all\.test' stdout # Sanity check.
-grep '#.*all\.test' stdout && Exit 1
-grep "all\.test[ $tab]*:[ $tab]*$" stdout && Exit 1
+grep '#.*all\.test' stdout && exit 1
+grep "all\.test[ $tab]*:[ $tab]*$" stdout && exit 1
 
 :

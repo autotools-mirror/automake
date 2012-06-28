@@ -16,7 +16,7 @@
 
 # Test to make sure config headers in subdirectories are cleaned.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_CONFIG_HEADERS([sub/config.h:sub/config.hin])
@@ -35,6 +35,6 @@ test -f sub/stamp-h1
 $MAKE clean
 test -f sub/stamp-h1
 $MAKE distclean
-test -f sub/stamp-h1 && Exit 1
+test -f sub/stamp-h1 && exit 1
 
 :

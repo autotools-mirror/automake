@@ -19,7 +19,7 @@
 # any '+=' appending to it gets overridden as well.
 
 am_create_testdir=empty
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > Makefile << 'END'
 var0 += foo
@@ -48,7 +48,7 @@ END
 
 checkit ()
 {
-  $MAKE "$@" 2>stderr && test ! -s stderr || { cat stderr >&2; Exit 1; }
+  $MAKE "$@" 2>stderr && test ! -s stderr || { cat stderr >&2; exit 1; }
 }
 
 checkit test1

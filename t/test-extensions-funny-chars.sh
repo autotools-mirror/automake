@@ -17,7 +17,7 @@
 # Make sure that Automake can handle "funny chars" in TEST_EXTENSIONS,
 # as long as they can be used in GNU make variable names.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 fetch_tap_driver
 
@@ -93,8 +93,8 @@ cat baz.log
 grep '@K @K @K' baz.log
 cat bar.log
 cat zardoz.log
-grep 'Hello Zardoz' zardoz.log && Exit 1
-test $st -eq 0 || Exit 1
+grep 'Hello Zardoz' zardoz.log && exit 1
+test $st -eq 0 || exit 1
 count_all
 
 $MAKE clean
@@ -114,18 +114,18 @@ test ! -f bar.log
 test ! -f baz.log
 cat zardoz.log
 grep 'Hello Zardoz' zardoz.log
-test $st -gt 0 || Exit 1
+test $st -gt 0 || exit 1
 
-$MAKE recheck >stdout || { cat stdout; Exit 1; }
+$MAKE recheck >stdout || { cat stdout; exit 1; }
 cat stdout
 count_test_results total=1 pass=0 fail=0 skip=0 xfail=1 xpass=0 error=0
 grep '^XFAIL: zardoz.l!Nu\.x$' stdout
 
-$MAKE recheck >stdout || { cat stdout; Exit 1; }
+$MAKE recheck >stdout || { cat stdout; exit 1; }
 cat stdout
 count_test_results total=0 pass=0 fail=0 skip=0 xfail=0 xpass=0 error=0
 
-$MAKE distcheck >stdout || { cat stdout; Exit 1; }
+$MAKE distcheck >stdout || { cat stdout; exit 1; }
 cat stdout
 count_all
 

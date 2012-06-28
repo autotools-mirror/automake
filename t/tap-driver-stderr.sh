@@ -19,7 +19,7 @@
 
 required=non-root
 am_create_testdir=empty
-. ./defs || Exit 1
+. ./defs || exit 1
 
 fetch_tap_driver
 
@@ -41,7 +41,7 @@ for suf in trs log; do
   cat $tst.trs || :
   test $st -eq 0
 
-  $FGREP 'Hello, World!' stderr stdout && Exit 1
+  $FGREP 'Hello, World!' stderr stdout && exit 1
   $FGREP $tst.$suf stderr
 
 done

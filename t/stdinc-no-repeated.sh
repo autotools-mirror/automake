@@ -18,7 +18,7 @@
 # compiler invocation.
 
 required=cc
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CC
@@ -36,17 +36,17 @@ $AUTOMAKE --add-missing
 mkdir build
 cd build
 ../configure
-$MAKE V=1 > stdout || { cat stdout; Exit 1; }
+$MAKE V=1 > stdout || { cat stdout; exit 1; }
 cat stdout
 grep '.*-I *\. .*-I *\.\. ' stdout
-grep '.*-I *\. .*-I *\. ' stdout && Exit 1
+grep '.*-I *\. .*-I *\. ' stdout && exit 1
 cd ..
 
 # Test with $builddir = $srcdir
 ./configure
-$MAKE V=1 > stdout || { cat stdout; Exit 1; }
+$MAKE V=1 > stdout || { cat stdout; exit 1; }
 cat stdout
 grep '.*-I *\.  ' stdout
-grep '.*-I *\..*-I *\.' stdout && Exit 1
+grep '.*-I *\..*-I *\.' stdout && exit 1
 
 :

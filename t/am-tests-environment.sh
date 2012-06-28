@@ -17,7 +17,7 @@
 # parallel-tests: check AM_TESTS_ENVIRONMENT support, and its
 # interactions with TESTS_ENVIRONMENT.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_MKDIR_P
@@ -74,16 +74,16 @@ $AUTOMAKE -a
 
 ./configure
 
-TESTS_ENVIRONMENT='BAR=1' $MAKE check || { debug_info; Exit 1; }
+TESTS_ENVIRONMENT='BAR=1' $MAKE check || { debug_info; exit 1; }
 minicheck
 miniclean
 
-TESTS_ENVIRONMENT='BAR=2' $MAKE check && { debug_info; Exit 1; }
+TESTS_ENVIRONMENT='BAR=2' $MAKE check && { debug_info; exit 1; }
 minicheck
 miniclean
 
 echo 'BAR=1 && export BAR' > test-env.sh
-$MAKE check || { debug_info; Exit 1; }
+$MAKE check || { debug_info; exit 1; }
 minicheck
 $MAKE distcheck
 

@@ -18,7 +18,7 @@
 
 required=libtoolize
 am_create_testdir=empty
-. ./defs || Exit 1
+. ./defs || exit 1
 
 ## Autotools Input Files.
 
@@ -329,7 +329,7 @@ if ! cross_compiling; then
     [Hello ObjC, world ObjC]
     [Hello ObjC++, world ObjC++]
 END
-  ./play > got || { cat got; Exit 1; }
+  ./play > got || { cat got; exit 1; }
   cat exp
   cat got
   diff exp got

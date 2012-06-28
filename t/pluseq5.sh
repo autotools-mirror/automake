@@ -16,7 +16,7 @@
 
 # Test for another '+=' problem.  Report from Brian Jones.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AM_CONDITIONAL([CHECK], [true])

@@ -17,7 +17,7 @@
 # Automake do not complain about nor messes up GNU make specific
 # variable assignments (":=" and "?=").
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 echo AC_OUTPUT >> configure.ac
 

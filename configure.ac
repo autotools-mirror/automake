@@ -264,6 +264,9 @@ exit 77" >&AS_MESSAGE_LOG_FD 2>&1; test $? -eq 77; }
 # We require that the shell can correctly trap EXIT when 'set -e' is in
 # effect (OSF1/Tru64 sh failed to do so, see commit v1.10b-52-g9fe8259).
 #
+# We want to able to define shell aliases with the same name of shell
+# builtins.
+#
 # We also prefer shells that, when 'set -x' is in effect, do not also
 # redirect traces upon stderr redirections.  For example,
 #  $ set -x; echo x 2>file
@@ -324,6 +327,14 @@ AC_DEFUN([_AM_CHECK_CANDIDATE_SHELL],
       ["set -x" corrupts stderr],
       [(set -x; P=1 true 2>&3) 3>&1 2>/dev/null | grep P=1],
       [am_score=9], [])
+
+    echo 'alias false=echo' > conftest-alias.sh
+    echo 'false && test "$(false 97)" = 97' >> conftest-alias.sh
+    _AM_CHECK_SHELL_FEATURE([$1],
+      [supports alias named like shell builtins],
+      [. ./conftest-alias.sh],
+      [rm -f conftest-alias.sh],
+      [rm -f conftest-alias.sh; am_score=1; break])
 
     break
   done])

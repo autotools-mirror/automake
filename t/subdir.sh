@@ -16,7 +16,7 @@
 
 # Test to make sure install-sh is correctly found in subdirs.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 mkdir zot
 

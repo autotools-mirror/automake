@@ -17,7 +17,7 @@
 # Test that automake complains properly when texinfo input files
 # specify output info files with an invalid extension.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > Makefile.am << 'END'
 info_TEXINFOS = foo.texi bar.texi baz.texi

@@ -16,7 +16,7 @@
 
 # Test to make sure no-dist option works.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CC
@@ -31,7 +31,7 @@ END
 $ACLOCAL
 $AUTOMAKE
 
-grep '^dist:' Makefile.in && Exit 1
-grep 'am__dist_sources' Makefile.in && Exit 1
+grep '^dist:' Makefile.in && exit 1
+grep 'am__dist_sources' Makefile.in && exit 1
 
 :

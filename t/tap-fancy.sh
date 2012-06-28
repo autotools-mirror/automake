@@ -17,7 +17,7 @@
 # TAP support: some unusual forms for valid TAP input.
 # See also related test 'tap-fancy2.test'.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 . "$am_testauxdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"
 
@@ -68,7 +68,7 @@ not ok!#TODO?
 ok~#TODO
 END
 
-$MAKE check >stdout && { cat stdout; Exit 1; }
+$MAKE check >stdout && { cat stdout; exit 1; }
 cat stdout
 
 count_test_results total=21 pass=6 fail=6 xfail=4 xpass=1 skip=4 error=0
@@ -91,7 +91,7 @@ ok $weirdchars # SKIP
 Bail out! $weirdchars
 END
 
-$MAKE check >stdout && { cat stdout; Exit 1; }
+$MAKE check >stdout && { cat stdout; exit 1; }
 cat stdout
 
 count_test_results total=6 pass=1 fail=1 xfail=1 xpass=1 skip=1 error=1
@@ -118,7 +118,7 @@ ok # SKIP $bs
 Bail out! $bs
 END
 
-$MAKE check >stdout && { cat stdout; Exit 1; }
+$MAKE check >stdout && { cat stdout; exit 1; }
 cat stdout
 
 count_test_results total=6 pass=1 fail=1 xfail=1 xpass=1 skip=1 error=1

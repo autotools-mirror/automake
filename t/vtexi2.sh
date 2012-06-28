@@ -19,7 +19,7 @@
 #   version.texi gets listed as a dependency for the .info file but
 #   not the .dvi file.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > Makefile.am << 'END'
 info_TEXINFOS = zardoz.texi

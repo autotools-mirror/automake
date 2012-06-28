@@ -16,7 +16,7 @@
 
 # Make sure different subpackages may share files and directories.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >Makefile.am <<'END'
 SUBDIRS = subpkg

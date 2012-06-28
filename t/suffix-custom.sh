@@ -21,12 +21,12 @@
 # real-world third party compiler (Go from Google).
 
 required=cc
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac <<'END'
 AC_CONFIG_HEADERS([config.h])
-AC_DEFINE([EXIT_OK], [0], [Exit status for success])
-AC_DEFINE([EXIT_KO], [1], [Exit status for failure])
+AC_DEFINE([EXIT_OK], [0], [The exit status for success])
+AC_DEFINE([EXIT_KO], [1], [The exit status for failure])
 AC_PROG_CC
 AC_OUTPUT
 END

@@ -21,7 +21,7 @@
 # "more modern" behaviour in our awk TAP driver.
 
 am_tap_implementation=shell
-. ./defs || Exit 1
+. ./defs || exit 1
 
 . "$am_testauxdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"
 
@@ -50,7 +50,7 @@ ERROR: b.test - Bail out!
 ERROR: c.test - Bail out! FUBAR!
 END
 
-$MAKE TESTS='a.test b.test c.test' check >stdout && { cat stdout; Exit 1; }
+$MAKE TESTS='a.test b.test c.test' check >stdout && { cat stdout; exit 1; }
 cat stdout
 
 count_test_results total=5 pass=1 fail=0 xpass=0 xfail=0 skip=1 error=3

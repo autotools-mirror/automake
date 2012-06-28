@@ -18,7 +18,7 @@
 # We use that assumption in some of our rules, so it better explicitly
 # check that it truly holds.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 ocwd=`pwd` || fatal_ "couldn't get current working directory"
 
@@ -109,8 +109,8 @@ do_test ()
   cp $srcdir/mk Makefile
   $MAKE -k all VPATH=$srcdir
   if test "$srcdir" != "."; then
-    test ! -f $srcdir/bar && test ! -d $srcdir/bar || Exit 1
-    test ! -f $srcdir/he && test ! -d $srcdir/he || Exit 1
+    test ! -f $srcdir/bar && test ! -d $srcdir/bar || exit 1
+    test ! -f $srcdir/he && test ! -d $srcdir/he || exit 1
   fi
   diff $srcdir/one.a one.b
   diff $srcdir/two.a2 two.b2

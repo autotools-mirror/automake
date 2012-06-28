@@ -23,7 +23,7 @@
 #  - the reasons for TODO and SKIP, if present, are nicely printed in
 #    the testsuite progress output
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 . "$am_testauxdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"
 
@@ -60,7 +60,7 @@ done; done; done; done; done >> all.test
 
 cat all.test # For debugging.
 
-$MAKE check >stdout || { cat stdout; Exit 1; }
+$MAKE check >stdout || { cat stdout; exit 1; }
 cat stdout
 
 count_test_results total=256 pass=0 fail=0 xpass=0 xfail=128 skip=128 error=0
@@ -82,7 +82,7 @@ ok 8 - SKIP
 ok 9
 END
 
-$MAKE check >stdout || { cat stdout; Exit 1; }
+$MAKE check >stdout || { cat stdout; exit 1; }
 cat stdout
 
 count_test_results total=9 pass=9 fail=0 xpass=0 xfail=0 skip=0 error=0

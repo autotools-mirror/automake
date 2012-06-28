@@ -19,7 +19,7 @@
 # present since libtool 1.9b, circa 2004).
 
 required='cc libtoolize'
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >>configure.ac <<'END'
 AC_PROG_CC
@@ -49,13 +49,13 @@ libtoolize
   if test $? -eq 63; then
     skip_ "libtool is too old (probably < 2.0)"
   else
-    Exit 1
+    exit 1
   fi
 }
-$EGREP 'LT_(INIT|PREREQ)' configure && Exit 1 # Sanity check.
+$EGREP 'LT_(INIT|PREREQ)' configure && exit 1 # Sanity check.
 $AUTOMAKE -a
 
-./configure --prefix="$(pwd)/inst" >stdout || { cat stdout; Exit 1; }
+./configure --prefix="$(pwd)/inst" >stdout || { cat stdout; exit 1; }
 cat stdout
 grep '^checking.*dlfcn\.h.* no$' stdout || grep '^checking.*dlopen' stdout
 

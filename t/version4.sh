@@ -16,7 +16,7 @@
 
 # Test to make sure we are compatible with the 1.4-p1 series.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > Makefile.am << 'END'
 AUTOMAKE_OPTIONS = 1.4-p3

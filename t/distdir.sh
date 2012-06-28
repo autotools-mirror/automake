@@ -21,7 +21,7 @@
 # Also test the situation when the lsit of distributed files contains
 # a directory and a file in it, and repeated directories.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_OUTPUT
@@ -64,7 +64,7 @@ cd build
 ../configure
 $MAKE distdir
 # Check to make sure 'foo' isn't made in build directory.
-test -d foo && Exit 1
+test -d foo && exit 1
 
 rm -rf $me-1.0
 # Remove the dot from VERSION for the next grep.
@@ -73,7 +73,7 @@ cat stdout
 
 # Make sure no './' appear in the directory names.  srcdir is '..', so
 # this also checks that no directory is created in the source tree.
-grep 'MKDIR_P.*\.' stdout && Exit 1
+grep 'MKDIR_P.*\.' stdout && exit 1
 
 cd ..
 ./configure --prefix "$(pwd)"

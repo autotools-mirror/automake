@@ -17,7 +17,7 @@
 # Make sure a per-Makefile.am -Werror setting is not carried over
 # to another Makefile.am.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >>configure.ac <<\END
 AC_CONFIG_FILES([sub/Makefile])

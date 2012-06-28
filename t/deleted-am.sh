@@ -19,7 +19,7 @@
 # erroring out when a still-required file is missing.
 # See also discussion about automake bug#9768.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 echo AC_OUTPUT >> configure.ac
 
@@ -35,12 +35,12 @@ $AUTOMAKE
 $MAKE
 
 rm -f zardoz.am
-$MAKE 2>stderr && { cat stderr >&2; Exit 1; }
+$MAKE 2>stderr && { cat stderr >&2; exit 1; }
 cat stderr >&2
 # This error will come from automake, not make, so we can be stricter
 # in our grepping of it.
 grep 'cannot open.*zardoz\.am' stderr
-grep 'foobar\.am' stderr && Exit 1 # No spurious error, please.
+grep 'foobar\.am' stderr && exit 1 # No spurious error, please.
 
 # Try with one less indirection.
 : > foobar.am
@@ -48,7 +48,7 @@ $AUTOMAKE Makefile
 ./config.status Makefile
 $MAKE # Sanity check.
 rm -f foobar.am
-$MAKE 2>stderr && { cat stderr >&2; Exit 1; }
+$MAKE 2>stderr && { cat stderr >&2; exit 1; }
 cat stderr >&2
 # This error will come from automake, not make, so we can be stricter
 # in our grepping of it.

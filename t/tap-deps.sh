@@ -17,7 +17,7 @@
 # Basic TAP test protocol support:
 #  - dependencies between test scripts
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > Makefile.am << 'END'
 # The tests are *deliberately* listed in inverted order here.
@@ -62,7 +62,7 @@ END
 
 chmod a+x *.test
 
-$MAKE check >stdout || { cat stdout; Exit 1; }
+$MAKE check >stdout || { cat stdout; exit 1; }
 cat stdout
 
 count_test_results total=5 pass=5 fail=0 xpass=0 xfail=0 skip=0 error=0

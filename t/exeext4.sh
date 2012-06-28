@@ -18,7 +18,7 @@
 # programs, but not to @substitutions@.
 
 am_serial_tests=yes
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AM_CONDITIONAL([COND], [test -n "$cond"])

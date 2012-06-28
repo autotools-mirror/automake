@@ -20,7 +20,7 @@
 # and yflags2.test.
 
 required=cc
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >fake-lex <<'END'
 #!/bin/sh
@@ -50,8 +50,8 @@ END
 $ACLOCAL
 $AUTOMAKE -a
 
-grep '\$(LFLAGS).*\$(bar_LFLAGS)' Makefile.in && Exit 1
-grep '\$(LFLAGS).*\$(AM_LFLAGS)' Makefile.in && Exit 1
+grep '\$(LFLAGS).*\$(bar_LFLAGS)' Makefile.in && exit 1
+grep '\$(LFLAGS).*\$(AM_LFLAGS)' Makefile.in && exit 1
 
 : > foo.l
 : > bar.l

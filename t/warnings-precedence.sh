@@ -18,7 +18,7 @@
 # warnings specified later should take precedence over those specified
 # earlier.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 # We want (almost) complete control over automake options.
 AUTOMAKE="$am_original_AUTOMAKE -Werror"

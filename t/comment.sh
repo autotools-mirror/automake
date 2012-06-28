@@ -17,7 +17,7 @@
 # Make sure that '#' as start of word in AUTOMAKE_OPTIONS means
 # comment.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > Makefile.am << 'END'
 AUTOMAKE_OPTIONS = #no such option

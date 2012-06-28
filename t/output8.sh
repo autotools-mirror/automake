@@ -17,7 +17,7 @@
 # Check AC_CONFIG_FILES support for files starting with '../'.
 # Report from Bruno Haible.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 mkdir testdir
 cd testdir

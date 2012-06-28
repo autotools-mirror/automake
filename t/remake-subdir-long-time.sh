@@ -21,7 +21,7 @@
 # an explicit delay in the build process.
 # Suggestion by Ralf Wildenhues.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > configure.ac <<END
 AC_INIT([$me], [1.0])

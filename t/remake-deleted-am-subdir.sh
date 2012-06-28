@@ -18,7 +18,7 @@
 # of the "deleted header problem".  This test does the check when the
 # SUBDIRS variable is involved.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac <<'END'
 AC_CONFIG_FILES([sub1/Makefile sub2/Makefile])
@@ -56,7 +56,7 @@ echo '# this is sub1/Makefile.am' > sub1/Makefile.am
 rm -f sub1/bar.am
 $MAKE all
 # Sanity checks.
-$FGREP 'this is bar' sub1/Makefile.in sub1/Makefile && Exit 1
+$FGREP 'this is bar' sub1/Makefile.in sub1/Makefile && exit 1
 $FGREP 'this is sub1/Makefile.am' sub1/Makefile.in
 $FGREP 'this is sub1/Makefile.am' sub1/Makefile
 
@@ -68,7 +68,7 @@ done
 rm -f foo.am
 $MAKE all
 # Sanity checks.
-$FGREP 'this is foo' sub*/Makefile* Makefile* && Exit 1
+$FGREP 'this is foo' sub*/Makefile* Makefile* && exit 1
 for d in . sub1 sub2; do
   $FGREP "this is $d/Makefile.am" $d/Makefile.in
   $FGREP "this is $d/Makefile.am" $d/Makefile

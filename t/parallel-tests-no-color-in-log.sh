@@ -17,7 +17,7 @@
 # Colorized output from the testsuite report shouldn't end up in log files.
 
 required='grep-nonprint'
-. ./defs || Exit 1
+. ./defs || exit 1
 
 TERM=ansi; export TERM
 
@@ -32,13 +32,12 @@ TESTS = pass fail skip xpass xfail error
 XFAIL_TESTS = xpass xfail
 END
 
-# Creative quoting to please maintainer-check.
-echo exit '0' > pass
-echo exit '0' > xpass
-echo exit '1' > fail
-echo exit '1' > xfail
-echo exit '77' > skip
-echo exit '99' > error
+echo 'exit 0' > pass
+echo 'exit 0' > xpass
+echo 'exit 1' > fail
+echo 'exit 1' > xfail
+echo 'exit 77' > skip
+echo 'exit 99' > error
 
 $ACLOCAL
 $AUTOCONF
@@ -46,9 +45,9 @@ $AUTOMAKE --add-missing
 
 ./configure
 mv config.log config-log # Avoid possible false positives below.
-$MAKE check AM_COLOR_TESTS=always && Exit 1
+$MAKE check AM_COLOR_TESTS=always && exit 1
 # Not a useless use of cat; see above comments "grep-nonprinting"
 # requirement in 'test-init.sh'.
-cat *.log | grep "$esc" && Exit 1
+cat *.log | grep "$esc" && exit 1
 
 :

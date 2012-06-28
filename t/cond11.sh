@@ -18,7 +18,7 @@
 # This checks that, if LDADD is set from a conditional variable
 # and an AC_SUBST, the _DEPENDENCIES variable is set correctly.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_SUBST([CC], [false])

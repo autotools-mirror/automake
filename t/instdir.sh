@@ -18,7 +18,7 @@
 # This test only ensures this if $(foo_PRIMARY) is also empty, see
 # instdir2.test and siblings instdir-*.test for nonempty contents.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >>configure.ac <<'END'
 AC_SUBST([foodir], ['${datadir}'/foo])
@@ -65,9 +65,9 @@ test ! -d "$instdir"
 xMAKE install DESTDIR="$destdir"
 test ! -d "$instdir"
 test ! -d "$destdir"
-xMAKE uninstall > stdout || { cat stdout; Exit 1; }
+xMAKE uninstall > stdout || { cat stdout; exit 1; }
 cat stdout
-grep 'rm -f' stdout && Exit 1
+grep 'rm -f' stdout && exit 1
 xMAKE uninstall DESTDIR="$destdir"
 
 :

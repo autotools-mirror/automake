@@ -20,7 +20,7 @@
 # we won't have to ask him for more information to start analyzing the
 # failure (that had happened too many times in the past!).
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 st=0
 if test -d "$am_top_srcdir"/.git; then
@@ -54,9 +54,9 @@ if test $st -eq 0; then
   # This test SKIPs, so that all the information it has gathered and
   # printed will get unconditionally copied into the 'test-suite.log'
   # file.
-  Exit 77
+  exit 77
 fi
 
 # Some unexpected error occurred; this must be reported as an hard
 # error by the testsuite driver.
-Exit 99
+exit 99

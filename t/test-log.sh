@@ -22,7 +22,7 @@
 #  - VERBOSE environment variable support
 # Keep in sync with 'tap-log.test'.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac <<END
 AC_OUTPUT
@@ -88,7 +88,7 @@ $AUTOMAKE -a
 
 ./configure
 
-$MAKE TEST_SUITE_LOG=my.log check && Exit 1
+$MAKE TEST_SUITE_LOG=my.log check && exit 1
 ls -l # For debugging.
 test ! -f test-suite.log
 test ! -f global.log
@@ -99,7 +99,7 @@ for result in pass fail xfail xpass skip error; do
   $FGREP "$pmarker $result $pmarker" $result.log || st=1
   $FGREP "$cmarker $result $cmarker" $result.log || st=1
 done
-test $st -eq 0 || Exit 1
+test $st -eq 0 || exit 1
 cat my.log # For debugging.
 for result in xfail fail xpass skip error; do
   cat $result.log # For debugging.
@@ -121,7 +121,7 @@ have_rst_section ()
 }
 
 # Passed test scripts shouldn't be mentioned in the global log.
-$EGREP ':.*[^x]pass' my.log && Exit 1
+$EGREP ':.*[^x]pass' my.log && exit 1
 # But failing (expectedly or not) and skipped ones should.
 have_rst_section 'SKIP: skip'   my.log
 have_rst_section 'FAIL: fail'   my.log
@@ -146,7 +146,7 @@ test -f global.log
 
 rm -f *.log
 
-VERBOSE=yes $MAKE check >stdout && { cat stdout; Exit 1; }
+VERBOSE=yes $MAKE check >stdout && { cat stdout; exit 1; }
 cat stdout
 cat global.log
 test ! -f my.log
@@ -155,7 +155,7 @@ test ! -f test-suite.log
 # emitted on stdout.
 out=$(cat stdout)
 log=$(cat global.log)
-case $out in *"$log"*) ;; *) Exit 1;; esac
+case $out in *"$log"*) ;; *) exit 1;; esac
 
 touch error2.log test-suite.log my.log
 $MAKE clean

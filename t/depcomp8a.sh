@@ -20,7 +20,7 @@
 # same thing for libtool objects.
 
 required=cc
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CC
@@ -50,7 +50,7 @@ $AUTOMAKE -a
 grep include Makefile.in # For debugging.
 grep 'include.*\./\$(DEPDIR)/foo\.P' Makefile.in
 grep 'include.*[^a-zA-Z0-9_/]sub/\$(DEPDIR)/bar\.P' Makefile.in
-$EGREP 'include.*/(\.|sub)/\$\(DEPDIR\)' Makefile.in && Exit 1
+$EGREP 'include.*/(\.|sub)/\$\(DEPDIR\)' Makefile.in && exit 1
 
 $AUTOCONF
 # Don't reject slower dependency extractors, for better coverage.

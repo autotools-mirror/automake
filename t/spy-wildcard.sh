@@ -17,7 +17,7 @@
 # Check that the behaviour of the $(wildcard) builtin in corner cases
 # matches the assumptions done in our recipes.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 mkdir dir
 echo dummy > file

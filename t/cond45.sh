@@ -17,7 +17,7 @@
 # Check that redefinitions of AC_SUBST'ed AM_SUBST_NOTMAKE'd variables
 # are not diagnosed.  See cond24.test.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >>configure.ac <<EOF
 AC_SUBST([foo], [bar])
@@ -34,6 +34,6 @@ EOF
 
 $ACLOCAL
 AUTOMAKE_run
-grep 'foo was already defined' stderr && Exit 1
-grep '^foo =' Makefile.in && Exit 1
-Exit 0
+grep 'foo was already defined' stderr && exit 1
+grep '^foo =' Makefile.in && exit 1
+exit 0

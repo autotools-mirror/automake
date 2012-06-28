@@ -19,7 +19,7 @@
 # build system.
 
 required=cc
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CC
@@ -94,14 +94,14 @@ $AUTOMAKE -a
 $MAKE
 
 # If we remove the whitelisting, failure ensues.
-$MAKE AM_VARTYPOS_WHITELIST= 2>stderr && { cat stderr; Exit 1; }
+$MAKE AM_VARTYPOS_WHITELIST= 2>stderr && { cat stderr; exit 1; }
 cat stderr >&2
 grep "'copy_LDADD' is defined but no program" stderr
 grep "'remove_LDADD' is defined but no program" stderr
-$MAKE AM_VARTYPOS_WHITELIST=remove_LDADD 2>stderr && { cat stderr; Exit 1; }
+$MAKE AM_VARTYPOS_WHITELIST=remove_LDADD 2>stderr && { cat stderr; exit 1; }
 cat stderr >&2
 grep "'copy_LDADD' is defined but no program" stderr
-grep "remove_LDADD" stderr && Exit 1
+grep "remove_LDADD" stderr && exit 1
 
 # Sanity check the distribution.
 $MAKE distcheck

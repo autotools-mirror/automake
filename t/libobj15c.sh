@@ -16,7 +16,7 @@
 
 # Nonexistent sources for AC_LIBSOURCES should cause Automake to fail.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CC
@@ -45,6 +45,6 @@ grep 'configure\.ac:.*required file.*bazquux\.c.*' stderr
 : > foobar.c
 AUTOMAKE_fails
 grep 'configure\.ac:.*required file.*bazquux\.c.*' stderr
-grep 'foobar\.c' stderr && Exit 1
+grep 'foobar\.c' stderr && exit 1
 
 :

@@ -16,7 +16,7 @@
 
 # Make sure Automake does not emit a link rule for unknown languages.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > Makefile.am << 'END'
 AUTOMAKE_OPTIONS = no-exeext
@@ -31,6 +31,6 @@ END
 $ACLOCAL
 $AUTOMAKE -Wno-override
 
-grep '^meal.*:' Makefile.in | grep -v beef.meat && Exit 1
+grep '^meal.*:' Makefile.in | grep -v beef.meat && exit 1
 
-Exit 0
+exit 0

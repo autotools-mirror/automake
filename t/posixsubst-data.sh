@@ -17,7 +17,7 @@
 # Test that POSIX variable expansion '$(var:str=rpl)' works
 # in when used with the DATA primary.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_OUTPUT

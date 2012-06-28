@@ -21,7 +21,7 @@
 # Keep this in sync with sister test 'remake8b.test', which performs the
 # same checks for a VPATH build.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 mv -f configure.ac configure.stub
 

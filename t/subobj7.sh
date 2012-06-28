@@ -17,7 +17,7 @@
 # Test to make sure AM_CFLAGS appears in subdir compilation rule.
 # Report from Steve M. Robbins.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CC
@@ -33,6 +33,6 @@ END
 $ACLOCAL
 $AUTOMAKE --add-missing
 
-grep wish_CFLAGS Makefile.in && Exit 1
+grep wish_CFLAGS Makefile.in && exit 1
 
 :

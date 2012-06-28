@@ -18,7 +18,7 @@
 # PR/300
 
 required=cc
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_RANLIB
@@ -65,8 +65,8 @@ test -f inst/lib/subdir/libb.a
 
 $MAKE uninstall
 
-test -f inst/lib/liba.a && Exit 1
-test -f inst/lib/subdir/libb.a && Exit 1
+test -f inst/lib/liba.a && exit 1
+test -f inst/lib/subdir/libb.a && exit 1
 
 $MAKE install-strip
 

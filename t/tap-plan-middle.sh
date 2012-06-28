@@ -17,7 +17,7 @@
 # TAP support:
 #  - test plan preceding and/or following non-result TAP lines
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 . "$am_testauxdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"
 
@@ -74,7 +74,7 @@ tests=$(echo *.test)
 
 for tap_flags in "" "--comments"; do
   $MAKE check TEST_LOG_DRIVER_FLAGS="$tap_flags" TESTS="$tests" >stdout \
-    || { cat stdout; Exit 1; }
+    || { cat stdout; exit 1; }
   cat stdout
   count_test_results total=12 pass=7 xfail=2 skip=3 fail=0 xpass=0 error=0
 done

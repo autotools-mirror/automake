@@ -19,7 +19,7 @@
 # rules don't break in obvious ways in a slightly "heavier than usual"
 # setup.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 ocwd=$(pwd) || fatal_ "getting current working directory"
 
@@ -76,7 +76,7 @@ cd "$ocwd"
 for f in configure config.status $makefiles_list $bar_list; do
   $FGREP "$magic2" $f
 done
-$FGREP "$magic1" configure config.status $makefiles_list $bar_list && Exit 1
+$FGREP "$magic1" configure config.status $makefiles_list $bar_list && exit 1
 
 $MAKE distcheck
 

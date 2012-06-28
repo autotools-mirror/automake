@@ -18,7 +18,7 @@
 # This shouldn't happen with user input, as _AM_COND_* are not documented,
 # but better to be safe.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >>configure.ac <<'END'
 AM_CONDITIONAL([COND], [:])

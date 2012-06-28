@@ -33,7 +33,7 @@
 #  compilation.
 
 required='libtoolize gcc'
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CC
@@ -76,7 +76,7 @@ grep am_cv_CC_dependencies_compiler_type configure
 ./configure am_cv_CC_dependencies_compiler_type=dashmstdout
 
 $MAKE
-test -f librace.la && Exit 1
+test -f librace.la && exit 1
 $MAKE check
 
 # The failure we check usually occurs during the above build,

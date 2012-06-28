@@ -18,7 +18,7 @@
 # *_DEPENDENCIES when we should, and do not warn about them
 # when we should not.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 subdirs='ok1 ok2 ko1 ko2'
 mkdir $subdirs
@@ -85,19 +85,19 @@ $MAKE
 (cd ok2 && $MAKE)
 
 cd ko1
-$MAKE 2>stderr && { cat stderr >&2; Exit 1; }
+$MAKE 2>stderr && { cat stderr >&2; exit 1; }
 cat stderr >&2
 errgrep LOG
 errgrep TEST_LOG
 cd ..
 
 cd ko2
-$MAKE 2>stderr && { cat stderr >&2; Exit 1; }
+$MAKE 2>stderr && { cat stderr >&2; exit 1; }
 cat stderr >&2
 errgrep SH_LOG
 errgrep CONFIG
 errgrep CONFIGSTATUS
-$EGREP "'(TEST_)?LOG" stderr && Exit 1
+$EGREP "'(TEST_)?LOG" stderr && exit 1
 cd ..
 
 :

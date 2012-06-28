@@ -18,7 +18,7 @@
 # at configure time and/or at make time.
 
 required='cc yacc'
-. ./defs || Exit 1
+. ./defs || exit 1
 
 unset YFLAGS || :
 

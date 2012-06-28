@@ -17,7 +17,7 @@
 # Another test for a failing ":" in AC_OUTPUT.
 # Report from Maciej Stachowiak.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > configure.ac << 'END'
 AC_INIT([colon7], [1.0])
@@ -44,7 +44,7 @@ $ACLOCAL
 $AUTOMAKE
 
 # Should nowhere refer to 'bar.in'.
-$FGREP 'bar.in' Makefile.in subdir/Makefile.in && Exit 1
+$FGREP 'bar.in' Makefile.in subdir/Makefile.in && exit 1
 
 $AUTOCONF
 ./configure

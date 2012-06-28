@@ -18,7 +18,7 @@
 # with a dot (like "./Makefile"), since the remake rules might be subtly
 # broken in that case.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > configure.ac << END
 AC_INIT([$me], [1.0])
@@ -53,7 +53,7 @@ $sleep
 touch Makefile.am
 # Check that remake rules do truly break -- otherwise automake is
 # giving a bogus warning.
-$MAKE 2>stderr && { cat stderr >&2; Exit 1; }
+$MAKE 2>stderr && { cat stderr >&2; exit 1; }
 cat stderr >&2
 grep "config\\.status:.*invalid argument.*Makefile" stderr
 

@@ -20,7 +20,7 @@
 # Related to automake bug#9651.
 
 am_create_testdir=empty
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > configure.ac <<END
 AC_INIT([$me], [1.0])

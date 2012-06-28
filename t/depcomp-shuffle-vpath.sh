@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2010-2012 Free Software Foundation, Inc.
+# Copyright (C) 2012 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,6 +18,6 @@
 #  - VPATH build
 #  - no use of subdir objects
 
-. ./defs-static || exit '99'
+. ./defs-static || exit 99
 xdir='' vpath='yes'
 . "$am_testauxdir"/depcomp-shuffle.sh

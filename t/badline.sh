@@ -17,7 +17,7 @@
 # Test to make sure that line number and file name in error message
 # referring to variable is always correct.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > configure.ac << END
 AC_INIT([$me], [1.0])
@@ -28,6 +28,6 @@ END
 
 : > Makefile.am
 
-$ACLOCAL || Exit 1
+$ACLOCAL || exit 1
 AUTOMAKE_fails
 grep 'configure.ac:3:.*info_TEXINFOS' stderr

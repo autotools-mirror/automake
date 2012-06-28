@@ -16,7 +16,7 @@
 
 # Test to make sure things that cannot be dist_'ed are diagnosed.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 echo AC_OUTPUT >>configure.ac
 
@@ -29,4 +29,4 @@ $ACLOCAL
 AUTOMAKE_fails
 test 2 -eq $(grep -c 'dist.*forbidden' stderr)
 
-Exit 0
+exit 0

@@ -18,7 +18,7 @@
 # extension-less tests.  This is required to allow the user to have
 # a, say, 'all.test' test case even in the face of the 'all' target.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 echo AC_OUTPUT >> configure.ac
 

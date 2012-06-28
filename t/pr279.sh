@@ -24,7 +24,7 @@
 # fail with messages like:
 #       foo_DEPENDENCIES was already defined in condition TRUE, ...
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CC

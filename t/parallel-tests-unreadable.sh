@@ -17,7 +17,7 @@
 # Check that the testsuite driver copes well with unreadable '.log'
 # and '.trs' files.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 : > t
 chmod a-r t && test ! -r t || skip_ "you can still read unreadable files"
@@ -55,7 +55,7 @@ doit ()
   $MAKE check
   rm -f test-suite.log
   chmod a-r $*
-  $MAKE test-suite.log 2>stderr && { cat stderr >&2; Exit 1; }
+  $MAKE test-suite.log 2>stderr && { cat stderr >&2; exit 1; }
   cat stderr >&2
 }
 

@@ -19,7 +19,7 @@
 # See also the other similar tests 'remake-subdir*.test', and the
 # related test 'aclocal5.test'.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac <<'END'
 m4_include([subdirs.m4])

@@ -18,7 +18,7 @@
 # Likewise for the other install-* targets used for texinfo files.
 
 required='makeinfo tex texi2dvi'
-. ./defs || Exit 1
+. ./defs || exit 1
 
 dvips --help \
   || skip_ "dvips is missing"
@@ -63,9 +63,9 @@ test ! -d "$instdir"
 xMAKE install install-html install-dvi install-ps install-pdf DESTDIR="$destdir"
 test ! -d "$instdir"
 test ! -d "$destdir"
-xMAKE uninstall > stdout || { cat stdout; Exit 1; }
+xMAKE uninstall > stdout || { cat stdout; exit 1; }
 cat stdout
-grep 'rm -f' stdout && Exit 1
+grep 'rm -f' stdout && exit 1
 xMAKE uninstall DESTDIR="$destdir"
 
 :

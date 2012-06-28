@@ -19,7 +19,7 @@
 # Please keep this in sync with the sister tests yflags2.test, lflags.test
 # and lflags2.test.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >fake-yacc <<'END'
 #!/bin/sh
@@ -47,8 +47,8 @@ END
 $ACLOCAL
 $AUTOMAKE -a
 
-grep '\$(YFLAGS).*\$(bar_YFLAGS)' Makefile.in && Exit 1
-grep '\$(YFLAGS).*\$(AM_YFLAGS)' Makefile.in && Exit 1
+grep '\$(YFLAGS).*\$(bar_YFLAGS)' Makefile.in && exit 1
+grep '\$(YFLAGS).*\$(AM_YFLAGS)' Makefile.in && exit 1
 
 : > foo.y
 : > bar.y

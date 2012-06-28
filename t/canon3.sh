@@ -16,7 +16,7 @@
 
 # Yet another canonicalization test.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CC
@@ -31,6 +31,6 @@ END
 $ACLOCAL
 $AUTOMAKE
 
-$FGREP 'perm_number.c' Makefile.in && Exit 1
+$FGREP 'perm_number.c' Makefile.in && exit 1
 
 :

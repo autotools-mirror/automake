@@ -16,7 +16,7 @@
 
 # Test to make sure extensions are set correctly for various languages.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_F77
@@ -37,7 +37,7 @@ $AUTOMAKE
 $FGREP '%.$(OBJEXT)' Makefile.in  # For debugging.
 
 for ext in f for f90 f95 F F90 F95 r m mm upc; do
-   grep "%.*: %$ext" Makefile.in && Exit 1
+   grep "%.*: %$ext" Makefile.in && exit 1
    grep "^%\.\$(OBJEXT): %\.$ext$" Makefile.in
 done
 

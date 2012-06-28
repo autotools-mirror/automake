@@ -22,7 +22,7 @@
 # FIXME: TAP, and merge them.
 
 required='makeinfo tex texi2dvi'
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >>configure.ac <<\EOF
 AC_CONFIG_FILES([rec/Makefile])

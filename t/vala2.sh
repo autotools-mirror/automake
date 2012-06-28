@@ -17,7 +17,7 @@
 # Test to make sure compiling Vala code really works with recursive make.
 
 required="pkg-config valac gcc"
-. ./defs || Exit 1
+. ./defs || exit 1
 
 mkdir src
 
@@ -75,7 +75,7 @@ echo am--error > src/zardoz.c
 $sleep
 touch src/zardoz.vala
 $MAKE
-grep 'am--error' src/zardoz.[ch] && Exit 1
+grep 'am--error' src/zardoz.[ch] && exit 1
 
 # Check the distribution.
 
@@ -105,6 +105,6 @@ sed 's/Zardoz!/FooBar!/' ../src/zardoz.vala > t
 mv -f t ../src/zardoz.vala
 $MAKE
 grep 'FooBar!' ../src/zardoz.c
-grep 'Zardoz!' ../src/zardoz.c && Exit 1
+grep 'Zardoz!' ../src/zardoz.c && exit 1
 
 :

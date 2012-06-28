@@ -18,7 +18,7 @@
 #   - Automake can correctly handle conditionals contents for the
 #     LOG_DRIVER variables.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cp "$am_testauxdir"/trivial-test-driver . \
   || fatal_ "failed to fetch auxiliary script trivial-test-driver"
@@ -58,7 +58,7 @@ cat > foo <<'END'
 #!/bin/sh
 echo "PASS: from $0"
 echo "SKIP: from $0"
-exit 1 # Exit status should be ignored by the trivial-test-driver.
+exit 1 # exit status should be ignored by the trivial-test-driver.
 END
 
 cat > bar.test <<'END'
@@ -101,10 +101,10 @@ cat test-suite.log
 cat foo.log
 cat bar.log
 cat baz.log
-test $st -eq 0 || Exit 1
+test $st -eq 0 || exit 1
 do_count
 
-$MAKE distcheck >stdout || { cat stdout; Exit 1; }
+$MAKE distcheck >stdout || { cat stdout; exit 1; }
 cat stdout
 do_count
 

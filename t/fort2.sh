@@ -20,7 +20,7 @@
 # Cf. fort1.test and link_f90_only.test.
 
 required=gfortran # Required only in order to run ./configure.
-. ./defs || Exit 1
+. ./defs || exit 1
 
 mkdir sub
 
@@ -44,12 +44,12 @@ END
 
 $ACLOCAL
 $AUTOMAKE
-grep '.\$(LINK)'       Makefile.in && Exit 1
+grep '.\$(LINK)'       Makefile.in && exit 1
 grep '.\$(FCLINK)'     Makefile.in
 grep '.\$(FCCOMPILE)'  Makefile.in > stdout
 cat stdout
-grep -v '\$(FCFLAGS_f' stdout && Exit 1
-grep '.\$(FC.*\$(FCFLAGS_blabla' Makefile.in && Exit 1
+grep -v '\$(FCFLAGS_f' stdout && exit 1
+grep '.\$(FC.*\$(FCFLAGS_blabla' Makefile.in && exit 1
 
 sed '/^AC_FC_SRCEXT.*blabla/d' configure.ac >t
 mv -f t configure.ac
@@ -66,7 +66,7 @@ touch hello.f90 foo.f95 sub/bar.f95 hi.f03 sub/howdy.f03 greets.f08 \
 
 $MAKE -n FC=fake-fc \
   FCFLAGS_f90=--@90 FCFLAGS_f95=--@95 FCFLAGS_f03=--@03 FCFLAGS_f08=--@08 \
-  > stdout || { cat stdout; Exit 1; }
+  > stdout || { cat stdout; exit 1; }
 cat stdout
 # To make it easier to have  stricter grepping below.
 sed -e 's/[ 	][ 	]*/  /g' -e 's/^/ /' -e 's/$/ /' stdout > out
@@ -84,9 +84,9 @@ grep ' fake-fc .* --gby .* --@90 .* sub/baz\.f90 ' out
 
 test `grep -c '.*--gby.*\.f' out` -eq 2
 
-$EGREP 'fake-fc.*--@(95|03|08).*\.f90' out && Exit 1
-$EGREP 'fake-fc.*--@(90|03|08).*\.f95' out && Exit 1
-$EGREP 'fake-fc.*--@(90|95|08).*\.f03' out && Exit 1
-$EGREP 'fake-fc.*--@(95|95|03).*\.f08' out && Exit 1
+$EGREP 'fake-fc.*--@(95|03|08).*\.f90' out && exit 1
+$EGREP 'fake-fc.*--@(90|03|08).*\.f95' out && exit 1
+$EGREP 'fake-fc.*--@(90|95|08).*\.f03' out && exit 1
+$EGREP 'fake-fc.*--@(95|95|03).*\.f08' out && exit 1
 
 :

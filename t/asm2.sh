@@ -17,7 +17,7 @@
 # Test of basic preprocessed assembly functionality.
 # Keep this in sync with sister tests asm.test and asm3.test.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 mv configure.ac configure.stub
 

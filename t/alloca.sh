@@ -16,7 +16,7 @@
 
 # Make sure we complain if @ALLOCA@ is used without being set in configure.ac
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac <<'END'
 AM_PROG_AR

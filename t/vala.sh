@@ -16,7 +16,7 @@
 
 # Basic "grepping" test on vala support.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 # So that we won't require libtool macros.
 cat > acinclude.m4 <<'END'
@@ -71,7 +71,7 @@ $FGREP 'zardoz-foo.c' Makefile.in
 $FGREP 'zardoz-bar.c' Makefile.in
 
 grep '\$(VALAC).* \$(AM_VALAFLAGS) \$(VALAFLAGS) ' sub/Makefile.in
-$FGREP 'foo_VALAFLAGS' sub/Makefile.in && Exit 1
+$FGREP 'foo_VALAFLAGS' sub/Makefile.in && exit 1
 $FGREP 'am_foo_OBJECTS' sub/Makefile.in
 $FGREP 'bar.c' sub/Makefile.in
 $FGREP 'baz.c' sub/Makefile.in
@@ -81,6 +81,6 @@ test $($FGREP -c '.stamp:' sub/Makefile.in) -eq 1
 # Check against regression for weird bug due to unescaped '@'
 # characters used in a "..." perl string when writing the vala
 # rules from automake.in.
-grep '\$[0-9][0-9]*t' Makefile.in sub/Makefile.in && Exit 1
+grep '\$[0-9][0-9]*t' Makefile.in sub/Makefile.in && exit 1
 
 :

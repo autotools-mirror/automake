@@ -17,7 +17,7 @@
 # Make sure we don't mistake a macro definition for an invocation.
 # From Jim Meyering.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 dnl if buggy this will require getloadavg.c

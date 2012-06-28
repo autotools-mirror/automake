@@ -17,7 +17,7 @@
 # Test to make sure that sources for links created by AC_CONFIG_LINKS
 # are distributed.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > Makefile.am << 'END'
 SUBDIRS = sdir

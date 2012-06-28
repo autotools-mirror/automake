@@ -17,7 +17,7 @@
 # Make sure aclocal does not overwrite aclocal.m4 needlessly.
 # Also make sure automake --no-force does not overwrite Makefile.in needlessly.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 SOME_DEFS
@@ -86,7 +86,7 @@ is_newest Makefile.in fragment.inc
 is_newest fragment.inc aclocal.m4
 is_newest fragment.inc sub/Makefile.in
 
-grep README Makefile.in && Exit 1
+grep README Makefile.in && exit 1
 
 $sleep
 : > README

@@ -17,7 +17,7 @@
 # Check silent-rules mode for Lex.
 
 required='cc lex'
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >>configure.ac <<'EOF'
 AM_PROG_CC_C_O
@@ -53,15 +53,15 @@ $AUTOMAKE --add-missing
 $AUTOCONF
 
 # Ensure per-target rules are used, to ensure their coverage below.
-$FGREP 'foo2-foo.c' Makefile.in || Exit 99
+$FGREP 'foo2-foo.c' Makefile.in || exit 99
 
 ./configure --enable-silent-rules
 
-$MAKE >stdout || { cat stdout; Exit 1; }
+$MAKE >stdout || { cat stdout; exit 1; }
 cat stdout
 
-$EGREP ' (-c|-o)' stdout && Exit 1
-$EGREP '(mv|ylwrap) ' stdout && Exit 1
+$EGREP ' (-c|-o)' stdout && exit 1
+$EGREP '(mv|ylwrap) ' stdout && exit 1
 
 grep 'LEX .*foo\.' stdout
 grep ' CC .*foo\.' stdout
@@ -73,11 +73,11 @@ grep 'CCLD .*foo2' stdout
 # different set of rules.
 $MAKE clean
 
-$MAKE >stdout || { cat stdout; Exit 1; }
+$MAKE >stdout || { cat stdout; exit 1; }
 cat stdout
 
-$EGREP ' (-c|-o)' stdout && Exit 1
-$EGREP '(mv|ylwrap) ' stdout && Exit 1
+$EGREP ' (-c|-o)' stdout && exit 1
+$EGREP '(mv|ylwrap) ' stdout && exit 1
 
 # Don't look for LEX, as probably lex hasn't been re-run.
 grep ' CC .*foo\.' stdout
@@ -88,27 +88,27 @@ grep 'CCLD .*foo2' stdout
 $MAKE clean
 rm -f *foo.c
 
-$MAKE V=1 >stdout || { cat stdout; Exit 1; }
+$MAKE V=1 >stdout || { cat stdout; exit 1; }
 cat stdout
 
 grep ' -c ' stdout
 grep ' -o ' stdout
 grep 'ylwrap ' stdout
 
-$EGREP '(LEX|CC|CCLD) ' stdout && Exit 1
+$EGREP '(LEX|CC|CCLD) ' stdout && exit 1
 
 # Cleaning and then rebuilding with the same V flag (and without
 # removing the generated sources in between) shouldn't trigger a
 # different set of rules.
 $MAKE clean
 
-$MAKE V=1 >stdout || { cat stdout; Exit 1; }
+$MAKE V=1 >stdout || { cat stdout; exit 1; }
 cat stdout
 
 # Don't look for ylwrap, as probably lex hasn't been re-run.
 grep ' -c ' stdout
 grep ' -o ' stdout
 
-$EGREP '(LEX|CC|CCLD) ' stdout && Exit 1
+$EGREP '(LEX|CC|CCLD) ' stdout && exit 1
 
 :

@@ -18,7 +18,7 @@
 # Keep in sync with sister test 'subobj-c.sh'.
 
 required=c++
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CXX
@@ -79,7 +79,7 @@ END
 $ACLOCAL
 $AUTOMAKE -a
 test ! -f compile # This is not needed by C++ support.
-$EGREP '[^/](a|b|foo)\.\$(OBJEXT)' Makefile.in && Exit 1
+$EGREP '[^/](a|b|foo)\.\$(OBJEXT)' Makefile.in && exit 1
 
 $AUTOCONF
 

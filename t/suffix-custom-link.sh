@@ -19,7 +19,7 @@
 # the Automake default (C linker) would be inappropriate.
 
 required=c++
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac <<'END'
 AC_PROG_CXX

@@ -30,7 +30,7 @@
 #   and newline sequence, because GNU make handles that gracefully.
 #
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 echo AC_OUTPUT >> configure.ac
 

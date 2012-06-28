@@ -18,7 +18,7 @@
 # in the correct directory.
 
 am_create_testdir=empty
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > configure.ac <<END
 AC_INIT([$me], [1.0])
@@ -40,7 +40,7 @@ TESTS = bar.test
 END
 
 $ACLOCAL
-$AUTOMAKE -a 2>stderr || { cat stderr >&2; Exit 1; }
+$AUTOMAKE -a 2>stderr || { cat stderr >&2; exit 1; }
 cat stderr >&2
 
 ls -l . sub my_aux_dir # For debugging.

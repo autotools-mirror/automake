@@ -18,7 +18,7 @@
 # are correctly generated.
 # See also sister functional test 'remake1a.test'.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > configure.ac <<END
 AC_INIT([$me], [1.0])

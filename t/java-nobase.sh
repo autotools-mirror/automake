@@ -17,7 +17,7 @@
 # Test support of 'nobase_' with the 'JAVA' primary.
 
 required=javac
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >>configure.ac <<'END'
 AC_OUTPUT

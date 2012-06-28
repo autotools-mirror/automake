@@ -18,7 +18,7 @@
 # (This should also work without GNU Make.)
 
 required=cc
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >>configure.ac <<'EOF'
 AC_PROG_CC
@@ -67,12 +67,12 @@ $AUTOMAKE
 ./configure --enable-dependency-tracking
 $MAKE
 # Sanity check.
-cross_compiling || sub3/run | grep grepme1 || Exit 1
+cross_compiling || sub3/run | grep grepme1 || exit 1
 
 $sleep
 echo '#define NAME "grepme2"' > sub2/config.bot
 $MAKE
-cross_compiling || sub3/run | grep grepme2 || Exit 1
+cross_compiling || sub3/run | grep grepme2 || exit 1
 $MAKE test-prog-updated
 
 $MAKE distcheck

@@ -16,7 +16,7 @@
 
 # Make sure 'py-compile' honours the PYTHON environment variable.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cp "$am_scriptdir/py-compile" . \
   || fatal_ "failed to fetch auxiliary script py-compile"
@@ -31,14 +31,14 @@ mkdir sub1
 cd sub1
 
 PYTHON=: ../py-compile foo.py
-ls | grep . && Exit 1
+ls | grep . && exit 1
 
-PYTHON=false ../py-compile foo.py && Exit 1
-ls | grep . && Exit 1
+PYTHON=false ../py-compile foo.py && exit 1
+ls | grep . && exit 1
 
 PYTHON='echo GrEpMe AndMeToo' ../py-compile foo.py
 PYTHON='echo GrEpMe AndMeToo' ../py-compile foo.py | grep 'GrEpMe AndMeToo'
-ls | grep . && Exit 1
+ls | grep . && exit 1
 
 cd ..
 mkdir sub2
@@ -46,7 +46,7 @@ cd sub2
 
 PYTHON=../my-py ../py-compile foo.py
 test -f my-py.run
-ls | grep -v '^my-py\.run$' | grep . && Exit 1
+ls | grep -v '^my-py\.run$' | grep . && exit 1
 
 cd ..
 mkdir sub3
@@ -54,6 +54,6 @@ cd sub3
 PATH=..$PATH_SEPARATOR$PATH; export PATH
 PYTHON=my-py py-compile foo.py
 test -f my-py.run
-ls | grep -v '^my-py\.run$' | grep . && Exit 1
+ls | grep -v '^my-py\.run$' | grep . && exit 1
 
 :

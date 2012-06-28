@@ -18,7 +18,7 @@
 # clean directory.  An early implementation of the '.trs' intermediate
 # files incurred a similar problem.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_OUTPUT
@@ -30,7 +30,7 @@ END
 
 cat > foo.test <<'END'
 #! /bin/sh
-test -f foo.run && Exit 1
+test -f foo.run && exit 1
 : > foo.run
 END
 chmod a+x foo.test

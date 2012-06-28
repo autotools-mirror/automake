@@ -18,7 +18,7 @@
 #  - colorization of TAP results and diagnostic messages
 
 required='grep-nonprint'
-. ./defs || Exit 1
+. ./defs || exit 1
 
 # Escape '[' for grep, below.
 red="$esc\[0;31m"
@@ -119,20 +119,20 @@ test_no_color ()
 {
   # Not a useless use of cat; see above comments "grep-nonprinting"
   # requirement in 'test-init.sh'.
-  cat stdout | grep "$esc" && Exit 1
-  :
+  cat stdout | grep "$esc" && exit 1
+  : For 'set -e'.
 }
 
 # It should be possible to override AM_COLOR_TESTS also from the
 # environment.
 # Forced colorization should take place also with non-ANSI terminals;
 # hence the "TERM=dumb" definition.
-TERM=dumb AM_COLOR_TESTS=always $MAKE check >stdout \
-  && { cat stdout; Exit 1; }
+AM_COLOR_TESTS=always $MAKE TERM=dumb check >stdout \
+  && { cat stdout; exit 1; }
 cat stdout
 test_color
 
-$MAKE check TERM=ansi >stdout && { cat stdout; Exit 1; }
+$MAKE check TERM=ansi >stdout && { cat stdout; exit 1; }
 cat stdout
 test_no_color
 

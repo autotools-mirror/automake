@@ -17,7 +17,7 @@
 # Test to ensure that a ".info~" file doesn't end up in the
 # distribution.  Bug report from Greg McGary.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_OUTPUT

@@ -18,7 +18,7 @@
 # This combines two examples from the manual.
 
 required='cc libtoolize'
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >>configure.ac <<'END'
 AM_CONDITIONAL([WANT_LIBFOO], [true])
@@ -87,11 +87,11 @@ test -f lib/lib1bar.la
 test -f lib/lib2foo.la
 test ! -f lib/lib3foo.la
 find empty -type f -print > empty.lst
-test -s empty.lst && { cat empty.lst; Exit 1; }
+test -s empty.lst && { cat empty.lst; exit 1; }
 
 $MAKE uninstall
 find lib -type f -print > lib.lst
-test -s lib.lst && { cat lib.lst; Exit 1; }
+test -s lib.lst && { cat lib.lst; exit 1; }
 test -f lib1foo.la
 test -f lib1bar.la
 test -f lib2foo.la

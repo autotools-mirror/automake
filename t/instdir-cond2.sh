@@ -21,7 +21,7 @@
 # FIXME: So this test is still xfailing.
 # See sister test 'instdir-cond.test' for the succeeding part.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AM_CONDITIONAL([ENABLE_FOO], [false])
@@ -46,6 +46,6 @@ $AUTOCONF
 ./configure --prefix="$(pwd)/inst"
 
 $MAKE installdirs
-test ! -d inst || { find inst; Exit 1; }
+test ! -d inst || { find inst; exit 1; }
 
 :

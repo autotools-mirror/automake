@@ -17,7 +17,7 @@
 # Regression test for substitution references to conditional variables.
 # Report from Richard Boulton.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_SUBST([CC], [false])

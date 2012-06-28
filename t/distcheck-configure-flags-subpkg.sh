@@ -20,7 +20,7 @@
 # passed down to the configure script of the subpackage.  This is
 # explicitly documented in the manual.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_CONFIG_SUBDIRS([subpkg])
@@ -63,7 +63,7 @@ $FGREP 'DISTCHECK_CONFIGURE_FLAGS' Makefile.in subpkg/Makefile.in
 
 grep '^AM_DISTCHECK_CONFIGURE_FLAGS =' Makefile.in
 grep '^DISTCHECK_CONFIGURE_FLAGS =' Makefile.in
-$EGREP '^(AM_)?DISTCHECK_CONFIGURE_FLAGS' subpkg/Makefile.in && Exit 1
+$EGREP '^(AM_)?DISTCHECK_CONFIGURE_FLAGS' subpkg/Makefile.in && exit 1
 
 ./configure dc=ok am_dc=ok
 
@@ -74,7 +74,7 @@ $MAKE distcheck
 
 # ... but not when "make distcheck" is run from the subpackage.
 cd subpkg
-$MAKE distcheck 2>stderr && { cat stderr >&2; Exit 1; }
+$MAKE distcheck 2>stderr && { cat stderr >&2; exit 1; }
 cat stderr >&2
 grep '^configure:.* dc=KO am_dc=KO' stderr
 

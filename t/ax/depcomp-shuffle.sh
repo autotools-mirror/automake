@@ -19,7 +19,7 @@
 # set the variables '$xdir' and '$vpath' appropriately.
 
 required=cc
-. ./defs || Exit 1
+. ./defs || exit 1
 
 test x${xdir+"set"} = x"set" || fatal_ "\$xdir is unset"
 test x${vpath+"set"} = x"set" || fatal_ "\$vpath is unset"
@@ -42,7 +42,7 @@ fi
 
 finalize_edit ()
 {
-  diff "$1" t && Exit 1
+  diff "$1" t && exit 1
   mv -f t "$2"
 }
 
@@ -65,7 +65,7 @@ prepend ()
 if cross_compiling; then
   grep_prog_out () { :; }
 else
-  grep_prog_out () { ./prg && ./prg | grep "$1" || Exit 1; }
+  grep_prog_out () { ./prg && ./prg | grep "$1" || exit 1; }
 fi
 
 echo AC_PROG_CC                         >> configure.ac
@@ -106,7 +106,7 @@ $ACLOCAL
 $AUTOCONF
 $AUTOMAKE -a
 
-test $vpath = no || { mkdir build && cd build; } || Exit 99
+test $vpath = no || { mkdir build && cd build; } || exit 99
 
 $srcdir/configure --enable-dependency-tracking
 $MAKE

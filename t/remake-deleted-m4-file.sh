@@ -20,7 +20,7 @@
 # header file" issue w.r.t. aclocal.m4 dependencies.  See also related
 # test 'acloca22.test'.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac <<'END'
 FOO_MACRO

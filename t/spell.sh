@@ -17,7 +17,7 @@
 # Test to make sure misspellings in _SOURCES variables cause failure.
 
 required=cc
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CC
@@ -38,7 +38,7 @@ $AUTOCONF
 $AUTOMAKE
 
 ./configure
-$MAKE 2>stderr && { cat stderr >&2; Exit 1; }
+$MAKE 2>stderr && { cat stderr >&2; exit 1; }
 cat stderr >&2
 
 LC_ALL=C sed 's/^Makefile:[0-9][0-9]*: //' stderr > got

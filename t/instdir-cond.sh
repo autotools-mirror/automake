@@ -17,7 +17,7 @@
 # Check against automake bug#10997: directories holding only
 # conditionally-installed files should not be created unconditionally.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AM_CONDITIONAL([ENABLE_FOO], [false])

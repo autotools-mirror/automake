@@ -18,7 +18,7 @@
 # Automake 1.6.1 seems to have a problem parsing comments that use
 # '\' to span multiple lines.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac <<'EOF'
 AC_OUTPUT
@@ -47,7 +47,7 @@ do_check ()
   $MAKE test
   grep '^# SOME_FILES =' Makefile
   # No useless munging please.
-  grep '#.*file[123]' Makefile && Exit 1
+  grep '#.*file[123]' Makefile && exit 1
   :
 }
 

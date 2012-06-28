@@ -19,7 +19,7 @@
 # too.  Yes, this test is hacky ... as is the behaviour it tests
 # after all ;-)
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 echo AC_OUTPUT >> configure.ac
 
@@ -118,7 +118,7 @@ FOO= BAR=; unset FOO BAR
 $ACLOCAL
 $AUTOMAKE --libdir=.
 
-grep '^!' Makefile.in | grep -v '^!unmodified!$' && Exit 1
+grep '^!' Makefile.in | grep -v '^!unmodified!$' && exit 1
 
 # Use perl, to avoid possible issues with regex length in vendor greps.
 $PERL -e "
@@ -145,7 +145,7 @@ $MAKE rule
 test ! -f verbatim-rule.ok
 $MAKE
 test -f verbatim-rule.ok
-$MAKE | grep 'Custom Rule' && Exit 1
+$MAKE | grep 'Custom Rule' && exit 1
 $MAKE test-xyz
 
 $MAKE check-var var=foo val='. 1'

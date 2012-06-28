@@ -19,7 +19,7 @@
 # Thus, we allow substitutions in bin_PROGRAMS, but then EXTRA_PROGRAMS
 # needs to list possible values of that substitution, literally.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >>configure.ac <<'END'
 AC_PROG_CC
@@ -34,7 +34,7 @@ END
 
 $ACLOCAL
 AUTOMAKE_fails
-grep 'bin_PROGRAMS.*contains configure substitution' stderr && Exit 1
+grep 'bin_PROGRAMS.*contains configure substitution' stderr && exit 1
 grep 'EXTRA_PROGRAMS.*contains configure substitution' stderr
 
-Exit 0
+exit 0

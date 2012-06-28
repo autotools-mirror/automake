@@ -17,7 +17,7 @@
 # Check that non-conditional primaries can use conditional directories.
 # Reported by Juergen Keil.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >>configure.ac << 'EOF'
 AM_CONDITIONAL([USE_FOO], [true])

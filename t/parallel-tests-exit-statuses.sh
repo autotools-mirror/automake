@@ -17,7 +17,7 @@
 # Check parallel-tests features: normal and special exit statuses
 # in the test scripts.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_OUTPUT
@@ -78,7 +78,7 @@ st=1
 $MAKE check >stdout && st=0
 cat stdout
 cat test-suite.log
-test $st -gt 0 || Exit 1
+test $st -gt 0 || exit 1
 LC_ALL=C grep '^[A-Z][A-Z]*:' stdout | LC_ALL=C sort > got-fail
 diff exp-fail got-fail
 
@@ -86,7 +86,7 @@ st=1
 $MAKE check XFAIL_TESTS="$failure_statuses 99" >stdout && st=0
 cat stdout
 cat test-suite.log
-test $st -gt 0 || Exit 1
+test $st -gt 0 || exit 1
 LC_ALL=C grep '^[A-Z][A-Z]*:' stdout | LC_ALL=C sort > got-xfail-1
 diff exp-xfail-1 got-xfail-1
 
@@ -97,7 +97,7 @@ $MAKE check \
   > stdout || st=$?
 cat stdout
 cat test-suite.log
-test $st -eq 0 || Exit 1
+test $st -eq 0 || exit 1
 LC_ALL=C grep '^[A-Z][A-Z]*:' stdout | LC_ALL=C sort > got-xfail-2
 diff exp-xfail-2 got-xfail-2
 

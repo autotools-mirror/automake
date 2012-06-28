@@ -16,7 +16,7 @@
 
 # Some internals of the parallel testsuite harness implementation.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_OUTPUT

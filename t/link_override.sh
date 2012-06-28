@@ -16,7 +16,7 @@
 
 # Test to make sure _LINK variables are detected and used as documented.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CC
@@ -34,11 +34,11 @@ $AUTOMAKE -a
 
 # We should use foo_LINK not LINK.
 grep '.\$(foo_LINK)' Makefile.in
-grep '.\$(LINK).*foo' Makefile.in && Exit 1
+grep '.\$(LINK).*foo' Makefile.in && exit 1
 
 # We should not override the user definition of bar_LINK.
 # IOW, bar_LDFLAGS is useless unless bar_LINK refers to it.
-grep '^ *bar_LINK *=.*bar_LDFLAGS' Makefile.in && Exit 1
+grep '^ *bar_LINK *=.*bar_LDFLAGS' Makefile.in && exit 1
 grep '.\$(bar_LINK).*bar' Makefile.in
 
-Exit 0
+exit 0

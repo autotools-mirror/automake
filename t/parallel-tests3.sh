@@ -17,7 +17,7 @@
 # Check parallel-tests features:
 # - concurrent parallel execution
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 case $MAKE in
   *\ -j*) skip_ "\$MAKE contains '-j'";;

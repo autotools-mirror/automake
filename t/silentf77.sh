@@ -18,7 +18,7 @@
 # Keep this ins sync with the sister test silentf90.test.
 
 required=fortran77
-. ./defs || Exit 1
+. ./defs || exit 1
 
 mkdir sub
 
@@ -50,15 +50,15 @@ $AUTOMAKE --add-missing
 $AUTOCONF
 
 ./configure --enable-silent-rules
-$MAKE >stdout || { cat stdout; Exit 1; }
+$MAKE >stdout || { cat stdout; exit 1; }
 cat stdout
 # Avoid spurious failures with SunStudio Fortran compilers.
 sed '/^NOTICE:/d' stdout > t
 mv -f t stdout
 cat stdout
 
-$EGREP ' (-c|-o)' stdout && Exit 1
-grep 'mv ' stdout && Exit 1
+$EGREP ' (-c|-o)' stdout && exit 1
+grep 'mv ' stdout && exit 1
 
 grep ' F77  *foo\.'          stdout
 grep ' F77  *foo2-foo\.'     stdout
@@ -69,17 +69,17 @@ grep ' F77LD  *foo2'         stdout
 grep ' F77LD  *sub/bar1'     stdout
 grep ' F77LD  *bar2'         stdout
 
-$EGREP '(FC|FCLD) ' stdout && Exit 1
+$EGREP '(FC|FCLD) ' stdout && exit 1
 
 # Ensure a clean rebuild.
 $MAKE clean
 
-$MAKE V=1 >stdout || { cat stdout; Exit 1; }
+$MAKE V=1 >stdout || { cat stdout; exit 1; }
 cat stdout
 
 grep ' -c ' stdout
 grep ' -o ' stdout
 
-$EGREP '(F77|FC|LD) ' stdout && Exit 1
+$EGREP '(F77|FC|LD) ' stdout && exit 1
 
 :

@@ -18,7 +18,7 @@
 # by a subdir Makefile.am, it is distributed by that Makefile.am.
 
 required=cc
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_CONFIG_FILES([subdir/Makefile])

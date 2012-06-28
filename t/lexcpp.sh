@@ -17,7 +17,7 @@
 # Test to make sure Lex + C++ is supported.
 # Please keep this is sync with sister test yaccpp.test.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CXX

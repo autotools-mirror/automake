@@ -17,12 +17,12 @@
 # Option 'serial-tests'.
 
 am_create_testdir=empty
-. ./defs || Exit 1
+. ./defs || exit 1
 
 hasnt_parallel_tests ()
 {
-  $EGREP -i 'test_suite_log|test_(logs|bases)|\.log.*:' $1 && Exit 1
-  grep 'recheck.*:' $1 && Exit 1
+  $EGREP -i 'test_suite_log|test_(logs|bases)|\.log.*:' $1 && exit 1
+  grep 'recheck.*:' $1 && exit 1
   grep '^check-TESTS: \$(am__cooked_tests)$' $1
 }
 

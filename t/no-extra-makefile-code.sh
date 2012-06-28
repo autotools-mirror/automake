@@ -19,7 +19,7 @@
 # by a regression caused by removal of automatic de-ANSI-fication support:
 # <http://lists.gnu.org/archive/html/automake-patches/2011-08/msg00200.html>
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 echo AC_OUTPUT >> configure.ac
 
@@ -30,6 +30,6 @@ rm -f depcomp compile
 $ACLOCAL
 $AUTOMAKE
 
-$EGREP 'INCLUDE|-compile|\$\(OBJEXT\)|tab\.[ch]' Makefile.in && Exit 1
+$EGREP 'INCLUDE|-compile|\$\(OBJEXT\)|tab\.[ch]' Makefile.in && exit 1
 
 :

@@ -17,7 +17,7 @@
 # Test to make sure recursive variable definitions die.
 # From Jim Meyering.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > Makefile.am << 'END'
 man_MANS = chgrp.1

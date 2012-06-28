@@ -18,7 +18,7 @@
 # properly, when a subpackage is involved.
 
 required='cc yacc'
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > configure.ac <<'END'
 AC_INIT([suya], [0.5a], [automake-ng@gnu.org])

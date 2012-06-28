@@ -18,7 +18,7 @@
 #  - The Automake TAP driver has an option that instruct it to read TAP
 #    input also from the stderr of the test command, not only its stdout.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 fetch_tap_driver
 
@@ -40,7 +40,7 @@ echo "# foo foo foo" >&2
 END
 chmod a+x all.test
 
-$MAKE check >stdout || { cat stdout; Exit 1; }
+$MAKE check >stdout || { cat stdout; exit 1; }
 cat stdout
 
 count_test_results total=4 pass=2 fail=0 xpass=0 xfail=1 skip=1 error=0
@@ -53,7 +53,7 @@ echo ok 1
 echo 'Bail out!' >&2
 END
 
-$MAKE check >stdout && { cat stdout; Exit 1; }
+$MAKE check >stdout && { cat stdout; exit 1; }
 cat stdout
 
 count_test_results total=2 pass=1 fail=0 xpass=0 xfail=0 skip=0 error=1
@@ -61,7 +61,7 @@ count_test_results total=2 pass=1 fail=0 xpass=0 xfail=0 skip=0 error=1
 # See that the option '--no-merge' can override the effect of '--merge'.
 
 $MAKE check TEST_LOG_DRIVER_FLAGS=--no-merge >stdout \
-  || { cat stdout; Exit 1; }
+  || { cat stdout; exit 1; }
 cat stdout
 
 count_test_results total=1 pass=1 fail=0 xpass=0 xfail=0 skip=0 error=0

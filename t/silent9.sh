@@ -19,7 +19,7 @@
 # Please keep this file in sync with silent3.test and silent4.test.
 
 required='cc libtoolize'
-. ./defs || Exit 1
+. ./defs || exit 1
 
 mkdir sub
 
@@ -50,9 +50,9 @@ $AUTOMAKE --add-missing
 $AUTOCONF
 
 ./configure --disable-dependency-tracking --enable-silent-rules
-$MAKE >stdout || { cat stdout; Exit 1; }
+$MAKE >stdout || { cat stdout; exit 1; }
 cat stdout
-$EGREP ' (-c|-o)|(mv|mkdir) '             stdout && Exit 1
+$EGREP ' (-c|-o)|(mv|mkdir) '             stdout && exit 1
 grep ' CC  *libfoo\.lo'                   stdout
 grep ' CC  *libbar_la-libbar\.lo'         stdout
 grep ' CC  *sub/libbaz\.lo'               stdout
@@ -63,12 +63,12 @@ grep ' CCLD  *sub/libbaz\.la'             stdout
 grep ' CCLD  *sub/libbla\.la'             stdout
 
 $MAKE clean
-$MAKE V=1 >stdout || { cat stdout; Exit 1; }
+$MAKE V=1 >stdout || { cat stdout; exit 1; }
 cat stdout
 grep ' -c' stdout
 grep ' -o libfoo' stdout
 grep ' -o sub/libbaz' stdout
 # The libtool command line can contain e.g. a '--tag=CC' option.
-sed 's/--tag=[^ ]*/--tag=x/g' stdout | $EGREP '(CC|LD) ' && Exit 1
+sed 's/--tag=[^ ]*/--tag=x/g' stdout | $EGREP '(CC|LD) ' && exit 1
 
 :

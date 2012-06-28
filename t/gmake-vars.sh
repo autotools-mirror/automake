@@ -17,7 +17,7 @@
 # Check that Automake does not warns about nested variables expansion,
 # variables with non-POSIX names, or GNU make function calls.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > Makefile.am <<'END'
 define get-libname

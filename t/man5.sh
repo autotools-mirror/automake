@@ -16,7 +16,7 @@
 
 # Make sure to extract the correct mansection from files in man_MANS.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac <<'END'
 AC_OUTPUT

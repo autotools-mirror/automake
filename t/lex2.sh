@@ -16,7 +16,7 @@
 
 # Make sure that Automake suggest using AM_PROG_LEX when a lexer is used.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CC

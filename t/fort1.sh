@@ -17,7 +17,7 @@
 # Test that Automake suggests using AC_PROG_F77/FC if Fortran sources
 # are used.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >Makefile.am <<END
 bin_PROGRAMS = hello

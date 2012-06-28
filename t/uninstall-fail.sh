@@ -20,7 +20,7 @@
 # tests for other primaries too?  E.g., SCRIPTS, PROGRAMS, LISP, PYTHON,
 # etc...
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 mkdir d
 : > d/f
@@ -62,7 +62,7 @@ mkdir $inst $inst/share
 : > $inst/share/foobar.txt
 
 chmod a-w $inst/share
-$MAKE uninstall 2>stderr && { cat stderr >&2; Exit 1; }
+$MAKE uninstall 2>stderr && { cat stderr >&2; exit 1; }
 cat stderr >&2
 if test $rm_f_is_silent_on_error = yes; then
   : "rm -f" is silent on errors, skip the grepping of make output
@@ -73,8 +73,7 @@ fi
 chmod a-rwx $inst/share
 (cd $inst/share) && skip_ "cannot make directories fully unreadable"
 
-$MAKE uninstall 2>stderr && { cat stderr >&2; Exit 1; }
-cat stderr >&2
+$MAKE uninstall 2>stderr && { cat stderr >&2; exit 1; }
 #
 # Some shells, like Solaris 10 /bin/sh and /bin/ksh, do not report
 # the name of the 'cd' builtin upon a chdir error:

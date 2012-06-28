@@ -17,7 +17,7 @@
 # Grepping checks on the use of subdir objects with C++.
 # See relate test 't/subobj-cxx-grep.sh' for semantic checks.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 echo AC_PROG_CXX >> configure.ac
 
@@ -31,7 +31,7 @@ $AUTOMAKE
 
 $FGREP 'generic/a.$(OBJEXT)' Makefile.in
 $FGREP 'generic/b.$(OBJEXT)' Makefile.in
-grep '[^/][ab]\.\$(OBJEXT)' Makefile.in && Exit 1
-grep '.*-c -o' Makefile.in
+grep '[^/][ab]\.\$(OBJEXT)' Makefile.in && exit 1
+grep '.* -c -o ' Makefile.in
 
 :

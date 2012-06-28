@@ -19,7 +19,7 @@
 # Keep in sync with sister test 'yacc-d-basic.test'.
 
 required='c++ yacc'
-. ./defs || Exit 1
+. ./defs || exit 1
 
 write_parse ()
 {

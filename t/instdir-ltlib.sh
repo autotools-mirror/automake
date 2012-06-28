@@ -19,7 +19,7 @@
 # This test exercises the libtool code paths.
 
 required='cc libtoolize'
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >>configure.ac <<'END'
 AC_PROG_CC
@@ -75,13 +75,13 @@ test ! -d "$instdir"
 xMAKE install DESTDIR="$destdir"
 test ! -d "$instdir"
 test ! -d "$destdir"
-xMAKE uninstall > stdout || { cat stdout; Exit 1; }
+xMAKE uninstall > stdout || { cat stdout; exit 1; }
 cat stdout
 # Creative quoting below to please maintainer-check.
-grep 'rm'' ' stdout && Exit 1
-xMAKE uninstall DESTDIR="$destdir" > stdout || { cat stdout; Exit 1; }
+grep 'rm'' ' stdout && exit 1
+xMAKE uninstall DESTDIR="$destdir" > stdout || { cat stdout; exit 1; }
 cat stdout
 # Creative quoting below to please maintainer-check.
-grep 'rm'' ' stdout && Exit 1
+grep 'rm'' ' stdout && exit 1
 
 :

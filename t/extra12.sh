@@ -18,7 +18,7 @@
 # $srcdir != $builddir, if properly declared.
 # Suggested by observations from Braden McDaniel.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 echo AC_OUTPUT >> configure.ac
 

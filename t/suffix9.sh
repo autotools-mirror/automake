@@ -17,7 +17,7 @@
 # Make sure that Automake choose the shorter route between suffixes
 # (related to PR/37)
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >>configure.ac << 'END'
 AC_PROG_CC

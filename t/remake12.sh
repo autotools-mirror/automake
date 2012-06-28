@@ -17,7 +17,7 @@
 # Test basic remake rules for Makefiles with non-default names
 # and/or with multiple sources.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 magic1=::MagicStringOne::
 magic2=__MagicStringTwo__
@@ -85,7 +85,7 @@ mv -f t zardoz.am
 cat zardoz.am # For debugging.
 $MAKE nil
 $FGREP my-check zardoz # Sanity check.
-$FGREP $magic1 zardoz zardoz.in && Exit 1
+$FGREP $magic1 zardoz zardoz.in && exit 1
 $FGREP $magic2 zardoz
 $FGREP $magic2 zardoz.in
 
@@ -102,10 +102,10 @@ echo 'BAR = $(BAZ)' > top.in
 echo "BAZ = $magic3" > bot.in
 $MAKE test
 $FGREP my-check zardoz # Sanity check.
-$FGREP $magic3 quux.in && Exit 1
+$FGREP $magic3 quux.in && exit 1
 $FGREP $magic3 zardoz
-$FGREP $magic1 zardoz && Exit 1
-$FGREP $magic2 zardoz && Exit 1
+$FGREP $magic1 zardoz && exit 1
+$FGREP $magic2 zardoz && exit 1
 # After the remake above, the files 'zardoz.am' and 'zardoz.in'
 # should be no more needed.
 echo 'endif' > zardoz.am # Put in a syntax error.

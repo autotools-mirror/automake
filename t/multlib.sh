@@ -20,7 +20,7 @@
 # FIXME: We should move this script accordingly.
 
 required=gcc
-. ./defs || Exit 1
+. ./defs || exit 1
 
 mldir=$am_top_srcdir/contrib/multilib
 mkdir m4

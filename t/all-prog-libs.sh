@@ -19,7 +19,7 @@
 #  - $(am__all_libs).
 #  - $(am__all_ltlibs).
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_SUBST([CC], [who-cares])

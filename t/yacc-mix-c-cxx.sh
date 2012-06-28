@@ -18,7 +18,7 @@
 # in the same directory.
 
 required='cc c++ yacc'
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CC
@@ -157,7 +157,7 @@ for try in 0 1; do
     esac
   else
     echo "$me: invalid value of \$try '$try'" >&2
-    Exit 99
+    exit 99
   fi
 
   $srcdir/configure

@@ -19,7 +19,7 @@
 #  - TAP "SKIP" plans with multiple zeroes, as in "1..00 # SKIP"
 # This is consistent with the behaviour of the 'prove' utility.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 . "$am_testauxdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"
 
@@ -48,7 +48,7 @@ echo 1..00 > e.test
 echo '1..000 # SKIP' > f.test
 
 $MAKE TESTS='a.test b.test c.test d.test e.test f.test' check >stdout \
-  || { cat stdout; Exit 1; }
+  || { cat stdout; exit 1; }
 cat stdout
 
 count_test_results total=115 pass=113 xfail=0 skip=2 fail=0 xpass=0 error=0

@@ -19,7 +19,7 @@
 # sees, as well as through GNU make constructs that Automake does not
 # parse.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_SUBST([SafeInclude], [include])

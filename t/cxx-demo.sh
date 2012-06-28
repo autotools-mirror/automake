@@ -18,7 +18,7 @@
 
 required=c++
 am_create_testdir=empty
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > configure.ac << 'END'
 AC_INIT([GNU C++ Demo], [1.3], [bug-automake@gnu.org])
@@ -165,7 +165,7 @@ END
     Good morning, work.
 END
   for p in play work; do
-    ./$p > got.$p || { cat got.$p; Exit 1; }
+    ./$p > got.$p || { cat got.$p; exit 1; }
     cat exp.$p
     cat got.$p
     diff exp.$p got.$p

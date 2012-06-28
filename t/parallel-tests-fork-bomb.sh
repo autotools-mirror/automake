@@ -18,7 +18,7 @@
 #  - If $(TEST_SUITE_LOG) is in $(TEST_LOGS), we get a diagnosed
 #    error, not a make hang or a system freeze.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 # We don't want localized error messages from make, since we'll have
 # to grep them.  See automake bug#11452.
@@ -64,7 +64,7 @@ do_check ()
   log=$1; shift
   $MAKE "$@" check >output 2>&1 || st=$?
   cat output
-  $FGREP '::OOPS::' output && Exit 1 # Possible infinite recursion.
+  $FGREP '::OOPS::' output && exit 1 # Possible infinite recursion.
   grep "[Cc]ircular.*dependency" output | $FGREP "$log"
   grep "$log:.*depends on itself" output
   test $st -gt 0

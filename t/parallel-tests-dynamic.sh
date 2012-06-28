@@ -17,7 +17,7 @@
 # Check that dynamic content for $(TESTS) is supported, both when set from
 # inside the Makefile.am and when overridden from the command line.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 echo AC_OUTPUT >> configure.ac
 
@@ -98,7 +98,7 @@ $AUTOMAKE -a
 
 ./configure
 
-$MAKE check > stdout || { cat stdout; Exit 1; }
+$MAKE check > stdout || { cat stdout; exit 1; }
 cat stdout
 
 count_test_results total=13 pass=9 fail=0 xpass=0 xfail=2 skip=2 error=0
@@ -120,14 +120,14 @@ grep '^SKIP: mu$'          stdout
 $MAKE mostlyclean
 test "`find . -name *.log`" = ./config.log
 
-$MAKE distcheck > stdout || { cat stdout; Exit 1; }
+$MAKE distcheck > stdout || { cat stdout; exit 1; }
 cat stdout
 count_test_results total=13 pass=9 fail=0 xpass=0 xfail=2 skip=2 error=0
 
 $MAKE check tests1='$(wildcard t00*.sh t98?.sh)' \
             tests2='$(shell ./get-tests-list | sed 1d)' \
             TESTS='$(tests1) $(tests2)' \
-  > stdout || { cat stdout; Exit 1; }
+  > stdout || { cat stdout; exit 1; }
 cat stdout
 
 count_test_results total=4 pass=3 fail=0 xpass=0 xfail=1 skip=0 error=0
@@ -149,7 +149,7 @@ $MAKE check \
       a='t00.err' \
       b='${a:.err=-foo}' \
       TESTS='$(b) t$(subst E,,$(foo)) $(call my_add_dirprefix,t,nosuffix)' \
-  > stdout || { cat stdout; Exit 1; }
+  > stdout || { cat stdout; exit 1; }
 cat stdout
 
 count_test_results total=3 pass=2 fail=0 xpass=0 xfail=1 skip=0 error=0

@@ -17,7 +17,7 @@
 # Check all notrans_, dist_, nodist_ prefix combinations for MANS
 # primary and install-man dependencies.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >>configure.ac <<'END'
 AC_OUTPUT
@@ -106,8 +106,8 @@ grep '^install-man3:' Makefile.in | grep '\$(nodist_man_MANS)'
 grep '^install-man4:' Makefile.in | grep '\$(notrans_man_MANS)'
 grep '^install-man5:' Makefile.in | grep '\$(notrans_dist_man_MANS)'
 grep '^install-man6:' Makefile.in | grep '\$(notrans_nodist_man_MANS)'
-grep '^install-man8:' Makefile.in && Exit 1
-grep '^install-man9:' Makefile.in && Exit 1
+grep '^install-man8:' Makefile.in && exit 1
+grep '^install-man9:' Makefile.in && exit 1
 
 cwd=$(pwd) || fatal_ "getting current working directory"
 
@@ -129,7 +129,7 @@ test -d inst/man/man4
 test -d inst/man/man5
 test -d inst/man/man6
 test -d inst/man/man7
-test -d inst/man/man8 && Exit 1
-test -d inst/man/man9 && Exit 1
+test -d inst/man/man8 && exit 1
+test -d inst/man/man9 && exit 1
 
 :

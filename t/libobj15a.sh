@@ -16,7 +16,7 @@
 
 # Nonexistent sources for AC_LIBOBJ should cause an Automake failure.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CC

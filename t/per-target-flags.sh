@@ -17,7 +17,7 @@
 # Test executable-specific and library-specific flags, both with
 # and without dependency tracking.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > configure.ac << END
 AC_INIT([$me], [1.0])
@@ -65,21 +65,21 @@ done
 $AUTOMAKE
 
 # Regression test for missing space.
-$FGREP ')-c' $makefiles && Exit 1
+$FGREP ')-c' $makefiles && exit 1
 
 # Regression test for botchedly transformed object names.
-$FGREP '.o.o' $makefiles && Exit 1
-$FGREP '.obj.obj' $makefiles && Exit 1
-$FGREP '.$(OBJEXT).$(OBJEXT)' $makefiles && Exit 1
+$FGREP '.o.o' $makefiles && exit 1
+$FGREP '.obj.obj' $makefiles && exit 1
+$FGREP '.$(OBJEXT).$(OBJEXT)' $makefiles && exit 1
 
 # Watch against non-transformed "foo.$(OBJEXT)", "foo.o" and "foo.obj"
 # (and similarly for bar).
-$EGREP '[^-](foo|bar)\.[o$]' $makefiles && Exit 1
+$EGREP '[^-](foo|bar)\.[o$]' $makefiles && exit 1
 
 # All our programs and libraries have per-target flags, so all
 # the compilers invocations must use an explicit '-c' option.
-grep 'COMPILE. [^-]' $makefiles && Exit 1
-grep 'COMPILE. .[^c]' $makefiles && Exit 1
+grep 'COMPILE. [^-]' $makefiles && exit 1
+grep 'COMPILE. .[^c]' $makefiles && exit 1
 
 $FGREP 'foo-foo.$(OBJEXT)' Makefile.in
 $FGREP 'foo-foo.$(OBJEXT)' Makefile2.in

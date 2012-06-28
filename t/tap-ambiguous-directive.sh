@@ -18,7 +18,7 @@
 #  - handling of "ambiguous" TODO and SKIP directives
 # See also related test 'tap-todo-skip-together.test'.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 . "$am_testauxdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"
 
@@ -32,7 +32,7 @@ ok 5 # SKIP SKIP
 not ok 6 # TODO TODO
 END
 
-$MAKE check >stdout && { cat stdout; Exit 1; }
+$MAKE check >stdout && { cat stdout; exit 1; }
 cat stdout
 
 count_test_results total=6 pass=2 fail=2 xpass=0 xfail=1 skip=1 error=0

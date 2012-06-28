@@ -24,7 +24,7 @@
 #   previous tools, but at first glance "make check" has passed.
 
 required=runtest
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > hammer << 'END'
 #! /bin/sh
@@ -93,7 +93,7 @@ mv -f thammer hammer
 chmod +x hammer
 
 rm -f hammer.log hammer.sum spanner.log spanner.sum
-$MAKE check && Exit 1
+$MAKE check && exit 1
 test -f hammer.log
 test -f hammer.sum
 test -f spanner.log

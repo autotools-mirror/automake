@@ -17,7 +17,7 @@
 # Test rebuild rules for Java class files.
 
 required='javac'
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac <<'END'
 AC_OUTPUT

@@ -18,7 +18,7 @@
 # is erroneously retained in the final value.
 # See also sister test pluseq11b.test.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >>configure.ac <<'END'
 AC_OUTPUT
@@ -43,7 +43,7 @@ END
 $ACLOCAL
 $AUTOMAKE
 
-grep '^ *FOO *=.*\\.' Makefile.in && Exit 1
+grep '^ *FOO *=.*\\.' Makefile.in && exit 1
 
 $AUTOCONF
 ./configure

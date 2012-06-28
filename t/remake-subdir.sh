@@ -19,7 +19,7 @@
 # See also the other similar tests 'remake-subdir*.test', and the
 # related test 'aclocal5.test'.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 magic1='::MagicString::One::'
 magic2='__MagicString__Two__'
@@ -69,7 +69,7 @@ cd ..
 debug_info
 $FGREP $magic2 sub/Makefile
 $FGREP $magic2 sub/Makefile.in
-$FGREP $magic1 sub/Makefile sub/Makefile.in && Exit 1
-$FGREP $magic2 Makefile Makefile.in && Exit 1
+$FGREP $magic1 sub/Makefile sub/Makefile.in && exit 1
+$FGREP $magic2 Makefile Makefile.in && exit 1
 
 :

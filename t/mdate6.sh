@@ -17,7 +17,7 @@
 # mdate-sh can work with weird file names, doesn't eval too much.
 
 am_create_testdir=empty
-. ./defs || Exit 1
+. ./defs || exit 1
 
 a=
 file='file  name $a'
@@ -27,7 +27,7 @@ file='file  name $a'
 get_shell_script mdate-sh
 
 ./mdate-sh "$file" >stdout 2>stderr ||
-  { cat stdout; cat stderr >&2; Exit 1; }
+  { cat stdout; cat stderr >&2; exit 1; }
 cat stdout
 cat stderr >&2
 grep '[12][0-9]\{3\}' stdout

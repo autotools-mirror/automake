@@ -19,7 +19,7 @@
 # See also sister test 'lex-line.test'.
 
 required='cc yacc'
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CC
@@ -78,15 +78,15 @@ for vpath in : false; do
   $EGREP 'line|\.y' $c_outputs
 
   # Adjusted "#line" should not contain reference to the builddir.
-  grep '#.*line.*build.*\.y' $c_outputs && Exit 1
+  grep '#.*line.*build.*\.y' $c_outputs && exit 1
   # Adjusted "#line" should not contain reference to the absolute
   # srcdir.
-  $EGREP '#.*line *"?/.*\.y' $c_outputs && Exit 1
+  $EGREP '#.*line *"?/.*\.y' $c_outputs && exit 1
   # Adjusted "#line" should not contain reference to the default
   # output file names, e.g., 'y.tab.c' and 'y.tab.h'.
-  grep '#.*line.*y\.tab\.' $c_outputs && Exit 1
+  grep '#.*line.*y\.tab\.' $c_outputs && exit 1
   # Look out for a silly regression.
-  grep "#.*\.y.*\.y" $c_outputs && Exit 1
+  grep "#.*\.y.*\.y" $c_outputs && exit 1
   if $vpath; then
     grep '#.*line.*"\.\./zardoz\.y"' zardoz.c
     grep '#.*line.*"\.\./zardoz\.y"' baz-zardoz.c

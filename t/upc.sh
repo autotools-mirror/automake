@@ -16,7 +16,7 @@
 
 # A simple Hello World for UPC.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AM_PROG_UPC
@@ -44,7 +44,7 @@ $ACLOCAL
 $AUTOMAKE
 $AUTOCONF
 
-./configure || Exit $?
+./configure || exit $?
 $MAKE distcheck
 
 :

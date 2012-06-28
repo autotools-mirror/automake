@@ -19,7 +19,7 @@
 # related to the enabling/disabling of maintainer mode are correct (see
 # automake bug#9890).
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 set_maintmode ()
 {
@@ -34,7 +34,7 @@ set_maintmode ()
 check_configure_message_with ()
 {
   answer=$1; shift
-  ./configure ${1+"$@"} >stdout || { cat stdout; Exit 1; }
+  ./configure ${1+"$@"} >stdout || { cat stdout; exit 1; }
   cat stdout
   grep "^checking whether to enable maintainer-specific.*\\.\\.\\. $answer$" stdout
   test $(grep -c 'checking.*maint' stdout) -eq 1
@@ -62,7 +62,7 @@ check_configure_message_with "yes" --enable-maintainer-mode
 set_maintmode "enable"
 
 $AUTOCONF --force
-./configure --help >stdout || { cat stdout; Exit 1; }
+./configure --help >stdout || { cat stdout; exit 1; }
 cat stdout
 grep_configure_help --disable-maintainer-mode 'disable make rules'
 

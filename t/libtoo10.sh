@@ -22,7 +22,7 @@
 # *.lo files are removed when they should.
 
 required='cc libtoolize'
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AM_PROG_AR
@@ -59,7 +59,7 @@ $MAKE all check
 : > lib/so_locations
 : > src/so_locations
 $MAKE clean
-ls *.lo && Exit 1
+ls *.lo && exit 1
 test -f libtool
 test ! -d src/.libs
 test ! -d src/_libs

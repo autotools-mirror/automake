@@ -17,7 +17,7 @@
 # Make sure nobase_* works for python files.
 
 required=python
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >>configure.ac <<EOF
 AM_PATH_PYTHON
@@ -59,7 +59,7 @@ $MAKE
 $MAKE test-install-data
 $MAKE uninstall
 
-find inst/my -type f -print | grep . && Exit 1
+find inst/my -type f -print | grep . && exit 1
 
 $MAKE install-strip
 
@@ -73,6 +73,6 @@ cd build
 $MAKE
 $MAKE test-install-data
 $MAKE uninstall
-find inst/my -type f -print | grep . && Exit 1
+find inst/my -type f -print | grep . && exit 1
 
 :

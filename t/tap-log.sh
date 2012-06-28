@@ -22,7 +22,7 @@
 #  - VERBOSE environment variable support
 # Keep in sync with 'test-log.test'.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > Makefile.am << 'END'
 TESTS = pass.test skip.test xfail.test fail.test xpass.test error.test
@@ -85,7 +85,7 @@ END
 
 chmod a+x *.test
 
-$MAKE check TEST_SUITE_LOG=my.log && Exit 1
+$MAKE check TEST_SUITE_LOG=my.log && exit 1
 ls -l # For debugging.
 test ! -f test-suite.log
 test ! -f global.log
@@ -96,7 +96,7 @@ for result in pass fail xfail xpass skip error; do
   $FGREP "$pmarker $result $pmarker" $result.log || st=1
   $FGREP "$cmarker $result $cmarker" $result.log || st=1
 done
-test $st -eq 0 || Exit 1
+test $st -eq 0 || exit 1
 cat my.log # For debugging.
 for result in xfail fail xpass skip error; do
   cat $result.log # For debugging.
@@ -107,7 +107,7 @@ test $($FGREP -c "$pmarker" my.log) -eq 5
 test $($FGREP -c "$cmarker" my.log) -eq 5
 
 # Passed test scripts shouldn't be mentioned in the global log.
-$EGREP '(^pass|[^x]pass)\.test' my.log && Exit 1
+$EGREP '(^pass|[^x]pass)\.test' my.log && exit 1
 # But failing (expectedly or not) and skipped ones should.
 $FGREP 'xfail.test' my.log
 $FGREP 'skip.test' my.log
@@ -132,7 +132,7 @@ test -f global.log
 
 rm -f *.log
 
-VERBOSE=yes $MAKE check >stdout && { cat stdout; Exit 1; }
+VERBOSE=yes $MAKE check >stdout && { cat stdout; exit 1; }
 cat stdout
 cat global.log
 test ! -f my.log
@@ -141,7 +141,7 @@ test ! -f test-suite.log
 # emitted on stdout.
 out=$(cat stdout)
 log=$(cat global.log)
-case $out in *"$log"*) ;; *) Exit 1;; esac
+case $out in *"$log"*) ;; *) exit 1;; esac
 
 touch error2.log test-suite.log my.log
 $MAKE clean

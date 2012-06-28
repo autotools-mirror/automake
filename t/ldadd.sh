@@ -17,7 +17,7 @@
 # Check to make sure incorrect LDADD usage is diagnosed.
 
 required=libtool
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CC
@@ -38,7 +38,7 @@ END
 : > config.sub
 : > q.c
 
-$ACLOCAL || Exit 1
+$ACLOCAL || exit 1
 AUTOMAKE_fails -Wno-extra-portability
 grep "libtu_la_LDADD" stderr
 grep " use 'libtu_la_LIBADD'" stderr

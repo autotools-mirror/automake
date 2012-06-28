@@ -18,7 +18,7 @@
 # be installed.
 
 required=javac
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_OUTPUT
@@ -50,6 +50,6 @@ for i in 1 2 3 4 5 6; do
 done
 
 $MAKE install
-test -d _inst && { ls -l _inst; Exit 1; }
+test -d _inst && { ls -l _inst; exit 1; }
 
 :

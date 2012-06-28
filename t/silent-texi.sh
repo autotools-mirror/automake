@@ -17,7 +17,7 @@
 # Check texinfo rules in silent-rules mode.
 
 required='makeinfo tex texi2dvi dvips'
-. ./defs || Exit 1
+. ./defs || exit 1
 
 echo AC_OUTPUT >> configure.ac
 
@@ -64,16 +64,16 @@ grep '^  TEXI2DVI sub/zardoz.dvi$'  stdout
 grep '^  TEXI2PDF sub/zardoz.pdf$'  stdout
 # No make recipe is displayed before being executed.
 $EGREP 'texi2(dvi|pdf)|dvips|makeinfo|(rm|mv) ' \
-  stdout stderr && Exit 1
+  stdout stderr && exit 1
 # No verbose output from TeX nor dvips.
 $EGREP '(zardoz|foo)\.log|3\.14|Copyright|This is|[Oo]utput ' \
-  stdout stderr && Exit 1
+  stdout stderr && exit 1
 
 # Verbose mode output.
-$MAKE clean || Exit 1
-$MAKE V=1 dvi html info ps pdf >output 2>&1 || { cat output; Exit 1; }
+$MAKE clean || exit 1
+$MAKE V=1 dvi html info ps pdf >output 2>&1 || { cat output; exit 1; }
 cat output
-$EGREP '(DVIPS|MAKEINFO|TEXI2(PDF|DVI)) ' output && Exit 1
+$EGREP '(DVIPS|MAKEINFO|TEXI2(PDF|DVI)) ' output && exit 1
 # Verbose output from TeX.
 grep '[Oo]utput .*foo\.pdf' output
 grep '[Oo]utput .*zardoz\.pdf' output

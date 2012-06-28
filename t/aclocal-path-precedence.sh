@@ -17,7 +17,7 @@
 # Check precedence rules for ACLOCAL_PATH.
 
 am_create_testdir=empty
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > configure.ac << 'END'
 AC_INIT([foo], [1.0])
@@ -86,6 +86,6 @@ $FGREP '::pass-libtool::' configure
 $FGREP 'am__api_version' configure
 
 # A final sanity check.
-$FGREP '::fail' configure && Exit 1
+$FGREP '::fail' configure && exit 1
 
 :

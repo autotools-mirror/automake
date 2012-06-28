@@ -20,7 +20,7 @@
 # testsuite output, packages with and without bug-report addresses,
 # testsuites in subdirectories, ...)
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 case $use_colors in
   yes)
@@ -80,9 +80,9 @@ do_check ()
   st=0; $MAKE "$@" check >stdout || st=$?
   cat stdout
   if $expect_failure; then
-    test $st -gt 0 || Exit 1
+    test $st -gt 0 || exit 1
   else
-    test $st -eq 0 || Exit 1
+    test $st -eq 0 || exit 1
   fi
   $PERL "$am_testauxdir"/extract-testsuite-summary.pl stdout >summary.got \
    || fatal_ "cannot extract testsuite summary"
@@ -94,7 +94,7 @@ do_check ()
   else
     compare=diff
   fi
-  $compare summary.exp summary.got || Exit 1
+  $compare summary.exp summary.got || exit 1
 }
 
 br='============================================================================'

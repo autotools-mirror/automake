@@ -17,7 +17,7 @@
 # Make Automake diagnose a conditional AUTOMAKE_OPTIONS.
 # Report from Bas Wijnen.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >>configure.ac <<END
 AM_CONDITIONAL([COND], [true])

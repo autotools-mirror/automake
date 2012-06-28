@@ -17,7 +17,7 @@
 # Test to make sure that suffix rules chain.
 
 required=c++
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CXX
@@ -41,10 +41,10 @@ $AUTOMAKE
 $FGREP 'foo.$(OBJEXT)' Makefile.in
 # Finally, our dummy package doesn't use C in any way, so it the
 # Makefile shouldn't contain stuff related to the C compiler.
-$FGREP '$(LINK)'   Makefile.in && Exit 1
-$FGREP 'AM_CFLAGS' Makefile.in && Exit 1
-$FGREP '$(CFLAGS)' Makefile.in && Exit 1
-$FGREP '$(CC)'     Makefile.in && Exit 1
+$FGREP '$(LINK)'   Makefile.in && exit 1
+$FGREP 'AM_CFLAGS' Makefile.in && exit 1
+$FGREP '$(CFLAGS)' Makefile.in && exit 1
+$FGREP '$(CC)'     Makefile.in && exit 1
 
 
 $AUTOCONF

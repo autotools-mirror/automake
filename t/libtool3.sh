@@ -18,7 +18,7 @@
 # Also make sure we do not bloat the Makefile with unneeded rules.
 
 required='cc libtoolize'
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CC
@@ -77,7 +77,7 @@ $AUTOCONF
 $AUTOMAKE --add-missing --copy
 
 # We shouldn't need explicit rules.
-$EGREP '[^%]\.(o|obj|lo|\$\(OBJEXT\)) *:' Makefile.in && Exit 1
+$EGREP '[^%]\.(o|obj|lo|\$\(OBJEXT\)) *:' Makefile.in && exit 1
 
 ./configure
 

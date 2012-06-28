@@ -22,7 +22,7 @@
 # sister test 'parallel-tests-fd-redirect.test'.
 
 required='cc native'
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CC
@@ -105,6 +105,6 @@ cat qux.log
 test $st -eq 0
 grep "^ bazbazbaz$" stdout
 grep "^ quxquxqux$" stdout
-$EGREP '(bazbazbaz|quxquxqux)' *.log && Exit 1
+$EGREP '(bazbazbaz|quxquxqux)' *.log && exit 1
 
 :

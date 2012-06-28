@@ -18,7 +18,7 @@
 # are used, even when dependency tracking is disabled.
 
 required='cc yacc'
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >configure.ac <<END
 AC_INIT([$me], [1.0])

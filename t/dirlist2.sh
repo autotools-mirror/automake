@@ -16,7 +16,7 @@
 
 # Check dirlist globbing support.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > configure.ac <<EOF
 AC_INIT([$me], [1.0])
@@ -47,7 +47,7 @@ $AUTOCONF
 # There should be no m4_include in aclocal.m4, even though m4/dirlist
 # contains './dirlist-test' as a relative directory.  Only -I directories
 # are subject to file inclusion.
-grep m4_include aclocal.m4 && Exit 1
+grep m4_include aclocal.m4 && exit 1
 
 grep 'GUILE-VERSION' configure
 grep 'foo bar baz' configure

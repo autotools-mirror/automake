@@ -18,12 +18,11 @@
 # generate broken or incorrect makefiles.
 
 required=bzip2
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >configure.ac <<END
 AC_INIT([$me], [1.0])
 AM_INIT_AUTOMAKE([foreign foreign dist-bzip2 no-dist-gzip dist-bzip2])
-AC_PROG_CC
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT
 END
@@ -36,7 +35,7 @@ END
 $ACLOCAL
 $AUTOCONF
 $AUTOMAKE --foreign --foreign -Wall 2>stderr && test ! -s stderr \
-  || { cat stderr >&2; Exit 1; }
+  || { cat stderr >&2; exit 1; }
 
 ./configure
 

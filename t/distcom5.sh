@@ -19,7 +19,7 @@
 # a Makefile in that directory.  distcom4.test performs the same
 # test without Makefile in the directory.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
    AC_CONFIG_FILES([tests/autoconf:tests/wrapper.in],

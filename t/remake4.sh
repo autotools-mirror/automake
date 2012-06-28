@@ -27,7 +27,7 @@
 #
 # Report from Akim Demaille.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >>configure.ac <<'EOF'
 # Rebuild rule are ok until make dist, but not afterwards.

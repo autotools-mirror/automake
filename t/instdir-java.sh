@@ -17,7 +17,7 @@
 # If $(javadir) is the empty string, then nothing should be installed there.
 
 required=javac
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >>configure.ac <<'END'
 AC_OUTPUT
@@ -52,9 +52,9 @@ test ! -d "$instdir"
 xMAKE install DESTDIR="$destdir"
 test ! -d "$instdir"
 test ! -d "$destdir"
-xMAKE uninstall > stdout || { cat stdout; Exit 1; }
+xMAKE uninstall > stdout || { cat stdout; exit 1; }
 cat stdout
-grep 'rm -f' stdout && Exit 1
+grep 'rm -f' stdout && exit 1
 xMAKE uninstall DESTDIR="$destdir"
 
 :

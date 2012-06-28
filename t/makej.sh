@@ -21,7 +21,7 @@
 # depend on the time at which autoconf and automake update the cache
 # via autom4te.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >configure.ac <<END
 m4_include([version.m4])

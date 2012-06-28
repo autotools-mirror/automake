@@ -17,7 +17,7 @@
 # Test to make sure nostdinc option works correctly.
 
 required=cc
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CC
@@ -51,9 +51,9 @@ $AUTOMAKE --add-missing
 mkdir build
 cd build
 ../configure
-$MAKE V=1 > output || { cat output; Exit 1; }
+$MAKE V=1 > output || { cat output; exit 1; }
 cat output
-grep '.*-I *\.' stdout && Exit 1
+grep '.*-I *\.' stdout && exit 1
 $MAKE clean
 # Shouldn't be picked up from builddir either.
 cp ../stdlib.h .
@@ -62,8 +62,8 @@ cd ..
 
 # Test with $builddir = $srcdir
 ./configure
-$MAKE V=1 > output || { cat output; Exit 1; }
+$MAKE V=1 > output || { cat output; exit 1; }
 cat output
-grep '.*-I *\.' output && Exit 1
+grep '.*-I *\.' output && exit 1
 
 :

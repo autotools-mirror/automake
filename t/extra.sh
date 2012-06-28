@@ -19,7 +19,7 @@
 # targets should always be generated.  However, they should not be
 # built by default.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CC
@@ -36,5 +36,5 @@ $AUTOMAKE
 grep "^zardoz" Makefile.in
 
 # Can't have EXTRA clean rules.
-grep 'clean.*EXTRA' Makefile.in && Exit 1
-Exit 0
+grep 'clean.*EXTRA' Makefile.in && exit 1
+exit 0

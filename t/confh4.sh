@@ -24,7 +24,7 @@
 # Also check that our preprocessing code is smart enough not to pass
 # repeated '-I<DIR>' options on the compiler command line.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_CONFIG_FILES([include/Makefile sub/Makefile])

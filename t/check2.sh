@@ -17,7 +17,7 @@
 # Test Automake style tests.
 
 # For gen-testsuite-part: ==> try-with-serial-tests <==
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_CONFIG_FILES([dir/Makefile])
@@ -51,10 +51,10 @@ $AUTOCONF
 $AUTOMAKE
 ./configure
 
-$MAKE check >stdout || { cat stdout; Exit 1; }
+$MAKE check >stdout || { cat stdout; exit 1; }
 cat stdout
 grep '^PASS: subrun\.sh *$' stdout
-grep 'PASS.*echo\.sh' stdout && Exit 1
+grep 'PASS.*echo\.sh' stdout && exit 1
 
 $EGREP '^check:.*check-recursive' Makefile.in
 $EGREP '^check:.*check-am' dir/Makefile.in

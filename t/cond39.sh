@@ -17,7 +17,7 @@
 # Build either as CONFIG_FILE or as PROGRAM.
 
 required=cc
-. ./defs || Exit 1
+. ./defs || exit 1
 
 mkdir sub
 
@@ -78,24 +78,24 @@ $AUTOCONF
 $AUTOMAKE --add-missing
 
 ./configure COND=true
-$MAKE 2>stderr || { cat stderr >&2; Exit 1; }
+$MAKE 2>stderr || { cat stderr >&2; exit 1; }
 cat stderr >&2
-grep 'overriding commands' stderr && Exit 1
+grep 'overriding commands' stderr && exit 1
 $MAKE sure-exist
-./prog1 && Exit 1
-./sub/prog2 && Exit 1
+./prog1 && exit 1
+./sub/prog2 && exit 1
 $MAKE clean
 $MAKE sure-not-exist
 $MAKE
 $MAKE sure-exist
-./prog1 && Exit 1
-./sub/prog2 && Exit 1
+./prog1 && exit 1
+./sub/prog2 && exit 1
 $MAKE distclean
 
 ./configure COND=false
-$MAKE 2>stderr || { cat stderr >&2; Exit 1; }
+$MAKE 2>stderr || { cat stderr >&2; exit 1; }
 cat stderr >&2
-grep 'overriding commands' stderr && Exit 1
+grep 'overriding commands' stderr && exit 1
 ./prog1
 ./sub/prog2
 $MAKE clean

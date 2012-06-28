@@ -17,7 +17,7 @@
 # TAP support:
 #  - "SKIP" keyword in a TAP plan is case-insensitive
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 . "$am_testauxdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"
 
@@ -32,7 +32,7 @@ for c4 in p P; do
   echo "1..0 # $c1$c2$c3$c4 foobar" > $j.test
 done; done; done; done
 
-$MAKE TESTS="$(echo *.test)" check >stdout || { cat stdout; Exit 1; }
+$MAKE TESTS="$(echo *.test)" check >stdout || { cat stdout; exit 1; }
 cat stdout
 
 count_test_results total=16 pass=0 fail=0 xpass=0 xfail=0 skip=16 error=0

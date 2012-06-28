@@ -18,7 +18,7 @@
 # Keep this test in sync with sister test 'ar-lib6b.test'.
 
 required=libtoolize
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CC
@@ -29,7 +29,7 @@ END
 
 libtoolize
 $ACLOCAL
-$AUTOCONF 2>stderr || { cat stderr >&2; Exit 1; }
+$AUTOCONF 2>stderr || { cat stderr >&2; exit 1; }
 cat stderr >&2
 
 $EGREP '(AC_PROG_LIBTOOL|LT_INIT).*before.*AM_PROG_AR' stderr

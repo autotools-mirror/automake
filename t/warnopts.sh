@@ -16,7 +16,7 @@
 
 # Make sure that we can enable or disable warnings on a per-file basis.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CC
@@ -57,8 +57,8 @@ AUTOMAKE_fails
 #   sub/Makefile.am:1: warning: 'AUTOMAKE_OPTIONS' cannot have conditional contents
 grep '^Makefile\.am:.*sub/foo\.c.*AM_PROG_CC_C_O' stderr
 grep '^sub/Makefile.am:.*AUTOMAKE_OPTIONS' stderr
-grep '^sub/Makefile\.am:.*AM_PROG_CC_C_O' stderr && Exit 1
-grep '^Makefile\.am:.*AUTOMAKE_OPTIONS' stderr && Exit 1
+grep '^sub/Makefile\.am:.*AM_PROG_CC_C_O' stderr && exit 1
+grep '^Makefile\.am:.*AUTOMAKE_OPTIONS' stderr && exit 1
 # Only two lines of warnings.
 test $(grep -v 'warnings are treated as errors' stderr | wc -l) -eq 2
 

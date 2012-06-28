@@ -19,7 +19,7 @@
 # Please keep this file in sync with silent2.test.
 
 required=cc
-. ./defs || Exit 1
+. ./defs || exit 1
 
 mkdir sub
 
@@ -46,9 +46,9 @@ $AUTOMAKE --add-missing
 $AUTOCONF
 
 ./configure --enable-silent-rules
-$MAKE >stdout || { cat stdout; Exit 1; }
+$MAKE >stdout || { cat stdout; exit 1; }
 cat stdout
-$EGREP ' (-c|-o)|(mv|mkdir) '   stdout && Exit 1
+$EGREP ' (-c|-o)|(mv|mkdir) '   stdout && exit 1
 grep ' CC  *foo\.o'             stdout
 grep ' CC  *bar-bar\.o'         stdout
 grep ' CC  *sub/baz\.o'         stdout
@@ -59,11 +59,11 @@ grep ' CCLD  *sub/baz'          stdout
 grep ' CCLD  *sub/bla'          stdout
 
 $MAKE clean
-$MAKE V=1 >stdout || { cat stdout; Exit 1; }
+$MAKE V=1 >stdout || { cat stdout; exit 1; }
 cat stdout
 grep ' -c' stdout
 grep ' -o foo' stdout
 grep ' -o sub/baz' stdout
-$EGREP '(CC|LD) ' stdout && Exit 1
+$EGREP '(CC|LD) ' stdout && exit 1
 
 :

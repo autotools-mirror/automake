@@ -18,7 +18,7 @@
 #  - By default, TAP input is only from the stdout (and not the stderr)
 #    of the test command.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > Makefile.am << 'END'
 TEST_LOG_DRIVER_FLAGS = --comments
@@ -42,11 +42,11 @@ END
 
 chmod a+x all.test
 
-$MAKE check >stdout || { cat stdout; Exit 1; }
+$MAKE check >stdout || { cat stdout; exit 1; }
 cat stdout
 
 count_test_results total=2 pass=1 fail=0 xpass=0 xfail=0 skip=1 error=0
 $FGREP 'foo foo foo' stdout
-$FGREP 'bar bar bar' stdout && Exit 1
+$FGREP 'bar bar bar' stdout && exit 1
 
 :

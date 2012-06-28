@@ -17,7 +17,7 @@
 # TAP support: a malformed TAP plan is not recognized.  The checks in
 # here should be consistent with the behaviour of the 'prove' utility.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 . "$am_testauxdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"
 
@@ -47,7 +47,7 @@ END
 
 tests_list=$(echo *.test)
 
-$MAKE TESTS="$tests_list" check >stdout && { cat stdout; Exit 1; }
+$MAKE TESTS="$tests_list" check >stdout && { cat stdout; exit 1; }
 cat stdout
 
 count_test_results total=9 pass=2 fail=0 xpass=0 xfail=2 skip=0 error=5

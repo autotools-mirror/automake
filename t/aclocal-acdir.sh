@@ -18,7 +18,7 @@
 # check that stuff in the automake acdir takes precedence over stuff in
 # the system acdir.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 mkdir am sys
 
@@ -70,6 +70,6 @@ $ACLOCAL --automake-acdir am --system-acdir sys
 $AUTOCONF --force
 $FGREP 'fake--init--automake' configure
 $FGREP 'am--macro' configure
-$FGREP 'my--macro' configure && Exit 1 # Just to be sure.
+$FGREP 'my--macro' configure && exit 1 # Just to be sure.
 
 :

@@ -16,7 +16,7 @@
 
 # Check that autoheaders works, despite our AC_CONFIG_HEADERS hack.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >>configure.ac <<EOF
 AC_CONFIG_HEADERS([thisfile.h])

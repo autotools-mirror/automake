@@ -17,7 +17,7 @@
 # Test to make sure dependencies work when required macro is part of
 # autoconf.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 echo 'AM_FOO' >> configure.ac
 echo 'AC_DEFUN([AM_FOO], [AC_REQUIRE([AC_HEADER_STDC])])' > AM_FOO.m4

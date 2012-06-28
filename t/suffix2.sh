@@ -18,7 +18,7 @@
 # and only once, even for libtool libraries.
 # See also related test 'suffix.test'.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CC

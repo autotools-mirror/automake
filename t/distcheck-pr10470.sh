@@ -19,7 +19,7 @@
 # by a process (e.g., that is its "current working directory").
 # See automake bug#10470.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 mkdir foo.d
 sh -c "cd foo.d && sleep '4'" &
@@ -49,7 +49,7 @@ $AUTOMAKE
 ./configure
 
 # We can build the distribution.
-$MAKE distcheck 2>stderr || { cat stderr >&2; Exit 1; }
+$MAKE distcheck 2>stderr || { cat stderr >&2; exit 1; }
 cat stderr >&2
 # Sanity check: verify that our code has hit a problem removing
 # the distdir, but has recovered from it.

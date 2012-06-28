@@ -16,7 +16,7 @@
 
 # Check parallel-tests features: runtime redefinition of $(TEST_SUITE_LOG).
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac <<'END'
 AC_OUTPUT
@@ -57,7 +57,7 @@ test_log_expected ()
 {
   test_log_edit orig > exp
   test_log_edit $1   > got
-  diff exp got || Exit 1
+  diff exp got || exit 1
   rm -f exp got
 }
 
@@ -73,7 +73,7 @@ cat test-suite.log
 cp test-suite.log orig
 
 $MAKE clean
-test -f test-suite.log && Exit 99 # Sanity check.
+test -f test-suite.log && exit 99 # Sanity check.
 
 # Check that we can override the testsuite log file at runtime.
 $MAKE check TEST_SUITE_LOG=zardoz.log

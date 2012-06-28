@@ -17,7 +17,7 @@
 # Test to make sure VPATH can be overridden.
 # Report from Anthony Green.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 echo AC_OUTPUT >> configure.ac
 
@@ -41,7 +41,7 @@ echo KO > ../file.foo
 $MAKE file.bar
 test "$(cat file.bar)" = OK
 rm -f file.bar zardoz/file.foo
-$MAKE file.bar && Exit 1
+$MAKE file.bar && exit 1
 test ! -f file.bar
 
 :

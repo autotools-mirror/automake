@@ -16,7 +16,7 @@
 
 # Test to ensure --gnits version checking is correct.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > configure.ac << END
 AC_INIT([$me], [3.5.3.2])

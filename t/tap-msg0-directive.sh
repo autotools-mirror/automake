@@ -17,7 +17,7 @@
 # TAP support:
 #  - literal string "0" as a TODO or SKIP message
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 . "$am_testauxdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"
 
@@ -28,7 +28,7 @@ not ok 2 # TODO 0
 ok 3 # SKIP 0
 END
 
-$MAKE check >stdout && { cat stdout; Exit 1; }
+$MAKE check >stdout && { cat stdout; exit 1; }
 cat stdout
 
 count_test_results total=3 pass=0 fail=0 xpass=1 xfail=1 skip=1 error=0

@@ -16,7 +16,7 @@
 
 # Yet another multi-":" test, this time from Ken Pizzini.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > configure.ac <<END
 AC_INIT([$me], [1.0])
@@ -37,7 +37,7 @@ $AUTOMAKE
 # These are older "grepping checks", kept mostly for backward-compatibility.
 # They might (unlikely, but possibly) require updating when automake
 # internals are changed.  Just relax or remove if they become too fragile.
-$EGREP 'Makefile:.*(demo|version)' demo/Makefile.in && Exit 1
+$EGREP 'Makefile:.*(demo|version)' demo/Makefile.in && exit 1
 grep 'version\.good:.*version\.gin' demo/Makefile.in
 
 $AUTOCONF
@@ -82,7 +82,7 @@ for vpath in : false; do
 
   # version.good should depend on version.gin.
   rm -f version.good
-  $MAKE version.good 2>stderr && { cat stderr >&2; Exit 1; }
+  $MAKE version.good 2>stderr && { cat stderr >&2; exit 1; }
   cat stderr >&2
   # Try to verify that we errored out for the right reason.
   $FGREP version.gin stderr

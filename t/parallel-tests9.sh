@@ -17,7 +17,7 @@
 # Check parallel-tests features:
 # - recheck
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_OUTPUT
@@ -55,14 +55,14 @@ $AUTOCONF
 $AUTOMAKE -a
 
 ./configure
-$MAKE check >stdout && { cat stdout; Exit 1; }
+$MAKE check >stdout && { cat stdout; exit 1; }
 cat stdout
 count_test_results total=3 pass=1 fail=1 skip=0 xfail=0 xpass=0 error=1
 
-$MAKE recheck >stdout && { cat stdout; Exit 1; }
+$MAKE recheck >stdout && { cat stdout; exit 1; }
 cat stdout
 count_test_results total=2 pass=0 fail=1 skip=0 xfail=0 xpass=0 error=1
-grep 'foo\.test' stdout && Exit 1
+grep 'foo\.test' stdout && exit 1
 grep '^ERROR: bar\.test$' stdout
 grep '^FAIL: baz\.test$' stdout
 

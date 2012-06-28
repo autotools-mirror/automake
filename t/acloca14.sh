@@ -17,7 +17,7 @@
 # Make sure m4_included files are also scanned for definitions.
 # Report from Phil Edwards.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AM_PROG_LIBTOOL
@@ -68,12 +68,12 @@ $ACLOCAL -I defs
 $FGREP acinclude.m4 aclocal.m4
 # None of the following macro should be included.  acinclude.m4
 # includes the first four, and the last two are not needed at all.
-$FGREP a.m4 aclocal.m4 && Exit 1
-$FGREP b.m4 aclocal.m4 && Exit 1
-$FGREP c.m4 aclocal.m4 && Exit 1
-$FGREP d.m4 aclocal.m4 && Exit 1
-$FGREP defs/e.m4 aclocal.m4 && Exit 1
-$FGREP defs/f.m4 aclocal.m4 && Exit 1
+$FGREP a.m4 aclocal.m4 && exit 1
+$FGREP b.m4 aclocal.m4 && exit 1
+$FGREP c.m4 aclocal.m4 && exit 1
+$FGREP d.m4 aclocal.m4 && exit 1
+$FGREP defs/e.m4 aclocal.m4 && exit 1
+$FGREP defs/f.m4 aclocal.m4 && exit 1
 
 $AUTOCONF
 $AUTOMAKE
@@ -101,7 +101,7 @@ $MAKE testdist2
 
 # Make sure aclocal diagnose missing included files with correct 'file:line:'.
 rm -f b.m4
-$ACLOCAL 2>stderr && { cat stderr >&2; Exit 1; }
+$ACLOCAL 2>stderr && { cat stderr >&2; exit 1; }
 cat stderr >&2
 grep 'a\.m4:1: .*b\.m4.*does not exist' stderr
 

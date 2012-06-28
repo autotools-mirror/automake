@@ -18,7 +18,7 @@
 # (or even be) $(EXTRA_PROGRAMS).
 
 required='cc native'
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CC
@@ -154,7 +154,7 @@ st=0
 $MAKE check AM_LAZY_CHECK=yes >stdout || st=$?
 cat stdout
 ls -l
-test $st -eq 0 || Exit 1
+test $st -eq 0 || exit 1
 
 # For debugging.
 stat stamp foo.log bar.log baz.log || :
@@ -165,7 +165,7 @@ is_newest stamp foo.log bar.log baz.log
 test -f none.log
 test -f test-suite.log
 # Tests that shouldn't have been re-run.
-$EGREP '(foo|bar)\.bin|baz\.test$' stdout && Exit 1
+$EGREP '(foo|bar)\.bin|baz\.test$' stdout && exit 1
 # Tests that should have been run.  Again, we don't anchor the end
 # of the next pattern, to allow for non-empty $(EXEEXT).
 grep '^PASS: none\.bin' stdout

@@ -18,7 +18,7 @@
 #  - an exit status != 0 of a test script causes an hard error, even if
 #    the last line of output is a "SKIP plan" (e.g., "1..0 # SKIP").
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 echo TESTS = one.test two.test > Makefile.am
 
@@ -38,7 +38,7 @@ END
 
 chmod a+x one.test two.test
 
-$MAKE check >stdout && { cat stdout; Exit 1; }
+$MAKE check >stdout && { cat stdout; exit 1; }
 cat stdout
 
 # The 'prove' utility reports both the skip and the non-zero exit status,

@@ -19,7 +19,7 @@
 # Also, ensure that "make -n dist" and "make -n distcheck" show what
 # would happen.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 mkdir sub
 

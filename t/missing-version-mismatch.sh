@@ -17,14 +17,14 @@
 # Test missing with version mismatches.
 
 am_create_testdir=empty
-. ./defs || Exit 1
+. ./defs || exit 1
 
 get_shell_script missing
 
 do_check ()
 {
   progname=$1; shift;
-  ./missing "$@" 2>stderr && { cat stderr >&2; Exit 1; }
+  ./missing "$@" 2>stderr && { cat stderr >&2; exit 1; }
   cat stderr >&2
   $FGREP "WARNING: '$progname' is probably too old." stderr
 }

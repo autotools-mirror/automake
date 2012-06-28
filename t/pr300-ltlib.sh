@@ -18,7 +18,7 @@
 # PR/300
 
 required='cc libtoolize'
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CC
@@ -53,28 +53,28 @@ cwd=$(pwd) || fatal_ "getting current working directory"
 
 # A rule in the Makefile should create subdir.
 test ! -d subdir
-$MAKE >stdout || { cat stdout; Exit 1; }
+$MAKE >stdout || { cat stdout; exit 1; }
 cat stdout
 test -d subdir
 
 grep 'liba.la .*-rpath .*lib' stdout
-grep 'liba.la .*-rpath .*lib/subdir' stdout && Exit 1
+grep 'liba.la .*-rpath .*lib/subdir' stdout && exit 1
 grep 'libb.la .*-rpath .*lib/subdir' stdout
 
 test -f subdir/liba.la
 test -f subdir/libb.la
 
-$MAKE install 2>stderr || { cat stderr >&2; Exit 1; }
+$MAKE install 2>stderr || { cat stderr >&2; exit 1; }
 cat stderr >&2
-grep 'remember.*--finish' stderr && Exit 1
+grep 'remember.*--finish' stderr && exit 1
 
 test -f inst/lib/liba.la
 test -f inst/lib/subdir/libb.la
 
 $MAKE uninstall
 
-test -f inst/lib/liba.la && Exit 1
-test -f inst/lib/subdir/libb.la && Exit 1
+test -f inst/lib/liba.la && exit 1
+test -f inst/lib/subdir/libb.la && exit 1
 
 $MAKE install-strip
 

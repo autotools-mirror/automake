@@ -17,7 +17,7 @@
 # Make sure aclocal define macros in the same order as -I's.
 
 am_create_testdir=empty
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat > configure.ac << 'END'
 AC_INIT

@@ -20,7 +20,7 @@
 #  - interactions with 'check_*' variables
 
 required='cc native'
-. ./defs || Exit 1
+. ./defs || exit 1
 
 fetch_tap_driver
 
@@ -82,7 +82,7 @@ $AUTOMAKE --add-missing
 ./configure
 
 for target in check distcheck; do
-  $MAKE $target >stdout || { cat stdout; Exit 1; }
+  $MAKE $target >stdout || { cat stdout; exit 1; }
   cat stdout
   count_test_results total=3 pass=1 fail=0 xpass=0 xfail=1 skip=1 error=0
 done

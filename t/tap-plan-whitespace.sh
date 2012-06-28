@@ -17,7 +17,7 @@
 # TAP support:
 #  - plan line with trailing whitespace is recognized and handled correctly
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 . "$am_testauxdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"
 
@@ -32,7 +32,7 @@ cat > bar.test <<END
 ok 1
 END
 
-$MAKE TESTS='foo.test bar.test' check >stdout || { cat stdout; Exit 1; }
+$MAKE TESTS='foo.test bar.test' check >stdout || { cat stdout; exit 1; }
 cat stdout
 
 count_test_results total=3 pass=3 fail=0 error=0 xpass=0 xfail=0 skip=0

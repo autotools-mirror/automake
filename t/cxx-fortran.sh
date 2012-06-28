@@ -18,7 +18,7 @@
 
 # For now, require the GNU compilers, to avoid possible spurious failure.
 required='gfortran g++'
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CXX
@@ -55,7 +55,7 @@ $ACLOCAL
 $AUTOCONF
 $AUTOMAKE -a
 # The C++ linker should be preferred.
-grep '\$(FCLINK)' Makefile.in && Exit 1
+grep '\$(FCLINK)' Makefile.in && exit 1
 grep '.\$(CXXLINK)' Makefile.in
 
 ./configure

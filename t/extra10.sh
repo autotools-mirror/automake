@@ -19,7 +19,7 @@
 # See also sister test 'extra11.test', that check a similar usage
 # with the involvement of the $(wildcard) GNU make builtin.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 echo AC_OUTPUT >> configure.ac
 

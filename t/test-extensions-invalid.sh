@@ -17,7 +17,7 @@
 # Make sure that invalid entries in TEST_EXTENSIONS are diagnosed at
 # make runtime.  See automake bug#9400.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 echo AC_OUTPUT >> configure.ac
 
@@ -32,7 +32,7 @@ $AUTOMAKE -a
 
 ./configure
 
-$MAKE 2>stderr && { cat stderr >&2; Exit 1; }
+$MAKE 2>stderr && { cat stderr >&2; exit 1; }
 cat stderr >&2
 for suf in mu x1 _ x2; do
   $FGREP "invalid test extension: '$suf'" stderr
@@ -40,6 +40,6 @@ done
 
 # Verify that we don't report valid suffixes, even if intermixed
 # with invalid ones.
-grep 'invalid.*extension.*foo' stderr && Exit 1
+grep 'invalid.*extension.*foo' stderr && exit 1
 
 :

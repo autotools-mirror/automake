@@ -17,7 +17,7 @@
 # Test for install-strip.
 
 required=cc
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CC
@@ -41,7 +41,7 @@ $ACLOCAL
 $AUTOCONF
 $AUTOMAKE -a
 
-prefix=$(cd install && pwd) || Exit 99
+prefix=$(cd install && pwd) || exit 99
 ./configure --prefix="$prefix"
 $MAKE
 $MAKE install-strip

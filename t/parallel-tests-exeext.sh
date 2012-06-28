@@ -17,7 +17,7 @@
 # parallel-tests:
 #   - check2.am and interaction with $(EXEEXT)
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 dnl We need to fool the init.m4 internals a little.

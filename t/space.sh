@@ -16,7 +16,7 @@
 
 # Test leading space on macro assignment.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 echo AC_PROG_CC >> configure.ac
 

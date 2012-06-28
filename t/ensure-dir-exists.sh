@@ -17,7 +17,7 @@
 # Test Automake-provided internal macro 'am__ensure_dir_exists'.
 
 am_create_testdir=empty
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cp "$am_amdir"/header-vars.am . \
   || fatal_ "fetching makefile fragment headers-vars.am"

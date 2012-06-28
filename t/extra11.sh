@@ -17,7 +17,7 @@
 # Check for more complex usage of wildcards in EXTRA_DIST.
 # Suggested by observations from Braden McDaniel.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 echo AC_OUTPUT >> configure.ac
 

@@ -17,7 +17,7 @@
 # Test to make sure that programs with bad names are properly
 # transformed.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CC

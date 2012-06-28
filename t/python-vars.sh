@@ -18,7 +18,7 @@
 # advertised in the manual.
 
 required=python
-. ./defs || Exit 1
+. ./defs || exit 1
 
 # In case the user's config.site defines pythondir or pyexecdir.
 CONFIG_SITE=/dev/null; export CONFIG_SITE
@@ -30,8 +30,8 @@ PYTHON=python
 # vary among different python installations, so we need more relaxed
 # and ad-hoc checks for them.  Also, more proper "functional" checks
 # on them should be done in the 'python-virtualenv.test' test.
-PYTHON_VERSION=$($PYTHON -c 'import sys; print(sys.version[:3])') || Exit 1
-PYTHON_PLATFORM=$($PYTHON -c 'import sys; print(sys.platform)') || Exit 1
+PYTHON_VERSION=$($PYTHON -c 'import sys; print(sys.version[:3])') || exit 1
+PYTHON_PLATFORM=$($PYTHON -c 'import sys; print(sys.platform)') || exit 1
 PYTHON_EXEC_PREFIX='${exec_prefix}'
 PYTHON_PREFIX='${prefix}'
 pkgpythondir="\${pythondir}/$me"

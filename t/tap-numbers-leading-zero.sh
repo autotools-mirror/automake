@@ -17,13 +17,13 @@
 # TAP support:
 #  - how does TAP result numbers with leading zero fares?
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 . "$am_testauxdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"
 
 do_checks ()
 {
-  $MAKE check >stdout && { cat stdout; Exit 1; }
+  $MAKE check >stdout && { cat stdout; exit 1; }
   cat stdout
   count_test_results "$@"
   # Allow some normalization of leading zeros, without forcing it.

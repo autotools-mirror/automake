@@ -18,7 +18,7 @@
 # Keep in sync with sister test 'subobj-cxx.sh'.
 
 required=cc
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CC
@@ -69,14 +69,14 @@ int answer (void)
 END
 
 $ACLOCAL
-$AUTOMAKE --add-missing 2>stderr || { cat stderr >&2; Exit 1; }
+$AUTOMAKE --add-missing 2>stderr || { cat stderr >&2; exit 1; }
 cat stderr >&2
 
 # Make sure compile is installed, and that Automake says so.
 grep 'install.*compile' stderr
 test -f compile
 
-$EGREP '[^/](a|b|foo)\.\$(OBJEXT)' Makefile.in && Exit 1
+$EGREP '[^/](a|b|foo)\.\$(OBJEXT)' Makefile.in && exit 1
 
 $AUTOCONF
 

@@ -18,7 +18,7 @@
 #  - which global test result derives from different test results
 #    mixed in a single script?
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 . "$am_testauxdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"
 
@@ -140,7 +140,7 @@ END
 
 tests=$(echo *.test) # Also required later.
 
-$MAKE TESTS="$tests" check >stdout && { cat stdout; Exit 1; }
+$MAKE TESTS="$tests" check >stdout && { cat stdout; exit 1; }
 cat stdout
 
 # Dirty trick required here.
@@ -149,7 +149,7 @@ for tst in $(echo " $tests " | sed 's/\.test / /'); do
 done
 
 rm -f test-suite.log
-$MAKE TESTS="$tests" test-suite.log && Exit 1
+$MAKE TESTS="$tests" test-suite.log && exit 1
 cat test-suite.log
 
 have_rst_section ()

@@ -17,7 +17,7 @@
 # Make sure += does not append to a comment.
 # Report from Stepan Kasal.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac <<'EOF'
 AM_CONDITIONAL([COND1], [true])

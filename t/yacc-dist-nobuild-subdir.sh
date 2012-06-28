@@ -18,7 +18,7 @@
 # using yacc sources in a subdir option.  Exposes automake bug#8485.
 
 required='cc yacc'
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CC
@@ -81,7 +81,7 @@ chmod u+w .
 ../configure --enable-dependency-tracking YACC=false
 
 $MAKE all YACC=false
-ls -l sub/*.[ch] && Exit 1
+ls -l sub/*.[ch] && exit 1
 
 $MAKE distcheck YACC=false DISTCHECK_CONFIGURE_FLAGS='YACC=false'
 

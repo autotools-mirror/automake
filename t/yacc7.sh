@@ -21,7 +21,7 @@
 # PR/47.
 
 required='cc yacc'
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CC
@@ -71,7 +71,7 @@ $MAKE foo.h
 test -f foo.h
 
 # Make sure '#line ... y.tab.h' gets replaced.
-$FGREP 'y.tab.h' foo.h && Exit 1
+$FGREP 'y.tab.h' foo.h && exit 1
 
 # Make distclean must not erase foo.c nor foo.h (by GNU standards) ...
 $MAKE foo.c

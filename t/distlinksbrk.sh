@@ -17,7 +17,7 @@
 # Check that distributed broken symlinks cause 'make dist' to fail, and
 # to do so with (mostly) meaningful diagnostic.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 # We need, for our broken symlinks, names that make it hard to get false
 # positives when grepping make output to look for them.
@@ -60,10 +60,10 @@ $AUTOMAKE
 ls -l # For debugging.
 
 # Distribution must fail.
-$MAKE distdir && Exit 1
+$MAKE distdir && exit 1
 
 # Names of distributed broken symlinks should be reported in make output.
-$MAKE -k distdir 2>stderr && { cat stderr >&2; Exit 1; }
+$MAKE -k distdir 2>stderr && { cat stderr >&2; exit 1; }
 cat stderr >&2
 $FGREP $lnk1 stderr
 $FGREP $lnk2 stderr

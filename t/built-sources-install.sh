@@ -17,7 +17,7 @@
 # Make sure 'install:' honors $(BUILT_SOURCES).
 # PR/359.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_CONFIG_FILES([dir/Makefile])

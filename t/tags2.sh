@@ -17,7 +17,7 @@
 # TAGS_DEPENDENCIES only make sense if other tag-worthy things (such as
 # sources) exist.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CC
@@ -37,6 +37,6 @@ bin_PROGRAMS = bar
 END
 
 AUTOMAKE_run
-grep 'define.*TAGS_DEPENDENCIES.*without' stderr && Exit 1
+grep 'define.*TAGS_DEPENDENCIES.*without' stderr && exit 1
 
 :

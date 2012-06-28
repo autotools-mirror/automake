@@ -18,7 +18,7 @@
 # Java people need this.
 # PR/317, reported by Eric Siegerman and Philip Fong.
 
-. ./defs || Exit 1
+. ./defs || exit 1
 
 echo AC_OUTPUT >> configure.ac
 
