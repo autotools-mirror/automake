@@ -17,8 +17,6 @@
 # Check that Automake support entries with user-defined extensions of
 # files in _SOURCES, if there is a rule to turn files with that
 # extension in object files.
-# See also related test 'suffix-custom-go.sh' for a check using a
-# real-world third party compiler (Go from Google).
 
 required=cc
 . ./defs || exit 1
