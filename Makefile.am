@@ -524,11 +524,6 @@ $(srcdir)/doc/amhello-1.0.tar.gz: $(amhello_sources) $(srcdir)/configure.ac
 
 EXTRA_DIST += \
   contrib/check-html.am \
-  contrib/multilib/README \
-  contrib/multilib/config-ml.in \
-  contrib/multilib/symlink-tree \
-  contrib/multilib/multilib.am \
-  contrib/multilib/multi.m4 \
   contrib/README
 
 
