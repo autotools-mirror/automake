@@ -396,21 +396,10 @@ RECHECK_LOGS = $(TEST_LOGS)
 ## Running all tests, or rechecking failures. ##
 ## ------------------------------------------ ##
 
-check-TESTS recheck:
-## If we are running "make recheck", it's not the user which can decide
-## which tests to consider for re-execution, so we must ignore the value
-## of $(RECHECK_LOGS).
-## Here and below, we expand $(RECHECK_LOGS) only once, to avoid exceeding
-## line length limits.
-	@if test $@ != recheck; then \
-	   list='$(RECHECK_LOGS)'; \
-	   test -z "$$list" || rm -f $$list; \
-	 fi
-	@if test $@ != recheck; then \
-	   list='$(RECHECK_LOGS:.log=.trs)'; \
-	   test -z "$$list" || rm -f $$list; \
-	 fi
-## We always have to remove TEST_SUITE_LOG, to ensure its rule is run
+check-TESTS:
+	list='$(RECHECK_LOGS)';           test -z "$$list" || rm -f $$list
+	list='$(RECHECK_LOGS:.log=.trs)'; test -z "$$list" || rm -f $$list
+## We always have to remove $(TEST_SUITE_LOG), to ensure its rule is run
 ## in any case even in lazy mode: otherwise, if no test needs rerunning,
 ## or a prior run plus reruns all happen within the same timestamp (can
 ## happen with a prior "make TESTS=<subset>"), then we get no log output.
@@ -419,24 +408,37 @@ check-TESTS recheck:
 ## we rely on .PHONY to work portably.
 	@test -z "$(TEST_SUITE_LOG)" || rm -f $(TEST_SUITE_LOG)
 	@set +e; $(am__set_TESTS_bases); \
-	if test $@ = recheck; then \
-## If running a "make recheck", we must only consider tests that had an
-## unexpected outcome (FAIL or XPASS) in the earlier run.
-	  bases=`for i in $$bases; do echo $$i; done \
-	           | $(am__list_recheck_tests)` || exit 1; \
-	fi; \
 	log_list=`for i in $$bases; do echo $$i.log; done`; \
 	trs_list=`for i in $$bases; do echo $$i.trs; done`; \
-## Remove newlines and normalize whitespace, being careful to avoid extra
-## whitespace in the definition of $log_list, since its value will be
-## passed to the recursive make invocation below through the TEST_LOGS
-## macro, and leading/trailing white space in a make macro definition can
-## be problematic.  In this particular case, trailing white space is known
-## to have caused segmentation faults on Solaris 10 XPG4 make:
+## Remove newlines and normalize whitespace.  Trailing (and possibly
+## leading) whitespace is known to cause segmentation faults on
+## Solaris 10 XPG4 make.
 	log_list=`echo $$log_list`; trs_list=`echo $$trs_list`; \
-## Under "make recheck", move the '.log' and '.trs' files associated
-## with the tests to be re-run out of the way, so that those tests will
-## be re-run by the "make test-suite.log" recursive invocation below.
+	$(MAKE) $(AM_MAKEFLAGS) $(TEST_SUITE_LOG) TEST_LOGS="$$log_list"; \
+## Be sure to exit with the proper exit status (automake bug#9245).  See
+## comments in the recipe of $(TEST_SUITE_LOG) above for more information.
+	exit $$?;
+
+## Recheck must depend on $(check_SCRIPTS), $(check_PROGRAMS), etc.
+## It must also depend on the 'all' target.  See automake bug#11252.
+recheck: all %CHECK_DEPS%
+## See comments above in the check-TESTS recipe for why remove
+## $(TEST_SUITE_LOG) here.
+	@test -z "$(TEST_SUITE_LOG)" || rm -f $(TEST_SUITE_LOG)
+	@set +e; $(am__set_TESTS_bases); \
+## We must only consider tests that had an unexpected outcome (FAIL
+## or XPASS) in the earlier run.
+	bases=`for i in $$bases; do echo $$i; done \
+	         | $(am__list_recheck_tests)` || exit 1; \
+	log_list=`for i in $$bases; do echo $$i.log; done`; \
+	trs_list=`for i in $$bases; do echo $$i.trs; done`; \
+## Remove newlines and normalize whitespace.  Trailing (and possibly
+## leading) whitespace is known to cause segmentation faults on
+## Solaris 10 XPG4 make.
+	log_list=`echo $$log_list`; trs_list=`echo $$trs_list`; \
+## Move the '.log' and '.trs' files associated with the tests to be
+## re-run out of the way, so that those tests will be re-run by the
+## "make test-suite.log" recursive invocation below.
 ## Two tricky requirements:
 ##   - we must avoid extra files removal when running under "make -n";
 ##   - in case the test is a compiled program whose compilation fails,
@@ -445,7 +447,7 @@ check-TESTS recheck:
 ##     will still try to re-compile and re-run it (automake bug#11791).
 ## The extra contortions below cater to such requirements.
 	am_backupdir=.am-recheck; \
-	if test $@ != recheck || $(am__make_dryrun); then :; else \
+	if $(am__make_dryrun); then :; else \
 	  if test -n "$$trs_list$$log_list"; then \
 	    { test ! -d $$am_backupdir || rm -rf $$am_backupdir; } \
 	      && $(MKDIR_P) $$am_backupdir || exit 1; \
@@ -457,23 +459,13 @@ check-TESTS recheck:
 	fi; \
 	$(MAKE) $(AM_MAKEFLAGS) $(TEST_SUITE_LOG) TEST_LOGS="$$log_list"; \
 	st=$$?; \
-	if test $@ != recheck || $(am__make_dryrun) || test ! -d $$am_backupdir; then :; else \
+	if $(am__make_dryrun) || test ! -d $$am_backupdir; then :; else \
 	  for f in $$log_list $$trs_list; do \
 	    test -f $$f || mv $$am_backupdir/$$f . || exit 1; \
 	  done; \
 	  rm -rf $$am_backupdir || exit 1; \
 	fi; \
-## Be sure to exit with the proper exit status.  The use of "exit" below
-## is required to work around a FreeBSD make bug (present only when
-## running in concurrent mode).  See automake bug#9245:
-##  <http://debbugs.gnu.org/cgi/bugreport.cgi?bug=9245>
-## and FreeBSD PR bin/159730:
-##  <http://www.freebsd.org/cgi/query-pr.cgi?pr=159730>.
 	exit $$st;
-
-## Recheck must depend on $(check_SCRIPTS), $(check_PROGRAMS), etc.
-## It must also depend on the 'all' target.  See automake bug#11252.
-recheck: all %CHECK_DEPS%
 
 AM_RECURSIVE_TARGETS += check recheck
 
