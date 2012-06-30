@@ -61,26 +61,26 @@ $MAKE install
 test -f "$inst/your/two.py"
 test -f "$inst/your/two.pyc"
 test -f "$inst/your/two.pyo"
-test ! -f "$inst/my/one.py"
-test ! -f "$inst/my/one.pyc"
-test ! -f "$inst/my/one.pyo"
+test ! -e "$inst/my/one.py"
+test ! -e "$inst/my/one.pyc"
+test ! -e "$inst/my/one.pyo"
 $MAKE uninstall
-test ! -f "$inst/your/two.py"
-test ! -f "$inst/your/two.pyc"
-test ! -f "$inst/your/two.pyo"
+test ! -e "$inst/your/two.py"
+test ! -e "$inst/your/two.pyc"
+test ! -e "$inst/your/two.pyo"
 
 ../configure --prefix=$cwd/"$inst" one=1
 $MAKE install
-test ! -f "$inst/your/two.py"
-test ! -f "$inst/your/two.pyc"
-test ! -f "$inst/your/two.pyo"
+test ! -e "$inst/your/two.py"
+test ! -e "$inst/your/two.pyc"
+test ! -e "$inst/your/two.pyo"
 test -f "$inst/my/one.py"
 test -f "$inst/my/one.pyc"
 test -f "$inst/my/one.pyo"
 $MAKE uninstall
-test ! -f "$inst/my/one.py"
-test ! -f "$inst/my/one.pyc"
-test ! -f "$inst/my/one.pyo"
+test ! -e "$inst/my/one.py"
+test ! -e "$inst/my/one.pyc"
+test ! -e "$inst/my/one.pyo"
 
 $MAKE disttest
 

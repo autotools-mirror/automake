@@ -144,11 +144,11 @@ test -f baz/zardoz-parse.c
 test -f baz/zardoz-parse.h
 ./configure # Re-create 'Makefile'.
 $MAKE maintainer-clean
-test ! -f foo/parse.c
-test ! -f foo/parse.h
-test ! -f bar/parse.c
-test ! -f bar/parse.h
-test ! -f baz/zardoz-parse.c
-test ! -f baz/zardoz-parse.h
+test ! -e foo/parse.c
+test ! -e foo/parse.h
+test ! -e bar/parse.c
+test ! -e bar/parse.h
+test ! -e baz/zardoz-parse.c
+test ! -e baz/zardoz-parse.h
 
 :

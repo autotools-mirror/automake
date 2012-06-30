@@ -59,10 +59,10 @@ ls -l
 xMAKE () { $MAKE infodir= htmldir= dvidir= psdir= pdfdir= "$@"; }
 
 xMAKE install install-html install-dvi install-ps install-pdf
-test ! -d "$instdir"
+test ! -e "$instdir"
 xMAKE install install-html install-dvi install-ps install-pdf DESTDIR="$destdir"
-test ! -d "$instdir"
-test ! -d "$destdir"
+test ! -e "$instdir"
+test ! -e "$destdir"
 xMAKE uninstall > stdout || { cat stdout; exit 1; }
 cat stdout
 grep 'rm -f' stdout && exit 1

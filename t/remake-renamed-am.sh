@@ -51,7 +51,7 @@ rm -f has-run-1 bar.am
 echo 'all-local:; echo ok > has-run-2' > zardoz.am
 echo 'include $(srcdir)/zardoz.am' > Makefile.am
 $MAKE
-test ! -f has-run-1
+test ! -e has-run-1
 test -f has-run-2
 
 :

@@ -78,7 +78,7 @@ test -f test-suite.log && exit 99 # Sanity check.
 # Check that we can override the testsuite log file at runtime.
 $MAKE check TEST_SUITE_LOG=zardoz.log
 ls -l
-test ! -f test-suite.log
+test ! -e test-suite.log
 cat zardoz.log
 test_log_expected zardoz.log
 # Sanity check the distribution too (this also does minimal checks on
@@ -90,7 +90,7 @@ $MAKE distcheck TEST_SUITE_LOG=zardoz.log
 cp orig test-suite.log
 $MAKE clean TEST_SUITE_LOG=zardoz.log
 ls -l
-test ! -f zardoz.log
+test ! -e zardoz.log
 diff orig test-suite.log
 
 # Check that the default testsuite log doesn't get unduly modified.
@@ -103,7 +103,7 @@ diff orig test-suite.log
 test_log_expected TheLogFile
 $MAKE clean TEST_SUITE_LOG=TheLogFile
 ls -l
-test ! -f TheLogFile
+test ! -e TheLogFile
 diff orig test-suite.log
 
 :

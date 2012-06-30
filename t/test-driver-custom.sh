@@ -131,8 +131,8 @@ $MAKE
 VERBOSE=yes $MAKE check
 ls -l . sub
 
-test ! -r BAD.log
-test ! -r BAD.trs
+test ! -e BAD.log
+test ! -e BAD.trs
 
 echo 'chk-wrapper 1.chk --am-chk --chk' > 1.exp
 echo 'test-wrapper 2.test -am-test -test' > 2.exp

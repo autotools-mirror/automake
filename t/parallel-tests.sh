@@ -71,10 +71,10 @@ test -f bar.log
 test -f foo.log
 
 $MAKE clean
-test ! -f baz.log
-test ! -f bar.log
-test ! -f foo.log
-test ! -f test-suite.log
+test ! -e baz.log
+test ! -e bar.log
+test ! -e foo.log
+test ! -e test-suite.log
 
 # Check dependencies: baz.test needs to run before bar.test,
 # but foo.test is not needed.
@@ -88,7 +88,7 @@ grep '^ERROR: bar\.test$' stdout
 
 test -f baz.log
 test -f bar.log
-test ! -f foo.log
+test ! -e foo.log
 test -f test-suite.log
 
 # Upon a lazy rerun, foo.test should be run, but the others shouldn't.

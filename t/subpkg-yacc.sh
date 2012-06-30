@@ -129,6 +129,6 @@ $MAKE
 $MAKE distcheck
 test -f lib-dist-hook-has-run # Sanity check
 test -f subpack-1.tar.gz
-test ! -d subpack-1 # Make sure "distcheck" cleans up after itself.
+test ! -e subpack-1 # Make sure "distcheck" cleans up after itself.
 
 :

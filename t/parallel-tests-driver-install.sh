@@ -45,8 +45,8 @@ cat stderr >&2
 
 ls -l . sub my_aux_dir # For debugging.
 test -f my_aux_dir/test-driver
-test ! -r test-driver
-test ! -r sub/test-driver
+test ! -e test-driver
+test ! -e sub/test-driver
 
 grep '^parallel-tests:.*installing.*my_aux_dir/test-driver' stderr
 

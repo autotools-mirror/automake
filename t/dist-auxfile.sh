@@ -59,7 +59,7 @@ END
 END
 
   mkdir subdir
-  echo > subdir/Makefile.am # 'echo', not ':', for Solaris /bin/sh.
+  : > subdir/Makefile.am
 
   test -z "$auxdir" || mkdir "$auxdir" || exit 99
 

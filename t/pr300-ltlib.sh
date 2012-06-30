@@ -52,7 +52,7 @@ cwd=$(pwd) || fatal_ "getting current working directory"
 ./configure --prefix "$cwd/inst" --libdir "$cwd/inst/lib"
 
 # A rule in the Makefile should create subdir.
-test ! -d subdir
+test ! -e subdir
 $MAKE >stdout || { cat stdout; exit 1; }
 cat stdout
 test -d subdir

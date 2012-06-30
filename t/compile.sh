@@ -33,13 +33,13 @@ rm -f 'a  c' ./-o a.o a.c
 
 ./compile touch a.o -- -o 'a  c.o' a.c
 test -f 'a  c.o'
-test ! -f ./-o
-test ! -f a.o
+test ! -e ./-o
+test ! -e a.o
 test -f a.c
 
 # Make sure 'compile' works for .obj too.
 ./compile touch a.obj -- -o ac.obj a.c
-test ! -f a.obj
+test ! -e a.obj
 test ac.obj
 
 :

@@ -37,6 +37,6 @@ $MAKE
 rm -f config.h
 $MAKE -n
 test -f stamp-h1
-test ! -f config.h
+test ! -r config.h
 
 :

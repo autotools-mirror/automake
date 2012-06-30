@@ -42,6 +42,6 @@ $AUTOMAKE --foreign --foreign -Wall 2>stderr && test ! -s stderr \
 $MAKE
 $MAKE distcheck
 test -f $me-1.0.tar.bz2
-test ! -r $me-1.0.tar.gz
+test ! -e $me-1.0.tar.gz
 
 :

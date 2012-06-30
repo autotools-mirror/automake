@@ -90,8 +90,8 @@ $AUTOMAKE -a
 
 $MAKE TEST_SUITE_LOG=my.log check && exit 1
 ls -l # For debugging.
-test ! -f test-suite.log
-test ! -f global.log
+test ! -e test-suite.log
+test ! -e global.log
 test -f my.log
 st=0
 for result in pass fail xfail xpass skip error; do
@@ -132,13 +132,13 @@ have_rst_section 'ERROR: error' my.log
 touch error2.log test-suite.log global.log
 $MAKE TEST_SUITE_LOG=my.log mostlyclean
 ls -l # For debugging.
-test ! -f my.log
-test ! -f pass.log
-test ! -f fail.log
-test ! -f xfail.log
-test ! -f xpass.log
-test ! -f skip.log
-test ! -f error.log
+test ! -e my.log
+test ! -e pass.log
+test ! -e fail.log
+test ! -e xfail.log
+test ! -e xpass.log
+test ! -e skip.log
+test ! -e error.log
 # "make mostlyclean" shouldn't remove unrelated log files.
 test -f error2.log
 test -f test-suite.log
@@ -149,8 +149,8 @@ rm -f *.log
 VERBOSE=yes $MAKE check >stdout && { cat stdout; exit 1; }
 cat stdout
 cat global.log
-test ! -f my.log
-test ! -f test-suite.log
+test ! -e my.log
+test ! -e test-suite.log
 # Check that VERBOSE causes the global testsuite log to be
 # emitted on stdout.
 out=$(cat stdout)
@@ -160,13 +160,13 @@ case $out in *"$log"*) ;; *) exit 1;; esac
 touch error2.log test-suite.log my.log
 $MAKE clean
 ls -l # For debugging.
-test ! -f global.log
-test ! -f pass.log
-test ! -f fail.log
-test ! -f xfail.log
-test ! -f xpass.log
-test ! -f skip.log
-test ! -f error.log
+test ! -e global.log
+test ! -e pass.log
+test ! -e fail.log
+test ! -e xfail.log
+test ! -e xpass.log
+test ! -e skip.log
+test ! -e error.log
 # "make clean" shouldn't remove unrelated log files.
 test -f error2.log
 test -f test-suite.log

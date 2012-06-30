@@ -42,8 +42,8 @@ test -f bar.1
 test -f ../foo.1
 
 $MAKE maintainer-clean
-test ! -f bar.1
-test ! -f ../foo.1
+test ! -e bar.1
+test ! -e ../foo.1
 
 cd ..
 ./configure
@@ -53,7 +53,7 @@ test -f bar.1
 test -f foo.1
 
 $MAKE maintainer-clean
-test ! -f bar.1
-test ! -f foo.1
+test ! -e bar.1
+test ! -e foo.1
 
 :

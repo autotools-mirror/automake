@@ -83,9 +83,9 @@ test -f ../bar_vala.stamp
 test -f ../zardoz.h
 test -f ../hello.c
 $MAKE maintainer-clean
-test ! -f ../zardoz.h
-test ! -f ../hello.c
-test ! -f ../foo_vala.stamp
-test ! -f ../bar_vala.stamp
+test ! -e ../zardoz.h
+test ! -e ../hello.c
+test ! -e ../foo_vala.stamp
+test ! -e ../bar_vala.stamp
 
 :

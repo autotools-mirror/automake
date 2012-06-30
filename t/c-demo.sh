@@ -154,8 +154,8 @@ $MAKE test-objs
 
 VERBOSE=x $MAKE check
 if cross_compiling; then
-  test ! -f tests/test-suite.log
-  test ! -f tests/test.log
+  test ! -e tests/test-suite.log
+  test ! -e tests/test.log
 else
   test -f tests/test-suite.log
   grep 'Foo, Bar!' tests/test.log
@@ -173,7 +173,7 @@ if ! cross_compiling && ! grep "[ $tab]depmode=none" Makefile; then
 fi
 
 $MAKE clean
-test ! -f lib/foo.h
+test ! -e lib/foo.h
 test -f lib/bar.h
 
 :

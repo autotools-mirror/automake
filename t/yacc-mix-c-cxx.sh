@@ -168,7 +168,7 @@ for try in 0 1; do
   test -f p.c
   test -f p.h
   test -f c2-p.c
-  test ! -r c2-p.h
+  test ! -e c2-p.h
 
   test -f parse.cc
   test -f parse.hh
@@ -176,8 +176,8 @@ for try in 0 1; do
   test -f parse3.hxx
 
   test -f cxx2-parse2.c++
-  test ! -r parse2.h++
-  test ! -r cxx2-parse2.h++
+  test ! -e parse2.h++
+  test ! -e cxx2-parse2.h++
 
   # Minimal checks about recovering from header removal.
   rm -f p.h parse.hh parse3.hxx
@@ -185,7 +185,7 @@ for try in 0 1; do
   $debug_info
   test -f p.h
   test -f parse.hh
-  test ! -r parse3.hxx
+  test ! -e parse3.hxx
   $run_make
   $debug_info
   test -f parse3.hxx

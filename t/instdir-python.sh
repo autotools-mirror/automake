@@ -49,10 +49,10 @@ $MAKE
 xMAKE () { $MAKE pythondir= "$@"; }
 
 xMAKE install
-test ! -d "$instdir"
+test ! -e "$instdir"
 xMAKE install DESTDIR="$destdir"
-test ! -d "$instdir"
-test ! -d "$destdir"
+test ! -e "$instdir"
+test ! -e "$destdir"
 xMAKE uninstall > stdout || { cat stdout; exit 1; }
 cat stdout
 grep 'rm -f' stdout && exit 1

@@ -102,7 +102,7 @@ test -f bar-parse.c
 ./configure # We must re-create 'Makefile'.
 $MAKE maintainer-clean
 ls -l
-test ! -f parse.c
-test ! -f bar-parse.c
+test ! -e parse.c
+test ! -e bar-parse.c
 
 :

@@ -106,14 +106,14 @@ doinst ()
 
 ./configure --prefix="$cwd/inst"
 doinst
-test ! -d inst || { find inst; exit 1; }
+test ! -e inst || { find inst; exit 1; }
 $MAKE uninstall
 doinst bin_SCRIPTS=foo.sh
 test -f inst/bin/foo.sh
 
 ./configure
 doinst DESTDIR="$cwd/dest"
-test ! -d dest || { find dest; exit 1; }
+test ! -e dest || { find dest; exit 1; }
 $MAKE uninstall
 doinst DESTDIR="$cwd/dest" bin_SCRIPTS=foo.sh
 test -f dest/usr/local/bin/foo.sh

@@ -91,13 +91,13 @@ grep " --tag=FC" Makefile.in
 
 $MAKE
 test -f sub/bar.lo
-test ! -f bar.lo
+test ! -e bar.lo
 ## The setting of FCFLAGS should only cause objects deriving from
 ## Fortran 90, not Fortran 77, to be renamed.
 test -f sub/baz.lo
-test ! -f baz.lo
-test ! -f sub/libgoodbye_la-baz.lo
-test ! -f libgoodbye_la-baz.lo
+test ! -e baz.lo
+test ! -e sub/libgoodbye_la-baz.lo
+test ! -e libgoodbye_la-baz.lo
 
 $MAKE distcheck
 

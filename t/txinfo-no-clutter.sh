@@ -14,19 +14,28 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# The pdf, ps and dvi targets shouldn't let clutter in the build directory.
-# Related to automake bug#11146.
+# The info, html, pdf, ps and dvi targets shouldn't let clutter in the
+# build directory.  Related to automake bug#11146.
 
 required='makeinfo tex texi2dvi dvips'
 . ./defs || exit 1
 
-mkdir sub
-
-echo AC_OUTPUT >> configure.ac
+cat >> configure.ac <<'END'
+AC_CONFIG_FILES([sub/Makefile])
+AC_OUTPUT
+END
 
 cat > Makefile.am << 'END'
-all-local: ps pdf dvi html
-info_TEXINFOS = foo.texi sub/bar.texi
+all-local: ps pdf dvi html # For "make distcheck".
+info_TEXINFOS = foo.texi doc/bar.texi baz.texi
+SUBDIRS = sub
+END
+
+mkdir sub doc
+
+cat > sub/Makefile.am << 'END'
+all-local: ps pdf dvi html # For "make distcheck".
+info_TEXINFOS = baz.texi
 END
 
 cat > foo.texi << 'END'
@@ -39,22 +48,13 @@ Hello walls.
 @bye
 END
 
-cat > sub/bar.texi << 'END'
+cat > doc/bar.texi << 'END'
 \input texinfo
 @setfilename bar.info
 @settitle bar
 @node Top
 Hello walls.
 @include version2.texi
-@bye
-END
-
-cat > baz.texi << 'END'
-\input texinfo
-@setfilename baz.info
-@settitle baz
-@node Top
-Hello walls.
 @bye
 END
 
@@ -81,6 +81,8 @@ sb
 @bye
 END
 
+cp baz.texi sub
+
 $ACLOCAL
 $AUTOMAKE --add-missing
 $AUTOCONF
@@ -91,11 +93,53 @@ $AUTOCONF
 # clean up potential cruft left by earlier ones.
 for fmt in info pdf ps dvi html all; do
   $MAKE $fmt
-  ls -l . sub # For debugging.
-  ls -d foo* baz* sub/bar* > lst
-  $EGREP -v '^(foo|sub/bar|baz)\.(texi|dvi|ps|pdf|html|info|t2[dp])$' \
-    lst && exit 1
-  $MAKE clean
+  # For debugging.
+  ls -l . doc sub
+  # Sanity check.
+  case $fmt in
+    html)
+      test -e foo.html
+      test -e doc/bar.html
+      test -e baz.html
+      test -e sub/baz.html
+      ;;
+    all)
+      for x in info pdf ps dvi; do
+        test -f foo.$x
+        test -f doc/bar.$x
+        test -f baz.$x
+        test -f sub/baz.$x
+      done
+      test -e foo.html
+      test -e doc/bar.html
+      test -e baz.html
+      test -e sub/baz.html
+      ;;
+    *)
+      test -f foo.$fmt
+      test -f doc/bar.$fmt
+      test -f baz.$fmt
+      test -f sub/baz.$fmt
+      ;;
+  esac
+  # Real test.
+  ls -d foo* baz* sub/baz* doc/bar* > lst
+  basename_rx='(foo|doc/bar|baz|sub/baz)'
+  case $fmt in
+    pdf) extension_rx="(texi|pdf|t2p)";;
+    dvi) extension_rx="(texi|dvi|t2d)";;
+     ps) extension_rx="(texi|ps|dvi|t2d)";;
+   info) extension_rx="(texi|info)";;
+   html) extension_rx="(texi|html)";;
+    all) extension_rx="(texi|html|info|pdf|ps|dvi|t2[pd])";;
+      *) fatal_ "unreachable code reached";;
+  esac
+  $EGREP -v "^$basename_rx\.$extension_rx$" lst && exit 1
+  # Cleanup for checks on the next format.
+  case $fmt in
+    info) rm -f *.info doc/*.info sub/*.info;;
+       *) $MAKE clean;;
+  esac
 done
 
 $MAKE distcheck

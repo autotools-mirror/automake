@@ -97,9 +97,9 @@ for target in clean distclean; do
   test -f lexer.l
   test -f lexer.c
   test -f bar-lexer.c
-  test ! -r baz.l
-  test ! -r baz.c
-  test ! -r qux-baz.c
+  test ! -e baz.l
+  test ! -e baz.c
+  test ! -e qux-baz.c
 done
 
 cp config.sav config.status
@@ -108,7 +108,7 @@ cp config.sav config.status
 $MAKE maintainer-clean
 ls -l
 test -f lexer.l
-test ! -r lexer.c
-test ! -r bar-lexer.c
+test ! -e lexer.c
+test ! -e bar-lexer.c
 
 :

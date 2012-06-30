@@ -133,21 +133,21 @@ check_targets ()
     install-* | installdirs | tags | TAGS ) ;;
     *)
       grep "stamp-$target$" stdout || exit 1
-      test ! -f "stamp-$target$" || exit 1
+      test ! -e "stamp-$target" || exit 1
       ;;
     esac
     case $target in
     install-* | installdirs ) ;;
     *)
       grep "stamp-$target-sub" stdout || exit 1
-      test ! -f "sub/stamp-$target-sub" || exit 1
+      test ! -e "sub/stamp-$target-sub" || exit 1
       ;;
     esac
     case $target in
     distclean | maintainer-clean ) ;;
     *)
       grep "should-not-be-executed" stdout || exit 1
-      test ! -f "sub2/sub2-$target-should-not-be-executed" || exit 1
+      test ! -e "sub2/sub2-$target-should-not-be-executed" || exit 1
       ;;
     esac
   done

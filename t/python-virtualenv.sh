@@ -166,7 +166,7 @@ xMAKE () { $MAKE pythondir="$py_site" pyexecdir="$py_site" "$@"; }
 
 export pythondir pyexecdir
 xMAKE install
-test ! -d bad-prefix
+test ! -e bad-prefix
 xMAKE test-install
 xMAKE test-run
 xMAKE uninstall

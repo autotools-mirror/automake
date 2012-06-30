@@ -61,12 +61,12 @@ $MAKE all check
 $MAKE clean
 ls *.lo && exit 1
 test -f libtool
-test ! -d src/.libs
-test ! -d src/_libs
-test ! -d check/.libs
-test ! -d check/_libs
+test ! -e src/.libs
+test ! -e src/_libs
+test ! -e check/.libs
+test ! -e check/_libs
 test -f src/so_locations
-test ! -f lib/so_locations
+test ! -e lib/so_locations
 # No libtool libraries created in this directory, our rules
 # shouldn't bother about possible linker files in it.
 test -f src/so_locations

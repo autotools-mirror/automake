@@ -96,25 +96,25 @@ for vpath in : false; do
   $MAKE TESTS= recheck >stdout || { cat stdout; exit 1; }
   cat stdout
   count_test_results total=0 pass=0 fail=0 xpass=0 xfail=0 skip=0 error=0
-  test ! -r a.run
-  test ! -r b.run
-  test ! -r c.run
+  test ! -e a.run
+  test ! -e b.run
+  test ! -e c.run
 
   : a.test was successful the first time, no need to re-run it.
   $MAKE TESTS=a.test recheck >stdout || { cat stdout; exit 1; }
   cat stdout
   count_test_results total=0 pass=0 fail=0 xpass=0 xfail=0 skip=0 error=0
-  test ! -r a.run
-  test ! -r b.run
-  test ! -r c.run
+  test ! -e a.run
+  test ! -e b.run
+  test ! -e c.run
 
   : b.test failed, it should be re-run.  And make it pass this time.
   echo OK > b.ok
   $MAKE TESTS=b recheck >stdout || { cat stdout; exit 1; }
   cat stdout
-  test ! -r a.run
+  test ! -e a.run
   test -f b.run
-  test ! -r c.run
+  test ! -e c.run
   count_test_results total=2 pass=0 fail=0 xpass=0 xfail=1 skip=1 error=0
 
   rm -f *.run
@@ -123,27 +123,25 @@ for vpath in : false; do
   $MAKE TESTS=b recheck >stdout || { cat stdout; exit 1; }
   cat stdout
   count_test_results total=0 pass=0 fail=0 xpass=0 xfail=0 skip=0 error=0
-  test ! -r a.run
-  test ! -r b.run
-  test ! -r c.run
+  test ! -e a.run
+  test ! -e b.run
+  test ! -e c.run
   $MAKE TESTS='a.test b.test' recheck >stdout || { cat stdout; exit 1; }
   cat stdout
   count_test_results total=0 pass=0 fail=0 xpass=0 xfail=0 skip=0 error=0
-  test ! -r a.run
-  test ! -r b.run
-  test ! -r c.run
+  test ! -e a.run
+  test ! -e b.run
+  test ! -e c.run
 
   : No need to re-run a.test anymore, but c.test should be rerun,
   : as it contained an XPASS.  And this time, make it fail with
   : an hard error.
-  # Use 'echo' here, since Solaris 10 /bin/sh would try to optimize
-  # a ':' away after the first iteration, even if it is redirected.
   echo dummy > c.err
   $MAKE TESTS='a.test c' recheck >stdout && { cat stdout; exit 1; }
   cat stdout
   count_test_results total=1 pass=0 fail=0 xpass=0 xfail=0 skip=0 error=1
-  test ! -r a.run
-  test ! -r b.run
+  test ! -e a.run
+  test ! -e b.run
   test -f c.run
 
   rm -f *.run *.err
@@ -155,8 +153,8 @@ for vpath in : false; do
   $MAKE TESTS='c.test a.test' recheck >stdout || { cat stdout; exit 1; }
   cat stdout
   count_test_results total=1 pass=1 fail=0 xpass=0 xfail=0 skip=0 error=0
-  test ! -r a.run
-  test ! -r b.run
+  test ! -e a.run
+  test ! -e b.run
   test -f c.run
 
   rm -f *.run *.err *.ok
@@ -166,9 +164,9 @@ for vpath in : false; do
   $MAKE recheck >stdout || { cat stdout; exit 1; }
   cat stdout
   count_test_results total=0 pass=0 fail=0 xpass=0 xfail=0 skip=0 error=0
-  test ! -r a.run
-  test ! -r b.run
-  test ! -r c.run
+  test ! -e a.run
+  test ! -e b.run
+  test ! -e c.run
 
   cd $srcdir
 

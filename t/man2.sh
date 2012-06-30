@@ -42,14 +42,14 @@ cwd=$(pwd) || fatal_ "getting current working directory"
 ./configure --prefix='' --mandir=/man
 $MAKE DESTDIR="$cwd/_inst" install
 
-test -f ./_inst/man/man2/foo.2
-test -f ./_inst/man/man4/foo.4
-test -f ./_inst/man/man4/bar.4
+test -f _inst/man/man2/foo.2
+test -f _inst/man/man4/foo.4
+test -f _inst/man/man4/bar.4
 
 $MAKE DESTDIR="$cwd/_inst" uninstall
 
-test ! -f ./_inst/man/man2/foo.2
-test ! -f ./_inst/man/man4/foo.4
-test ! -f ./_inst/man/man4/bar.4
+test ! -e _inst/man/man2/foo.2
+test ! -e _inst/man/man4/foo.4
+test ! -e _inst/man/man4/bar.4
 
 :

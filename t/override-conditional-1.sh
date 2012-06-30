@@ -44,7 +44,7 @@ $AUTOCONF
 
 ./configure cond=no
 $MAKE ps
-test ! -r foobar
+test ! -e foobar
 
 ./configure cond=yes
 $MAKE ps

@@ -117,10 +117,7 @@ for try in 0 1; do
   # Success.
 
   # Use append mode here to avoid dropping output.  See automake bug#11413.
-  # Also, use 'echo' here to "nullify" the previous contents of 'stdout',
-  # since Solaris 10 /bin/sh would try to optimize a ':' away after the
-  # first iteration, even if it is redirected.
-  echo " " >stdout
+  : >stdout
   $run_make check >>stdout || { cat stdout; exit 1; }
   cat stdout
   count_test_results total=6 pass=4 fail=0 xpass=0 xfail=1 skip=1 error=0
@@ -137,15 +134,10 @@ for try in 0 1; do
 
   # Failure.
 
-  # Use 'echo' here, since Solaris 10 /bin/sh would try to optimize
-  # a ':' away after the first iteration, even if it is redirected.
-  echo dummy > not-skip
-  echo dummy > bail-out
+  : > not-skip
+  : > bail-out
   # Use append mode here to avoid dropping output.  See automake bug#11413.
-  # Also, use 'echo' here to "nullify" the previous contents of 'stdout',
-  # since Solaris 10 /bin/sh would try to optimize a ':' away after the
-  # first iteration, even if it is redirected.
-  echo " " >stdout
+  : >stdout
   $run_make check >>stdout && { cat stdout; exit 1; }
   cat stdout
   count_test_results total=7 pass=4 fail=1 xpass=0 xfail=1 skip=0 error=1

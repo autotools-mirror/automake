@@ -58,26 +58,26 @@ $AUTOMAKE -a
 
 ./configure cond=yes cond1=yes cond2=no cond3=yes
 test -f file1
-test ! -f file2
+test ! -e file2
 test -f file3
 rm -f file1 file3
 $MAKE file1 file3
 $MAKE file2 && exit 1
 test -f file1
-test ! -f file2
+test ! -e file2
 test -f file3
 $MAKE distclean
 
 ./configure cond=no cond1=yes cond2=yes
-test ! -f file1
+test ! -e file1
 test -f file2
-test ! -f file3
+test ! -e file3
 rm -f file2
 $MAKE file1 && exit 1
 $MAKE file2
 $MAKE file3 && exit 1
-test ! -f file1
+test ! -e file1
 test -f file2
-test ! -f file3
+test ! -e file3
 
 :

@@ -117,9 +117,9 @@ $MAKE mostlyclean
 ls -l . sub1 sub2
 for i in 1 2; do
   for j in a b c d e f; do
-    test ! -f sub$i/$j.o
-    test ! -f sub$i/$j.obj
-    test ! -f sub$i/$j.lo
+    test ! -e sub$i/$j.o
+    test ! -e sub$i/$j.obj
+    test ! -e sub$i/$j.lo
     test -f sub$i/$j.c || exit 99 # Sanity check
   done
 done
@@ -152,14 +152,14 @@ test -f sub2/a.$OBJEXT
 
 # ... but they get removed by "make mostlyclean" ...
 $MAKE mostlyclean
-test ! -f sub1/a.$OBJEXT
-test ! -f sub2/d.$OBJEXT
+test ! -e sub1/a.$OBJEXT
+test ! -e sub2/d.$OBJEXT
 
 # ... and do not get rebuilt ...
 $MAKE clean
 $MAKE all
-test ! -f sub1/a.$OBJEXT
-test ! -f sub2/d.$OBJEXT
+test ! -e sub1/a.$OBJEXT
+test ! -e sub2/d.$OBJEXT
 
 # ... while the non-stale files do.
 test -f sub1/b.$OBJEXT

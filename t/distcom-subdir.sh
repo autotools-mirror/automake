@@ -47,7 +47,7 @@ END
 $ACLOCAL
 $AUTOCONF
 $AUTOMAKE
-test ! -f depcomp
+test ! -e depcomp
 
 cat >> subdir/Makefile.am << 'END'
 bin_PROGRAMS = foo

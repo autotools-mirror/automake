@@ -53,21 +53,21 @@ $MAKE check
 rm -f foo.trs bar.trs baz.trs
 $MAKE foo.trs
 test -f foo.trs
-test ! -f bar.trs
-test ! -f baz.trs
+test ! -e bar.trs
+test ! -e baz.trs
 
 : Recreate by hand, several at the same time.
 rm -f foo.trs bar.trs baz.trs
 $MAKE foo.trs bar.trs
 test -f foo.trs
 test -f bar.trs
-test ! -f baz.trs
+test ! -e baz.trs
 
 : Recreate by hand, with a failing test.
 rm -f foo.trs bar.trs
 TEST_STATUS=1 $MAKE bar.trs baz.trs >stdout || { cat stdout; exit 1; }
 cat stdout
-test ! -f foo.trs
+test ! -e foo.trs
 test -f bar.trs
 test -f baz.trs
 grep '^FAIL: bar\.test' stdout
@@ -97,15 +97,15 @@ grep '^PASS: baz\.test' stdout
 rm -f foo.trs bar.trs baz.trs
 $MAKE TESTS=foo.test check
 test -f foo.trs
-test ! -f bar.trs
-test ! -f baz.trs
+test ! -e bar.trs
+test ! -e baz.trs
 
 : Recreate with a "make check" with redefined suffix-less TESTS.
 rm -f foo.trs bar.trs baz.trs
 $MAKE TESTS=bar check
-test ! -f foo.trs
+test ! -e foo.trs
 test -f bar.trs
-test ! -f baz.trs
+test ! -e baz.trs
 
 : Interactions with "make recheck" are OK.
 rm -f foo.trs bar.trs baz.log baz.trs
@@ -113,8 +113,8 @@ $MAKE recheck >stdout || { cat stdout; exit 1; }
 cat stdout
 test -f foo.trs
 test -f bar.trs
-test ! -f baz.trs
-test ! -f baz.log
+test ! -e baz.trs
+test ! -e baz.log
 grep '^PASS: foo\.test' stdout
 grep '^PASS: bar\.test' stdout
 grep 'baz\.test' stdout && exit 1

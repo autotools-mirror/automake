@@ -48,7 +48,7 @@ $AUTOMAKE -a
 
 # The testsuite driver does not exist.
 $MAKE check && exit 1
-test ! -f test-suite.log
+test ! -e test-suite.log
 
 # The testsuite driver exists and create the test log files, but fails.
 
@@ -61,6 +61,6 @@ END
 chmod a+x oops
 
 $MAKE check && exit 1
-test ! -f test-suite.log
+test ! -e test-suite.log
 
 :

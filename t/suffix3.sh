@@ -46,7 +46,6 @@ $FGREP 'AM_CFLAGS' Makefile.in && exit 1
 $FGREP '$(CFLAGS)' Makefile.in && exit 1
 $FGREP '$(CC)'     Makefile.in && exit 1
 
-
 $AUTOCONF
 ./configure
 
@@ -64,6 +63,6 @@ $MAKE distcheck
 
 # Intermediate files should not be distributed.
 $MAKE distdir
-test ! -r $me-1.0/foo.cc
+test ! -e $me-1.0/foo.cc
 
 :

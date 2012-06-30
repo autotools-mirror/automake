@@ -71,10 +71,10 @@ $MAKE
 xMAKE() { $MAKE bindir= libdir= pyexecdir= "$@"; }
 
 xMAKE install
-test ! -d "$instdir"
+test ! -e "$instdir"
 xMAKE install DESTDIR="$destdir"
-test ! -d "$instdir"
-test ! -d "$destdir"
+test ! -e "$instdir"
+test ! -e "$destdir"
 xMAKE uninstall > stdout || { cat stdout; exit 1; }
 cat stdout
 # Creative quoting below to please maintainer-check.

@@ -59,9 +59,9 @@ test -f src/zardoz.c
 test -f src_zardoz_vala.stamp
 $MAKE distcheck
 $MAKE maintainer-clean
-test ! -f src/zardoz.c
+test ! -e src/zardoz.c
 # FIXME: having 'src/zardoz_vala.stamp' should be more appropriate here.
-test ! -f src_zardoz_vala.stamp
+test ! -e src_zardoz_vala.stamp
 
 mkdir build
 cd build
@@ -74,6 +74,6 @@ $MAKE distcheck
 $MAKE maintainer-clean
 test ! -f src/zardoz.c
 # FIXME: having 'src/zardoz_vala.stamp' should be more appropriate here.
-test ! -f src_zardoz_vala.stamp
+test ! -e src_zardoz_vala.stamp
 
 :

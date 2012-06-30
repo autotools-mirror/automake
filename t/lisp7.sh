@@ -41,9 +41,9 @@ $MAKE >stdout || { cat stdout; exit 1; }
 cat stdout
 test 1 -eq $(grep -c 'Warnings can be ignored' stdout)
 
-test ! -f am-one.elc
-test ! -f am-two.elc
-test ! -f am-three.elc
+test ! -e am-one.elc
+test ! -e am-two.elc
+test ! -e am-three.elc
 test -f elc-stamp
 
 $MAKE distcheck

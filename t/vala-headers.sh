@@ -82,6 +82,6 @@ for h in $headers; do test -f $h; done
 $MAKE distcheck
 
 $MAKE maintainer-clean
-for h in $headers; do test ! -f $h; done
+for h in $headers; do test ! -e $h; done
 
 :

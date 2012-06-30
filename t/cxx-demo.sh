@@ -69,7 +69,7 @@ $AUTOCONF
 $AUTOMAKE --add-missing
 test -f build-aux/depcomp
 # Not needed by C++ compilers.
-test ! -f build-aux/compile
+test ! -e build-aux/compile
 
 cat > work.h++ << 'END'
 #define ACTION "work"

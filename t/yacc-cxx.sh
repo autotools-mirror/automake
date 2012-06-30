@@ -132,9 +132,9 @@ test -f foo4-parse4.cpp
 ./configure # Re-create 'Makefile'.
 $MAKE maintainer-clean
 ls -l
-test ! -f parse1.cc
-test ! -f parse2.c++
-test ! -f foo3-parse3.cxx
-test ! -f foo4-parse4.cpp
+test ! -e parse1.cc
+test ! -e parse2.c++
+test ! -e foo3-parse3.cxx
+test ! -e foo4-parse4.cpp
 
 :

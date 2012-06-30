@@ -128,8 +128,8 @@ grep foofoofoo foo.log
 grep barbarbar bar.log
 grep yepyepyep baz.log
 # Files that shouldn't have been created.
-test ! -f none.log
-test ! -f test-suite.log
+test ! -e none.log
+test ! -e test-suite.log
 # Expected testsuite progress output.
 grep '^PASS: baz\.test$' stdout
 # Don't anchor the end of the next two patterns, to allow for non-empty

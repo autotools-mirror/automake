@@ -71,9 +71,9 @@ grep '^FAIL: baz\.test$' stdout
 $MAKE clean
 $MAKE recheck
 test -f bla
-test ! -f foo.log
-test ! -f bar.log
-test ! -f baz.log
+test ! -e foo.log
+test ! -e bar.log
+test ! -e baz.log
 test -f mylog.log
 
 :

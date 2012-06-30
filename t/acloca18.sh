@@ -123,7 +123,7 @@ $ACLOCAL -I 4 -I 1 --diff=diff >stdout 2>stderr || {
 cat stderr >&2
 cat stdout
 grep '#serial 456' stdout
-test ! -f 4/m1.m4
+test ! -e 4/m1.m4
 grep 'installing.*4/m1\.m4' stderr
 
 $ACLOCAL -I 5 2>stderr && { cat stderr >&2; exit 1; }

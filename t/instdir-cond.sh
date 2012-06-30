@@ -42,7 +42,7 @@ $AUTOCONF
 ./configure --prefix="$(pwd)/inst"
 
 $MAKE install
-test ! -d inst/share/instdir-cond
-test ! -d inst/libexec/instdir-cond
+test ! -e inst/share/instdir-cond
+test ! -e inst/libexec/instdir-cond
 
 :

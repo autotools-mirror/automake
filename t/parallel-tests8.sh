@@ -50,7 +50,7 @@ mkdir build
 cd build
 ../configure
 $MAKE check
-test ! -f ../foo.log
+test ! -e ../foo.log
 $MAKE distcheck
 
 :

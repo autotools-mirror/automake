@@ -34,11 +34,11 @@ ln -s "$(pwd)/nonesuch" $lnk2
 ln -s $lnk1 $lnka
 ln -s $lnka $lnkb
 
-# Sanity checks.  Use 'test -r', since Solaris Sh doesn't grok 'test -e'.
-test ! -r $lnk1
-test ! -r $lnk2
-test ! -r $lnka
-test ! -r $lnkb
+# Sanity checks.
+test ! -e $lnk1
+test ! -e $lnk2
+test ! -e $lnka
+test ! -e $lnkb
 test -h $lnk1
 test -h $lnk2
 test -h $lnka

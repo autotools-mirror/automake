@@ -53,9 +53,9 @@ touch x y.bin a.test b.test.bin
 $MAKE check
 ls -l # For debugging.
 test -f y.log
-test ! -r y.bin.log
+test ! -e y.bin.log
 test -f b.log
-test ! -r b.test.log
+test ! -e b.test.log
 
 # Opportunistically check that we are not forced to specify
 # the test suffixes nor the $(EXEEXT) suffix when overriding

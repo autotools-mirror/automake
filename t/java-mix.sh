@@ -58,11 +58,11 @@ test ! -s stderr
 
 $MAKE distdir
 ls -l $distdir # For debugging.
-test ! -f $distdir/Class.java
+test ! -e $distdir/Class.java
 test -f $distdir/ClassDist.java
-test ! -f $distdir/ClassNobase.java
+test ! -e $distdir/ClassNobase.java
 test -f $distdir/ClassNobaseDist.java
-test ! -f $distdir/ClassNodist.java
-test ! -f $distdir/ClassNobaseNodist.java
+test ! -e $distdir/ClassNodist.java
+test ! -e $distdir/ClassNobaseNodist.java
 
 :

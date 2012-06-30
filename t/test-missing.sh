@@ -40,17 +40,17 @@ cat stdout; cat stderr >&2
 test -f ok.log
 grep '^PASS: ok\.test' stdout
 $FGREP 'zardoz.log' stderr
-test ! -f test-suite.log
+test ! -e test-suite.log
 
 $MAKE TESTS='zardoz2.test' check 2>stderr && { cat stderr >&2; exit 1; }
 cat stderr
 $FGREP 'zardoz2.log' stderr
-test ! -f test-suite.log
+test ! -e test-suite.log
 
 $MAKE TESTS='zardoz3' check 2>stderr && { cat stderr >&2; exit 1; }
 cat stderr >&2
 $FGREP 'zardoz3.log' stderr
-test ! -f test-suite.log
+test ! -e test-suite.log
 
 # The errors should persist even after 'test-suite.log'
 # has been created.
@@ -62,6 +62,6 @@ rm -f zardoz.test
 $MAKE check 2>stderr && { cat stderr >&2; exit 1; }
 cat stderr >&2
 $FGREP 'zardoz.log' stderr
-test ! -f test-suite.log
+test ! -e test-suite.log
 
 :

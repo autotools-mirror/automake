@@ -113,7 +113,7 @@ for vpath in : false; do
 
   $MAKE
   ls -l
-  test ! -f stdio.h
+  test ! -e stdio.h
 
   # And now simulate that we want our custom stdio.h back.
 

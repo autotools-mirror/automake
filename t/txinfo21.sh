@@ -34,6 +34,7 @@ AC_OUTPUT
 EOF
 
 cat > Makefile.am << 'END'
+check-local: ps pdf dvi html # For "make distcheck".
 SUBDIRS = rec
 info_TEXINFOS = main.texi sub/main2.texi
 END
@@ -75,13 +76,15 @@ install-pdf-local:
 	:> "$(pdfdir)/hello"
 uninstall-local:
 	rm -f "$(pdfdir)/hello"
+
+check-local: ps pdf dvi html # For "make distcheck".
 END
 
 $ACLOCAL
 $AUTOMAKE --add-missing
 $AUTOCONF
 
-./configure
+./configure --prefix "$(pwd)"
 
 $MAKE
 
@@ -100,9 +103,9 @@ $MAKE html
 is_newest main.html main.texi
 
 $MAKE clean
-test ! -d main.html
-test ! -d sub/main2.html
-test ! -d rec/main3.html
+test ! -e main.html
+test ! -e sub/main2.html
+test ! -e rec/main3.html
 
 # Test production of a single HTML file.
 $MAKE MAKEINFOFLAGS=--no-split html
@@ -110,44 +113,47 @@ test -f main.html
 test -f sub/main2.html
 test -f rec/main3.html
 $MAKE clean
-test ! -f main.html
-test ! -f sub/main2.html
-test ! -f rec/main3.html
+test ! -e main.html
+test ! -e sub/main2.html
+test ! -e rec/main3.html
 
 # Make sure AM_MAKEINFOHTMLFLAGS is supported, and override AM_MAKEINFO.
+
+cp Makefile.am Makefile.sav
 cat >>Makefile.am <<\EOF
 AM_MAKEINFOHTMLFLAGS = --no-headers --no-split
 AM_MAKEINFOFLAGS = --unsupported-option
 EOF
 $AUTOMAKE
-./configure --prefix "$(pwd)"
+./config.status Makefile
 
 $MAKE html
 test -f main.html
 test -f sub/main2.html
 test -d rec/main3.html
+
 $MAKE clean
-test ! -f main.html
-test ! -f sub/main2.html
-test ! -d rec/main3.html
+test ! -e main.html
+test ! -e sub/main2.html
+test ! -e rec/main3.html
 
 $MAKE install-html
 test -f share/$me/html/main.html
 test -f share/$me/html/main2.html
 test -d share/$me/html/main3.html
 $MAKE uninstall
-test ! -f share/$me/html/main.html
-test ! -f share/$me/html/main2.html
-test ! -d share/$me/html/main3.html
+test ! -e share/$me/html/main.html
+test ! -e share/$me/html/main2.html
+test ! -e share/$me/html/main3.html
 
 $MAKE install-dvi
 test -f share/$me/dvi/main.dvi
 test -f share/$me/dvi/main2.dvi
 test -f share/$me/dvi/main3.dvi
 $MAKE uninstall
-test ! -f share/$me/dvi/main.dvi
-test ! -f share/$me/dvi/main2.dvi
-test ! -f share/$me/dvi/main3.dvi
+test ! -e share/$me/dvi/main.dvi
+test ! -e share/$me/dvi/main2.dvi
+test ! -e share/$me/dvi/main3.dvi
 
 dvips --help || skip_ "dvips is missing"
 
@@ -156,9 +162,9 @@ test -f share/$me/ps/main.ps
 test -f share/$me/ps/main2.ps
 test -f share/$me/ps/main3.ps
 $MAKE uninstall
-test ! -f share/$me/ps/main.ps
-test ! -f share/$me/ps/main2.ps
-test ! -f share/$me/ps/main3.ps
+test ! -e share/$me/ps/main.ps
+test ! -e share/$me/ps/main2.ps
+test ! -e share/$me/ps/main3.ps
 
 pdfetex --help || pdftex --help \
   || skip_ "pdftex and pdfetex are both missing"
@@ -169,9 +175,16 @@ test -f share/$me/pdf/main2.pdf
 test -f share/$me/pdf/main3.pdf
 test -f share/$me/pdf/hello
 $MAKE uninstall
-test ! -f share/$me/pdf/main.pdf
-test ! -f share/$me/pdf/main2.pdf
-test ! -f share/$me/pdf/main3.pdf
-test ! -f share/$me/pdf/hello
+test ! -e share/$me/pdf/main.pdf
+test ! -e share/$me/pdf/main2.pdf
+test ! -e share/$me/pdf/main3.pdf
+test ! -e share/$me/pdf/hello
+
+# Restore the makefile without a broken AM_MAKEINFOFLAGS definition.
+mv -f Makefile.sav Makefile.am
+$AUTOMAKE
+./config.status Makefile
+
+$MAKE distcheck
 
 :

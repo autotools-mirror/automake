@@ -62,7 +62,7 @@ $ACLOCAL
 $AUTOMAKE
 grep TEST Makefile.in # For debugging.
 hasnt_parallel_tests Makefile.in
-test ! -r test-driver
+test ! -e test-driver
 cd ..
 
 cd two
@@ -74,7 +74,7 @@ has_parallel_tests aMakefile.in
 hasnt_parallel_tests bMakefile.in
 mv aMakefile.in aMakefile.sav
 mv bMakefile.in bMakefile.sav
-test ! -r test-driver
+test ! -e test-driver
 test -f config/test-driver
 $AUTOMAKE
 diff aMakefile.sav aMakefile.in

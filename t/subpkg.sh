@@ -113,7 +113,7 @@ grep '^checking whether cc understands -c and -o together' stdout
 
 $MAKE
 $MAKE distcheck
-test ! -d subpack-1 # Make sure distcheck cleans up after itself.
+test ! -e subpack-1 # Make sure distcheck cleans up after itself.
 test -f subpack-1.tar.gz
 
 :
