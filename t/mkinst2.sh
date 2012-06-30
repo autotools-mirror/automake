@@ -33,8 +33,8 @@ $AUTOMAKE
 ./configure --prefix "$(pwd)/sub"
 
 $MAKE installdirs
-test ! -d sub/man
+test ! -e sub/man
 $MAKE install
-test ! -d sub/man
+test ! -e sub/man
 
 :

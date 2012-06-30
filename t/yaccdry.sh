@@ -53,6 +53,6 @@ $MAKE
 rm -f parse.h
 $MAKE -n parse.h
 test -f parse.c
-test ! -f parse.h
+test ! -e parse.h
 
 :

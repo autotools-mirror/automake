@@ -47,11 +47,11 @@ cd build
 ../configure
 $MAKE
 test -f ../main.info
-test ! -f main.info
+test ! -e main.info
 test -f ../stamp-vti
-test ! -f stamp-vti
+test ! -e stamp-vti
 test -f ../version.texi
-test ! -f version.texi
+test ! -e version.texi
 
 cd ..
 rm -rf build make.info* stamp-vti version.texi
@@ -82,7 +82,7 @@ $MAKE
 # stamp-vti is newer than version.texi, the 'version.texi: stamp-vti'
 # rule is always triggered.  Still that's not a reason for 'make'
 # to think 'version.texi' has been created...
-test ! -f main.info
+test ! -e main.info
 $MAKE dvi
 test -f main.dvi
 

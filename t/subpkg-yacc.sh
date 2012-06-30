@@ -120,7 +120,7 @@ cd ..
 $MAKE dist
 test -f lib-dist-hook-has-run
 test -f subpack-1.tar.gz
-test ! -d subpack-1 # Make sure "dist" cleans up after itself.
+test ! -e subpack-1 # Make sure "dist" cleans up after itself.
 
 rm -f lib-dist-hook-has-run subpack-1.tar.gz
 

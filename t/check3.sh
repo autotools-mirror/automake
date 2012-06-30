@@ -70,8 +70,8 @@ $EGREP '^check:.* \$\(BUILT_SOURCES\)( |$)' dir/Makefile.in
 
 $MAKE clean
 # Sanity checks
-test ! -f command1.inc
-test ! -f dir/command2.inc
+test ! -e command1.inc
+test ! -e dir/command2.inc
 # Now make sure these two files are rebuilt during make install.
 $MAKE install
 test -f command1.inc

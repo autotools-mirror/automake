@@ -115,19 +115,19 @@ for target in clean distclean; do
   test -f sub1/parse.y
   test -f sub1/parse.c
   test -f sub1/bar-parse.c
-  test ! -r sub1/baz.y
-  test ! -r sub1/baz.c
-  test ! -r sub1/qux-baz.c
+  test ! -e sub1/baz.y
+  test ! -e sub1/baz.c
+  test ! -e sub1/qux-baz.c
   test -f sub2/parse.y
   test -f sub2/parse.c
   test -f sub2/parse.h
   test -f sub2/bar-parse.c
   test -f sub2/bar-parse.h
-  test ! -r sub2/baz.y
-  test ! -r sub2/baz.c
-  test ! -r sub2/baz.h
-  test ! -r sub2/qux-baz.c
-  test ! -r sub2/qux-baz.h
+  test ! -e sub2/baz.y
+  test ! -e sub2/baz.c
+  test ! -e sub2/baz.h
+  test ! -e sub2/qux-baz.c
+  test ! -e sub2/qux-baz.h
 done
 
 cp config.sav config.status
@@ -136,12 +136,12 @@ cp config.sav config.status
 $MAKE maintainer-clean
 ls -l . sub1 sub2
 test -f sub1/parse.y
-test ! -r sub1/parse.c
-test ! -r sub1/bar-parse.c
+test ! -e sub1/parse.c
+test ! -e sub1/bar-parse.c
 test -f sub2/parse.y
-test ! -r sub2/parse.c
-test ! -r sub2/parse.h
-test ! -r sub2/bar-parse.c
-test ! -r sub2/bar-parse.h
+test ! -e sub2/parse.c
+test ! -e sub2/parse.h
+test ! -e sub2/bar-parse.c
+test ! -e sub2/bar-parse.h
 
 :

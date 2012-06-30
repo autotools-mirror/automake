@@ -103,20 +103,20 @@ test -f sub/another.ps
 
 $MAKE clean
 
-test ! -f main.dvi
-test ! -f main.ps
-test ! -f main.html && test ! -d main.html
-test ! -f main.pdf
-test ! -f other.pdf
-test ! -f sub/another.pdf
-test ! -f sub/yetanother.pdf
+test ! -e main.dvi
+test ! -e main.ps
+test ! -e main.html
+test ! -e main.pdf
+test ! -e other.pdf
+test ! -e sub/another.pdf
+test ! -e sub/yetanother.pdf
 
-test ! -f other.dvi
-test ! -f other.html && test ! -d other.html
-test ! -f other.ps
-test ! -f sub/another.dvi
-test ! -f sub/another.html && test ! -d sub/another.html
-test ! -f sub/another.ps
+test ! -e other.dvi
+test ! -e other.html
+test ! -e other.ps
+test ! -e sub/another.dvi
+test ! -e sub/another.html
+test ! -e sub/another.ps
 
 ./configure
 $MAKE

@@ -31,7 +31,6 @@ AC_DEFUN([MY_MACRO], [:])
 END
 
 $ACLOCAL -I foo --system-acdir=sys-acdir && exit 1
-test ! -d foo
-test ! -r foo
+test ! -e foo
 
 :

@@ -97,7 +97,7 @@ mv config.sav config.status
 ./config.status
 
 $MAKE maintainer-clean
-test ! -f src/xfoo.c
-test ! -f src/xbar.c
+test ! -e src/xfoo.c
+test ! -e src/xbar.c
 
 :

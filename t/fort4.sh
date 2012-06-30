@@ -83,12 +83,12 @@ echo 'AUTOMAKE_OPTIONS = subdir-objects' >> Makefile.am
 $AUTOMAKE
 ./configure
 $MAKE
-test ! -f bar.o
-test ! -f bar.obj
-test ! -f baz.o
-test ! -f baz.obj
-test ! -f goodbye-baz.o
-test ! -f goodbye-baz.obj
+test ! -e bar.o
+test ! -e bar.obj
+test ! -e baz.o
+test ! -e baz.obj
+test ! -e goodbye-baz.o
+test ! -e goodbye-baz.obj
 $MAKE distcheck
 
 :

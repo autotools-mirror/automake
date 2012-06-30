@@ -132,7 +132,7 @@ cat stdout
 
 count_test_results total=1 pass=0 fail=0 xpass=0 xfail=0 skip=0 error=1
 
-test ! -f success.log
+test ! -e success.log
 test -f bail.log
 test -f test-suite.log
 
@@ -153,8 +153,8 @@ count_test_results total=3 pass=1 fail=0 xpass=0 xfail=1 skip=1 error=0
 
 test -f ok.test
 test -f ok.log
-test ! -f success.log
-test ! -f bail.log
+test ! -e success.log
+test ! -e bail.log
 test -f test-suite.log
 
 $EGREP '(bail|success)\.test' stdout && exit 1

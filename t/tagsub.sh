@@ -42,5 +42,7 @@ $FGREP sub/TAGS TAGS
 $FGREP iguana.h sub/TAGS
 
 $MAKE distclean
-test ! -f sub/TAGS
-test ! -f TAGS
+test ! -e sub/TAGS
+test ! -e TAGS
+
+:

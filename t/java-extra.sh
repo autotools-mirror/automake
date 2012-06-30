@@ -57,8 +57,8 @@ $MAKE
 ls -l
 test -f Class1.class
 test -f Class2.class
-test ! -f Class3.class
-test ! -f Class3.java
+test ! -e Class3.class
+test ! -e Class3.java
 
 $MAKE distclean
 
@@ -66,7 +66,7 @@ $MAKE distclean
 $MAKE
 ls -l
 test -f Class1.class
-test ! -f Class2.class
+test ! -e Class2.class
 test -f Class3.class
 test -f Class3.java
 

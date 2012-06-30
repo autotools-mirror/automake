@@ -40,8 +40,7 @@ $AUTOMAKE -a
 ./configure
 
 : > t
-chmod a-r t
-test ! -r t || exit 77
+chmod a-r t && test ! -r t || skip_ "you can still read unreadable files"
 rm -f t
 
 : Create the required log files.

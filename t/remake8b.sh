@@ -76,7 +76,7 @@ using_gmake || $MAKE Makefile
 $MAKE
 cat bar
 grep '!Baz!' bar
-test ! -r foo
+test ! -e foo
 $MAKE distcheck
 
 rm -f bar
@@ -107,7 +107,7 @@ using_gmake || $MAKE Makefile
 $MAKE
 cat quux
 grep '!Zardoz!' quux
-test ! -r bar
+test ! -e bar
 $MAKE distcheck
 
 rm -f quux

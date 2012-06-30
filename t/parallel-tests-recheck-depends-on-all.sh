@@ -66,7 +66,7 @@ $AUTOMAKE -a
 $MAKE check >stdout && { cat stdout; exit 1; }
 cat stdout
 count_test_results total=3 pass=1 fail=2 skip=0 xfail=0 xpass=0 error=0
-test ! -f status
+test ! -e status
 
 $sleep
 : > status

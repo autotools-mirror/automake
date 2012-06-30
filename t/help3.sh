@@ -40,9 +40,9 @@ pkgdata_DATA =
 END
 
 $ACLOCAL --force --help --output=foo.m4
-test ! -r foo.m4
+test ! -e foo.m4
 $ACLOCAL --output=foo.m4 --version --force
-test ! -r foo.m4
+test ! -e foo.m4
 # Sanity check.
 $ACLOCAL --output=foo.m4 --force
 test -f foo.m4
@@ -50,9 +50,9 @@ test -f foo.m4
 mv -f foo.m4 aclocal.m4 # autoconf will need aclocal.m4
 
 $AUTOMAKE --add-missing --help --copy
-test ! -r install-sh
+test ! -e install-sh
 $AUTOMAKE --copy --version --add-mising
-test ! -r install-sh
+test ! -e install-sh
 # Sanity check.
 $AUTOMAKE --add-missing --copy
 test -f install-sh

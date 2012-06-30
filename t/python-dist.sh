@@ -73,6 +73,6 @@ $AUTOMAKE
 
 $MAKE disttest
 # It's not distributed, hence it shouldn't be needlessly generated.
-test ! -f my-nodist.py
+test ! -e my-nodist.py
 
 :

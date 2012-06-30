@@ -27,6 +27,6 @@ $ACLOCAL
 $AUTOMAKE --add-missing
 
 test -f install-sh
-test ! -r Zardoz
+test ! -e Zardoz
 
 :

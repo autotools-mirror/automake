@@ -42,7 +42,7 @@ END
 $ACLOCAL --install 2>stderr && { cat stderr >&2; exit 1; }
 cat stderr >&2
 grep ' no -I was supplied' stderr
-test ! -f pdir/foo.m4
+test ! -e pdir/foo.m4
 
 # The '--install' option should cause a required macro found in a
 # directory specified in ACLOCAL_PATH to be installed locally.

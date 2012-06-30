@@ -61,11 +61,11 @@ javadir=_inst/java
 
 check_uninstallation()
 {
-  test ! -r $javadir/aClass.class
-  test ! -r $javadir/bClass.class
-  test ! -r $javadir/Zardoz.class
-  test ! -r $javadir/Baz.class
-  test ! -r $javadir/Baz2.class
+  test ! -e $javadir/aClass.class
+  test ! -e $javadir/bClass.class
+  test ! -e $javadir/Zardoz.class
+  test ! -e $javadir/Baz.class
+  test ! -e $javadir/Baz2.class
   test   -f $javadir/Foo.class
   test   -f $javadir/Bar.class
   test   -f $javadir/xClass.class

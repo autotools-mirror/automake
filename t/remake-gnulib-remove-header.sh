@@ -114,7 +114,7 @@ for vpath in : false; do
   using_gmake || $MAKE Makefile
   $MAKE
   ls -l
-  test ! -f stdio.h
+  test ! -e stdio.h
 
   # And now simulate that we want our custom stdio.h back.
 

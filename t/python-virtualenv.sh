@@ -164,7 +164,7 @@ $MAKE distclean
 pythondir=$py_site pyexecdir=$py_site
 export pythondir pyexecdir
 $MAKE -e install
-test ! -d bad-prefix
+test ! -e bad-prefix
 $MAKE -e test-install
 $MAKE test-run
 $MAKE -e uninstall

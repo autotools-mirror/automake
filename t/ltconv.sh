@@ -137,12 +137,12 @@ find empty -type f -print > empty.lst
 test -s empty.lst && { cat empty.lst; exit 1; }
 
 $MAKE clean
-test ! -f libtop.la
-test ! -f sub1/libsub1.la
-test ! -f sub2/libsub2.la
-test ! -f sub2/sub21/libsub21.la
-test ! -f sub2/sub22/libsub22.la
-test ! -f ltconvtest
+test ! -e libtop.la
+test ! -e sub1/libsub1.la
+test ! -e sub2/libsub2.la
+test ! -e sub2/sub21/libsub21.la
+test ! -e sub2/sub22/libsub22.la
+test ! -e ltconvtest
 
 $MAKE installcheck
 test -f installcheck-ok

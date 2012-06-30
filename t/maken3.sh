@@ -152,7 +152,7 @@ check_targets ()
       if $have_dotmake; then
         grep "stamp-$target$" stdout || exit 1
       fi
-      test ! -f "stamp-$target$" || exit 1
+      test ! -e "stamp-$target" || exit 1
       ;;
     esac
     case $target in
@@ -161,7 +161,7 @@ check_targets ()
       if $have_dotmake; then
         grep "stamp-$target-sub" stdout || exit 1
       fi
-      test ! -f "sub/stamp-$target-sub" || exit 1
+      test ! -e "sub/stamp-$target-sub" || exit 1
       ;;
     esac
     case $target in
@@ -170,7 +170,7 @@ check_targets ()
       if $have_dotmake; then
         grep "should-not-be-executed" stdout || exit 1
       fi
-      test ! -f "sub2/sub2-$target-should-not-be-executed" || exit 1
+      test ! -e "sub2/sub2-$target-should-not-be-executed" || exit 1
       ;;
     esac
   done

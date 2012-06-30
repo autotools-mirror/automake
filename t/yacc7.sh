@@ -83,7 +83,7 @@ test -f foo.c
 # ... but maintainer-clean should.
 ./configure # Re-create 'Makefile'.
 $MAKE maintainer-clean
-test ! -f foo.h
-test ! -f foo.c
+test ! -e foo.h
+test ! -e foo.c
 
 :

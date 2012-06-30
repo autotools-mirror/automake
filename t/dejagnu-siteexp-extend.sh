@@ -153,7 +153,7 @@ grep 'zardoz.*quux' tool.log && exit 1
 # by default.
 $MAKE distdir
 ls -l $distdir
-test ! -r $distdir/bar.dir/bar
-test ! -r $distdir/quux.exp
+test ! -e $distdir/bar.dir/bar
+test ! -e $distdir/quux.exp
 
 :

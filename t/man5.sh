@@ -53,17 +53,17 @@ test -f _inst/man/man2/nbaz-1.4.2
 test -f _inst/man/man3/bar.3
 test -f _inst/man/man3/nbar.3
 
-test ! -d _inst/man/man1
-test ! -d _inst/man/man4
-test ! -d _inst/man/man5
+test ! -e _inst/man/man1
+test ! -e _inst/man/man4
+test ! -e _inst/man/man5
 
 $MAKE DESTDIR="$cwd/_inst" uninstall
 
-test ! -f _inst/man/man2/foo.2
-test ! -f _inst/man/man2/nfoo.2
-test ! -f _inst/man/man2/baz-1.4.2
-test ! -f _inst/man/man2/nbaz-1.4.2
-test ! -f _inst/man/man3/bar.3
-test ! -f _inst/man/man3/nbar.3
+test ! -e _inst/man/man2/foo.2
+test ! -e _inst/man/man2/nfoo.2
+test ! -e _inst/man/man2/baz-1.4.2
+test ! -e _inst/man/man2/nbaz-1.4.2
+test ! -e _inst/man/man3/bar.3
+test ! -e _inst/man/man3/nbar.3
 
 :

@@ -100,9 +100,9 @@ $MAKE html
 is_newest main.html main.texi
 
 $MAKE clean
-test ! -d main.html
-test ! -d sub/main2.html
-test ! -d rec/main3.html
+test ! -e main.html
+test ! -e sub/main2.html
+test ! -e rec/main3.html
 
 # Test production of a single HTML file.
 MAKEINFOFLAGS=--no-split $MAKE -e html
@@ -110,9 +110,9 @@ test -f main.html
 test -f sub/main2.html
 test -f rec/main3.html
 $MAKE clean
-test ! -f main.html
-test ! -f sub/main2.html
-test ! -f rec/main3.html
+test ! -e main.html
+test ! -e sub/main2.html
+test ! -e rec/main3.html
 
 # Make sure AM_MAKEINFOHTMLFLAGS is supported, and override AM_MAKEINFO.
 cat >>Makefile.am <<\EOF
@@ -127,27 +127,27 @@ test -f main.html
 test -f sub/main2.html
 test -d rec/main3.html
 $MAKE clean
-test ! -f main.html
-test ! -f sub/main2.html
-test ! -d rec/main3.html
+test ! -e main.html
+test ! -e sub/main2.html
+test ! -e rec/main3.html
 
 $MAKE install-html
 test -f share/$me/html/main.html
 test -f share/$me/html/main2.html
 test -d share/$me/html/main3.html
 $MAKE uninstall
-test ! -f share/$me/html/main.html
-test ! -f share/$me/html/main2.html
-test ! -d share/$me/html/main3.html
+test ! -e share/$me/html/main.html
+test ! -e share/$me/html/main2.html
+test ! -e share/$me/html/main3.html
 
 $MAKE install-dvi
 test -f share/$me/dvi/main.dvi
 test -f share/$me/dvi/main2.dvi
 test -f share/$me/dvi/main3.dvi
 $MAKE uninstall
-test ! -f share/$me/dvi/main.dvi
-test ! -f share/$me/dvi/main2.dvi
-test ! -f share/$me/dvi/main3.dvi
+test ! -e share/$me/dvi/main.dvi
+test ! -e share/$me/dvi/main2.dvi
+test ! -e share/$me/dvi/main3.dvi
 
 dvips --help || skip_ "dvips is missing"
 
@@ -156,9 +156,9 @@ test -f share/$me/ps/main.ps
 test -f share/$me/ps/main2.ps
 test -f share/$me/ps/main3.ps
 $MAKE uninstall
-test ! -f share/$me/ps/main.ps
-test ! -f share/$me/ps/main2.ps
-test ! -f share/$me/ps/main3.ps
+test ! -e share/$me/ps/main.ps
+test ! -e share/$me/ps/main2.ps
+test ! -e share/$me/ps/main3.ps
 
 pdfetex --help || pdftex --help \
   || skip_ "pdftex and pdfetex are both missing"
@@ -169,9 +169,9 @@ test -f share/$me/pdf/main2.pdf
 test -f share/$me/pdf/main3.pdf
 test -f share/$me/pdf/hello
 $MAKE uninstall
-test ! -f share/$me/pdf/main.pdf
-test ! -f share/$me/pdf/main2.pdf
-test ! -f share/$me/pdf/main3.pdf
-test ! -f share/$me/pdf/hello
+test ! -e share/$me/pdf/main.pdf
+test ! -e share/$me/pdf/main2.pdf
+test ! -e share/$me/pdf/main3.pdf
+test ! -e share/$me/pdf/hello
 
 :

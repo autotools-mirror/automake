@@ -80,7 +80,7 @@ $MAKE distdir
 autodist_list="$list" $MAKE check
 
 $MAKE maintainer-clean
-test ! -f README        # Sanity check.
+test ! -e README        # Sanity check.
 rm -rf $me-1.0          # Remove $(distdir).
 
 : Now try creating the automatically-distributed files before

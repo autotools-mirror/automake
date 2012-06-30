@@ -146,14 +146,14 @@ for vpath in : false; do
   cp -f config.status config-status.sav
 
   $MAKE distclean
-  test ! -r hammer.log
-  test ! -r hammer.sum
-  test ! -r spanner.log
-  test ! -r spanner.sum
-  test ! -r test-suite.log
-  test ! -r a.log
-  test ! -r b.log
-  test ! -r local.log
+  test ! -e hammer.log
+  test ! -e hammer.sum
+  test ! -e spanner.log
+  test ! -e spanner.sum
+  test ! -e test-suite.log
+  test ! -e a.log
+  test ! -e b.log
+  test ! -e local.log
 
   mv -f config-status.sav config.status
   ./config.status

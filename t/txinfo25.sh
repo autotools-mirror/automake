@@ -61,8 +61,8 @@ cd build
 ../configure
 $MAKE
 test -f main.info
-test ! -f ../main.info
-test ! -f other.info
+test ! -e ../main.info
+test ! -e other.info
 test -f ../other.info
 
 cd ..
@@ -101,7 +101,7 @@ $MAKE
 # rule is always triggered.  Still that's not a reason for 'make'
 # to think 'version.texi' has been created...
 test -f main.info
-test ! -f other.info
+test ! -e other.info
 $MAKE dvi
 test -f main.dvi
 test -f other.dvi

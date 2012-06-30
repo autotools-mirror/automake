@@ -55,16 +55,16 @@ ls zardoz2 | grep . && exit 1
 # Directories in ACLOCAL_PATH should never be created if they don't
 # exist.
 ACLOCAL_PATH="$(pwd)/none:$(pwd)/none2" $ACLOCAL --install && exit 1
-test ! -d none
-test ! -d none2
+test ! -e none
+test ! -e none2
 ACLOCAL_PATH="$(pwd)/none:$(pwd)/none2" $ACLOCAL --install -I x
 test -f x/my-defs.m4
-test ! -d none
-test ! -d none2
+test ! -e none
+test ! -e none2
 
 # It's better if aclocal doesn't create the first include dir on failure.
 $ACLOCAL --install -I none -I none2 && exit 1
-test ! -d none
-test ! -d none2
+test ! -e none
+test ! -e none2
 
 :

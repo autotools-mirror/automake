@@ -72,20 +72,20 @@ $MAKE
 test -f lib1foo.la
 test -f lib1bar.la
 test -f lib2foo.la
-test ! -f lib2bar.la
-test ! -f lib3foo.la
-test ! -f lib3bar.la
+test ! -e lib2bar.la
+test ! -e lib3foo.la
+test ! -e lib3bar.la
 
 $MAKE check
-test ! -f lib2bar.la
+test ! -e lib2bar.la
 test -f lib3foo.la
-test ! -f lib3bar.la
+test ! -e lib3bar.la
 
 $MAKE install
 test -f lib/lib1foo.la
 test -f lib/lib1bar.la
 test -f lib/lib2foo.la
-test ! -f lib/lib3foo.la
+test ! -e lib/lib3foo.la
 find empty -type f -print > empty.lst
 test -s empty.lst && { cat empty.lst; exit 1; }
 
@@ -98,9 +98,9 @@ test -f lib2foo.la
 test -f lib3foo.la
 
 $MAKE clean
-test ! -f lib1foo.la
-test ! -f lib1bar.la
-test ! -f lib2foo.la
-test ! -f lib3foo.la
+test ! -e lib1foo.la
+test ! -e lib1bar.la
+test ! -e lib2foo.la
+test ! -e lib3foo.la
 
 :

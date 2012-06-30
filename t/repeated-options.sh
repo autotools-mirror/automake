@@ -77,6 +77,6 @@ $MAKE clean
 $MAKE distcheck
 ls -l
 test -f $me-1.0.tar.bz2
-test ! -r $me-1.0.tar.gz
+test ! -e $me-1.0.tar.gz
 
 :
