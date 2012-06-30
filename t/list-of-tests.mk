@@ -739,6 +739,7 @@ t/parallel-tests8.sh \
 t/parallel-tests9.sh \
 t/parallel-tests10.sh \
 t/parallel-tests-recheck-depends-on-all.sh \
+t/parallel-tests-recheck-pr11791.sh \
 t/parallel-tests-exeext.sh \
 t/parallel-tests-suffix.sh \
 t/parallel-tests-suffix-prog.sh \
