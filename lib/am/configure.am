@@ -14,16 +14,6 @@
 ## You should have received a copy of the GNU General Public License
 ## along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
-## This dummy rule is called from subdirectories whenever one of the
-## top-level Makefile's dependencies must be updated; it relies on
-## the fact that GNU make always make sure the Makefile is updated
-## before considering the other rules.
-if %?TOPDIR_P%
-.PHONY: am--refresh
-am--refresh:
-endif %?TOPDIR_P%
-
 ## --------------------- ##
 ## Building Makefile.*.  ##
 ## --------------------- ##
@@ -40,11 +30,11 @@ endif %?TOPDIR_P%
 ?TOPDIR_P?	      echo ' cd $(srcdir) && $(AUTOMAKE) %AUTOMAKE-OPTIONS%'; \
 ?TOPDIR_P?	      cd $(srcdir) && $(AUTOMAKE) %AUTOMAKE-OPTIONS% \
 ?TOPDIR_P?		&& exit 0; \
-?!TOPDIR_P?	      ( cd $(top_builddir) && $(MAKE) am--refresh ) \
+?!TOPDIR_P?	      ( cd $(top_builddir) && $(MAKE) .am/nil ) \
 ## If on the other hand, subdir/Makefile.in has been removed, then toplevel
-## am--refresh will not be aware of any need to run.  We still invoke it
-## due to $? listing all prerequisites.  Fix up for it by running the rebuild
-## rule for this file only, below.
+## .am/nil will not be aware of any need to run.  We still invoke it due to
+## $? listing all prerequisites.  Fix up for it by running the rebuild rule
+## for this file only, below.
 ?!TOPDIR_P?	        && { if test -f $@; then exit 0; else break; fi; }; \
 	      exit 1;; \
 	  esac; \
@@ -72,7 +62,7 @@ endif %?TOPDIR_P%
 	  *config.status*) \
 ?TOPDIR_P?	    echo ' $(SHELL) ./config.status'; \
 ?TOPDIR_P?	    $(SHELL) ./config.status;; \
-?!TOPDIR_P?	    cd $(top_builddir) && $(MAKE) am--refresh;; \
+?!TOPDIR_P?	    cd $(top_builddir) && $(MAKE) .am/nil;; \
 	  *) \
 	    echo ' cd $(top_builddir) && $(SHELL) ./config.status %CONFIG-MAKEFILE%'; \
 	    cd $(top_builddir) && $(SHELL) ./config.status %CONFIG-MAKEFILE%;; \
@@ -98,11 +88,11 @@ endif %?TOPDIR_P%
 
 $(top_builddir)/config.status: $(top_srcdir)/configure $(CONFIG_STATUS_DEPENDENCIES)
 ?TOPDIR_P?	$(SHELL) ./config.status --recheck
-?!TOPDIR_P?	cd $(top_builddir) && $(MAKE) am--refresh
+?!TOPDIR_P?	cd $(top_builddir) && $(MAKE) .am/nil
 
 $(top_srcdir)/configure: %MAINTAINER-MODE% $(am__configure_deps)
 ?TOPDIR_P?	cd $(srcdir) && $(AUTOCONF)
-?!TOPDIR_P?	cd $(top_builddir) && $(MAKE) am--refresh
+?!TOPDIR_P?	cd $(top_builddir) && $(MAKE) .am/nil
 
 
 ## ------------ ##
@@ -119,7 +109,7 @@ $(top_srcdir)/configure: %MAINTAINER-MODE% $(am__configure_deps)
 if %?REGEN-ACLOCAL-M4%
 $(ACLOCAL_M4): %MAINTAINER-MODE% $(am__aclocal_m4_deps)
 ?TOPDIR_P?	cd $(srcdir) && $(ACLOCAL) $(ACLOCAL_AMFLAGS)
-?!TOPDIR_P?	cd $(top_builddir) && $(MAKE) am--refresh
+?!TOPDIR_P?	cd $(top_builddir) && $(MAKE) .am/nil
 
 ## Avoid the "deleted header file" problem for the dependencies.
 $(am__aclocal_m4_deps):
