@@ -49,6 +49,9 @@ make_n_ ()
 
 files='foo.log bar.log foo.trs bar.trs'
 
+echo 'exit 0' > foo.test
+echo 'exit 1' > bar.test
+
 for target in check recheck test-suite.log; do
   make_n_ $target
   test ! -e foo.log
@@ -57,9 +60,6 @@ for target in check recheck test-suite.log; do
   test ! -e bar.trs
   test ! -e test-suite.log
 done
-
-echo 'exit 0' > foo.test
-echo 'exit 1' > bar.test
 
 $MAKE check && exit 1
 
