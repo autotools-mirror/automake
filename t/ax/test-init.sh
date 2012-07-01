@@ -983,11 +983,14 @@ else
   # temporary/data files.  This will be created shortly, and will be removed
   # by the cleanup trap below if the test passes.  If the test doesn't pass,
   # this directory will be kept, to facilitate debugging.
-  testSubDir=t/$me.dir
+  testSubDir=${argv0#$am_rel_srcdir/}
+  case $testSubDir in
+    */*) testSubDir=${testSubDir%/*}/$me.dir;;
+      *) testSubDir=$me.dir;;
+  esac
   test ! -e $testSubDir || rm_rf_ $testSubDir \
     || framework_failure_ "removing old test subdirectory"
-  test -d t || mkdir t
-  mkdir $testSubDir \
+  $MKDIR_P $testSubDir \
     || framework_failure_ "creating test subdirectory"
   # The leading './' is to avoid CDPATH issues.
   cd ./$testSubDir \
