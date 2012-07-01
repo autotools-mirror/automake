@@ -261,12 +261,6 @@ am__mostlyclean_files += $(am__test_results) $(am__test_logs)
 # $(TEST_LOGS) is a published interface.
 TEST_LOGS = $(am__test_logs)
 
-# Leading 'am--fnord' is there to ensure the list of targets does not
-# exand to empty, as could happen e.g. with make check TESTS=''.
-am--fnord $(am__test_logs) $(am__test_results): $(am__force_recheck)
-am--force-recheck:
-	@:
-
 $(TEST_SUITE_LOG): $(am__test_logs) $(am__test_results)
 	@$(am__sh_e_setup); $(am__tty_colors); \
 	fatal () { echo "fatal: making $@: $$*" >&2; exit 1; }; \
@@ -423,8 +417,17 @@ recheck: all %CHECK_DEPS%
 	         | $(am__list_recheck_tests)` || exit 1; \
 ## Remove newlines and normalize whitespace.
 	bases=`echo $$bases`; \
-	$(MAKE) $(TEST_SUITE_LOG) am__test_bases="$$bases" \
-	                          am__force_recheck=am--force-recheck 
+	$(MAKE) $(TEST_SUITE_LOG) .am/doing-recheck=yes am__test_bases="$$bases"
 .PHONY: recheck
+
+## One tricky requirement of the "recheck" target is that, in case (say)
+## the test is a compiled program whose compilation fails, we must ensure
+## that any '.log' and '.trs' file referring to such test are preserved,
+## so that future "make recheck" invocations will still try to re-compile
+## and re-run it (automake bug#11791).  This indirection is aimed at
+## satisying such a requirement.
+!ifeq ($(.am/doing-recheck),yes)
+!$(am__test_logs) $(am__test_results): .am/nil
+!endif
 
 AM_RECURSIVE_TARGETS += check recheck
