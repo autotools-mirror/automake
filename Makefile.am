@@ -335,6 +335,7 @@ perl_fake_XFAIL_TESTS = \
 XFAIL_TESTS = \
   t/all.sh \
   t/override-suggest-local.sh \
+  t/parallel-tests-recheck-pr11791.sh \
   t/yacc-bison-skeleton-cxx.sh \
   t/yacc-bison-skeleton.sh \
   t/comments-in-var-def.sh \
@@ -581,11 +582,6 @@ ChangeLog:
 	       "$@ file has been found there" >&2; \
 	  exit 1; \
 	fi
-
-# Ensure tests are world-executable.
-# FIXME: this should be turned into a maintainer check...
-dist-hook:
-	cd $(distdir)/t && chmod a+rx *.sh *.tap
 
 
 ## --------------------------- ##
