@@ -261,6 +261,12 @@ am__mostlyclean_files += $(am__test_results) $(am__test_logs)
 # $(TEST_LOGS) is a published interface.
 TEST_LOGS = $(am__test_logs)
 
+# Leading 'am--fnord' is there to ensure the list of targets does not
+# exand to empty, as could happen e.g. with make check TESTS=''.
+am--fnord $(am__test_logs) $(am__test_results): $(am__force_recheck)
+am--force-recheck:
+	@:
+
 $(TEST_SUITE_LOG): $(am__test_logs) $(am__test_results)
 	@$(am__sh_e_setup); $(am__tty_colors); \
 	fatal () { echo "fatal: making $@: $$*" >&2; exit 1; }; \
@@ -406,9 +412,10 @@ check-TESTS:
 
 ## Recheck must depend on $(check_SCRIPTS), $(check_PROGRAMS), etc.
 ## It must also depend on the 'all' target.  See automake bug#11252.
-## FIXME: this recipe should be fixed not to trip on automake
-## FIXME: bug#11791 anymore.
 recheck: all %CHECK_DEPS%
+## See comments above in the check-TESTS recipe for why remove
+## $(TEST_SUITE_LOG) here.
+	@test -z "$(TEST_SUITE_LOG)" || rm -f $(TEST_SUITE_LOG)
 	@bases='$(am__test_bases)'; \
 ## If running a "make recheck", we must only consider tests that had an
 ## unexpected outcome (FAIL or XPASS) in the earlier run.
@@ -416,7 +423,8 @@ recheck: all %CHECK_DEPS%
 	         | $(am__list_recheck_tests)` || exit 1; \
 ## Remove newlines and normalize whitespace.
 	bases=`echo $$bases`; \
-	$(MAKE) check-TESTS am__test_bases="$$bases"
+	$(MAKE) $(TEST_SUITE_LOG) am__test_bases="$$bases" \
+	                          am__force_recheck=am--force-recheck 
 .PHONY: recheck
 
 AM_RECURSIVE_TARGETS += check recheck

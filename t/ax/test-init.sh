@@ -805,7 +805,7 @@ trap 'exit_status=$?
     esac
     test $exit_status -eq 0 || keep_testdirs=yes
   fi
-  am_keeping_testdirs || rm_rf_ $testSubDir
+  am_keeping_testdirs || rm_rf_ $am_test_subdir
   set +x
   echo "$me: exit $exit_status"
   # Spurious escaping to ensure we do not call our "exit" alias.
@@ -840,20 +840,22 @@ trap "trap '' 13; fatal_ 'caught signal SIGPIPE'" 13
 
 # Create and populate the temporary directory, if and as required.
 if test x"$am_create_testdir" = x"no"; then
-  testSubDir=
+  am_test_subdir=
 else
   # The subdirectory where the current test script will run and write its
   # temporary/data files.  This will be created shortly, and will be removed
   # by the cleanup trap below if the test passes.  If the test doesn't pass,
   # this directory will be kept, to facilitate debugging.
-  testSubDir=t/$me.dir
-  test ! -e $testSubDir || rm_rf_ $testSubDir \
+  am_test_subdir=${argv0#$am_rel_srcdir/}
+  case $am_test_subdir in
+    */*) am_test_subdir=${am_test_subdir%/*}/$me.dir;;
+      *) am_test_subdir=$me.dir;;
+  esac
+  test ! -e $am_test_subdir || rm_rf_ $am_test_subdir \
     || framework_failure_ "removing old test subdirectory"
-  test -d t || mkdir t
-  mkdir $testSubDir \
+  $MKDIR_P $am_test_subdir \
     || framework_failure_ "creating test subdirectory"
-  # The leading './' is to avoid CDPATH issues.
-  cd ./$testSubDir \
+  cd $am_test_subdir \
     || framework_failure_ "cannot chdir into test subdirectory"
   if test x"$am_create_testdir" != x"empty"; then
     cp "$am_scriptdir"/install-sh "$am_scriptdir"/missing \

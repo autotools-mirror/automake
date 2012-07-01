@@ -334,8 +334,8 @@ perl_fake_XFAIL_TESTS = \
 
 XFAIL_TESTS = \
   t/all.sh \
+  t/test-missing.sh \
   t/override-suggest-local.sh \
-  t/parallel-tests-recheck-pr11791.sh \
   t/yacc-bison-skeleton-cxx.sh \
   t/yacc-bison-skeleton.sh \
   t/comments-in-var-def.sh \
