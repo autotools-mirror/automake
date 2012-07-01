@@ -240,6 +240,12 @@ am__set_TESTS_bases = \
 	rm -f $< $@
 	$(MAKE) $(AM_MAKEFLAGS) $<
 
+# Leading 'am--fnord' is there to ensure the list of targets does not
+# exand to empty, as could happen e.g. with make check TESTS=''.
+am--fnord $(TEST_LOGS) $(TEST_LOGS:.log=.trs): $(am__force_recheck)
+am--force-recheck:
+	@:
+
 $(TEST_SUITE_LOG): $(TEST_LOGS)
 	@$(am__set_TESTS_bases); \
 ## Helper shell function, tells whether a path refers to an existing,
@@ -431,11 +437,10 @@ recheck: all %CHECK_DEPS%
 	bases=`for i in $$bases; do echo $$i; done \
 	         | $(am__list_recheck_tests)` || exit 1; \
 	log_list=`for i in $$bases; do echo $$i.log; done`; \
-	trs_list=`for i in $$bases; do echo $$i.trs; done`; \
 ## Remove newlines and normalize whitespace.  Trailing (and possibly
 ## leading) whitespace is known to cause segmentation faults on
 ## Solaris 10 XPG4 make.
-	log_list=`echo $$log_list`; trs_list=`echo $$trs_list`; \
+	log_list=`echo $$log_list`; \
 ## Move the '.log' and '.trs' files associated with the tests to be
 ## re-run out of the way, so that those tests will be re-run by the
 ## "make test-suite.log" recursive invocation below.
@@ -445,27 +450,14 @@ recheck: all %CHECK_DEPS%
 ##     we must ensure that any '.log' and '.trs' file referring to such
 ##     test are preserved, so that future "make recheck" invocations
 ##     will still try to re-compile and re-run it (automake bug#11791).
-## The extra contortions below cater to such requirements.
-	am_backupdir=.am-recheck; \
-	if $(am__make_dryrun); then :; else \
-	  if test -n "$$trs_list$$log_list"; then \
-	    { test ! -d $$am_backupdir || rm -rf $$am_backupdir; } \
-	      && $(MKDIR_P) $$am_backupdir || exit 1; \
-	    test -z "$$log_list" \
-	      || mv -f $$log_list $$am_backupdir 2>/dev/null; \
-	    test -z "$$trs_list" \
-	      || mv -f $$trs_list $$am_backupdir 2>/dev/null; \
-	  fi; \
-	fi; \
-	$(MAKE) $(AM_MAKEFLAGS) $(TEST_SUITE_LOG) TEST_LOGS="$$log_list"; \
-	st=$$?; \
-	if $(am__make_dryrun) || test ! -d $$am_backupdir; then :; else \
-	  for f in $$log_list $$trs_list; do \
-	    test -f $$f || mv $$am_backupdir/$$f . || exit 1; \
-	  done; \
-	  rm -rf $$am_backupdir || exit 1; \
-	fi; \
-	exit $$st;
+## The tricky recusrive make invocation below should cater to such
+## requirements.
+	$(MAKE) $(AM_MAKEFLAGS) $(TEST_SUITE_LOG) \
+	        am__force_recheck=am--force-recheck \
+	        TEST_LOGS="$$log_list"; \
+## Be sure to exit with the proper exit status (automake bug#9245).  See
+## comments in the recipe of $(TEST_SUITE_LOG) above for more information.
+	exit $$?
 
 AM_RECURSIVE_TARGETS += check recheck
 
