@@ -992,8 +992,7 @@ else
     || framework_failure_ "removing old test subdirectory"
   $MKDIR_P $am_test_subdir \
     || framework_failure_ "creating test subdirectory"
-  # The leading './' is to avoid CDPATH issues.
-  cd ./$am_test_subdir \
+  cd $am_test_subdir \
     || framework_failure_ "cannot chdir into test subdirectory"
   if test x"$am_create_testdir" != x"empty"; then
     cp "$am_scriptdir"/install-sh "$am_scriptdir"/missing \
