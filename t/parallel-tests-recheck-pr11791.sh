@@ -18,7 +18,7 @@
 # failures for the test cases.  See automake bug#11791.
 
 required='cc native'
-. ./defs || Exit 1
+. ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CC
@@ -38,11 +38,11 @@ $AUTOMAKE -a
 
 ./configure
 
-$MAKE check >stdout && { cat stdout; Exit 1; }
+$MAKE check >stdout && { cat stdout; exit 1; }
 cat stdout
 count_test_results total=1 pass=0 fail=1 xpass=0 xfail=0 skip=0 error=0
 
-$MAKE -k recheck >stdout && { cat stdout; Exit 1; }
+$MAKE -k recheck >stdout && { cat stdout; exit 1; }
 cat stdout
 count_test_results total=1 pass=0 fail=1 xpass=0 xfail=0 skip=0 error=0
 
@@ -50,10 +50,10 @@ count_test_results total=1 pass=0 fail=1 xpass=0 xfail=0 skip=0 error=0
 $sleep
 echo choke me >> foo.c
 
-$MAKE recheck >stdout && { cat stdout; Exit 1; }
+$MAKE recheck >stdout && { cat stdout; exit 1; }
 cat stdout
 # We don't get a change to run the testsuite.
-$EGREP '(X?PASS|X?FAIL|SKIP|ERROR):' stdout && Exit 1
+$EGREP '(X?PASS|X?FAIL|SKIP|ERROR):' stdout && exit 1
 # These shouldn't be removed, otherwise the next make recheck will do
 # nothing.
 test -f foo.log
@@ -62,9 +62,9 @@ test -f foo.trs
 st=0; $MAKE -k recheck >stdout || st=$?
 cat stdout
 # Don't trust the exit status of "make -k" for non-GNU makes.
-if using_gmake && test $st -eq 0; then Exit 1; fi
+if using_gmake && test $st -eq 0; then exit 1; fi
 # We don't get a change to run the testsuite.
-$EGREP '(X?PASS|X?FAIL|SKIP|ERROR):' stdout && Exit 1
+$EGREP '(X?PASS|X?FAIL|SKIP|ERROR):' stdout && exit 1
 test -f foo.log
 test -f foo.trs
 
@@ -72,13 +72,13 @@ test -f foo.trs
 $sleep
 echo 'int main (void) { return 0; }' > foo.c
 
-$MAKE recheck >stdout || { cat stdout; Exit 1; }
+$MAKE recheck >stdout || { cat stdout; exit 1; }
 cat stdout
 count_test_results total=1 pass=1 fail=0 xpass=0 xfail=0 skip=0 error=0
 test -f foo.log
 test -f foo.trs
 
-$MAKE recheck >stdout || { cat stdout; Exit 1; }
+$MAKE recheck >stdout || { cat stdout; exit 1; }
 cat stdout
 count_test_results total=0 pass=0 fail=0 xpass=0 xfail=0 skip=0 error=0
 test -f foo.log

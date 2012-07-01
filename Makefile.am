@@ -607,11 +607,6 @@ ChangeLog: am--changelog-regen-hook
 	  exit 1; \
 	fi
 
-# Ensure tests are world-executable.
-# FIXME: this should be turned into a maintainer check...
-dist-hook:
-	$(am__cd) $(distdir)/t && chmod a+rx *.sh *.tap
-
 
 ## --------------------------- ##
 ##  Perl coverage statistics.  ##
