@@ -256,6 +256,27 @@ am__strip_suffixes = $(strip \
           $(patsubst %$(firstword $1),%$(am__private_suffix),$2))), \
     $2))
 
+# Helper variables and function to help in recipes that could exceed
+# the command line length limit.
+
+## FIXME: this is basically arbitrary.  In the long term, defining this
+## FIXME: after a configure-time test on the command-line length limits,
+## FIXME: or at least on a system-by-system basis, might be better.
+am.max-cmdline-args := 40
+am.max-cmdline-args+1 := 41
+
+# $(call am.xargs-map,FUNCTION,LIST)
+# ----------------------------------
+# Map the function $1 on the arguments $2, ensuring that each
+# call of $1 has at most 40 arguments.
+# The extra $(strip) calls are only to allow clearer formatting.
+define am.xargs-map
+$(if $2,$(strip \
+  )$(call $1,$(wordlist 1,$(am.max-cmdline-args),$2))$(strip \
+  )$(call $0,$1,$(wordlist $(am.max-cmdline-args+1),$(words $2),$2)))
+endef
+
+
 ## Some derived variables that have been found to be useful.
 pkgdatadir = $(datadir)/@PACKAGE@
 pkgincludedir = $(includedir)/@PACKAGE@
