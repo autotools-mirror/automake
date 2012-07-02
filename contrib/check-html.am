@@ -29,18 +29,16 @@ mostlyclean-check-html:
 	rm -f $(TEST_SUITE_HTML)
 
 .log.html:
-	@list='$(RST2HTML) $$RST2HTML rst2html rst2html.py';		\
-	for r2h in $$list; do						\
-	  if ($$r2h --version) >/dev/null 2>&1; then			\
-	    R2H=$$r2h;							\
-	  fi;								\
-	done;								\
-	if test -z "$$R2H"; then					\
-	  echo >&2 "cannot find rst2html, cannot create $@";		\
+	@list='$(RST2HTML) rst2html rst2html.py';			\
+	while :; do							\
+	  for r2h in $$list; do						\
+	    if ($$r2h --version) >/dev/null 2>&1; then break 2;		\
+	    else :; fi;							\
+	  done;								\
+	  echo "cannot find rst2html, cannot create $@" >&2;		\
 	  exit 2;							\
-	fi;								\
-	$$R2H $< >$@.tmp
-	@mv $@.tmp $@
+	done;								\
+	$$r2h $< >$@-t && mv -f $@-t $@
 
 # Be sure to run check first, and then to convert the result.
 # Beware of concurrent executions.  Run "check" not "check-TESTS", as
