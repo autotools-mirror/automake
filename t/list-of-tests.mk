@@ -487,7 +487,6 @@ t/help-depend2.sh \
 t/help-dmalloc.sh \
 t/help-init.sh \
 t/help-lispdir.sh \
-t/help-multilib.sh \
 t/help-python.sh \
 t/help-silent.sh \
 t/help-upc.sh \
@@ -676,7 +675,6 @@ t/mkinst2.sh \
 t/mkinst3.sh \
 t/mmode.sh \
 t/mmodely.sh \
-t/multlib.sh \
 t/no-extra-makefile-code.sh \
 t/no-outdir-option.sh \
 t/nobase.sh \
@@ -731,7 +729,6 @@ t/parallel-am2.sh \
 t/parallel-am3.sh \
 t/serial-tests.sh \
 t/parallel-tests.sh \
-t/parallel-tests2.sh \
 t/parallel-tests3.sh \
 t/parallel-tests5.sh \
 t/parallel-tests6.sh \

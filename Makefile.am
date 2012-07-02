@@ -379,6 +379,11 @@ EXTRA_DIST += gen-testsuite-part
 $(generated_TESTS): $(srcdir)/gen-testsuite-part
 $(srcdir)/t/testsuite-part.am: $(srcdir)/gen-testsuite-part Makefile.am
 
+# Hand-written tests for stuff in 'contrib/'.
+include $(srcdir)/contrib/t/local.am
+TESTS += $(contrib_TESTS)
+EXTRA_DIST += $(contrib_TESTS)
+
 # Static dependencies valid for each test case.
 check_SCRIPTS = t/wrap/aclocal-$(APIVERSION) t/wrap/automake-$(APIVERSION)
 dist_check_DATA = \

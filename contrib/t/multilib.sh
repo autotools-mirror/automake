@@ -16,8 +16,6 @@
 
 # Check multilib support.
 # Based on a test case from Ralf Corsepius.
-# FIXME: the features tested by this script has been moved in contrib.
-# FIXME: We should move this script accordingly.
 
 required='gcc GNUmake'
 . ./defs || exit 1
