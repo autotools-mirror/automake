@@ -81,15 +81,9 @@ as_expected ()
 $MAKE foo && exit 1
 find . -name foo | grep . && exit 1
 
-if using_gmake; then
-  $MAKE -k foo && exit 1
-  as_expected
-  $MAKE --keep-going foo && exit 1
-  as_expected
-else
-  # Don't trust the exit status of 'make -k' for non-GNU makes.
-  $MAKE -k foo || :
-  as_expected
-fi
+$MAKE -k foo && exit 1
+as_expected
+$MAKE --keep-going foo && exit 1
+as_expected
 
 :

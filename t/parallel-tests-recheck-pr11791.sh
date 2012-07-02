@@ -42,10 +42,8 @@ $MAKE check >stdout && { cat stdout; exit 1; }
 cat stdout
 count_test_results total=1 pass=0 fail=1 xpass=0 xfail=0 skip=0 error=0
 
-st=0; $MAKE -k recheck >stdout || st=$?
+$MAKE -k recheck >stdout && { cat stdout; exit 1; }
 cat stdout
-# Don't trust the exit status of "make -k" for non-GNU makes.
-if using_gmake && test $st -eq 0; then exit 1; fi
 count_test_results total=1 pass=0 fail=1 xpass=0 xfail=0 skip=0 error=0
 
 # Introduce an error in foo.c, that should cause a compilation failure.
@@ -61,10 +59,8 @@ $EGREP '(X?PASS|X?FAIL|SKIP|ERROR):' stdout && exit 1
 test -f foo.log
 test -f foo.trs
 
-st=0; $MAKE -k recheck >stdout || st=$?
+$MAKE -k recheck >stdout && { cat stdout; exit 1; }
 cat stdout
-# Don't trust the exit status of "make -k" for non-GNU makes.
-if using_gmake && test $st -eq 0; then exit 1; fi
 # We don't get a change to run the testsuite.
 $EGREP '(X?PASS|X?FAIL|SKIP|ERROR):' stdout && exit 1
 test -f foo.log

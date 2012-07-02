@@ -17,9 +17,6 @@
 # Check that user-defined recursive targets and their associate
 # '-local', '-am' and '-recursive' targets are declared as phony.
 
-# Require GNU make, because some vendo makes (e.g., Solaris) doesn't
-# truly respect .PHONY.
-required=GNUmake
 . ./defs || exit 1
 
 cat >> configure.ac <<'END'

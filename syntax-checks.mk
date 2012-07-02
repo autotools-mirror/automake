@@ -33,7 +33,7 @@ xtests := $(shell \
 
 xdefs = $(srcdir)/t/ax/test-init.sh $(srcdir)/defs $(srcdir)/defs-static.in
 
-ams := $(shell find $(srcdir) -name '*.dir' -prune -o -name '*.am' -print)
+ams := $(shell find $(srcdir) -name '*.dir' -prune -o -name '?*.am' -a -print)
 pms := $(dist_perllib_DATA)
 
 # Some simple checks, and then ordinary check.  These are only really
@@ -131,10 +131,14 @@ sc_rm_minus_f:
 	else :; fi
 
 ## Never use something like "for file in $(FILES)", this doesn't work
-## if FILES is empty or if it contains shell meta characters (e.g. $ is
-## commonly used in Java filenames).
+## if FILES is empty or if it contains shell meta characters (e.g. '$'
+## is commonly used in Java filenames).  Make an exception for
+## $(am__installdirs), which is already defined as properly quoted.
 sc_no_for_variable_in_macro:
-	@if grep 'for .* in \$$(' $(ams) | grep -v '/Makefile\.am:'; then \
+	@LC_ALL=C; export LC_ALL; \
+	if grep 'for .* in \$$(' $(ams) | grep -v '/Makefile\.am:' \
+	    | grep -Ev '\bfor [a-zA-Z0-9_]+ in \$$\(am__installdirs\)'; \
+	then \
 	  echo 'Use "list=$$(mumble); for var in $$$$list".' 1>&2 ; \
 	  exit 1; \
 	else :; fi
@@ -290,7 +294,7 @@ sc_make_simple_include:
 ## by GNU make.  No point in using it.
 sc_no_dotmake_target:
 	@files="\
-	  `find $(srcdir) -name '*.am'` \
+	  $(ams) \
 	  $(srcdir)/automake.in \
 	  $(srcdir)/doc/*.texi \
 	 "; \

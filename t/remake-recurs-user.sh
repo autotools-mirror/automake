@@ -77,7 +77,6 @@ later-target:
 DISTCLEANFILES = zardoz
 END
 
-using_gmake || $MAKE Makefile
 $MAKE
 test -f foo
 test -f oof

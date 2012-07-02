@@ -107,7 +107,7 @@ $MAKE nihil
 $sleep
 echo none_SOURCES = >> Makefile.am
 
-$MAKE nihil 2>stderr && { cat stderr >&2; Exit 1; }
+$MAKE nihil 2>stderr && { cat stderr >&2; exit 1; }
 cat stderr >&2
 
 grep "variable 'none_SOURCES'" stderr
