@@ -242,6 +242,7 @@ dist_automake_ac_DATA = \
   m4/cond-if.m4 \
   m4/depend.m4 \
   m4/dmalloc.m4 \
+  m4/extra-recurs.m4 \
   m4/gcj.m4 \
   m4/init.m4 \
   m4/install-sh.m4 \
@@ -389,6 +390,11 @@ $(srcdir)/testsuite-autodeps.am: $(srcdir)/gen-testsuite-part
 	$(AM_V_GEN)$(PERL) $< --srcdir $(srcdir) > $(@F)-t
 	$(AM_V_at)chmod a-w $(@F)-t && mv -f $(@F)-t $@
 EXTRA_DIST += gen-testsuite-part
+
+# Hand-written tests for stuff in 'contrib/'.
+include $(srcdir)/contrib/t/local.am
+TESTS += $(contrib_TESTS)
+EXTRA_DIST += $(contrib_TESTS)
 
 # Static dependencies valid for each test case.
 check_SCRIPTS = t/wrap/aclocal-$(APIVERSION) t/wrap/automake-$(APIVERSION)

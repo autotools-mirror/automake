@@ -17,8 +17,6 @@
 # Check parallel-tests features:
 #  - check-html
 #  - recheck-html
-# FIXME: the features tested by this script has been moved in contrib.
-# FIXME: We should move this script accordingly.
 
 . ./defs || exit 1
 

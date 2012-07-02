@@ -27,7 +27,7 @@ xtests := $(shell \
    fi; \
    for d in $$dirs; do \
      for s in tap sh; do \
-       ls $$d/t/*.$$s $$d/t/ax/*.$$s 2>/dev/null; \
+       ls $$d/t/ax/*.$$s $$d/t/*.$$s $$d/contrib/t/*.$$s 2>/dev/null; \
      done; \
    done | sort)
 
