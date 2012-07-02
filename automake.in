@@ -362,6 +362,9 @@ my $ac_gettext_location;
 # Whether AM_GNU_GETTEXT_INTL_SUBDIR has been seen.
 my $seen_gettext_intl = 0;
 
+# The arguments of the AM_EXTRA_RECURSIVE_TARGETS call (if any).
+my @extra_recursive_targets = ();
+
 # Lists of tags supported by Libtool.
 my %libtool_tags = ();
 # 1 if Libtool uses LT_SUPPORTED_TAG.  If it does, then it also
@@ -4546,6 +4549,32 @@ sub handle_all ($)
       }
 }
 
+# Generate helper targets for user recursion, where needed.
+sub handle_user_recursion ()
+{
+  return unless @extra_recursive_targets;
+
+  define_pretty_variable ('am__extra_recursive_targets', TRUE, INTERNAL,
+                          map { "$_-recursive" } @extra_recursive_targets);
+  my $aux = var ('SUBDIRS') ? 'recursive' : 'am';
+  foreach my $target (@extra_recursive_targets)
+    {
+      # This allows the default target's rules to be overridden in
+      # Makefile.am.
+      user_phony_rule ($target);
+      depend ("$target", "$target-$aux");
+      depend ("$target-am", "$target-local");
+      # Every user-defined recursive target 'foo' *must* have a valid
+      # associated 'foo-local' rule; we define it as an empty rule by
+      # default, so that the user can transparently extend it in his
+      # own Makefile.am.
+      pretty_print_rule ("$target-local:");
+      # $target-recursive might as well be undefined, so do not add
+      # it here; it's taken care of in subdirs.am anyway.
+      depend (".PHONY", "$target-am", "$target-local");
+    }
+}
+
 
 # &do_check_merge_target ()
 # -------------------------
@@ -5163,6 +5192,7 @@ sub scan_autoconf_traces ($)
 		AC_SUBST_TRACE => 1,
 		AM_AUTOMAKE_VERSION => 1,
 		AM_CONDITIONAL => 2,
+		_AM_EXTRA_RECURSIVE_TARGETS => 1,
 		AM_GNU_GETTEXT => 0,
 		AM_GNU_GETTEXT_INTL_SUBDIR => 0,
 		AM_INIT_AUTOMAKE => 0,
@@ -5322,6 +5352,10 @@ sub scan_autoconf_traces ($)
       elsif ($macro eq 'AM_CONDITIONAL')
 	{
 	  $configure_cond{$args[1]} = $where;
+	}
+      elsif ($macro eq '_AM_EXTRA_RECURSIVE_TARGETS')
+	{
+	  push @extra_recursive_targets, split (' ', $args[1]);
 	}
       elsif ($macro eq 'AM_GNU_GETTEXT')
 	{
@@ -7998,6 +8032,7 @@ sub generate_makefile ($$)
   handle_data;
   handle_headers;
   handle_subdirs;
+  handle_user_recursion;
   handle_tags;
   handle_minor_options;
   # Must come after handle_programs so that %known_programs is up-to-date.

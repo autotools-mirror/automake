@@ -4204,6 +4204,34 @@ will be built.  It is customary to arrange test directories to be
 built after everything else since they are meant to test what has
 been constructed.
 
+In addition to the built-in recursive targets defined by Automake
+(@code{all}, @code{check}, etc.), the developer can also define his
+own recursive targets.  That is done by passing the names of such
+targets as arguments to the m4 macro @code{AM_EXTRA_RECURSIVE_TARGETS}
+in @file{configure.ac}.  Automake generates rules to handle the
+recursion for such targets; and the developer can define real actions
+for them by defining corresponding @code{-local} targets.
+
+@example
+% @kbd{cat configure.ac}
+AC_INIT([pkg-name], [1.0]
+AM_INIT_AUTOMAKE
+AM_EXTRA_RECURSIVE_TARGETS([foo])
+AC_CONFIG_FILES([Makefile sub/Makefile sub/src/Makefile])
+AC_OUTPUT
+% @kbd{cat Makefile.am}
+SUBDIRS = sub
+foo-local:
+        @@echo This will be run by "make foo".
+% @kbd{cat sub/Makefile.am}
+SUBDIRS = src
+% @kbd{cat sub/src/Makefile.am}
+foo-local:
+        @@echo This too will be run by a "make foo" issued either in
+        @@echo the 'sub/src/' directory, the 'sub/' directory, or the
+        @@echo top-level directory.
+@end example
+
 @node Conditional Subdirectories
 @section Conditional Subdirectories
 @cindex Subdirectories, building conditionally

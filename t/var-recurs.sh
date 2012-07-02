@@ -15,15 +15,20 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Test to make sure recursive variable definitions die.
-# From Jim Meyering.
 
 . ./defs || exit 1
 
+cat >> configure.ac << 'END'
+AC_PROG_CC
+END
+
 cat > Makefile.am << 'END'
-man_MANS = chgrp.1
-man_aux = $(man_MANS:.1=.x)
-EXTRA_DIST = $(man_aux) $(man_MANS)
+bin_PROGRAMS = $(foo)
+foo = $(bin_PROGRAMS)
 END
 
 $ACLOCAL
-$AUTOMAKE
+AUTOMAKE_fails
+grep 'Makefile\.am:.*bin_PROGRAMS.*recursively defined' stderr
+
+:
