@@ -421,7 +421,7 @@ check-local: check-no-repeated-test-name
 .PHONY: check-no-repeated-test-name
 
 ## Checking the list of tests.
-test_subdirs = t t/pm t/perf
+test_subdirs = t t/pm t/perf contrib/t
 include $(srcdir)/t/CheckListOfTests.am
 
 # Run the testsuite with the installed aclocal and automake.
