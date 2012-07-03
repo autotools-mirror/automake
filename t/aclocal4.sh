@@ -21,6 +21,7 @@ required=cc
 . ./defs || exit 1
 
 cat >>configure.ac <<EOF
+AC_CONFIG_MACRO_DIR([m4])
 AC_PROG_RANLIB
 AM_PROG_AR
 AC_PROG_CC
@@ -46,7 +47,6 @@ EOF
 cat >Makefile.am <<'EOF'
 SUBDIRS = lib
 EXTRA_DIST = m4/mymacro.m4
-ACLOCAL_AMFLAGS = -I m4
 check-foo: distdir
 	test -f $(distdir)/lib/foo.c
 	test -f $(distdir)/lib/bar.c
@@ -56,7 +56,7 @@ check-not-foo: distdir
 	test -f $(distdir)/lib/bar.c
 EOF
 
-$ACLOCAL -I m4
+$ACLOCAL
 $AUTOCONF
 $AUTOMAKE --add-missing
 ./configure

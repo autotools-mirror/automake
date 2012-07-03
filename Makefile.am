@@ -438,13 +438,16 @@ installcheck-testsuite:
 clean-local: clean-local-check
 .PHONY: clean-local-check
 clean-local-check:
-	-set x t/*.dir; shift; \
-	 if test "$$#,$$1" = "1,*.dir"; then \
-	   : there is no test directory to clean; \
-	 else \
-	   find "$$@" -type d ! -perm -700 -exec chmod u+rwx {} ';'; \
-	   rm -rf "$$@"; \
-	 fi;
+## Directries candidate to be test directories match this wildcard.
+	@globs='t/*.dir t/*/*.dir */t/*.dir */t/*/*.dir'; \
+## The 'nullglob' bash option is not portable, so use perl.
+	dirs=`$(PERL) -e "print join(' ', glob('$$globs'));"` || exit 1; \
+	if test -n "$$dirs"; then \
+## Errors in find are acceptable, errors in rm are not.
+	    find $$dirs -type d ! -perm -700 -exec chmod u+rwx {} ';'; \
+	    echo " rm -rf $$dirs"; \
+	    rm -rf $$dirs || exit 1; \
+	fi
 
 
 ## ---------------- ##
