@@ -41,7 +41,8 @@ if REPLACE_STDIO_H
 stdio.h: stdio.in.h $(top_builddir)/config.status
 	cp $(srcdir)/stdio.in.h $@
 else
-stdio.h: $(top_builddir)/config.status
+.PHONY: stdio.h
+stdio.h:
 	rm -f $@
 endif
 MOSTLYCLEANFILES = stdio.h

@@ -42,11 +42,12 @@ libfoo_a_SOURCES = foo.c
 BUILT_SOURCES = foo.h
 foo.h:
 	echo \#define FOO_DEFINE 1 >$@
+CLEANFILES = $(BUILT_SOURCES)
 END
 
 cat > lib/foo.c << 'END'
 #include <foo.h>
-int foo () { return !FOO_DEFINE; }
+int foo (void) { return !FOO_DEFINE; }
 END
 
 
@@ -56,5 +57,6 @@ $AUTOMAKE --copy --add-missing
 
 ./configure
 $MAKE
+$MAKE distcheck
 
 :

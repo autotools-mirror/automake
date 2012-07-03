@@ -181,13 +181,10 @@ for try in 0 1; do
 
   # Minimal checks about recovering from header removal.
   rm -f p.h parse.hh parse3.hxx
-  $run_make p.h parse.hh
+  $run_make
   $debug_info
   test -f p.h
   test -f parse.hh
-  test ! -e parse3.hxx
-  $run_make
-  $debug_info
   test -f parse3.hxx
 
   cd $srcdir
