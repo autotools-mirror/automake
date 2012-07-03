@@ -22,12 +22,12 @@
 cat >> configure.ac << 'END'
 SOME_DEFS
 AC_CONFIG_FILES([sub/Makefile])
+AC_CONFIG_MACRO_DIR([m4])
 AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
 SUBDIRS = sub
-ACLOCAL_AMFLAGS = -I m4
 END
 
 mkdir sub
@@ -37,7 +37,7 @@ mkdir m4
 echo 'AC_DEFUN([SOME_DEFS], [])' > m4/somedefs.m4
 echo 'AC_DEFUN([MORE_DEFS], [AC_SUBST([GREPME])])' > m4/moredefs.m4
 
-$ACLOCAL -I m4
+$ACLOCAL
 $AUTOCONF
 $AUTOMAKE --copy --add-missing
 

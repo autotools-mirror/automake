@@ -20,23 +20,23 @@
 . ./defs || exit 1
 
 cat >> configure.ac << 'END'
-AM_TEST([GREPME])
+AC_CONFIG_MACRO_DIR([m4])
+FOO_TEST([GREPME])
 AC_CONFIG_FILES([sub/Makefile])
 AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
 SUBDIRS = sub
-ACLOCAL_AMFLAGS = -I m4
 END
 
 mkdir sub
 : > sub/Makefile.am
 
 mkdir m4
-echo 'AC_DEFUN([AM_TEST], [echo $@])' > m4/moredefs.m4
+echo 'AC_DEFUN([FOO_TEST], [echo $@])' > m4/moredefs.m4
 
-$ACLOCAL -I m4
+$ACLOCAL
 $AUTOCONF
 $AUTOMAKE --copy --add-missing
 ./configure
@@ -44,10 +44,10 @@ $MAKE
 
 # Update an aclocal.m4 dependency, then make sure all Makefiles are
 # updated, even from a sub-directory.  Check that AU_ALIAS is
-# recognized. Change the definition of AM_TEST to check that its new
+# recognized. Change the definition of FOO_TEST to check that its new
 # definition is used.
 $sleep # Modified configure dependencies must be newer than config.status.
-echo 'AU_ALIAS([AM_TEST], [AC_SUBST])' > m4/moredefs.m4
+echo 'AU_ALIAS([FOO_TEST], [AC_SUBST])' > m4/moredefs.m4
 cd sub
 $MAKE
 cd ..
@@ -58,10 +58,10 @@ grep GREPME sub/Makefile
 $MAKE distdir
 test -f $me-1.0/m4/moredefs.m4
 
-# Change the definition of AM_TEST to check that its new definition is
+# Change the definition of FOO_TEST to check that its new definition is
 # used.  Check that AC_DEFUN_ONCE is caught.
 $sleep # Modified configure dependencies must be newer than config.status.
-echo 'AC_DEFUN_ONCE([AM_TEST], [AC_SUBST(__$1__)])' > m4/moredefs.m4
+echo 'AC_DEFUN_ONCE([FOO_TEST], [AC_SUBST(__$1__)])' > m4/moredefs.m4
 $MAKE
 grep 'm4/moredefs\.m4' aclocal.m4
 grep '__GREPME__' configure

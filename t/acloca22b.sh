@@ -14,14 +14,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Make sure the "deleted header file" issue is fixed w.r.t. aclocal.m4
-# dependencies.  See also related the tests 'remake-deleted-m4-file.test'
-# and 'remake-renamed-m4-macro-and-file.test'.
+# Make sure the "deleted header file" issue is fixed wrt. aclocal.m4
+# dependencies.
+# NOTE: this test works by using the obsolete 'ACLOCAL_AMFLAGS' make
+# variable; see sister test 'acloca22.test' for a modern equivalent.
 
 . ./defs || exit 1
 
 cat >>configure.ac <<EOF
-AC_CONFIG_MACRO_DIR([.])
 FOO
 AC_OUTPUT
 EOF
@@ -34,9 +34,11 @@ cat >bar.m4 <<EOF
 AC_DEFUN([BAR], [AC_SUBST([GREPBAR])])
 EOF
 
-: >Makefile.am
+cat >Makefile.am <<EOF
+ACLOCAL_AMFLAGS = -I .
+EOF
 
-$ACLOCAL
+$ACLOCAL -I .
 $AUTOMAKE
 $AUTOCONF
 

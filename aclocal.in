@@ -52,7 +52,7 @@ $perl_threads = 0;
 # user-supplied directories first, then the directory containing the
 # automake macros, and finally the system-wide directories for
 # third-party macros.
-# @user_includes can be augmented with -I.
+# @user_includes can be augmented with -I or AC_CONFIG_MACRO_DIR.
 # @automake_includes can be reset with the '--automake-acdir' option.
 # @system_includes can be augmented with the 'dirlist' file or the
 # ACLOCAL_PATH environment variable, and reset with the '--system-acdir'
@@ -143,9 +143,13 @@ my $m4_include_rx = "(m4_|m4_s|s)include\\((?:\\[([^]]+)\\]|([^],)\n]+))\\)";
 my $serial_line_rx = '^#\s*serial\s+(\S*)';
 my $serial_number_rx = '^\d+(?:\.\d+)*$';
 
-# Autoconf version
-# Set by trace_used_macros.
+# Autoconf version.  This variable is set by 'trace_used_macros'.
 my $ac_version;
+
+# Primary user directory containing extra m4 files for macros
+# definition, as extracted from call to macro AC_CONFIG_MACRO_DIR.
+# This variable is set by 'trace_used_macros'.
+my $ac_config_macro_dir;
 
 # If set, names a temporary file that must be erased on abnormal exit.
 my $erase_me;
@@ -719,13 +723,15 @@ sub trace_used_macros ()
   $traces .= join (' ',
 		   (map { "'$_'" }
 		    (grep { exists $files{$_} } @file_order))) . " ";
+
   # All candidate macros.
   $traces .= join (' ',
 		   (map { "--trace='$_:\$f::\$n::\$1'" }
 		    ('AC_DEFUN',
 		     'AC_DEFUN_ONCE',
 		     'AU_DEFUN',
-		     '_AM_AUTOCONF_VERSION')),
+		     '_AM_AUTOCONF_VERSION',
+		     'AC_CONFIG_MACRO_DIR')),
 		   # Do not trace $1 for all other macros as we do
 		   # not need it and it might contains harmful
 		   # characters (like newlines).
@@ -734,6 +740,8 @@ sub trace_used_macros ()
   verb "running $traces $configure_ac";
 
   my $tracefh = new Automake::XFile ("$traces $configure_ac |");
+
+  $ac_config_macro_dir = undef;
 
   my %traced = ();
 
@@ -744,12 +752,19 @@ sub trace_used_macros ()
 
       $traced{$macro} = 1 if exists $macro_seen{$macro};
 
-      $map_traced_defs{$arg1} = $file
-	if ($macro eq 'AC_DEFUN'
-	    || $macro eq 'AC_DEFUN_ONCE'
-	    || $macro eq 'AU_DEFUN');
-
-      $ac_version = $arg1 if $macro eq '_AM_AUTOCONF_VERSION';
+      if ($macro eq 'AC_DEFUN' || $macro eq 'AC_DEFUN_ONCE'
+            || $macro eq 'AU_DEFUN')
+        {
+          $map_traced_defs{$arg1} = $file;
+        }
+      elsif ($macro eq '_AM_AUTOCONF_VERSION')
+        {
+          $ac_version = $arg1;
+        }
+      elsif ($macro eq 'AC_CONFIG_MACRO_DIR')
+        {
+          $ac_config_macro_dir = $arg1;
+        }
     }
 
   $tracefh->close;
@@ -1018,12 +1033,6 @@ sub parse_arguments ()
       $dry_run = 1;
     }
 
-  if ($install && !@user_includes)
-    {
-      fatal ("--install should copy macros in the directory indicated by the"
-	     . "\nfirst -I option, but no -I was supplied");
-    }
-
   # Finally, adds any directory listed in the 'dirlist' file.
   if (open (DIRLIST, "$system_includes[0]/dirlist"))
     {
@@ -1073,16 +1082,36 @@ $configure_ac = require_configure_ac;
 # we did not rerun aclocal, the next run of aclocal would produce a
 # different aclocal.m4.
 my $loop = 0;
+my $rerun_due_to_macrodir = 0;
 while (1)
   {
     ++$loop;
-    prog_error "too many loops" if $loop > 2;
+    prog_error "too many loops" if $loop > 2 + $rerun_due_to_macrodir;
 
     reset_maps;
     scan_m4_files;
     scan_configure;
     last if $exit_code;
     my %macro_traced = trace_used_macros;
+
+    if (!$rerun_due_to_macrodir && defined $ac_config_macro_dir)
+      {
+         # The directory specified by the AC_CONFIG_MACRO_DIR m4 macro
+         # (if any) must after the user includes specified explicitly
+         # with the '-I' option.
+         push @user_includes, $ac_config_macro_dir
+           if defined $ac_config_macro_dir;
+        # We might have to scan some new directory of .m4 files.
+        $rerun_due_to_macrodir++;
+        next;
+      }
+
+    if ($install && !@user_includes)
+      {
+        fatal "installation of third-party macros impossible without " .
+              "-I options nor AC_CONFIG_MACRO_DIR m4 macro";
+      }
+
     last if write_aclocal ($output_file, keys %macro_traced);
     last if $dry_run;
   }

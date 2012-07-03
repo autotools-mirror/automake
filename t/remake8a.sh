@@ -110,29 +110,29 @@ $MAKE distcheck
 
 rm -f quux
 
-# Modify Makefile.am to add a directory of extra m4 files
-# considered by aclocal.
+# Modify configure.ac and aclocal.m4 to add a directory of extra m4
+# files considered by aclocal.  Also update checks in Makefile.am.
+# Note that we won't use this new directory of extra m4 files in the
+# first rebuild below (but we will in the second).
 
 $sleep
 
 mkdir $srcdir/m4
 
 cat > $srcdir/Makefile.am <<'END'
-ACLOCAL_AMFLAGS = -I m4
+all-local: quux
 check-local:
 	cat quux
 	grep '%Foo%' quux
 	test x'$(QUUX)' = x'%Foo%'
 END
 
-$MAKE # This should place aclocal flags in Makefile.
-grep '.*-I m4' Makefile # Sanity check.
-
 # Modify configure.ac and aclocal.m4.
 
 $sleep
 
 cat $srcdir/configure.stub - > $srcdir/configure.ac <<'END'
+AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_FILES([quux])
 MY_CUSTOM_MACRO
 AC_OUTPUT
