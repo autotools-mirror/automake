@@ -164,7 +164,7 @@ sub check_acinclude ();
 sub reset_maps ();
 sub install_file ($$);
 sub list_compare (\@\@);
-sub scan_m4_dirs ($@);
+sub scan_m4_dirs ($$@);
 sub scan_m4_files ();
 sub add_macro ($);
 sub scan_configure_dep ($);
@@ -344,28 +344,20 @@ sub list_compare (\@\@)
 
 ################################################################
 
-# scan_m4_dirs($TYPE, @DIRS)
-# --------------------------
+# scan_m4_dirs($TYPE, $ERR_ON_NONEXISTING, @DIRS)
+# -----------------------------------------------
 # Scan all M4 files installed in @DIRS for new macro definitions.
 # Register each file as of type $TYPE (one of the FT_* constants).
-my $first_user_m4dir = 1;
-sub scan_m4_dirs ($@)
+sub scan_m4_dirs ($$@)
 {
-  my ($type, @dirlist) = @_;
+  my ($type, $err_on_nonexisting, @dirlist) = @_;
 
   foreach my $m4dir (@dirlist)
     {
       if (! opendir (DIR, $m4dir))
 	{
-	  if ($install && $type == FT_USER && $first_user_m4dir)
-            {
-              # We will try to create this directory later, so don't
-              # complain if it doesn't exist.
-              # TODO: maybe we should avoid complaining only if errno
-              # is ENONENT?
-              $first_user_m4dir = 0;
-              next;
-            }
+	  # TODO: maybe avoid complaining only if errno == ENONENT?
+	  next unless $err_on_nonexisting;
 	  fatal "couldn't open directory '$m4dir': $!";
 	}
 
@@ -400,9 +392,16 @@ sub scan_m4_files ()
     }
 
   # Finally, scan all files in our search paths.
-  scan_m4_dirs (FT_USER, @user_includes);
-  scan_m4_dirs (FT_AUTOMAKE, @automake_includes);
-  scan_m4_dirs (FT_SYSTEM, @system_includes);
+
+  if (@user_includes)
+    {
+      # Don't complain if the first user directory doesn't exist, in case
+      # we need to create it later (can happen if '--install' was given).
+      scan_m4_dirs (FT_USER, !$install, $user_includes[0]);
+      scan_m4_dirs (FT_USER, 1, @user_includes[1..$#user_includes]);
+    }
+  scan_m4_dirs (FT_AUTOMAKE, 1, @automake_includes);
+  scan_m4_dirs (FT_SYSTEM,   1, @system_includes);
 
   # Construct a new function that does the searching.  We use a
   # function (instead of just evaluating $search in the loop) so that
