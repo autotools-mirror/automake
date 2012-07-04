@@ -52,7 +52,7 @@ $perl_threads = 0;
 # user-supplied directories first, then the directory containing the
 # automake macros, and finally the system-wide directories for
 # third-party macros.
-# @user_includes can be augmented with -I or AC_CONFIG_MACRO_DIR.
+# @user_includes can be augmented with -I or AC_CONFIG_MACRO_DIRS.
 # @automake_includes can be reset with the '--automake-acdir' option.
 # @system_includes can be augmented with the 'dirlist' file or the
 # ACLOCAL_PATH environment variable, and reset with the '--system-acdir'
@@ -146,10 +146,10 @@ my $serial_number_rx = '^\d+(?:\.\d+)*$';
 # Autoconf version.  This variable is set by 'trace_used_macros'.
 my $ac_version;
 
-# Primary user directory containing extra m4 files for macros
-# definition, as extracted from call to macro AC_CONFIG_MACRO_DIR.
-# This variable is set by 'trace_used_macros'.
-my $ac_config_macro_dir;
+# User directory containing extra m4 files for macros definition,
+# as extracted from calls to the macro AC_CONFIG_MACRO_DIRS.
+# This variable is updated by 'trace_used_macros'.
+my @ac_config_macro_dirs;
 
 # If set, names a temporary file that must be erased on abnormal exit.
 my $erase_me;
@@ -731,7 +731,8 @@ sub trace_used_macros ()
 		     'AC_DEFUN_ONCE',
 		     'AU_DEFUN',
 		     '_AM_AUTOCONF_VERSION',
-		     'AC_CONFIG_MACRO_DIR')),
+		     'AC_CONFIG_MACRO_DIR',
+		     'AC_CONFIG_MACRO_DIRS')),
 		   # Do not trace $1 for all other macros as we do
 		   # not need it and it might contains harmful
 		   # characters (like newlines).
@@ -741,7 +742,7 @@ sub trace_used_macros ()
 
   my $tracefh = new Automake::XFile ("$traces $configure_ac |");
 
-  $ac_config_macro_dir = undef;
+  @ac_config_macro_dirs = ();
 
   my %traced = ();
 
@@ -763,7 +764,11 @@ sub trace_used_macros ()
         }
       elsif ($macro eq 'AC_CONFIG_MACRO_DIR')
         {
-          $ac_config_macro_dir = $arg1;
+          @ac_config_macro_dirs = ($arg1);
+        }
+      elsif ($macro eq 'AC_CONFIG_MACRO_DIRS')
+        {
+          push @ac_config_macro_dirs, split (/\s+/, $arg1);
         }
     }
 
@@ -1094,13 +1099,12 @@ while (1)
     last if $exit_code;
     my %macro_traced = trace_used_macros;
 
-    if (!$rerun_due_to_macrodir && defined $ac_config_macro_dir)
+    if (!$rerun_due_to_macrodir && @ac_config_macro_dirs)
       {
-         # The directory specified by the AC_CONFIG_MACRO_DIR m4 macro
-         # (if any) must after the user includes specified explicitly
-         # with the '-I' option.
-         push @user_includes, $ac_config_macro_dir
-           if defined $ac_config_macro_dir;
+        # The directory specified in calls to the AC_CONFIG_MACRO_DIRS
+        # m4 macro (if any) must go after the user includes specified
+        # explicitly with the '-I' option.
+        push @user_includes, @ac_config_macro_dirs;
         # We might have to scan some new directory of .m4 files.
         $rerun_due_to_macrodir++;
         next;
@@ -1109,7 +1113,7 @@ while (1)
     if ($install && !@user_includes)
       {
         fatal "installation of third-party macros impossible without " .
-              "-I options nor AC_CONFIG_MACRO_DIR m4 macro";
+              "-I options nor AC_CONFIG_MACRO_DIR{,S} m4 macro(s)";
       }
 
     last if write_aclocal ($output_file, keys %macro_traced);

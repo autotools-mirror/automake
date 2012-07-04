@@ -98,6 +98,7 @@ t/acloca23.sh \
 t/aclocal-acdir.sh \
 t/aclocal-install-absdir.sh \
 t/aclocal-macrodir.tap \
+t/aclocal-macrodirs.tap \
 t/aclocal-amflags.sh \
 t/aclocal-print-acdir.sh \
 t/aclocal-path.sh \
@@ -1035,6 +1036,7 @@ t/subpkg2.sh \
 t/subpkg3.sh \
 t/subpkg4.sh \
 t/subpkg-yacc.sh \
+t/subpkg-macrodir.sh \
 t/subst.sh \
 t/subst3.sh \
 t/subst4.sh \

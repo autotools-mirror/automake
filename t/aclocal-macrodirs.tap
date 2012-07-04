@@ -14,13 +14,19 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Several tests on the use of the m4 macro AC_CONFIG_MACRO_DIR with
+# Several tests on the use of the m4 macro AC_CONFIG_MACRO_DIRS with
 # aclocal.  See also related test 'aclocal-macrodir.tap'.
 
 am_create_testdir=empty
 . test-init.sh
 
-plan_ 5
+{ $AUTOCONF -o /dev/null - <<END
+    AC_INIT([x], [0])
+    AC_CONFIG_MACRO_DIRS([.])
+END
+} || skip_all_ "autoconf doesn't define the AC_CONFIG_MACRO_DIRS macro"
+
+plan_ 11
 
 ocwd=$(pwd) || fatal_ "getting current working directory"
 ACLOCAL_PATH=; unset ACLOCAL_PATH
@@ -71,11 +77,11 @@ test_end ()
 
 #---------------------------------------------------------------------------
 
-test_begin "AC_CONFIG_MACRO_DIR is honored"
+test_begin "AC_CONFIG_MACRO_DIRS is honored"
 
 cat > configure.ac <<'END'
 AC_INIT([md], [10.0])
-AC_CONFIG_MACRO_DIR([macro-dir])
+AC_CONFIG_MACRO_DIRS([macro-dir])
 MY_FOO
 END
 
@@ -93,11 +99,59 @@ test_end
 
 #---------------------------------------------------------------------------
 
-test_begin "AC_CONFIG_MACRO_DIR([foo]) interaction with --install"
+two_dirs_check ()
+{
+  mkdir dir1 dir2
+  echo 'AC_DEFUN([MY_FOO], [::my::foo::])' > dir1/foo.m4
+  echo 'AC_DEFUN([MY_BAR], [!!my!!bar!!])' > dir2/zap.m4
+  $ACLOCAL \
+    && $FGREP 'm4_include([dir1/foo.m4])' aclocal.m4 \
+    && $FGREP 'm4_include([dir2/zap.m4])' aclocal.m4 \
+    && $AUTOCONF \
+    && not $EGREP 'MY_(FOO|BAR)' configure \
+    && $FGREP '::my::foo::' configure \
+    && $FGREP '!!my!!bar!!' configure \
+    || r='not ok'
+}
+
+#---------------------------------------------------------------------------
+
+test_begin "AC_CONFIG_MACRO_DIRS: several arguments"
+
+cat > configure.ac <<'END'
+AC_INIT([more-args], [0.2])
+AC_CONFIG_MACRO_DIRS([dir1 dir2])
+MY_FOO
+MY_BAR
+END
+
+two_dirs_check
+
+test_end
+
+#---------------------------------------------------------------------------
+
+test_begin "AC_CONFIG_MACRO_DIRS: several calls"
+
+cat > configure.ac <<'END'
+AC_INIT([more-calls], [2.0])
+AC_CONFIG_MACRO_DIRS([dir1])
+AC_CONFIG_MACRO_DIRS([dir2])
+MY_FOO
+MY_BAR
+END
+
+two_dirs_check
+
+test_end
+
+#---------------------------------------------------------------------------
+
+test_begin "AC_CONFIG_MACRO_DIRS interaction with --install"
 
 cat > configure.ac << 'END'
 AC_INIT([inst], [1.0])
-AC_CONFIG_MACRO_DIR([the-dir])
+AC_CONFIG_MACRO_DIRS([the-dir])
 THE_MACRO
 END
 
@@ -113,11 +167,59 @@ test_end
 
 #---------------------------------------------------------------------------
 
-test_begin "'-I' option wins over AC_CONFIG_MACRO_DIR"
+two_dirs_install_check ()
+{
+  mkdir sys-dir dir1 dir2
+  echo 'AC_DEFUN([THE_MACRO], [:])' > sys-dir/my.m4
+  echo 'AC_DEFUN([AX_FOO], [:])' > dir2/zap.m4
+  test ! -r dir1/my.m4 \
+    && $ACLOCAL --install --system-acdir ./sys-dir \
+    && diff sys-dir/my.m4 dir1/my.m4 \
+    && test ! -e dir2/my.m4 \
+    && $FGREP 'm4_include([dir1/my.m4])' aclocal.m4 \
+    && $FGREP 'm4_include([dir2/zap.m4])' aclocal.m4 \
+    || r='not ok'
+}
+
+#---------------------------------------------------------------------------
+
+test_begin "several AC_CONFIG_MACRO_DIRS arguments and --install"
+
+cat > configure.ac << 'END'
+AC_INIT([inst2a], [1.0])
+AC_CONFIG_MACRO_DIRS([dir1 dir2])
+THE_MACRO
+AX_FOO
+END
+
+two_dirs_install_check
+
+test_end
+
+#---------------------------------------------------------------------------
+
+
+test_begin "several AC_CONFIG_MACRO_DIRS calls and --install"
+
+cat > configure.ac << 'END'
+AC_INIT([inst2b], [1.0])
+AC_CONFIG_MACRO_DIRS([dir1])
+AC_CONFIG_MACRO_DIRS([dir2])
+THE_MACRO
+AX_FOO
+END
+
+two_dirs_install_check
+
+test_end
+
+#---------------------------------------------------------------------------
+
+test_begin "'-I' option wins over AC_CONFIG_MACRO_DIRS"
 
 cat > configure.ac <<'END'
 AC_INIT([md], [4.6])
-AC_CONFIG_MACRO_DIR([dir1])
+AC_CONFIG_MACRO_DIRS([dir1])
 MY_FOO
 END
 
@@ -137,11 +239,11 @@ test_end
 
 #---------------------------------------------------------------------------
 
-test_begin "AC_CONFIG_MACRO_DIR([foo]) can create directory 'foo'"
+test_begin "AC_CONFIG_MACRO_DIRS([foo]) can create directory 'foo'"
 
 cat > configure.ac << 'END'
 AC_INIT([x], [1.0])
-AC_CONFIG_MACRO_DIR([foo])
+AC_CONFIG_MACRO_DIRS([foo])
 MY_MACRO
 END
 
@@ -157,11 +259,11 @@ test_end
 
 #---------------------------------------------------------------------------
 
-test_begin "AC_CONFIG_MACRO_DIR([non-existent]) errors out (1)"
+test_begin "AC_CONFIG_MACRO_DIRS([non-existent]) errors out (1)"
 
 cat > configure.ac << 'END'
 AC_INIT([oops], [1.0])
-AC_CONFIG_MACRO_DIR([non-existent])
+AC_CONFIG_MACRO_DIRS([non-existent])
 END
 
 not $ACLOCAL 2>stderr \
@@ -173,5 +275,44 @@ test_end
 
 #---------------------------------------------------------------------------
 
+test_begin "AC_CONFIG_MACRO_DIRS([non-existent]) errors out (2)"
+
+cat > configure.ac << 'END'
+AC_INIT([oops], [1.0])
+AC_CONFIG_MACRO_DIRS([dir-ok])
+AC_CONFIG_MACRO_DIRS([dir-ko])
+END
+
+mkdir dir-ok
+not $ACLOCAL 2>stderr \
+  && cat stderr >&2 \
+  && grep "couldn't open directory 'dir-ko'" stderr \
+  && not grep "dir-ok" stderr \
+  || r='not ok'
+
+test_end
+
+#---------------------------------------------------------------------------
+
+test_begin "AC_CONFIG_MACRO_DIRS([non-existent]) errors out (tricky setup)" \
+           TODO
+
+cat > configure.ac << 'END'
+AC_INIT([oops], [1.0])
+AC_CONFIG_MACRO_DIRS([dir-ok])
+AC_CONFIG_MACRO_DIRS([dir-ko])
+END
+
+mkdir dir-ok
+
+not $ACLOCAL --install 2>stderr \
+  && cat stderr >&2 \
+  && grep "couldn't open directory 'dir-ko'" stderr \
+  && test ! -e dir-ko \
+  || r='not ok'
+
+test_end
+
+#---------------------------------------------------------------------------
 
 :
