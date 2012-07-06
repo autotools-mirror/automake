@@ -64,6 +64,8 @@ filter_stdout ()
 $MAKE check >stdout && { cat stdout; exit 1; }
 cat stdout
 
+using_gmake || $sleep # Required by BSD make.
+
 chmod a-rw test-suite.log
 TEST_SUITE_LOG=my.log $MAKE -e recheck >stdout \
   && { cat stdout; exit 1; }
