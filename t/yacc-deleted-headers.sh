@@ -101,53 +101,9 @@ $MAKE
 
 headers='parse1.h p2-parse2.h parse3.h parse4.h'
 
-# Check that we remake only the necessary headers.
-
-rm -f $headers
-$MAKE parse1.h
-test -f parse1.h
-test ! -e p2-parse2.h
-test ! -e parse3.h
-test ! -e parse4.h
-
-rm -f $headers
-$MAKE p2-parse2.h
-test ! -e parse1.h
-test -f p2-parse2.h
-test ! -e parse3.h
-test ! -e parse4.h
-
-rm -f $headers
-$MAKE parse3.h
-test ! -e parse1.h
-test ! -e p2-parse2.h
-test -f parse3.h
-test ! -e parse4.h
-# Since we declared parse3.h into $(p3_SOURCES), make should be
-# able to rebuild it automatically before remaking 'p3'.
-rm -f $headers
-$MAKE clean-p3
-test ! -e parse3.h # Sanity check.
-$MAKE build-p3
-test -f parse3.h
-
-$MAKE
-
-rm -f $headers
-$MAKE parse4.h
-test ! -e parse1.h
-test ! -e p2-parse2.h
-test ! -e parse3.h
-test -f parse4.h
-
-# Now remake all the headers together.
-
 rm -f $headers
 $MAKE $headers
-test -f parse1.h
-test -f p2-parse2.h
-test -f parse3.h
-test -f parse4.h
+for h in $headers; do test -f $h; done
 
 # Most headers should be remade by "make all".
 
@@ -156,8 +112,9 @@ $MAKE all
 test -f parse1.h
 test -f p2-parse2.h
 test -f parse3.h
-# parse4.h is not declared in any *_SOURCES variable, nor #included
-# by any C source file, so it shouldn't be rebuilt by "make all".
+# parse4.h is not declared in any *_SOURCES variable, nor in
+# BUILT_SOURCES, nor #included by any C source file, so it
+# shouldn't be rebuilt by "make all".
 test ! -e parse4.h
 
 :

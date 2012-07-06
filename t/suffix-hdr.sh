@@ -26,7 +26,7 @@ END
 
 cat > Makefile.am << 'END'
 noinst_PROGRAMS = zardoz
-nodist_zardoz_SOURCES = foo.c
+nodist_zardoz_SOURCES = foo.c bar.h
 EXTRA_DIST = bar.my-h foo.my-c
 BUILT_SOURCES = bar.h
 %.c: %.my-c

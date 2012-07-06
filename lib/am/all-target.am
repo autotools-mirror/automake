@@ -21,14 +21,22 @@ ifdef SUBDIRS
 .PHONY: all-recursive
 endif
 
-all-am: all-local %ALL-DEPS%
-
-# We need to make sure config.h is built before we recurse.
-# We also want to make sure that built sources are built
-# before any ordinary 'all' targets are run.
-ifeq ($(strip %LOCAL-HEADERS% $(BUILT_SOURCES)),)
-all: $(if $(SUBDIRS),all-recursive,all-am)
+# We need to make sure $(BUILT_SOURCES) files are built before
+# any "ordinary" target (all, check, install, ...) is run.
+# Ditto for config.h (or files specified in AC_CONFIG_HEADERS).
+# But of course, we shouldn't attempt to build any of them when
+# running in dry mode.
+am.built-early = %LOCAL-HEADERS% $(BUILT_SOURCES)
+ifeq ($(am__make_dryrun),true)
+# A trick to make the "make -n" output more useful, albeit not
+# completely accurate.
+all check install: | $(am.built-early)
 else
-all: %LOCAL-HEADERS% $(BUILT_SOURCES)
-	$(MAKE) $(if $(SUBDIRS),all-recursive,all-am)
+$(foreach x,$(am.built-early),$(eval -include .am/built-sources/$(x)))
+.am/built-sources/%: | %
+	@$(am__ensure_target_dir_exists)
+	@touch $@
 endif
+
+all-am: all-local %ALL-DEPS%
+all: $(if $(SUBDIRS),all-recursive,all-am)
