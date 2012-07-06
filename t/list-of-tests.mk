@@ -955,7 +955,6 @@ t/reqd.sh \
 t/reqd2.sh \
 t/repeated-options.sh \
 t/rulepat.sh \
-t/self-check-cleanup.tap \
 t/self-check-configure-help.sh \
 t/self-check-dir.tap \
 t/self-check-env-sanitize.tap \
