@@ -24,7 +24,6 @@ am_create_testdir=no
 set +e
 
 unset am_explicit_skips stderr_fileno_
-AM_TESTS_REEXEC=no; export AM_TESTS_REEXEC
 
 # FIXME: this can be simplified when we improve our runtime checks on the
 # testsuite shell to ensure it supports "VAR=val shell_func" correctly.

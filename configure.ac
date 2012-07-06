@@ -559,6 +559,7 @@ AC_SUBST([EXEEXT])
 ## ---------------------- ##
 
 AC_CONFIG_FILES([Makefile])
+AC_CONFIG_FILES([t/ax/test-runner], [chmod +x t/ax/test-runner])
 
 AC_CONFIG_LINKS([GNUmakefile:GNUmakefile])
 AC_CONFIG_LINKS([defs:defs])

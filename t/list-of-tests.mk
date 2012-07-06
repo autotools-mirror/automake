@@ -962,7 +962,6 @@ t/self-check-exit.tap \
 t/self-check-explicit-skips.sh \
 t/self-check-is_newest.tap \
 t/self-check-me.tap \
-t/self-check-reexec.tap \
 t/self-check-report.sh \
 t/self-check-seq.tap \
 t/self-check-is-blocked-signal.tap \

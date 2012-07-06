@@ -345,11 +345,6 @@ AM_TESTS_ENVIRONMENT = \
   ; do \
     eval test x"\$${$$v}" = x || unset $$v; \
   done;
-# The 'AM_TESTS_REEXEC=no' setting tells the tests not to needlessly
-# re-execute themselves with the shell detected at configure time, since
-# we are already running them under it explicitly in our setup (see e.g.
-# the definition of TEST_LOG_COMPILER above).
-AM_TESTS_ENVIRONMENT += AM_TESTS_REEXEC=no; export AM_TESTS_REEXEC;
 # We want warning messages and explanations for skipped tests to go to
 # the console if possible, so set up 'stderr_fileno_' properly.
 AM_TESTS_FD_REDIRECT = 9>&2

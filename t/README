@@ -70,45 +70,39 @@ About the tests
   There are two kinds of tests in the Automake testsuite (both implemented
   as shell scripts).  The scripts with the '.sh' suffix are "simple"
   tests, their outcome completely determined by their exit status.  Those
-  with the '.tap' suffix use the TAP protocol.  If you want to run a test
-  by hand, you can do so directly if it is a simple test:
+  with the '.tap' suffix use the TAP protocol.
 
-    ./t/nogzip.sh
+  If you want to run a test by hand, you should be able to do so using the
+  'test-runner' script:
 
-  (it will be verbose by default), while if it is a TAP test you can pass
-  it to your preferred TAP runner, as in e.g.:
+      ./t/ax/test-runner t/nogzip.sh
+      ./t/ax/test-runner t/add-missing.tap
 
-    prove --verbose --merge ./t/add-missing.tap
-
-  The tests can also be run directly in a VPATH build, as with:
-
-    /path/to/srcdir/t/nogzip.sh
-    prove --verbose --merge /path/to/srcdir/t/add-missing.tap
+  This will run the test using the correct shell, and should also work in
+  VPATH builds.  Note that, to run the TAP tests this way, you'll need to
+  have the prove(1) utility available in $PATH.
 
 
 Supported shells
 ----------------
 
-  By default, the tests are run by the $SHELL detected at configure
-  time.  They also take care to re-execute themselves with that shell,
-  unless told not to.  So, to run the tests with a different shell, say
-  '/path/to/another/sh', the user must use:
+  By default, the tests are run by a proper shell detected at configure
+  time.  Here is how you can run the tests with a different shell, say
+  '/bin/my-sh':
 
-    AM_TESTS_REEXEC=no /path/to/another/sh ./t/foo.sh
-    AM_TESTS_REEXEC=no prove -v -e /path/to/another/sh ./t/bar.tap
+    # Running through the makefile test driver.
+    make check AM_TEST_RUNNER_SHELL=/bin/my-sh         (GNU make)
+    AM_TEST_RUNNER_SHELL=/bin/my-sh make -e check      (non-GNU make)
 
-  to run a test directly, and:
+    # Run a test directly from the command line.
+    AM_TEST_RUNNER_SHELL=/bin/my-sh ./t/ax/test-runner t/foo.sh
 
-    make check LOG_COMPILER=/path/to/sh         (GNU make)
-    LOG_COMPILER=/path/to/sh make -e check      (non-GNU make)
 
-  to run the test(s) through the makefile test driver.
-
-  The test scripts are written with portability in mind, so that they
-  should run with any decent Bourne-compatible shell.  However, it is
-  worth nothing that older versions of Zsh (pre-4.3) exhibited several
-  bugs and incompatibilities with our uses, and are thus not supported
-  for running Automake's test scripts.
+  The test scripts are written with portability in mind, and should run
+  with any decent POSIX shell.  However, it is worth nothing that older
+  versions of Zsh (pre-4.3) exhibited several bugs and incompatibilities
+  with our uses, and are thus not supported for running Automake's test
+  scripts.
 
 
 Reporting failures
