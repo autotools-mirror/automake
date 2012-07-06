@@ -105,6 +105,7 @@ for vpath in : false; do
   unset var
 
   : a.test was successful the first time, no need to re-run it.
+  using_gmake || $sleep # Required by BSD make.
   env TESTS=a.test $MAKE -e recheck >stdout \
     || { cat stdout; exit 1; }
   cat stdout
@@ -114,6 +115,7 @@ for vpath in : false; do
   test ! -e c.run
 
   : b.test failed, it should be re-run.  And make it pass this time.
+  using_gmake || $sleep # Required by BSD make.
   echo OK > b.ok
   TEST_LOGS=b.log $MAKE -e recheck >stdout \
     || { cat stdout; exit 1; }
@@ -126,6 +128,7 @@ for vpath in : false; do
   rm -f *.run
 
   : No need to re-run a.test or b.test anymore.
+  using_gmake || $sleep # Required by BSD make.
   TEST_LOGS=b.log $MAKE -e recheck >stdout \
     || { cat stdout; exit 1; }
   cat stdout
@@ -133,6 +136,7 @@ for vpath in : false; do
   test ! -e a.run
   test ! -e b.run
   test ! -e c.run
+  using_gmake || $sleep # Required by BSD make.
   TESTS='a.test b.test' $MAKE -e recheck >stdout \
     || { cat stdout; exit 1; }
   cat stdout
@@ -158,6 +162,7 @@ for vpath in : false; do
   : c.test contained and hard error the last time, so it should be re-run.
   : This time, make it pass
   # Use 'echo', not ':'; see comments above for why.
+  using_gmake || $sleep # Required by BSD make.
   echo dummy > c.ok
   env TESTS='c.test a.test' $MAKE -e recheck >stdout \
     || { cat stdout; exit 1; }
@@ -171,6 +176,7 @@ for vpath in : false; do
 
   : Nothing should be rerun anymore, as all tests have been eventually
   : successful.
+  using_gmake || $sleep # Required by BSD make.
   $MAKE recheck >stdout || { cat stdout; exit 1; }
   cat stdout
   count_test_results total=0 pass=0 fail=0 xpass=0 xfail=0 skip=0 error=0
