@@ -400,6 +400,17 @@ defs-static: defs-static.in Makefile
 EXTRA_DIST += defs-static.in
 CLEANFILES += defs-static
 
+t/ax/test-runner: t/ax/test-runner.in Makefile
+	$(AM_V_at)rm -f $@ $@-t
+	$(AM_V_GEN)in=t/ax/test-runner.in \
+	  && $(MKDIR_P) t/ax \
+	  && $(do_subst) <$(srcdir)/t/ax/test-runner.in >$@-t \
+	  && chmod a+x $@-t
+	$(generated_file_finalize)
+EXTRA_DIST += t/ax/test-runner.in
+CLEANFILES += t/ax/test-runner
+noinst_SCRIPTS = t/ax/test-runner
+
 # If two test scripts have the same basename, they will end up sharing
 # the same log file, leading to all sort of undefined and undesired
 # behaviours.
