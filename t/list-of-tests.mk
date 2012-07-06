@@ -640,6 +640,7 @@ t/lisp6.sh \
 t/lisp7.sh \
 t/lisp8.sh \
 t/lispdry.sh \
+t/lisp-pr11806.sh \
 t/listval.sh \
 t/location.sh \
 t/longline.sh \
