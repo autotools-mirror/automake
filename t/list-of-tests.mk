@@ -38,6 +38,7 @@ t/override-conditional-2.sh \
 t/dist-pr109765.sh \
 t/instdir-cond2.sh \
 t/java-nobase.sh \
+t/mkdir_p.sh \
 t/objext-pr10128.sh \
 t/parallel-tests-many.sh \
 t/pr8365-remake-timing.sh \
@@ -689,6 +690,7 @@ t/missing5.sh \
 t/missing6.sh \
 t/am-missing-prog.sh \
 t/missing-auxfile-stops-makefiles-creation.sh \
+t/mkdir_p.sh \
 t/mkdirp-deprecation.sh \
 t/mkinstall.sh \
 t/mkinst2.sh \
