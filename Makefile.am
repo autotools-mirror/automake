@@ -340,11 +340,6 @@ AM_TESTS_ENVIRONMENT = \
   ; do \
     eval test x"\$${$$v}" = x || unset $$v; \
   done;
-# The 'AM_TESTS_REEXEC=no' setting tells the tests not to needlessly
-# re-execute themselves with the shell detected at configure time, since
-# we are already running them under it explicitly in our setup (see e.g.
-# the definition of TEST_LOG_COMPILER above).
-AM_TESTS_ENVIRONMENT += AM_TESTS_REEXEC=no; export AM_TESTS_REEXEC;
 # We want warning messages and explanations for skipped tests to go to
 # the console if possible, so set up 'stderr_fileno_' properly.
 AM_TESTS_FD_REDIRECT = 9>&2
@@ -404,6 +399,17 @@ defs-static: defs-static.in Makefile
 	$(generated_file_finalize)
 EXTRA_DIST += defs-static.in
 CLEANFILES += defs-static
+
+t/ax/runtest: t/ax/runtest.in Makefile
+	$(AM_V_at)rm -f $@ $@-t
+	$(AM_V_GEN)in=t/ax/runtest.in \
+	  && $(MKDIR_P) t/ax \
+	  && $(do_subst) <$(srcdir)/t/ax/runtest.in >$@-t \
+	  && chmod a+x $@-t
+	$(generated_file_finalize)
+EXTRA_DIST += t/ax/runtest.in
+CLEANFILES += t/ax/runtest
+noinst_SCRIPTS = t/ax/runtest
 
 # If two test scripts have the same basename, they will end up sharing
 # the same log file, leading to all sort of undefined and undesired

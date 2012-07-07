@@ -1,6 +1,5 @@
-# -*- shell-script -*-
-#
-# Copyright (C) 1996-2012 Free Software Foundation, Inc.
+#! /bin/sh
+# Copyright (C) 2012 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,9 +14,38 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Source the shell static setup and variable definitions.
-. ./defs-static; test $? -eq 0 || exit 99
+# AM_INIT_AUTOMAKE should still define $(mkdir_p), for backward
+# compatibility.
 
-# Source the actual test initialization and setup code, and return
-# control to the test script that is sourcing us.
-. "$am_testauxdir/test-init.sh"
+. ./defs || exit 1
+
+cat >> configure.ac << 'END'
+AC_CONFIG_FILES([sub/Makefile])
+AC_OUTPUT
+END
+
+cat > Makefile.am << 'END'
+SUBDIRS = sub
+all-local:
+	$(mkdir_p) . dir1/dir2
+check-local: all
+	test -d dir1/dir2
+	test -d dir1/dir3
+END
+
+mkdir sub
+cat > sub/Makefile.am << 'END'
+# '$(mkdir_p)' should continue to work even in subdir makefiles.
+all-local:
+	$(mkdir_p) .. ../dir1/dir3
+END
+
+$ACLOCAL
+$AUTOCONF -Werror -Wall
+$AUTOMAKE
+
+./configure
+$MAKE check-local
+$MAKE distcheck
+
+:

@@ -631,6 +631,7 @@ t/lisp6.sh \
 t/lisp7.sh \
 t/lisp8.sh \
 t/lispdry.sh \
+t/lisp-pr11806.sh \
 t/listval.sh \
 t/location.sh \
 t/longline.sh \
@@ -674,6 +675,7 @@ t/missing-version-mismatch.sh \
 t/missing3.sh \
 t/am-missing-prog.sh \
 t/missing-auxfile-stops-makefiles-creation.sh \
+t/mkdir_p.sh \
 t/mkinstall.sh \
 t/mkinst2.sh \
 t/mkinst3.sh \
@@ -948,7 +950,6 @@ t/reqd.sh \
 t/reqd2.sh \
 t/repeated-options.sh \
 t/rulepat.sh \
-t/self-check-cleanup.tap \
 t/self-check-configure-help.sh \
 t/self-check-dir.tap \
 t/self-check-env-sanitize.tap \
@@ -956,7 +957,6 @@ t/self-check-exit.tap \
 t/self-check-explicit-skips.sh \
 t/self-check-is_newest.tap \
 t/self-check-me.tap \
-t/self-check-reexec.tap \
 t/self-check-report.sh \
 t/self-check-seq.tap \
 t/self-check-is-blocked-signal.tap \

@@ -22,8 +22,6 @@ am_create_testdir=no
 
 plan_ 12
 
-AM_TESTS_REEXEC=no; export AM_TESTS_REEXEC
-
 # This test becomes cumbersome if we keep the 'errexit' shell flag set.
 # And removing it is no big deal, as this test is a TAP-based one, so
 # that false positives remain very unlikely.
@@ -31,7 +29,11 @@ set +e
 
 do_check ()
 {
-  $AM_TEST_RUNNER_SHELL -c '. ./defs && echo me=$me' "$1" | grep "^me=$2$"
+  $AM_TEST_RUNNER_SHELL -c '
+    am_create_testdir=no # Do not pollute the top-level directory.
+    . ./defs
+    echo me=$me
+  ' "$1" | grep "^me=$2$"
   command_ok_ "me=$1" test $? -eq 0
 }
 
@@ -47,7 +49,12 @@ do_check abc. 'abc\.'
 
 # A definition of $me in the environment should be ignored.
 
-s=$(me=bad $AM_TEST_RUNNER_SHELL -c '. ./defs && echo me=$me' foo.sh)
+s=$(me=bad $AM_TEST_RUNNER_SHELL -c '
+  # Do not pollute the top-level directory.
+  am_create_testdir=no
+  . ./defs
+  echo me=$me
+' foo.sh)
 command_ok_ "override of \$me before ./defs causes no error" \
             test $? -eq 0
 
