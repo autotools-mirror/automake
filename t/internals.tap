@@ -19,7 +19,7 @@
 am_create_testdir=empty
 . ./defs || exit 1
 
-plan_ 8
+plan_ 10
 
 cp "$am_amdir"/header-vars.am . \
   || fatal_ "fetching makefile fragment headers-vars.am"
@@ -162,12 +162,27 @@ test-canonicalize:
 	test '$(call am__canon,$(bslash)$(comma))' = '__'
 	test '$(call am__canon,x$(comma)@$(bslash))' = 'x_@_'
 
-.PHONY: test-newline
-test-newline:
-	@echo OK > foo$(am__newline)@touch bar$(am__newline)-false > baz
-	test `cat foo` = OK
-	test -f bar
-	test -f baz
+.PHONY: test-newline-1
+test-newline-1:
+	@echo OK > fo1$(am__newline)@touch ba1$(am__newline)-false > qu1
+	test `cat fo1` = OK
+	test -f ba1
+	test -f qu1
+
+my_newline = $(am__newline)
+.PHONY: test-newline-2
+test-newline-2:
+	@echo OK > fo2$(my_newline)@touch ba2$(my_newline)-false > qu2
+	test `cat fo2` = OK
+	test -f ba2
+	test -f qu2
+
+command-1 = test x = x$(am__newline)
+command-2 = test y = y$(my_newline)
+.PHONY: test-newline-3
+test-newline-3:
+	$(command-1)$(command-2)touch n3
+	test -f n3
 END
 
 command_ok_  am__strip_firstword        $MAKE test-strip-firstword
@@ -177,6 +192,8 @@ command_ok_  am__test_strip_suffixes    $MAKE test-strip-suffixes
 command_ok_  am__tolower                $MAKE test-tolower
 command_ok_  am__toupper                $MAKE test-toupper
 command_ok_  am__canon                  $MAKE test-canonicalize
-command_ok_  am__newline                $MAKE test-newline
+command_ok_  "am__newline (1)"          $MAKE test-newline-1
+command_ok_  "am__newline (2)" -D TODO  $MAKE test-newline-2
+command_ok_  "am__newline (3)" -D TODO  $MAKE test-newline-3
 
 :
