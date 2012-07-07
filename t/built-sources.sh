@@ -29,12 +29,14 @@ BUILT_SOURCES = foo.c
 noinst_PROGRAMS = bar baz
 foo.c:
 	rm -f $@ $@-t
-	echo '#include <stdio.h>'               >  $@-t
-	echo 'int main (void)'                  >> $@-t
-	echo '{               '                 >> $@-t
-	echo '  printf ("%s\n", FOOMSG);'       >> $@-t
-	echo '  return 0;'                      >> $@-t
-	echo '}'                                >> $@-t
+	# Use printf, not echo, to avoid spurious interpretation of
+	# the "\n" as a newline (see on NetBSD 5.1).
+	printf '%s\n' '#include <stdio.h>'               >  $@-t
+	printf '%s\n' 'int main (void)'                  >> $@-t
+	printf '%s\n' '{               '                 >> $@-t
+	printf '%s\n' '  printf ("%s\n", FOOMSG);'       >> $@-t
+	printf '%s\n' '  return 0;'                      >> $@-t
+	printf '%s\n' '}'                                >> $@-t
 	mv -f $@-t $@
 CLEANFILES = foo.c
 END

@@ -50,10 +50,12 @@ $AUTOMAKE
 for target in dist distcheck; do
   echo stamp > stampfile
   $sleep
+  chmod a-w .
   $MAKE -n $target
   $MAKE -n $target | grep stamp-sub-dist-hook
+  chmod u+w .
   # No file has been actually touched or created.
-  is_newest stampfile $(find .)
+  is_newest stampfile $(find . | grep -v '^\.$')
   $MAKE test-no-distdir
 done
 
