@@ -44,7 +44,7 @@ BUILT_SOURCES = parse1.h p2-parse2.h
 # should be able to just declare dependencies directly instead
 # of relying on the BUILT_SOURCES hack, and things should still
 # work correctly.
-main3.@OBJEXT@: parse3.h
+main3.@OBJEXT@ parse3.@OBJEXT@: parse3.h
 
 .PHONY: clean-p3 build-p3
 build-p3: p3$(EXEEXT)

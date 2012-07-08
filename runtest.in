@@ -1,0 +1,62 @@
+#!@AM_TEST_RUNNER_SHELL@
+#
+# Copyright (C) 2012 Free Software Foundation, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2, or (at your option)
+# any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# Run an Automake test from the command line.
+# Usage:
+
+set -e; set -u
+
+: ${AM_TEST_RUNNER_SHELL='@AM_TEST_RUNNER_SHELL@'}
+: ${AM_PROVE_CMD='prove'}
+: ${AM_PROVEFLAGS='--merge --verbose'}
+: ${srcdir='@srcdir@'}
+
+error () { echo "$0: $*" >&2; exit 255; }
+
+# Some shell flags should be passed over to the test scripts.
+#while test $# -gt 0; do
+#  case $1 in
+#    --help) echo "Usage: $0 [SHELL-OPTIONS] TEST [TEST-OPTIONS]"; exit $?;;
+#    -*)
+#  esac
+#done
+
+test $# -gt 0 || error "missing argument"
+
+tst=$1; shift
+
+case $tst in
+   *.sh) wrapper () { exec "$@"; };;
+  *.tap) wrapper () { exec "$AM_PROVE_CMD" $AM_PROVEFLAGS -e "$@"; };;
+      *) error "test '$tst' has an unrecognized extension";;
+esac
+
+case $tst in
+  /*) ;;
+   *) if test -f ./$tst; then
+        tst=./$tst
+      # Support for VPATH build.
+      elif test -f $srcdir/$tst; then
+        tst=$srcdir/$tst
+      else
+        error "could not find test '$tst'"
+      fi
+      ;;
+esac
+
+wrapper "$AM_TEST_RUNNER_SHELL" "$tst" "$@"
+error "dead code reached"

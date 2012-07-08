@@ -153,6 +153,7 @@ rm -f *.run
 # fields indicating success, so "make recheck" must pass.  Still, the
 # next "make recheck" call should still re-run the same set of tests.
 for iteration in 1 2; do
+  using_gmake || $sleep # Required by BSD make.
   $MAKE recheck
   ls -l
   for t in $rechecked; do test -f $t.run; done

@@ -131,6 +131,7 @@ for vpath in : false; do
   count_test_results total=9 pass=3 fail=2 xpass=1 xfail=1 skip=1 error=1
 
   : Let us make b.test pass.
+  using_gmake || $sleep # Required by BSD make.
   echo OK > b.ok
   do_recheck --fail
   # a.test has been successful the first time, so no need to re-run it.
@@ -142,6 +143,7 @@ for vpath in : false; do
   count_test_results total=7 pass=2 fail=2 xpass=1 xfail=1 skip=1 error=0
 
   : Let us make the first part of c.test pass.
+  using_gmake || $sleep # Required by BSD make.
   echo OK > c.pass
   do_recheck --fail
   test ! -e a.run
@@ -151,6 +153,7 @@ for vpath in : false; do
   count_test_results total=5 pass=1 fail=1 xpass=1 xfail=1 skip=1 error=0
 
   : Let us make also the second part of c.test pass.
+  using_gmake || $sleep # Required by BSD make.
   echo KO > c.xfail
   do_recheck --fail
   test ! -e a.run
@@ -161,6 +164,7 @@ for vpath in : false; do
 
   : Nothing changed, so only d.test should be run.
   for i in 1 2; do
+    using_gmake || $sleep # Required by BSD make.
     do_recheck --fail
     test ! -e a.run
     test ! -e b.run
@@ -170,6 +174,7 @@ for vpath in : false; do
   done
 
   : Let us make d.test run more testcases, and experience _more_ failures.
+  using_gmake || $sleep # Required by BSD make.
   echo 'test_count=9' > d.count
   unindent > d.extra <<'END'
     echo 'ok # SKIP s'
@@ -191,6 +196,7 @@ END
   count_test_results total=11 pass=2 fail=4 xpass=1 xfail=0 skip=2 error=2
 
   : Let us finally make d.test pass.
+  using_gmake || $sleep # Required by BSD make.
   echo 'test_count=1' > d.count
   echo : > d.extra
   do_recheck --pass
@@ -201,6 +207,7 @@ END
   count_test_results total=1 pass=0 fail=0 xpass=0 xfail=0 skip=1 error=0
 
   : All tests have been successful or skipped, nothing should be re-run.
+  using_gmake || $sleep # Required by BSD make.
   do_recheck --pass
   test ! -e a.run
   test ! -e b.run
