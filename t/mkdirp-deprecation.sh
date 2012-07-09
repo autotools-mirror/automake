@@ -29,17 +29,21 @@ END
 cat > Makefile.am << 'END'
 SUBDIRS = sub
 all-local:
-	$(mkdir_p) . dir1/dir2
+	$(mkdir_p) . dir1/a
+	@mkdir_p@ . dir2/b
 check-local: all
-	test -d dir1/dir2
-	test -d dir1/dir3
+	test -d dir1/a
+	test -d dir2/b
+	test -d dir3/c
+	test -d dir3/d
 END
 
 mkdir sub
 cat > sub/Makefile.am << 'END'
 # '$(mkdir_p)' should continue to work even in subdir makefiles.
 all-local:
-	$(mkdir_p) .. ../dir1/dir3
+	$(mkdir_p) .. ../dir3/c
+	@mkdir_p@ .. ../dir3/d
 END
 
 grep_err ()
