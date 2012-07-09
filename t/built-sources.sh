@@ -30,7 +30,7 @@ noinst_PROGRAMS = bar baz
 foo.c:
 	rm -f $@ $@-t
 	# Use printf, not echo, to avoid spurious interpretation of
-	# the "\n" as a newline (see on NetBSD 5.1).
+	# the "\n" as a newline (seen on NetBSD 5.1).
 	printf '%s\n' '#include <stdio.h>'               >  $@-t
 	printf '%s\n' 'int main (void)'                  >> $@-t
 	printf '%s\n' '{               '                 >> $@-t
