@@ -45,6 +45,11 @@ AUTOMAKE_after_aclocal ()
   $AUTOMAKE --no-force
 }
 
+# aclocal will rewrite aclocal.m4 unless the input files are all older than the
+# existing aclocal.m4 -- sleep to ensure somedefs.m4 has an older timestamp
+# than the aclocal.m4 that the next aclocal call will generate.
+$sleep
+
 $ACLOCAL -I m4
 AUTOMAKE_after_aclocal
 
