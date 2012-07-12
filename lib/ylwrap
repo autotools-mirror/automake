@@ -1,7 +1,7 @@
 #! /bin/sh
 # ylwrap - wrapper for lex/yacc invocations.
 
-scriptversion=2012-07-12.12; # UTC
+scriptversion=2012-07-13.10; # UTC
 
 # Copyright (C) 1996-2012 Free Software Foundation, Inc.
 #
@@ -103,14 +103,33 @@ case "$input" in
     ;;
 esac
 
+# Since DOS filename conventions don't allow two dots,
+# the DOS version of Bison writes out y_tab.c instead of y.tab.c
+# and y_tab.h instead of y.tab.h. Test to see if this is the case.
+y_tab_nodot=false
+if test -f y_tab.c || test -f y_tab.h; then
+  y_tab_nodot=true
+fi
+
+# The list of file to rename: FROM TO...
 pairlist=
 while test "$#" -ne 0; do
   if test "$1" = "--"; then
     shift
     break
   fi
-  pairlist="$pairlist $1"
+  from=$1
+  # Handle y_tab.c and y_tab.h output by DOS
+  if $y_tab_nodot; then
+    case $from in
+      "y.tab.c") from=y_tab.c;;
+      "y.tab.h") from=y_tab.h;;
+    esac
+  fi
   shift
+  to=$1
+  shift
+  pairlist="$pairlist $from $to"
 done
 
 # The program to run.
@@ -144,34 +163,18 @@ if test $ret -eq 0; then
   set X $pairlist
   shift
   first=yes
-  # Since DOS filename conventions don't allow two dots,
-  # the DOS version of Bison writes out y_tab.c instead of y.tab.c
-  # and y_tab.h instead of y.tab.h. Test to see if this is the case.
-  y_tab_nodot="no"
-  if test -f y_tab.c || test -f y_tab.h; then
-    y_tab_nodot="yes"
-  fi
 
   input_rx=`get_dirname "$input" | quote_for_sed`
 
   while test "$#" -ne 0; do
-    from="$1"
-    # Handle y_tab.c and y_tab.h output by DOS
-    if test $y_tab_nodot = "yes"; then
-      if test $from = "y.tab.c"; then
-        from="y_tab.c"
-      else
-        if test $from = "y.tab.h"; then
-          from="y_tab.h"
-        fi
-      fi
-    fi
+    from=$1
+    to=$2
     if test -f "$from"; then
       # If $2 is an absolute path name, then just use that,
       # otherwise prepend '../'.
-      case "$2" in
-        [\\/]* | ?:[\\/]*) target="$2";;
-        *) target="../$2";;
+      case $to in
+        [\\/]* | ?:[\\/]*) target=$to;;
+        *) target="../$to";;
       esac
 
       # We do not want to overwrite a header file if it hasn't
@@ -191,18 +194,18 @@ if test $ret -eq 0; then
       # instance.
       # We want the include guards to be adjusted too.
       FROM=`guard "$from"`
-      TARGET=`guard "$2"`
+      TARGET=`guard "$to"`
 
-      sed -e "/^#/!b" -e "s,$input_rx,$input_sub_rx," -e "s,$from,$2," \
+      sed -e "/^#/!b" -e "s,$input_rx,$input_sub_rx," -e "s,$from,$to," \
           -e "s,$FROM,$TARGET," "$from" >"$target" || ret=$?
 
       # Check whether header files must be updated.
       if test $first = no; then
         if test -f "$realtarget" && cmp -s "$realtarget" "$target"; then
-          echo "$2" is unchanged
+          echo "$to is unchanged"
           rm -f "$target"
         else
-          echo updating "$2"
+          echo "updating $to"
           mv -f "$target" "$realtarget"
         fi
       fi
