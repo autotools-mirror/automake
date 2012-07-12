@@ -1,7 +1,7 @@
 #! /bin/sh
 # ylwrap - wrapper for lex/yacc invocations.
 
-scriptversion=2011-08-25.18; # UTC
+scriptversion=2012-07-12.12; # UTC
 
 # Copyright (C) 1996-2012 Free Software Foundation, Inc.
 #
@@ -28,6 +28,31 @@ scriptversion=2011-08-25.18; # UTC
 # This file is maintained in Automake, please report
 # bugs to <bug-automake@gnu.org> or send patches to
 # <automake-patches@gnu.org>.
+
+get_dirname ()
+{
+  case $1 in
+    */*|*\\*) printf '%s\n' "$1" | sed -e 's,\([\\/]\)[^\\/]*$,\1,';;
+    # Otherwise,  we want the empty string (not ".").
+  esac
+}
+
+# guard FILE
+# ----------
+# The CPP macro used to guard inclusion of FILE.
+guard()
+{
+  echo "$from" \
+    | sed \
+        -e 'y/abcdefghijklmnopqrstuvwxyz/ABCDEFGHIJKLMNOPQRSTUVWXYZ/'\
+        -e 's/[^ABCDEFGHIJKLMNOPQRSTUVWXYZ]/_/g'
+}
+
+quote_for_sed ()
+{
+  # FIXME: really we should care about more than '.' and '\'.
+  sed -e 's,[\\.],\\&,g'
+}
 
 case "$1" in
   '')
@@ -62,19 +87,6 @@ EOF
     ;;
 esac
 
-get_dirname ()
-{
-  case $1 in
-    */*|*\\*) printf '%s\n' "$1" | sed -e 's,\([\\/]\)[^\\/]*$,\1,';;
-    # Otherwise,  we want the empty string (not ".").
-  esac
-}
-
-quote_for_sed ()
-{
-  # FIXME: really we should care about more than '.' and '\'.
-  sed -e 's,[\\.],\\&,g'
-}
 
 # The input.
 input="$1"
@@ -178,12 +190,8 @@ if test $ret -eq 0; then
       # We want to use the real output file name, not yy.lex.c for
       # instance.
       # We want the include guards to be adjusted too.
-      FROM=`echo "$from" | sed \
-            -e 'y/abcdefghijklmnopqrstuvwxyz/ABCDEFGHIJKLMNOPQRSTUVWXYZ/'\
-            -e 's/[^ABCDEFGHIJKLMNOPQRSTUVWXYZ]/_/g'`
-      TARGET=`echo "$2" | sed \
-            -e 'y/abcdefghijklmnopqrstuvwxyz/ABCDEFGHIJKLMNOPQRSTUVWXYZ/'\
-            -e 's/[^ABCDEFGHIJKLMNOPQRSTUVWXYZ]/_/g'`
+      FROM=`guard "$from"`
+      TARGET=`guard "$2"`
 
       sed -e "/^#/!b" -e "s,$input_rx,$input_sub_rx," -e "s,$from,$2," \
           -e "s,$FROM,$TARGET," "$from" >"$target" || ret=$?
