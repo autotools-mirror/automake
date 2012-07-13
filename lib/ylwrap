@@ -1,7 +1,7 @@
 #! /bin/sh
 # ylwrap - wrapper for lex/yacc invocations.
 
-scriptversion=2012-07-13.10; # UTC
+scriptversion=2012-07-13.14; # UTC
 
 # Copyright (C) 1996-2012 Free Software Foundation, Inc.
 #
@@ -48,10 +48,16 @@ guard()
         -e 's/[^ABCDEFGHIJKLMNOPQRSTUVWXYZ]/_/g'
 }
 
+# quote_for_sed [STRING]
+# ----------------------
+# Return STRING (or stdin) quoted to be used as a sed pattern.
 quote_for_sed ()
 {
-  # FIXME: really we should care about more than '.' and '\'.
-  sed -e 's,[\\.],\\&,g'
+  case $# in
+    0) cat;;
+    1) printf '%s\n' "$1";;
+  esac \
+    | sed -e 's|[][\\.*]|\\&|g'
 }
 
 case "$1" in
@@ -113,6 +119,10 @@ fi
 
 # The list of file to rename: FROM TO...
 pairlist=
+# A sed program to s/FROM/TO/g for all the FROM/TO so that, for
+# instance, we rename #include "y.tab.h" into #include "parse.h"
+# during the conversion from y.tab.c to parse.c.
+rename_sed=
 while test "$#" -ne 0; do
   if test "$1" = "--"; then
     shift
@@ -130,6 +140,7 @@ while test "$#" -ne 0; do
   to=$1
   shift
   pairlist="$pairlist $from $to"
+  rename_sed="${rename_sed}s|"`quote_for_sed "$from"`"|$to|g;"
 done
 
 # The program to run.
@@ -196,7 +207,7 @@ if test $ret -eq 0; then
       FROM=`guard "$from"`
       TARGET=`guard "$to"`
 
-      sed -e "/^#/!b" -e "s,$input_rx,$input_sub_rx," -e "s,$from,$to," \
+      sed -e "/^#/!b" -e "s,$input_rx,$input_sub_rx," -e "$rename_sed" \
           -e "s,$FROM,$TARGET," "$from" >"$target" || ret=$?
 
       # Check whether header files must be updated.
