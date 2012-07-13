@@ -57,11 +57,22 @@ cat > foo.x_ << 'END'
 int foo (void) { return yyparse(); }
 END
 
+# We must protect the TAP driver from the output of configure, since
+# that might output a stray "ok" on a line of its own (due to a
+# libtool bug on Mac OS X), thus causing a spurious test result to
+# be seen.  See automake bug#11897.
+run_configure ()
+{
+  st=0; ./configure >output 2>&1 || st=1
+  sed 's/^/  /' output
+  test $st -eq 0
+}
+
 command_ok_ "libtoolize" libtoolize --force
 command_ok_ "aclocal"    $ACLOCAL
 command_ok_ "autoconf"   $AUTOCONF
 command_ok_ "automake"   $AUTOMAKE --add-missing
-command_ok_ "configure"  ./configure
+command_ok_ "configure"  run_configure
 command_ok_ "make test"  $MAKE test
 
 directive=''; make_can_chain_suffix_rules || directive=TODO

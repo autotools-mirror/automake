@@ -75,11 +75,22 @@ END
 echo 'int main (void) { return 0; }' > foo.x_
 echo 'int bar (void) { return 0; }' > bar.x_
 
+# We must protect the TAP driver from the output of configure, since
+# that might output a stray "ok" on a line of its own (due to a
+# libtool bug on Mac OS X), thus causing a spurious test result to
+# be seen.  See automake bug#11897.
+protect_output ()
+{
+  st=0; "$@" >output 2>&1 || st=1
+  sed 's/^/  /' output
+  test $st -eq 0
+}
+
 command_ok_ "libtoolize" libtoolize
 command_ok_ "aclocal"    $ACLOCAL
 command_ok_ "autoconf"   $AUTOCONF
 command_ok_ "automake"   $AUTOMAKE -a
-command_ok_ "configure"  ./configure
+command_ok_ "configure"  protect_output ./configure
 command_ok_ "make test0" env OBJEXT=foo $MAKE -e test0
 command_ok_ "make test1" $MAKE test1
 
@@ -88,7 +99,7 @@ directive=''; make_can_chain_suffix_rules || directive=TODO
 for target in test2 all distcheck; do
   command_ok_ "make $target"  \
               -D "$directive" -r "suffix rules not chained" \
-              $MAKE $target
+              protect_output $MAKE $target
 done
 
 :
