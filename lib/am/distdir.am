@@ -69,6 +69,12 @@ am__dist_parent_dirs = \
   $(call am__memoize,am__dist_parent_dirs,$(strip $(sort \
     $(filter-out ., $(patsubst ./%,%,$(dir $(am__dist_files_cooked)))))))
 
+am.mkdir-for-dist = \
+  @$(MKDIR_P) $(patsubst %,"$(distdir)"/%,$1)$(am__newline)
+am.write-list-of-distfiles = \
+  @lst='$1'; for x in $$lst; do echo $$x; done \
+    >> $(am__dir)/$@-list$(am__newline)
+
 if %?TOPDIR_P%
 distdir = $(PACKAGE)-$(VERSION)
 top_distdir = $(distdir)
@@ -127,7 +133,7 @@ if %?SUBDIRS%
 AM_RECURSIVE_TARGETS += distdir
 endif %?SUBDIRS%
 
-distdir: $(am__dist_files)
+distdir: $(am__dist_files) | $(am__dir)
 ##
 ## For Gnits users, this is pretty handy.  Look at 15 lines
 ## in case some explanatory text is desirable.
@@ -149,16 +155,19 @@ if %?TOPDIR_P%
 	$(am__remove_distdir)
 	test -d "$(distdir)" || mkdir "$(distdir)"
 endif %?TOPDIR_P%
-## Make the subdirectories for the files.
-	@$(if $(am__dist_parent_dirs),\
-	   $(MKDIR_P) $(patsubst %,"$(distdir)"/%,$(am__dist_parent_dirs)))
+## Make the subdirectories for the files, avoiding to exceed command
+## line length limitations.
+	$(call am.xargs-map,am.mkdir-for-dist,$(am__dist_parent_dirs))
 ## Install the files and directories, applying a "VPATH rewrite"
 ## by hand where needed.
 ## To get the files in the distribution directory, use 'cp', not 'ln'.
 ## There are situations in which 'ln' can fail.  For instance a file to
 ## distribute could actually be a cross-filesystem symlink -- this can
 ## easily happen if "gettextize" was run on the distribution.
-	@lst='$(am__dist_files_cooked)'; for file in $$lst; do \
+	@rm -f $(am__dir)/$@-list
+	$(call am.xargs-map,am.write-list-of-distfiles, \
+	       $(am__dist_files_cooked))
+	@while read file; do \
 ## Always look for the file or directory to distribute in the build
 ## directory first, in VPATH spirit.
 	  if test -f $$file || test -d $$file; then d=.; else d=$(srcdir); fi; \
@@ -191,7 +200,7 @@ endif %?TOPDIR_P%
 	    || cp -p $$d/$$file "$(distdir)/$$file" \
 	    || exit 1; \
 	  fi; \
-	done
+	done < $(am__dir)/$@-list
 ##
 ## Test for directory existence here because previous automake
 ## invocation might have created some directories.  Note that we
