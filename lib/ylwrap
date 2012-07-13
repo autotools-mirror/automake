@@ -32,7 +32,7 @@ scriptversion=2012-07-13.14; # UTC
 get_dirname ()
 {
   case $1 in
-    */*|*\\*) printf '%s\n' "$1" | sed -e 's,\([\\/]\)[^\\/]*$,\1,';;
+    */*|*\\*) printf '%s\n' "$1" | sed -e 's|\([\\/]\)[^\\/]*$|\1|';;
     # Otherwise,  we want the empty string (not ".").
   esac
 }
@@ -42,7 +42,7 @@ get_dirname ()
 # The CPP macro used to guard inclusion of FILE.
 guard()
 {
-  echo "$from" \
+  printf '%s\n' "$from" \
     | sed \
         -e 'y/abcdefghijklmnopqrstuvwxyz/ABCDEFGHIJKLMNOPQRSTUVWXYZ/'\
         -e 's/[^ABCDEFGHIJKLMNOPQRSTUVWXYZ]/_/g'
@@ -196,7 +196,7 @@ if test $ret -eq 0; then
       # file so we can compare them to existing versions.
       if test $first = no; then
         realtarget="$target"
-        target="tmp-`echo $target | sed s/.*[\\/]//g`"
+        target=tmp-`printf '%s\n' "$target" | sed s/.*[\\/]//g`
       fi
       # Munge "#line" or "#" directives.
       # We don't want the resulting debug information to point at
@@ -207,8 +207,8 @@ if test $ret -eq 0; then
       FROM=`guard "$from"`
       TARGET=`guard "$to"`
 
-      sed -e "/^#/!b" -e "s,$input_rx,$input_sub_rx," -e "$rename_sed" \
-          -e "s,$FROM,$TARGET," "$from" >"$target" || ret=$?
+      sed -e "/^#/!b" -e "s|$input_rx|$input_sub_rx|" -e "$rename_sed" \
+          -e "s|$FROM|$TARGET|" "$from" >"$target" || ret=$?
 
       # Check whether header files must be updated.
       if test $first = no; then
