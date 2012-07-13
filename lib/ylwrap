@@ -188,25 +188,22 @@ if test $ret -eq 0; then
         *) target="../$to";;
       esac
 
-      # We do not want to overwrite a header file if it hasn't
-      # changed.  This avoid useless recompilations.  However the
-      # parser itself (the first file) should always be updated,
-      # because it is the destination of the .y.c rule in the
-      # Makefile.  Divert the output of all other files to a temporary
-      # file so we can compare them to existing versions.
+      # Do not overwrite unchanged header files to avoid useless
+      # recompilations.  Always update the parser itself (the first
+      # file): it is the destination of the .y.c rule in the Makefile.
+      # Divert the output of all other files to a temporary file so we
+      # can compare them to existing versions.
       if test $first = no; then
         realtarget="$target"
         target=tmp-`printf '%s\n' "$target" | sed s/.*[\\/]//g`
       fi
-      # Munge "#line" or "#" directives.
-      # We don't want the resulting debug information to point at
-      # an absolute srcdir.
-      # We want to use the real output file name, not yy.lex.c for
-      # instance.
-      # We want the include guards to be adjusted too.
+
+      # Munge "#line" or "#" directives.  Don't let the resulting
+      # debug information point at an absolute srcdir.  Use the real
+      # output file name, not yy.lex.c for instance.  Adjust the
+      # include guards too.
       FROM=`guard "$from"`
       TARGET=`guard "$to"`
-
       sed -e "/^#/!b" -e "s|$input_rx|$input_sub_rx|" -e "$rename_sed" \
           -e "s|$FROM|$TARGET|" "$from" >"$target" || ret=$?
 
