@@ -36,22 +36,19 @@ run_dummy_test ()
   " dummy.sh
 }
 
-run_dummy_test '(exit 77); exit 77'
+run_dummy_test 'exit 77'
 test $? -eq 77 || exit 1
 
 run_dummy_test 'sh -c "exit 77"' am_explicit_skips=no
 test $? -eq 77 || exit 1
 
-run_dummy_test '(exit 77); exit 77' am_explicit_skips=yes 
+run_dummy_test '$PERL -e "exit 77"; true' am_explicit_skips=yes
 test $? -eq 78 || exit 1
 
-run_dummy_test 'sh -c "exit 77"' am_explicit_skips=y
+run_dummy_test 'sh -c "exit 77"; exit 0' am_explicit_skips=y
 test $? -eq 78 || exit 1
 
-run_dummy_test 'exit 77' am_explicit_skips=yes
-test $? -eq 77 || exit 1
-
-run_dummy_test 'skip_ "foo"' am_explicit_skips=y
+run_dummy_test 'skip_ "foo"; :' am_explicit_skips=y
 test $? -eq 77 || exit 1
 
 :
