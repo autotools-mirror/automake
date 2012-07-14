@@ -38,6 +38,7 @@ t/override-conditional-2.sh \
 t/dist-pr109765.sh \
 t/instdir-cond2.sh \
 t/java-nobase.sh \
+t/lisp-loadpath.sh \
 t/lisp-subdir.sh \
 t/lisp-subdir2.sh \
 t/objext-pr10128.sh \
@@ -632,6 +633,7 @@ t/lisp5.sh \
 t/lisp6.sh \
 t/lisp7.sh \
 t/lisp8.sh \
+t/lisp-loadpath.sh \
 t/lisp-subdir.sh \
 t/lisp-subdir2.sh \
 t/lispdry.sh \
