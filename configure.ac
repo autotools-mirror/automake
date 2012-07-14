@@ -297,6 +297,14 @@ AC_DEFUN([_AM_CHECK_CANDIDATE_SHELL],
       [], [am_score=1; break])
 
     _AM_CHECK_SHELL_FEATURE([$1],
+      [supports \${@%:@var}],
+      [zero='' one='x' twelve=' foobar baz!' \
+        && test ${@%:@zero} -eq 0 \
+        && test ${@%:@one} -eq 1 \
+        && test ${@%:@twelve} -eq 12],
+      [], [am_score=1; break])
+
+    _AM_CHECK_SHELL_FEATURE([$1],
       [supports \${var@%:@glob} and \${var%glob}],
       [v=a/b/c \
         && test ${v@%:@*/} = b/c \
