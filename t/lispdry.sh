@@ -42,9 +42,8 @@ $MAKE
 test -f am-one.elc
 test -f am-two.elc
 test -f am-three.elc
-test -f elc-stamp
 
-rm -f am-*.elc elc-stamp
+rm -f am-*.elc
 
 chmod a-w .
 
@@ -53,6 +52,5 @@ $MAKE -n
 test ! -e am-one.elc
 test ! -e am-two.elc
 test ! -e am-three.elc
-test ! -e elc-stamp
 
 :

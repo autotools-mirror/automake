@@ -135,7 +135,6 @@ dist_script_DATA = \
   lib/mdate-sh \
   lib/missing \
   lib/mkinstalldirs \
-  lib/elisp-comp \
   lib/ylwrap \
   lib/depcomp \
   lib/compile \

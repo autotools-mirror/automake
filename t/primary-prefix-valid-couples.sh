@@ -41,7 +41,6 @@ END
 echo '@setfilename foo' > foo.texi
 : > texinfo.tex
 : > py-compile
-: > elisp-comp
 : > ar-lib
 
 # Setup Makefile.am.
