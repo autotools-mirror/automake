@@ -38,6 +38,8 @@ t/override-conditional-2.sh \
 t/dist-pr109765.sh \
 t/instdir-cond2.sh \
 t/java-nobase.sh \
+t/lisp-subdir.sh \
+t/lisp-subdir2.sh \
 t/objext-pr10128.sh \
 t/parallel-tests-many.sh \
 t/pr8365-remake-timing.sh \
@@ -630,6 +632,8 @@ t/lisp5.sh \
 t/lisp6.sh \
 t/lisp7.sh \
 t/lisp8.sh \
+t/lisp-subdir.sh \
+t/lisp-subdir2.sh \
 t/lispdry.sh \
 t/lisp-pr11806.sh \
 t/listval.sh \
