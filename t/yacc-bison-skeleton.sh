@@ -30,6 +30,7 @@ cat > Makefile.am << 'END'
 bin_PROGRAMS = zardoz
 zardoz_SOURCES = zardoz.y foo.c
 AM_YFLAGS = -d --skeleton glr.c
+BUILT_SOURCES = zardoz.h
 END
 
 # Parser.
