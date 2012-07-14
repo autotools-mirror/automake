@@ -1,7 +1,7 @@
 #! /bin/sh
 # ylwrap - wrapper for lex/yacc invocations.
 
-scriptversion=2012-07-13.14; # UTC
+scriptversion=2012-07-14.08; # UTC
 
 # Copyright (C) 1996-2012 Free Software Foundation, Inc.
 #
@@ -121,8 +121,6 @@ fi
 # The parser itself, the first file, is the destination of the .y.c
 # rule in the Makefile.
 parser=$1
-# The list of file to rename: FROM TO...
-pairlist=
 # A sed program to s/FROM/TO/g for all the FROM/TO so that, for
 # instance, we rename #include "y.tab.h" into #include "parse.h"
 # during the conversion from y.tab.c to parse.c.
@@ -143,7 +141,6 @@ while test "$#" -ne 0; do
   shift
   to=$1
   shift
-  pairlist="$pairlist $from $to"
   rename_sed="${rename_sed}s|"`quote_for_sed "$from"`"|$to|g;"
 done
 
@@ -175,11 +172,9 @@ esac
 ret=$?
 
 if test $ret -eq 0; then
-  set X $pairlist
-  shift
-  while test "$#" -ne 0; do
-    from=$1
-    to=$2
+  for from in *
+  do
+    to=`printf '%s\n' "$from" | sed "$rename_sed"`
     if test -f "$from"; then
       # If $2 is an absolute path name, then just use that,
       # otherwise prepend '../'.
@@ -225,8 +220,6 @@ if test $ret -eq 0; then
         ret=1
       fi
     fi
-    shift
-    shift
   done
 else
   ret=$?
