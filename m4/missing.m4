@@ -6,15 +6,12 @@
 # gives unlimited permission to copy and/or distribute it,
 # with or without modifications, as long as this notice is preserved.
 
-# serial 7
-
 # AM_MISSING_PROG(NAME, PROGRAM)
 # ------------------------------
 AC_DEFUN([AM_MISSING_PROG],
 [AC_REQUIRE([AM_MISSING_HAS_RUN])
 $1=${$1-"${am_missing_run}$2"}
 AC_SUBST($1)])
-
 
 # AM_MISSING_HAS_RUN
 # ------------------

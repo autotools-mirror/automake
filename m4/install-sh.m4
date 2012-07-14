@@ -5,8 +5,6 @@
 # gives unlimited permission to copy and/or distribute it,
 # with or without modifications, as long as this notice is preserved.
 
-# serial 8
-
 # AM_PROG_INSTALL_SH
 # ------------------
 # Define $install_sh.

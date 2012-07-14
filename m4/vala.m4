@@ -6,8 +6,6 @@
 # gives unlimited permission to copy and/or distribute it,
 # with or without modifications, as long as this notice is preserved.
 
-# serial 6
-
 # Check whether the Vala compiler exists in $PATH. If it is found, the
 # variable VALAC is set. Optionally a minimum release number of the
 # compiler can be requested.

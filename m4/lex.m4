@@ -6,8 +6,6 @@
 # gives unlimited permission to copy and/or distribute it,
 # with or without modifications, as long as this notice is preserved.
 
-# serial 6
-
 # AM_PROG_LEX
 # -----------
 # Autoconf leaves LEX=: if lex or flex can't be found.  Change that to a

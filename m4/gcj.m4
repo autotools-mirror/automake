@@ -7,8 +7,6 @@
 # gives unlimited permission to copy and/or distribute it,
 # with or without modifications, as long as this notice is preserved.
 
-# serial 8
-
 AC_DEFUN([AM_PROG_GCJ],
 [AC_CHECK_TOOLS([GCJ], [gcj], [gcj])
 test -z "$GCJ" && AC_MSG_ERROR([no acceptable gcj found in \$PATH])

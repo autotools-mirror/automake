@@ -6,8 +6,6 @@
 # gives unlimited permission to copy and/or distribute it,
 # with or without modifications, as long as this notice is preserved.
 
-# serial 8
-
 # AM_AUTOMAKE_VERSION(VERSION)
 # ----------------------------
 # Automake X.Y traces this macro to ensure aclocal.m4 has been

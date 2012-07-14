@@ -7,8 +7,6 @@
 # gives unlimited permission to copy and/or distribute it,
 # with or without modifications, as long as this notice is preserved.
 
-# serial 6
-
 AC_DEFUN([AM_C_PROTOTYPES],
          [AC_FATAL([automatic de-ANSI-fication support has been removed])])
 

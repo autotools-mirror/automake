@@ -5,8 +5,6 @@
 # gives unlimited permission to copy and/or distribute it,
 # with or without modifications, as long as this notice is preserved.
 
-# serial 1
-
 # AM_PROG_AR([ACT-IF-FAIL])
 # -------------------------
 # Try to determine the archiver interface, and trigger the ar-lib wrapper

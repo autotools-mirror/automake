@@ -5,8 +5,6 @@
 # gives unlimited permission to copy and/or distribute it,
 # with or without modifications, as long as this notice is preserved.
 
-# serial 1
-
 # AM_RUN_LOG(COMMAND)
 # -------------------
 # Run COMMAND, save the exit status in ac_status, and log it.

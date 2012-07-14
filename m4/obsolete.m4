@@ -5,8 +5,6 @@
 # gives unlimited permission to copy and/or distribute it,
 # with or without modifications, as long as this notice is preserved.
 
-# serial 2
-
 # Obsolete Automake macros.
 
 # We put here only the macros whose substitution is not an Automake
