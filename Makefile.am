@@ -436,6 +436,41 @@ check-no-repeated-test-name:
 check-local: check-no-repeated-test-name
 .PHONY: check-no-repeated-test-name
 
+# Check that our test cases are syntactically correct.
+# See automake bug#11898.
+check-tests-syntax:
+	@st=0; \
+	err () { echo "$@: $$*" >&2; st=1; }; \
+## The user might do something like "make check TESTS=t/foo" or
+## "make check TESTS_LOGS=t/foo.log" and expect (say) the test
+## 't/foo.sh' to be run; this has worked well until today, and
+## we want to continue supporting this use case.
+	bases=`for log in : $(TEST_LOGS); do echo $$log; done \
+	  | sed -e '/^:$$/d' -e 's/\.log$$//'`; \
+	for bas in $$bases; do \
+	  for suf in sh tap pl; do \
+	    tst=$$bas.$$suf; \
+## Emulate VPATH search.
+	    if test -f $$tst; then \
+	      break; \
+	    elif test -f $(srcdir)/$$tst; then \
+	      tst=$(srcdir)/$$tst; \
+	      break; \
+	    else \
+	      tst=''; \
+	    fi; \
+	  done; \
+	  test -n "$$tst" || err "couldn't find test '$$bas'"; \
+## Don't check that perl tests are valid shell scripts!
+	  test $$suf = pl && continue; \
+	  $(AM_V_P) && echo " $(AM_TEST_RUNNER_SHELL) -n $$tst"; \
+	  $(AM_TEST_RUNNER_SHELL) -n "$$tst" \
+	    || err "test '$$tst' syntactically invalid"; \
+	done; \
+	exit $$st
+check-local: check-tests-syntax
+.PHONY: check-tests-syntax
+
 # Run the testsuite with the installed aclocal and automake.
 installcheck-local: installcheck-testsuite
 installcheck-testsuite:
