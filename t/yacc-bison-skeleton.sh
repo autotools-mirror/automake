@@ -30,16 +30,20 @@ cat > Makefile.am << 'END'
 bin_PROGRAMS = zardoz
 zardoz_SOURCES = zardoz.y foo.c
 AM_YFLAGS = -d --skeleton glr.c
+BUILT_SOURCES = zardoz.h
 END
 
 # Parser.
 cat > zardoz.y << 'END'
 %{
-int yylex () { return 0; }
-void yyerror (const char *s) { return; }
+int yylex ();
+void yyerror (const char *s);
 %}
 %%
 foobar : 'f' 'o' 'o' 'b' 'a' 'r' {};
+%%
+int yylex () { return 0; }
+void yyerror (const char *s) { return; }
 END
 
 cat > foo.c << 'END'

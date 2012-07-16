@@ -40,10 +40,15 @@ END
 cat > zardoz.yy << 'END'
 %skeleton "lalr1.cc"
 %defines
+%locations
 
+%union
+{
+  int ival;
+};
 %{
-#define YYSTYPE int
-int yylex(YYSTYPE* yylval_param);
+int yylex (yy::parser::semantic_type *yylval,
+           yy::parser::location_type *yylloc);
 %}
 
 %%
@@ -51,22 +56,21 @@ start :        /* empty */
 %%
 
 int
-yylex(YYSTYPE*)
+yylex (yy::parser::semantic_type *yylval,
+       yy::parser::location_type *yylloc)
 {
-    return 0;
+  return 0;
 }
 
 void
-yy::parser::error(const yy::parser::location_type&, const std::string& m)
+yy::parser::error(const yy::parser::location_type&, const std::string&)
 {
-    return;
+  return;
 }
 END
 
 cat > foo.cc << 'END'
 #include "zardoz.hh"
-
-using namespace std;
 
 int
 main(int argc, char** argv)
