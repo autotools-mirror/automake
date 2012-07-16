@@ -6,8 +6,6 @@
 # gives unlimited permission to copy and/or distribute it,
 # with or without modifications, as long as this notice is preserved.
 
-# serial 2
-
 # For projects using AC_CONFIG_AUX_DIR([foo]), Autoconf sets
 # $ac_aux_dir to '$srcdir/foo'.  In other projects, it is set to
 # '$srcdir', '$srcdir/..', or '$srcdir/../..'.

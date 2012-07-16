@@ -6,8 +6,6 @@
 # gives unlimited permission to copy and/or distribute it,
 # with or without modifications, as long as this notice is preserved.
 
-# serial 10
-
 # AM_CONDITIONAL(NAME, SHELL-CONDITION)
 # -------------------------------------
 # Define a conditional.

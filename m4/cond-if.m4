@@ -6,8 +6,6 @@
 # gives unlimited permission to copy and/or distribute it,
 # with or without modifications, as long as this notice is preserved.
 
-# serial 3
-
 # _AM_COND_IF
 # _AM_COND_ELSE
 # _AM_COND_ENDIF
@@ -16,7 +14,6 @@
 m4_define([_AM_COND_IF])
 m4_define([_AM_COND_ELSE])
 m4_define([_AM_COND_ENDIF])
-
 
 # AM_COND_IF(COND, [IF-TRUE], [IF-FALSE])
 # ---------------------------------------

@@ -6,8 +6,6 @@
 # gives unlimited permission to copy and/or distribute it,
 # with or without modifications, as long as this notice is preserved.
 
-# serial 1
-
 AC_DEFUN([AM_PROG_UPC],
 [dnl We need OBJEXT and EXEEXT, but Autoconf doesn't offer any public
 dnl macro to compute them.  Use AC_PROG_CC instead.
