@@ -18,16 +18,17 @@ am__dist_common += %DIST-COMMON%
 
 ## Use 'sort', not 'am__uniq', for performance reasons.  Luckily, we
 ## don't care in which order the distributed files are.
-am__dist_files = $(strip $(sort \
-  $(am__dist_common) $(am__dist_sources) $(TEXINFOS) $(EXTRA_DIST)))
+am__dist_files = $(call am__memoize,am__dist_files,$(strip $(sort \
+  $(am__dist_common) $(am__dist_sources) $(TEXINFOS) $(EXTRA_DIST))))
 
 ## Try to avoid repeated slashed in the entries, to make the
 ## filtering in the 'am__dist_files_1' definition below more reliable.
 ## This idiom should compress up to four consecutive '/' characters in
 ## each $(am__dist_files) entry.
-am__dist_files_1 = $(subst //,/,$(subst //,/,$(am__dist_files)))
+am__dist_files_1 = $(call am__memoize,am__dist_files_1, \
+  $(subst //,/,$(subst //,/,$(am__dist_files))))
 
-am__dist_files_2 = \
+am__dist_files_2 = $(call am__memoize,am__dist_files_2, \
 ## Files filtered out here require an ad-hoc "munging"; see the two
 ## following 'patsubst's.
   $(filter-out $(srcdir)/% $(top_srcdir)/%, $(am__dist_files_1)) \
@@ -50,10 +51,11 @@ am__dist_files_2 = \
 ## prepended later by our VPATH-aware rules.
 ## The same caveats reported above apply.
   $(patsubst $(top_srcdir)/%, $(top_builddir)/%, \
-             $(filter $(top_srcdir)/%, $(am__dist_files_1)))
+             $(filter $(top_srcdir)/%, $(am__dist_files_1))))
 
 ## Strip extra whitespaces, for more safety.
-am__dist_files_cooked = $(strip $(am__dist_files_2))
+am__dist_files_cooked = \
+  $(call am__memoize,am__dist_files_cooked,$(strip $(am__dist_files_2)))
 
 ## Given the pre-processing done above to the list of distributed files,
 ## this definition ensures that we won't try to create the wrong
@@ -63,8 +65,15 @@ am__dist_files_cooked = $(strip $(am__dist_files_2))
 ## will allow our rules to correctly create "$(distdir)/subdir", and not
 ## "$(distdir)/$(srcdir)/subdir" -- which, in a VPATH build where
 ## "$(subdir) = ..", would be the build directory!
-am__dist_parent_dirs = $(strip $(sort \
-  $(filter-out ., $(patsubst ./%,%,$(dir $(am__dist_files_cooked))))))
+am__dist_parent_dirs = \
+  $(call am__memoize,am__dist_parent_dirs,$(strip $(sort \
+    $(filter-out ., $(patsubst ./%,%,$(dir $(am__dist_files_cooked)))))))
+
+am.mkdir-for-dist = \
+  @$(MKDIR_P) $(patsubst %,"$(distdir)"/%,$1)$(am__newline)
+am.write-list-of-distfiles = \
+  @lst='$1'; for x in $$lst; do echo $$x; done \
+    >> $(am__dir)/$@-list$(am__newline)
 
 if %?TOPDIR_P%
 distdir = $(PACKAGE)-$(VERSION)
@@ -124,7 +133,7 @@ if %?SUBDIRS%
 AM_RECURSIVE_TARGETS += distdir
 endif %?SUBDIRS%
 
-distdir: $(am__dist_files)
+distdir: $(am__dist_files) | $(am__dir)
 ##
 ## For Gnits users, this is pretty handy.  Look at 15 lines
 ## in case some explanatory text is desirable.
@@ -146,16 +155,19 @@ if %?TOPDIR_P%
 	$(am__remove_distdir)
 	test -d "$(distdir)" || mkdir "$(distdir)"
 endif %?TOPDIR_P%
-## Make the subdirectories for the files.
-	@$(if $(am__dist_parent_dirs),\
-	   $(MKDIR_P) $(patsubst %,"$(distdir)"/%,$(am__dist_parent_dirs)))
+## Make the subdirectories for the files, avoiding to exceed command
+## line length limitations.
+	$(call am.xargs-map,am.mkdir-for-dist,$(am__dist_parent_dirs))
 ## Install the files and directories, applying a "VPATH rewrite"
 ## by hand where needed.
 ## To get the files in the distribution directory, use 'cp', not 'ln'.
 ## There are situations in which 'ln' can fail.  For instance a file to
 ## distribute could actually be a cross-filesystem symlink -- this can
 ## easily happen if "gettextize" was run on the distribution.
-	@lst='$(am__dist_files_cooked)'; for file in $$lst; do \
+	@rm -f $(am__dir)/$@-list
+	$(call am.xargs-map,am.write-list-of-distfiles, \
+	       $(am__dist_files_cooked))
+	@while read file; do \
 ## Always look for the file or directory to distribute in the build
 ## directory first, in VPATH spirit.
 	  if test -f $$file || test -d $$file; then d=.; else d=$(srcdir); fi; \
@@ -188,7 +200,7 @@ endif %?TOPDIR_P%
 	    || cp -p $$d/$$file "$(distdir)/$$file" \
 	    || exit 1; \
 	  fi; \
-	done
+	done < $(am__dir)/$@-list
 ##
 ## Test for directory existence here because previous automake
 ## invocation might have created some directories.  Note that we
