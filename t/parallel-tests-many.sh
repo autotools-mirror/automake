@@ -16,175 +16,133 @@
 
 # Check that the parallel testsuite harness does not hit errors due
 # to an exceeded command line length when there are many tests.
-# For automake bug#7868.  This test is currently expected to fail.
+# For automake bug#7868.
 
 . ./defs || exit 1
 
-cat >> configure.ac << 'END'
-AC_OUTPUT
+echo AC_OUTPUT >> configure.ac
+
+cat > Makefile.am << 'END'
+TEST_EXTENSIONS = .test .sh
+LOG_COMPILER = true
+TEST_LOG_COMPILER = $(LOG_COMPILER)
+SH_LOG_COMPILER = $(LOG_COMPILER)
+EXTRA_DIST = $(TESTS)
 END
 
-cat > Makefile.am <<'END'
-# Sanity check that the $(TESTS) is going to exceed the system
-# command line length.
-# Extra quoting and indirections below are required to ensure the
-# various make implementations (e.g, GNU make or Sun Distributed Make)
-# will truly spawn a shell to execute this command, instead of relying
-# on optimizations that might mask the "Argument list too long" error
-# we expect.
-this-will-fail:
-	@":" && ":" $(TEST_LOGS)
-TEST_LOG_COMPILER = true
-include list-of-tests.am
-# So that we won't have to create a ton of dummy test cases.
-$(TESTS):
-END
+tst='a-test-script-with-a-long-name'
+dir1='a-directory-with-a-long-name'
+dir2='another-long-named-directory'
 
-# The real instance will be dynamically created later.
-echo TESTS = foo.test > list-of-tests.am
-
-$ACLOCAL && $AUTOCONF && $AUTOMAKE -a \
-  || framework_failure_ "unexpected autotools failure"
-./configure \
-  || framework_failure_ "unexpected configure failure"
-
-# We want to hit the system command-line length limit without hitting
-# the filename length limit or the PATHMAX limit; so we use longish
-# (but not too long) names for the testcase, and place them in a nested
-# (but not too deeply) directory.
-# We also prefer to use the minimal(ish) number of test cases that can
-# make us hit the command-line length limit, since the more the test
-# cases are, the more time "automake" and "make check" will take to run
-# (especially on Cygwin and MinGW/MSYS).
-
-tname="wow-this-is-a-very-long-name-for-a-simple-dummy-test-case"
-dname="and-this-too-is-a-very-long-name-for-a-dummy-directory"
-
-deepdir=.
-depth=0
-for i in 1 2 3 4 5 6 7 8 9 10 12 13 14 15 16 17 18 19 29 21 22 23 24; do
-  new_deepdir=$deepdir/$dname.d$i
-  mkdir $new_deepdir || break
-  tmpfile=$new_deepdir/$tname-some-more-chars-for-good-measure
-  if touch $tmpfile; then
-    rm -f $tmpfile || exit 99
-  else
-    rmdir $new_deepdir || exit 99
-  fi
-  deepdir=$new_deepdir
-  unset tmpfile new_deepdir
-  depth=$i
-done
-
-cat <<END
-*********************************************************************
-Our tests will be in the following directory (depth = $depth)
-*********************************************************************
-$deepdir
-*********************************************************************
-END
-
-setup_data ()
+list_logs ()
 {
-  # Use perl, not awk, to avoid errors like "awk: string too long"
-  # (seen e.g. with Solaris 10 /usr/bin/awk).
-  count=$count deepdir=$deepdir tname=$tname $PERL -e '
-    use warnings FATAL => "all";
-    use strict;
-    print "TESTS = \\\n";
-    my $i = 0;
-    while (++$i)
-      {
-        print "  $ENV{deepdir}/$ENV{tname}-$i.test";
-        if ($i >= $ENV{count})
-          {
-            print "\n";
-            last;
-          }
-        else
-          {
-            print " \\\n";
-          }
-      }
-  ' > list-of-tests.am || exit 99
-  sed 20q list-of-tests.am || exit 99 # For debugging.
-  $AUTOMAKE Makefile \
-    || framework_failure_ "unexpected automake failure"
-  ./config.status Makefile \
-    || framework_failure_ "unexpected config.status failure"
+  find . -name '*.log' | $EGREP -v '^\./(config|test-suite)\.log$'
 }
 
-for count in 1 2 4 8 12 16 20 24 28 32 48 64 96 128 E_HUGE; do
-  test $count = E_HUGE && break
-  count=$(($count * 100))
-  setup_data
-  if $MAKE this-will-fail; then
-    continue
-  else
-    # We have managed to find a number of test cases large enough to
-    # hit the system command-line limits; we can stop.  But first, for
-    # good measure, increase the number of tests of some 20%, to be
-    # "even more sure" of really tickling command line length limits.
-    count=$(($count * 12))
-    count=$(($count / 10))
-    setup_data
-    break
-  fi
-done
+# Number of test scripts will be 3 * $count.
+count=10000
 
-if test $count = E_HUGE; then
-  framework_failure_ "system has a too-high limit on command line length"
-else
-  cat <<END
-*********************************************************************
-               Number of tests we will use: $count
-*********************************************************************
-END
-fi
+i=1
+while test $i -le $count; do
+  files="
+    $tst-$i.test
+    $dir1-$i/foo.sh
+    $dir2-$i/$tst-$i
+  "
+  mkdir $dir1-$i $dir2-$i
+  for f in $files; do
+    : > $f
+    echo $f
+  done
+  i=$(($i + 1))
+  # Disable shell traces after the first iteration, to avoid
+  # polluting the test logs.
+  set +x
+done > t
+set -x # Re-enable shell traces.
+echo 'TESTS = \'   >> Makefile.am
+sed '$!s/$/ \\/' t >> Makefile.am
+rm -f t
 
-$MAKE check TESTS=$deepdir/$tname-1.test \
-  && test -f $deepdir/$tname-1.log \
-  || framework_failure_ "\"make check\" with one single tests"
+whole_count=$(($count * 3))
 
-rm -f $deepdir/* || exit 99
+test $(wc -l <Makefile.am) -eq $((6 + $whole_count)) \
+  || fatal_ "populating 'TESTS'"
+
+$ACLOCAL
+$AUTOCONF
+$AUTOMAKE -a
+./configure
 
 $MAKE check > stdout || { cat stdout; exit 1; }
 cat stdout
 
-grep "^# TOTAL: $count$" stdout
-grep "^# PASS:  $count$" stdout
+grep "^# TOTAL: $whole_count$" stdout
+grep "^# PASS:  $whole_count$" stdout
 
-grep "^PASS: .*$tname-[0-9][0-9]*\.test" stdout > grp
-ls -1 $deepdir | grep '\.log$' > lst
+# Only check head, tail, and a random sample.
+
+test -f $tst-1.log
+test -f $dir1-1/foo.log
+test -f $dir2-1/$tst-1.log
+
+test -f $tst-$count.log
+test -f $dir1-$count/foo.log
+test -f $dir2-$count/$tst-$count.log
+
+test -f $tst-163.log
+grep "^PASS: $tst-163\.test$" stdout
+test -f $dir1-7645/foo.log
+grep "^PASS: $dir1-7645/foo.sh$" stdout
+test -f $dir2-4077/$tst-4077.log
+grep "^PASS: $dir2-4077/$tst-4077$" stdout
+
+grep "^PASS: " stdout > grp
+list_logs > lst
 
 sed 20q lst # For debugging.
 sed 20q grp # Likewise.
 
-test $(cat <grp | wc -l) -eq $count
-test $(cat <lst | wc -l) -eq $count
+test $(wc -l <grp) -eq $whole_count
+test $(wc -l <lst) -eq $whole_count
 
-# We need to simulate a failure of two tests.
+check_three_reruns ()
+{
+  grep "^PASS: $tst-1\.test$" stdout
+  grep "^PASS: $dir1-1/foo\.sh$" stdout
+  grep "^PASS: $dir2-1/$tst-1$" stdout
+  test $(LC_ALL=C grep -c "^[A-Z][A-Z]*:" stdout) -eq 3
+}
+
+# We need to simulate a failure of few tests.
 st=0
-env TESTS="$deepdir/$tname-1.test $deepdir/$tname-2.test" \
-    $MAKE check TEST_LOG_COMPILER=false > stdout && st=1
+$MAKE check TESTS="$tst-1.test $dir1-1/foo.sh $dir2-1/$tst-1" \
+            LOG_COMPILER=false > stdout && st=1
 cat stdout
-test $(grep -c '^FAIL:' stdout) -eq 2 || st=1
-test $st -eq 0 || fatal_ "couldn't simulate failure of two tests"
+test $(grep -c '^FAIL:' stdout) -eq 3 || st=1
+test $st -eq 0 || fatal_ "couldn't simulate failure of 3 tests"
 unset st
 
 $MAKE recheck > stdout || { cat stdout; exit 1; }
 cat stdout
-grep "^PASS: .*$tname-1\.test" stdout
-grep "^PASS: .*$tname-2\.test" stdout
-test $(LC_ALL=C grep -c "^[A-Z][A-Z]*:" stdout) -eq 2
-grep "^# TOTAL: 2$" stdout
-grep "^# PASS:  2$" stdout
+check_three_reruns
+grep "^# TOTAL: 3$" stdout
+grep "^# PASS:  3$" stdout
 
-# "make clean" might ignore some failures, so we prefer to also grep its
-# output to ensure that no "Argument list too long" error was encountered.
+$sleep
+touch $tst-1.test $dir1-1/foo.sh $dir2-1/$tst-1
+$MAKE check AM_LAZY_CHECK=yes > stdout || { cat stdout; exit 1; }
+cat stdout
+check_three_reruns
+grep "^# TOTAL: $whole_count$" stdout
+grep "^# PASS:  $whole_count$" stdout
+
+# "make clean" might ignore some failures (either on purpose or spuriously),
+# so we prefer to also grep its output to ensure that no "Argument list too
+# long" error was encountered.
 $MAKE clean >output 2>&1 || { cat output; exit 1; }
 cat output
 grep -i 'list.* too long' output && exit 1
-ls $deepdir | grep '\.log$' && exit 1
+list_logs | grep . && exit 1
 
 :
