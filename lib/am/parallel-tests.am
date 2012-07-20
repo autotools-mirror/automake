@@ -261,23 +261,49 @@ am__mostlyclean_files += $(am__test_results) $(am__test_logs)
 # $(TEST_LOGS) is a published interface.
 TEST_LOGS = $(am__test_logs)
 
+am.test-harness.workdir = $(am__dir)/test-harness
+
+am.test-harness.append-to-list-of-bases = \
+  @lst='$1'; for x in $$lst; do echo $$x; done \
+    >> $(am.test-harness.workdir)/bases$(am__newline)
+
+!define am.setup-test-harness-workdir
+!	@rm -rf $(am.test-harness.workdir)
+!	@$(MKDIR_P) $(am.test-harness.workdir)
+!	@touch $(am.test-harness.workdir)/bases
+!	$(call am.xargs-map,am.test-harness.append-to-list-of-bases, \
+!	       $(am__test_bases))
+!	@workdir='$(am.test-harness.workdir)' \
+!	  && sed 's/$$/.log/' $$workdir/bases > $$workdir/logs \
+!	  && sed 's/$$/.trs/' $$workdir/bases > $$workdir/trs
+!endef
+
 $(TEST_SUITE_LOG): $(am__test_logs) $(am__test_results)
+	$(am.setup-test-harness-workdir)
 	@$(am__sh_e_setup); $(am__tty_colors); \
 	fatal () { echo "fatal: making $@: $$*" >&2; exit 1; }; \
-## Detect a possible circular dependency, and error out.
-	case ' $(strip $(am__test_logs)) ' in *' $(TEST_SUITE_LOG) '*) \
-	  fatal "depends on itself (check TESTS content)";; \
-	esac; \
+	workdir='$(am.test-harness.workdir)'; \
+## Detect a possible circular dependency, and error out if it's found.
+	grep '^$(TEST_SUITE_LOG:.log=)$$' $$workdir/bases \
+	  && fatal "depends on itself (check TESTS content)"; \
 	ws='[ 	]'; \
 	count_result () \
 	{ \
-	  r='$(strip $(am__test_results))'; \
-	  r=`grep "^$$ws*:test-result:$$ws*$${1-}" $$r </dev/null`; \
+	  if test -s $$workdir/trs; then \
+	    r=`xargs grep "^$$ws*:test-result:$$ws*$${1-}" <$$workdir/trs`; \
+	  else \
+	    r=''; \
+	  fi; \
 ## Catch I/O errors, and complain accordingly.
-	  test $$? -le 1 || fatal "I/O error reading test results"; \
+## FIXME: temporarily disabled.
+	  : || test $$? -le 1 || fatal "I/O error reading test results"; \
+## Must use 'echo', not 'printf', because the latter could be an external
+## program rather than a builtin even on decent shells (like NetBSD 5.1
+## /bin/ksh), which could cause command-line length limits to be hit.
+## That already happened in practice.
 	  case $$r in \
 	    "") echo 0;; \
-	    * ) printf '%s\n' "$$r" | wc -l;; \
+	    * ) echo "$$r" | wc -l;; \
 	  esac; \
 	}; \
 ## Prepare data for the test suite summary.  These do not take into account
@@ -345,8 +371,7 @@ $(TEST_SUITE_LOG): $(am__test_logs) $(am__test_results)
 	  echo;								\
 	  echo ".. contents:: :depth: 2";				\
 	  echo;								\
-	  bases='$(am__test_bases)';					\
-	  for b in $$bases; do echo $$b; done				\
+	  while read b; do echo $$b; done <$$workdir/bases		\
 	    | $(am__create_global_log);					\
 	} >$(TEST_SUITE_LOG).tmp; then					\
 	  mv -f $(TEST_SUITE_LOG).tmp $(TEST_SUITE_LOG);		\
@@ -386,9 +411,7 @@ am__mostlyclean_files += $(TEST_SUITE_LOG)
 ## ------------------------------------------ ##
 
 am__remove_if_not_lazy_check = \
-## Expand the given list only once, to avoid exceeding line length limits.
-  $(if $(filter yes,$(AM_LAZY_CHECK)),, \
-       list='$(strip $(1))'; test -z "$$list" || rm -f $$list)
+  $(if $(filter yes,$(AM_LAZY_CHECK)),,$(call .am.clean-cmd.f,$1))
 
 check-TESTS:
 	@$(call am__remove_if_not_lazy_check,$(am__test_results))
@@ -407,16 +430,21 @@ check-TESTS:
 ## Recheck must depend on $(check_SCRIPTS), $(check_PROGRAMS), etc.
 ## It must also depend on the 'all' target.  See automake bug#11252.
 recheck: all %CHECK_DEPS%
+	+$(am.setup-test-harness-workdir)
 ## See comments above in the check-TESTS recipe for why remove
 ## $(TEST_SUITE_LOG) here.
 	@test -z "$(TEST_SUITE_LOG)" || rm -f $(TEST_SUITE_LOG)
-	@bases='$(am__test_bases)'; \
 ## If running a "make recheck", we must only consider tests that had an
 ## unexpected outcome (FAIL or XPASS) in the earlier run.
-	bases=`for i in $$bases; do echo $$i; done \
+	@bases=`while read b; do echo $$b; done \
+	          <$(am.test-harness.workdir)/bases \
 	         | $(am__list_recheck_tests)` || exit 1; \
 ## Remove newlines and normalize whitespace.
 	bases=`echo $$bases`; \
+## FIXME: This could still cause command line length limits to be exceeded.
+## But that could happen only if a huge number of tests had failed in the
+## previous run, in which case we could expect the user to run "make check"
+## for safeness.  So, is this limitation worth lifting or not?
 	$(MAKE) $(TEST_SUITE_LOG) .am/doing-recheck=yes am__test_bases="$$bases"
 .PHONY: recheck
 
