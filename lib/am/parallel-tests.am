@@ -167,10 +167,12 @@ am__list_recheck_tests = $(AWK) '{ \
   close ($$0 ".log"); \
 }'
 
-# 'A command that, given a newline-separated list of test names on the
-# standard input and a test result (PASS, FAIL, etc) in the shell variable
-# '$target_result', counts the occurrences of that result in the '.trs'
-# files of the given tests.
+# A command that, given a newline-separated list of test names on the
+# standard input, output a shell code snippet setting variables that
+# count occurrences of each test result (PASS, FAIL, etc) declared in
+# the '.trs' files of that given tests.  For example, the count of
+# PASSes will be saved in the '$am_PASS' variable, the count of SKIPs
+# in the '$am_SKIP' variable, and so on.
 am__count_test_results = $(AWK) ' \
 ## Don't leak open file descriptors, as this could cause serious
 ## problems when there are many tests (yes, even on Linux).
@@ -189,7 +191,7 @@ function input_error(file) \
   error("awk" ": cannot read \"" file "\""); \
   close_current(); \
 } \
-BEGIN { count = 0; exit_status = 0; } \
+BEGIN { exit_status = 0; } \
 { \
   while ((rc = (getline line < ($$0 ".trs"))) != 0) \
     { \
@@ -202,8 +204,7 @@ BEGIN { count = 0; exit_status = 0; } \
         { \
           sub("$(am__test_result_rx)", "", line); \
           sub("[: 	].*$$", "", line); \
-          if (line == "'"$$target_result"'") \
-	    count++;\
+          counts[line]++;\
         } \
     }; \
   close_current(); \
@@ -212,7 +213,15 @@ END { \
   if (exit_status != 0) \
     error("fatal: making $@: I/O error reading test results"); \
   else \
-    print count; \
+    { \
+      global_count = 0; \
+      for (k in counts) \
+        { \
+          print "am_" k "=" counts[k]; \
+          global_count += counts[k]; \
+        } \
+     } \
+  print "am_ALL=" global_count; \
   exit(exit_status); \
 }'
 
@@ -336,29 +345,15 @@ $(TEST_SUITE_LOG): $(am__test_logs) $(am__test_results)
 ## Detect a possible circular dependency, and error out if it's found.
 	grep '^$(TEST_SUITE_LOG:.log=)$$' $$workdir/bases \
 	  && fatal "depends on itself (check TESTS content)"; \
-	ws='[ 	]'; \
-	count_result () \
-	{ \
-	  test $$# -eq 1 || { \
-	    echo "$@: invalid 'count_result' usage" >&2; \
-	    exit 4; \
-	  }; \
-	  target_result=$$1; \
-	  $(am__count_test_results) <$$workdir/bases || exit 1; \
-	}; \
 ## Prepare data for the test suite summary.  These do not take into account
 ## unreadable test results, but they'll be appropriately updated later if
 ## needed.
-	true \
-	  && pass=` count_result PASS` \
-	  && fail=` count_result FAIL` \
-	  && skip=` count_result SKIP` \
-	  && xfail=`count_result XFAIL` \
-	  && xpass=`count_result XPASS` \
-	  && error=`count_result ERROR` \
-	  && all=`expr $$pass + $$fail + $$skip + $$xfail + $$xpass + $$error`; \
+	am_PASS=0 am_FAIL=0 am_SKIP=0 am_XPASS=0 am_XFAIL=0 am_ERROR=0; \
+	count_test_results_command=`$(am__count_test_results) <$$workdir/bases` \
+	  && eval "$$count_test_results_command" \
+          || fatal "unknown error reading test results"; \
 ## Whether the testsuite was successful or not.
-	if test `expr $$fail + $$xpass + $$error` -eq 0; then \
+	if test `expr $$am_FAIL + $$am_XPASS + $$am_ERROR` -eq 0; then \
 	  success=true; \
 	else \
 	  success=false; \
@@ -394,13 +389,13 @@ $(TEST_SUITE_LOG): $(am__test_logs) $(am__test_results)
 	create_testsuite_report () \
 	{ \
 	  opts=$$*; \
-	  display_result_count $$opts "TOTAL:" $$all   "$$brg"; \
-	  display_result_count $$opts "PASS: " $$pass  "$$grn"; \
-	  display_result_count $$opts "SKIP: " $$skip  "$$blu"; \
-	  display_result_count $$opts "XFAIL:" $$xfail "$$lgn"; \
-	  display_result_count $$opts "FAIL: " $$fail  "$$red"; \
-	  display_result_count $$opts "XPASS:" $$xpass "$$red"; \
-	  display_result_count $$opts "ERROR:" $$error "$$mgn"; \
+	  display_result_count $$opts "TOTAL:" $$am_ALL   "$$brg"; \
+	  display_result_count $$opts "PASS: " $$am_PASS  "$$grn"; \
+	  display_result_count $$opts "SKIP: " $$am_SKIP  "$$blu"; \
+	  display_result_count $$opts "XFAIL:" $$am_XFAIL "$$lgn"; \
+	  display_result_count $$opts "FAIL: " $$am_FAIL  "$$red"; \
+	  display_result_count $$opts "XPASS:" $$am_XPASS "$$red"; \
+	  display_result_count $$opts "ERROR:" $$am_ERROR "$$mgn"; \
 	}; \
 ## Write "global" testsuite log.
 	if {								\
