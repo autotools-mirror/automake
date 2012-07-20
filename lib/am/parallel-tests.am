@@ -115,6 +115,7 @@ $(call am__strip_suffixes, $(TEST_EXTENSIONS), \
 
 am__recheck_rx = ^[ 	]*:recheck:[ 	]*
 am__global_test_result_rx = ^[ 	]*:global-test-result:[ 	]*
+am__test_result_rx = ^[ 	]*:test-result:[ 	]*
 am__copy_in_global_log_rx = ^[ 	]*:copy-in-global-log:[ 	]*
 
 # A command that, given a newline-separated list of test names on the
@@ -164,6 +165,55 @@ am__list_recheck_tests = $(AWK) '{ \
 ## problems when there are many tests (yes, even on Linux).
   close ($$0 ".trs"); \
   close ($$0 ".log"); \
+}'
+
+# 'A command that, given a newline-separated list of test names on the
+# standard input and a test result (PASS, FAIL, etc) in the shell variable
+# '$target_result', counts the occurrences of that result in the '.trs'
+# files of the given tests.
+am__count_test_results = $(AWK) ' \
+## Don't leak open file descriptors, as this could cause serious
+## problems when there are many tests (yes, even on Linux).
+function close_current() \
+{ \
+  close ($$0 ".trs"); \
+  close ($$0 ".log"); \
+} \
+function error(msg) \
+{ \
+  print msg | "cat >&2"; \
+  exit_status = 1; \
+} \
+function input_error(file) \
+{ \
+  error("awk" ": cannot read \"" file "\""); \
+  close_current(); \
+} \
+BEGIN { count = 0; exit_status = 0; } \
+{ \
+  while ((rc = (getline line < ($$0 ".trs"))) != 0) \
+    { \
+      if (rc < 0) \
+        { \
+          input_error($$0 ".trs"); \
+          next; \
+        } \
+      if (line ~ /$(am__test_result_rx)/) \
+        { \
+          sub("$(am__test_result_rx)", "", line); \
+          sub("[: 	].*$$", "", line); \
+          if (line == "'"$$target_result"'") \
+	    count++;\
+        } \
+    }; \
+  close_current(); \
+} \
+END { \
+  if (exit_status != 0) \
+    error("fatal: making $@: I/O error reading test results"); \
+  else \
+    print count; \
+  exit(exit_status); \
 }'
 
 # A command that, given a newline-separated list of test names on the
@@ -289,34 +339,24 @@ $(TEST_SUITE_LOG): $(am__test_logs) $(am__test_results)
 	ws='[ 	]'; \
 	count_result () \
 	{ \
-	  if test -s $$workdir/trs; then \
-	    r=`xargs grep "^$$ws*:test-result:$$ws*$${1-}" <$$workdir/trs`; \
-	  else \
-	    r=''; \
-	  fi; \
-## Catch I/O errors, and complain accordingly.
-## FIXME: temporarily disabled.
-	  : || test $$? -le 1 || fatal "I/O error reading test results"; \
-## Must use 'echo', not 'printf', because the latter could be an external
-## program rather than a builtin even on decent shells (like NetBSD 5.1
-## /bin/ksh), which could cause command-line length limits to be hit.
-## That already happened in practice.
-	  case $$r in \
-	    "") echo 0;; \
-	    * ) echo "$$r" | wc -l;; \
-	  esac; \
+	  test $$# -eq 1 || { \
+	    echo "$@: invalid 'count_result' usage" >&2; \
+	    exit 4; \
+	  }; \
+	  target_result=$$1; \
+	  $(am__count_test_results) <$$workdir/bases || exit 1; \
 	}; \
 ## Prepare data for the test suite summary.  These do not take into account
 ## unreadable test results, but they'll be appropriately updated later if
 ## needed.
-	all=`count_result` \
+	true \
 	  && pass=` count_result PASS` \
 	  && fail=` count_result FAIL` \
 	  && skip=` count_result SKIP` \
 	  && xfail=`count_result XFAIL` \
 	  && xpass=`count_result XPASS` \
 	  && error=`count_result ERROR` \
-	  || exit 1; \
+	  && all=`expr $$pass + $$fail + $$skip + $$xfail + $$xpass + $$error`; \
 ## Whether the testsuite was successful or not.
 	if test `expr $$fail + $$xpass + $$error` -eq 0; then \
 	  success=true; \
