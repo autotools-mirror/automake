@@ -114,7 +114,15 @@ check_three_reruns ()
   test $(LC_ALL=C grep -c "^[A-Z][A-Z]*:" stdout) -eq 3
 }
 
-# We need to simulate a failure of few tests.
+$sleep
+touch $tst-1.test $dir1-1/foo.sh $dir2-1/$tst-1
+$MAKE check AM_LAZY_CHECK=yes > stdout || { cat stdout; exit 1; }
+cat stdout
+check_three_reruns
+grep "^# TOTAL: $whole_count$" stdout
+grep "^# PASS:  $whole_count$" stdout
+
+# We need to simulate the failure of few tests.
 st=0
 $MAKE check TESTS="$tst-1.test $dir1-1/foo.sh $dir2-1/$tst-1" \
             LOG_COMPILER=false > stdout && st=1
@@ -129,11 +137,32 @@ check_three_reruns
 grep "^# TOTAL: 3$" stdout
 grep "^# PASS:  3$" stdout
 
-$sleep
-touch $tst-1.test $dir1-1/foo.sh $dir2-1/$tst-1
-$MAKE check AM_LAZY_CHECK=yes > stdout || { cat stdout; exit 1; }
+# We need to simulate the failure of a lot of tests.
+$MAKE check LOG_COMPILER=false > stdout && { cat stdout; exit 1; }
 cat stdout
-check_three_reruns
+
+grep '^PASS:' stdout && exit 1
+# A random sample.
+grep "^FAIL: $tst-363\.test$" stdout
+grep "^FAIL: $dir1-9123/foo.sh$" stdout
+grep "^FAIL: $dir2-3609/$tst-3609$" stdout
+
+grep "^FAIL: " stdout > grp
+sed 20q grp # For debugging.
+test $(wc -l <grp) -eq $whole_count
+
+$MAKE recheck > stdout || { cat stdout; exit 1; }
+cat stdout
+
+grep '^FAIL:' stdout && exit 1
+# A random sample.
+grep "^PASS: $tst-363\.test$" stdout
+grep "^PASS: $dir1-9123/foo.sh$" stdout
+grep "^PASS: $dir2-3609/$tst-3609$" stdout
+
+grep "^PASS: " stdout > grp
+sed 20q grp # For debugging.
+test $(wc -l <grp) -eq $whole_count
 grep "^# TOTAL: $whole_count$" stdout
 grep "^# PASS:  $whole_count$" stdout
 
