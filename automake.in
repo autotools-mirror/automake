@@ -3013,7 +3013,7 @@ sub handle_texinfo ()
   if ($info_texinfos)
     {
       define_verbose_texinfo;
-      $output_verbatim .= preprocess_file ("$libdir/am/texibuild.am");
+      almost_verbatim ('texibuild');
       ($mostlyclean, $clean, $maintclean) = handle_texinfo_helper ($info_texinfos);
       chomp $mostlyclean;
       chomp $clean;
@@ -3930,7 +3930,7 @@ sub handle_footer
 # Generate 'make install' rules.
 sub handle_install ()
 {
-  $output_verbatim .= preprocess_file ("$libdir/am/install.am");
+  almost_verbatim ('install');
 }
 
 # Generate "make all" and "make check" rules.
@@ -3944,13 +3944,13 @@ sub handle_all_and_check ()
         if dirname ($out) eq $relative_dir;
     }
 
-  $output_verbatim .= preprocess_file ("$libdir/am/all-target.am",
-                                       'ALL-DEPS' => "@all",
-                                       'LOCAL-HEADERS' => "@local_headers");
+  almost_verbatim ('all-target',
+                   'ALL-DEPS' => "@all",
+                   'LOCAL-HEADERS' => "@local_headers");
 
-  $output_verbatim .= preprocess_file ("$libdir/am/check-target.am",
-                                       'CHECK-DEPS' => "@check",
-                                       'CHECK-TESTS' => "@check_tests");
+  almost_verbatim ('check-target',
+                   'CHECK-DEPS' => "@check",
+                   'CHECK-TESTS' => "@check_tests");
 }
 
 # Generate helper targets for user recursion, where needed.
@@ -5882,6 +5882,17 @@ sub preprocess_file ($%)
   return $_;
 }
 
+# almost_verbatim ($NAME, [%TRANSFORM])
+# -------------------------------------
+# Load a "$libdir/am/$NAME.am", apply the %TRANSFORM, and append the
+# result to the '$output_verbatim'.  No extra parsing or post-processing
+# is done (i.e., recognition of rules declaration or of make variables
+# definitions).
+sub almost_verbatim ($%)
+{
+  my $name = shift;
+  $output_verbatim .= preprocess_file ("$libdir/am/$name.am", @_);
+}
 
 # @PARAGRAPHS
 # &make_paragraphs ($MAKEFILE, [%TRANSFORM])
@@ -6910,7 +6921,7 @@ sub generate_makefile ($$)
   check_gnu_standards;
   check_gnits_standards;
 
-  $output_verbatim .= preprocess_file ("$libdir/am/am-dir.am");
+  almost_verbatim ('am-dir');
 
   handle_configure ($makefile_am, $makefile_in, $makefile, @inputs);
   handle_gettext;
