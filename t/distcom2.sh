@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Test to make sure that depcomp and compile are added to am__dist_common.
+# Test to make sure that depcomp and compile are added to am.dist.common-files.
 # Report from Pavel Roskin.  Report of problems with '--no-force' from
 # Scott James Remnant (Debian #206299)
 
@@ -50,7 +50,7 @@ for opt in '' --no-force; do
   test -f depcomp
 
   for dir in . subdir; do
-    sed -n 's/^am__dist_common = *\(.*\)$/ \1 /p' \
+    sed -n 's/^am.dist.common-files = *\(.*\)$/ \1 /p' \
       <$dir/Makefile.in >$dir/dc.txt
   done
 
@@ -58,7 +58,7 @@ for opt in '' --no-force; do
   cat subdir/dc.txt # Likewise.
 
   $FGREP ' $(am__config_aux_dir)/depcomp ' subdir/dc.txt
-  # The 'compile' script will be listed in the am__dist_common of
+  # The 'compile' script will be listed in the am.dist.common-files of
   # the top-level Makefile because it's required in configure.ac
   # (by AM_PROG_CC_C_O).
   $FGREP ' $(am__config_aux_dir)/compile ' dc.txt \

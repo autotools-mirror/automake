@@ -49,11 +49,10 @@ while test $i -le $count; do
 done > t
 set -x # Re-enable shell traces.
 echo 'EXTRA_DIST = \'   >> Makefile.am
-sed 's/$/ \\/' t        >> Makefile.am
-echo '$(am__empty)'     >> Makefile.am
+sed '$!s/$/ \\/' t      >> Makefile.am
 rm -f t
 
-test $(wc -l <Makefile.am) -eq $(( 2 + (3 * $count) )) \
+test $(wc -l <Makefile.am) -eq $(( 1 + (3 * $count) )) \
   || fatal_ "populating 'EXTRA_DIST'"
 
 $ACLOCAL

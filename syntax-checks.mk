@@ -321,9 +321,9 @@ sc_no_am_makeflags:
 	fi
 
 # Modern names for internal variables that had a bad name once.
-modern.DISTFILES = am__dist_files
-modern.DIST_COMMON = am__dist_common
-modern.DIST_SOURCES = am__dist_sources
+modern.DISTFILES = am.dist.all-files
+modern.DIST_COMMON = am.dist.common-files
+modern.DIST_SOURCES = am.dist.sources
 modern.am__TEST_BASES = am__test_bases
 modern.am__TEST_LOGS = am__test_logs
 modern.am__TEST_RESULTS = am__test_results
@@ -348,9 +348,6 @@ $(sc_renamed_variables_rules): sc_no_% :
 	fi
 
 # Variables whose name is prone to typos.
-fixtypo.am__distfiles = am__dist_files
-fixtypo.am__distcommon = am__dist_common
-fixtypo.am__distsources = am__dist_sources
 
 define typos-for-clean
 

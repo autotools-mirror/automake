@@ -39,7 +39,7 @@ bin_PROGRAMS = zardoz
 zardoz_SOURCES = parse.y main.c
 .PHONY: echo-distcom
 echo-distcom:
-	@echo ' ' $(am__dist_common) ' '
+	@echo ' ' $(am.dist.common-files) ' '
 END
 cp foo/Makefile.am bar/Makefile.am
 cp foo/Makefile.am baz/Makefile.am

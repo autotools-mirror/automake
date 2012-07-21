@@ -34,7 +34,7 @@ cat > Makefile.am <<'END'
 test: distdir
 	ls -l $(distdir)
 	test ! -f $(distdir)/aclocal.m4
-	echo $(am__dist_files) $(am__dist_common) \
+	echo $(am.dist.all-files) $(am.dist.common-files) \
           | grep 'aclocal\.m4' && exit 1; :
 check-local: test
 END

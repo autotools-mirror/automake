@@ -34,8 +34,8 @@ bar_SOURCES = bar.lxx
 
 .PHONY: check-dist
 check-dist: distdir
-	echo ' ' $(am__dist_common) ' ' | grep '[ /]foo\.cc'
-	echo ' ' $(am__dist_common) ' ' | grep '[ /]bar\.cxx'
+	echo ' ' $(am.dist.common-files) ' ' | grep '[ /]foo\.cc'
+	echo ' ' $(am.dist.common-files) ' ' | grep '[ /]bar\.cxx'
 	ls -l $(distdir)
 	test -f $(distdir)/foo.cc
 	test -f $(distdir)/bar.cxx

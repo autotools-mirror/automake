@@ -22,7 +22,7 @@
 # like the following (among the Makefiles)
 #       README.foo:templ/README.foo.in
 # the generated dist target in the Makefile.in fails,
-# because am__dist_common will contain templ/README.foo.in
+# because am.dist.common-files will contain templ/README.foo.in
 # and the dist target will try to copy templ/README.foo.in
 # to the distribution directory before it creates a templ
 # subdirectory in the distribution directory.

@@ -66,7 +66,7 @@ mkdir foo bar baz qux baz/sub
 cat > Makefile.am <<'END'
 .PHONY: echo-distcom
 echo-distcom:
-	@echo ' ' $(am__dist_common) ' '
+	@echo ' ' $(am.dist.common-files) ' '
 END
 cp Makefile.am foo/Makefile.am
 cp Makefile.am bar/Makefile.am

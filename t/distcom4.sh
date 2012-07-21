@@ -45,7 +45,7 @@ mkdir tests
 cat > Makefile.am << 'END'
 .PHONY: test1 test 2
 test1:
-	for x in $(am__dist_files); do echo $$x; done \
+	for x in $(am.dist.all-files); do echo $$x; done \
 	  | grep 'tests/' > lst
 	cat lst # For debugging.
 	test `wc -l <lst` -eq 1

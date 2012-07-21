@@ -30,7 +30,7 @@ cat > Makefile.am << 'END'
 SUBDIRS = sub
 TESTS = foo.sh bar.test baz.t1 mu.t1.t2 zardoz.tap
 TEST_EXTENSIONS = .test @suf@ $(foreach i,1 2,.t$(i))
-TEST_EXTENSIONS += $(subst &,.,$(call am__tolower,&SH))
+TEST_EXTENSIONS += $(subst &,.,$(call am.util.tolower,&SH))
 END
 
 cat > sub/Makefile.am << 'END'

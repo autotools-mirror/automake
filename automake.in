@@ -3375,10 +3375,10 @@ sub handle_dist ()
   # check that.  But if the file is in a subdir without a Makefile,
   # we want to distribute it here if we are doing '.'.  Ugly!
   # Also, in some corner cases, it's possible that the following code
-  # will cause the same file to appear in the $(am__dist_common) variables
-  # of two distinct Makefiles; but this is not a problem, since the
-  # 'distdir' target in 'lib/am/distdir.am' can deal with the same
-  # file being distributed multiple times.
+  # will cause the same file to appear in the $(am.dist.common-files)
+  # variables of two distinct Makefiles; but this is not a problem,
+  # since the 'distdir' target in 'lib/am/distdir.am' can deal with
+  # the same file being distributed multiple times.
   # See also automake bug#9651.
   if ($relative_dir eq '.')
     {
@@ -6834,7 +6834,7 @@ sub require_conf_file_with_macro ($$$@)
 
 ################################################################
 
-# Push a list of files onto dist_common.
+# Push a list of files onto @dist_common.
 sub push_dist_common
 {
   prog_error "push_dist_common run after handle_dist"
@@ -6934,7 +6934,7 @@ sub generate_makefile ($$)
 
   # Variables used by distdir.am and tags.am.
   define_variable ('SOURCES', INTERNAL, @sources);
-  define_variable ('am__dist_sources', INTERNAL, @dist_sources)
+  define_variable ('am.dist.sources', INTERNAL, @dist_sources)
     unless option 'no-dist';
 
   handle_texinfo;
@@ -6952,9 +6952,9 @@ sub generate_makefile ($$)
   # Must come after invocation of handle_programs, handle_libraries and
   # handle_ltlibraries, so that %known_programs and %known_libraries are
   # up-to-date.
-  define_variable 'am__all_progs',  INTERNAL, sort keys %known_programs;
-  define_variable 'am__all_libs',   INTERNAL, sort keys %known_libraries;
-  define_variable 'am__all_ltlibs', INTERNAL, sort keys %known_ltlibraries;
+  define_variable 'am.all-progs',  INTERNAL, sort keys %known_programs;
+  define_variable 'am.all-libs',   INTERNAL, sort keys %known_libraries;
+  define_variable 'am.all-ltlibs', INTERNAL, sort keys %known_ltlibraries;
   handle_tests;
 
   # This must come after most other rules.
@@ -6986,8 +6986,11 @@ sub generate_makefile ($$)
   # See if any _SOURCES (or _LIBADD, or ...) variable were misspelled.
   $output_checks .= preprocess_file ("$libdir/am/check-typos.am",
                                      MAKEFILE => basename ($makefile));
-  # Report errors (if any) seen at make runtime.
-  $output_checks .= '$(if $(am__seen_error),' .
+  # Bail out if we have encountered errors at make runtime.  The
+  # relevant diagnostic should have already been reported by any
+  # call to the function '$(am.error)', so we just print a generic
+  # "errors seen, stopping" message.
+  $output_checks .= '$(if $(am.error.seen),' .
                     '$(error Some Automake-NG error occurred))' .
                     "\n";
 

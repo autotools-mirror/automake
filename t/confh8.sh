@@ -27,11 +27,11 @@ END
 cat > Makefile.am << 'END'
 .PHONY: test0 test1 test2
 test0:
-	@echo am__dist_common = $(am__dist_common)
-	echo ' ' $(am__dist_common) ' ' | grep '[ /]one\.h\.in '
-	echo ' ' $(am__dist_common) ' ' | grep '[ /]two\.h\.in '
+	@echo am.dist.common-files = $(am.dist.common-files)
+	echo ' ' $(am.dist.common-files) ' ' | grep '[ /]one\.h\.in '
+	echo ' ' $(am.dist.common-files) ' ' | grep '[ /]two\.h\.in '
 	# Processed header files should not be distributed.
-	if echo ' ' $(am__dist_common) ' ' | grep '\.h '; then \
+	if echo ' ' $(am.dist.common-files) ' ' | grep '\.h '; then \
 	  exit 1; \
 	else \
 	  exit 0; \

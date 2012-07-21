@@ -59,7 +59,7 @@ done
 # Sanity check.
 rm -f $(cat t) && fatal_ "setting up 'rm' wrapper"
 
-(echo 'files = \' && sed 's/$/ \\/' t && echo '$(am__empty)') >files.am
+(echo 'files = \' && sed '$!s/$/ \\/' t) >files.am
 rm -f t
 
 $ACLOCAL

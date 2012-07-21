@@ -36,7 +36,7 @@ clean-local:
 	rm -rf bsub
 
 ## Yes, I'm a lazy typist.
-vr = \$(am__vpath_rewrite)
+vr = \$(am.vpath.rewrite)
 
 test-common: bsub/foo/bar bsub/mu.c++ bsub/foo/pu.cxx
 	test '\$(call vr,Makefile)'             = Makefile

@@ -33,10 +33,10 @@ mkdir subdir
 : > Makefile.am
 : > subdir/foo
 cat > subdir/Makefile.am << 'END'
-# am__dist_common should contain 'foo', not 'subdir/foo'.
+# am.dist.common-files should contain 'foo', not 'subdir/foo'.
 test:
-	case '$(am__dist_common)' in *subdir/foo*) exit 1;; *) exit 0;; esac
-	echo ' ' $(am__dist_common) ' ' | grep '[ /]foo '
+	case '$(am.dist.common-files)' in *subdir/foo*) exit 1;; *) exit 0;; esac
+	echo ' ' $(am.dist.common-files) ' ' | grep '[ /]foo '
 .PHONY: test
 END
 

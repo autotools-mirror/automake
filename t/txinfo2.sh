@@ -27,8 +27,8 @@ cat > Makefile.am << 'END'
 info_TEXINFOS = textutils.texi
 .PHONY: test
 test:
-	@echo am__dist_files = $(am__dist_files)
-	case '$(am__dist_files)' in *'~'*) exit 1;; *) exit 0;; esac
+	@echo am.dist.all-files = $(am.dist.all-files)
+	case '$(am.dist.all-files)' in *'~'*) exit 1;; *) exit 0;; esac
 END
 
 : > texinfo.tex
