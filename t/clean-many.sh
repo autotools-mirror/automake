@@ -49,11 +49,11 @@ while test $i -le 17; do
   cat t t > t2
   mv -f t2 t
 done
-(echo 'files = \' && sed 's/$/ \\/' t && echo '$(am__empty)') > files.mk
+(echo 'files = \' && sed '$!s/$/ \\/' t) > files.mk
 rm -f t
 
-# 2^17 + 2 = 131074.
-test $(wc -l <files.mk) -eq 65538 || fatal_ "populating 'files.mk'"
+# 2^17 + 1 = 65537.
+test $(wc -l <files.mk) -eq 65537 || fatal_ "populating 'files.mk'"
 
 touch foo bar
 $MAKE maintainer-clean
