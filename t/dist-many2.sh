@@ -17,7 +17,7 @@
 # Check that our dist rules do not hit errors due to an exceeded
 # command line length when there are many files to distribute.  Here,
 # we fake a very low command line length limit for 'mkdir' (max 50
-# arguments) and the shell (max 2000 chars in its command line).
+# arguments) and the shell (max 4000 chars in its command line).
 # The sister test 'dist-many.sh' try to hit the real command line length
 # limit of the system, by declaring a huge number of files to be cleaned.
 
