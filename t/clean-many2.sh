@@ -26,7 +26,8 @@ echo AC_OUTPUT >> configure.ac
 
 oPATH=$PATH; export oPATH
 mkdir bin
-cat > bin/rm <<'END'
+# Redundant quoting of 'rm' (here and below) to please maintainer-check.
+cat > bin/'rm' <<'END'
 #!/bin/sh
 PATH=$oPATH; export PATH
 if test $# -eq 0; then
@@ -36,7 +37,7 @@ elif test $# -gt 50; then
   echo "rm: argument list too long ($# arguments)" >&2
   exit 1
 fi
-exec rm "$@"
+exec 'rm' "$@"
 END
 chmod a+x bin/rm
 PATH=$(pwd)/bin$PATH_SEPARATOR$PATH; export PATH
