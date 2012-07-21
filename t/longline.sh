@@ -22,7 +22,7 @@
 i=0
 while test $i -lt 30; do
   echo some_very_very_long_variable_content_$i
-  i=$((i + 1))
+  i=$(($i + 1))
 done > t
 
 { echo "DUMMY =" && sed 's/^/DUMMY +=/' t; } > Makefile.am
