@@ -49,13 +49,13 @@ SUBDIRS = tests
 test: distdir
 	test -f $(distdir)/tests/wrapper.in
 check-local: test
-	for x in $(am__dist_files); do echo $$x; done \
+	for x in $(am.dist.all-files); do echo $$x; done \
 	  | grep tests && exit 1; :
 END
 
 cat > tests/Makefile.am <<'END'
 check-local:
-	for x in $(am__dist_files); do echo $$x; done \
+	for x in $(am.dist.all-files); do echo $$x; done \
 	  | grep wrapper.in > lst
 	cat lst # For debugging.
 	test `wc -l <lst` -eq 1

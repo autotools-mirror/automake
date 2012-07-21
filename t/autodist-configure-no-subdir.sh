@@ -47,7 +47,7 @@ configure:
 configure.ac:
 	$(dontbuild)
 check-local:
-	echo $(am__dist_files) $(am__dist_common) \
+	echo $(am.dist.all-files) $(am.dist.common-files) \
           | grep 'configure' && exit 1; :
 END
 

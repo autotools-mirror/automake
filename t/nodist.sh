@@ -34,7 +34,7 @@ $ACLOCAL
 $AUTOMAKE
 
 grep '^am_eyeball_OBJECTS' Makefile.in
-grep '^am__dist_sources =' Makefile.in
-grep '^am__dist_sources =.*nodist' Makefile.in && exit 1
+grep '^am.dist.sources =' Makefile.in
+grep '^am.dist.sources =.*nodist' Makefile.in && exit 1
 
 :

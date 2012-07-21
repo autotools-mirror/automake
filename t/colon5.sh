@@ -39,7 +39,7 @@ test-grep:
 	grep '=GrEp$(empty)Me_am=' Makefile
 	grep '=GrEp$(empty)Me_dep=' Makefile
 test-distcommon:
-	echo ' ' $(am__dist_common) ' ' | grep '[ /]Makefile.dep '
+	echo ' ' $(am.dist.common-files) ' ' | grep '[ /]Makefile.dep '
 test-distdir: distdir
 	test -f $(distdir)/Makefile.dep
 END

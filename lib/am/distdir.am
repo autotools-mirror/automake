@@ -14,24 +14,24 @@
 ## You should have received a copy of the GNU General Public License
 ## along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-am__dist_common += %DIST-COMMON%
+am.dist.common-files += %DIST-COMMON%
 
 ## Use 'sort', not 'am__uniq', for performance reasons.  Luckily, we
 ## don't care in which order the distributed files are.
-am__dist_files = $(call am__memoize,am__dist_files,$(strip $(sort \
-  $(am__dist_common) $(am__dist_sources) $(TEXINFOS) $(EXTRA_DIST))))
+am.dist.all-files = $(call am__memoize,am.dist.all-files,$(strip $(sort \
+  $(am.dist.common-files) $(am.dist.sources) $(TEXINFOS) $(EXTRA_DIST))))
 
-## Try to avoid repeated slashed in the entries, to make the
-## filtering in the 'am__dist_files_1' definition below more reliable.
-## This idiom should compress up to four consecutive '/' characters in
-## each $(am__dist_files) entry.
-am__dist_files_1 = $(call am__memoize,am__dist_files_1, \
-  $(subst //,/,$(subst //,/,$(am__dist_files))))
+## Try to avoid repeated slashes in the entries, to make the filtering
+## in the 'am.dist.files-tmp2' definition below more reliable.
+## This idiom should compress up to four consecutive '/' characters
+## in each $(am.dist.all-files) entry.
+am.dist.files-tmp1 = $(call am__memoize,am.dist.files-tmp1, \
+  $(subst //,/,$(subst //,/,$(am.dist.all-files))))
 
-am__dist_files_2 = $(call am__memoize,am__dist_files_2, \
+am.dist.files-tmp2 = $(call am__memoize,am.dist.files-tmp2, \
 ## Files filtered out here require an ad-hoc "munging"; see the two
 ## following 'patsubst's.
-  $(filter-out $(srcdir)/% $(top_srcdir)/%, $(am__dist_files_1)) \
+  $(filter-out $(srcdir)/% $(top_srcdir)/%, $(am.dist.files-tmp1)) \
 ## Let's strip leading $(srcdir) (which might appears in EXTRA_DIST,
 ## especially if one want to use the $(wildcard) built-in in there),
 ## so that in our 'distdir' recipe below we can loop on the list of
@@ -44,18 +44,18 @@ am__dist_files_2 = $(call am__memoize,am__dist_files_2, \
 ## present in mainstream Automake, and concerns only such corner-case
 ## situations that it's probably not worth worrying about.
   $(patsubst $(srcdir)/%, %, \
-             $(filter $(srcdir)/%, $(am__dist_files_1))) \
+             $(filter $(srcdir)/%, $(am.dist.files-tmp1))) \
 ## Also rewrite $(top_srcdir) -- which can sometimes appear in
-## $(am__dist_common), and can be absolute -- by $(top_builddir)
+## $(am.dist.common-files), and can be absolute -- by $(top_builddir)
 ## (which is always relative).  If needed, $(srcdir) will be
 ## prepended later by our VPATH-aware rules.
 ## The same caveats reported above apply.
   $(patsubst $(top_srcdir)/%, $(top_builddir)/%, \
-             $(filter $(top_srcdir)/%, $(am__dist_files_1))))
+             $(filter $(top_srcdir)/%, $(am.dist.files-tmp1))))
 
 ## Strip extra whitespaces, for more safety.
-am__dist_files_cooked = \
-  $(call am__memoize,am__dist_files_cooked,$(strip $(am__dist_files_2)))
+am.dist.files-cooked = \
+  $(call am__memoize,am.dist.files-cooked,$(strip $(am.dist.files-tmp2)))
 
 ## Given the pre-processing done above to the list of distributed files,
 ## this definition ensures that we won't try to create the wrong
@@ -65,9 +65,9 @@ am__dist_files_cooked = \
 ## will allow our rules to correctly create "$(distdir)/subdir", and not
 ## "$(distdir)/$(srcdir)/subdir" -- which, in a VPATH build where
 ## "$(subdir) = ..", would be the build directory!
-am__dist_parent_dirs = \
-  $(call am__memoize,am__dist_parent_dirs,$(strip $(sort \
-    $(filter-out ., $(patsubst ./%,%,$(dir $(am__dist_files_cooked)))))))
+am.dist.parent-dirs = \
+  $(call am__memoize,am.dist.parent-dirs,$(strip $(sort \
+    $(filter-out ., $(patsubst ./%,%,$(dir $(am.dist.files-cooked)))))))
 
 am.mkdir-for-dist = \
   @$(MKDIR_P) $(patsubst %,"$(distdir)"/%,$1)$(am__newline)
@@ -133,7 +133,7 @@ if %?SUBDIRS%
 AM_RECURSIVE_TARGETS += distdir
 endif %?SUBDIRS%
 
-distdir: $(am__dist_files) | $(am__dir)
+distdir: $(am.dist.all-files) | $(am__dir)
 ##
 ## For Gnits users, this is pretty handy.  Look at 15 lines
 ## in case some explanatory text is desirable.
@@ -157,7 +157,7 @@ if %?TOPDIR_P%
 endif %?TOPDIR_P%
 ## Make the subdirectories for the files, avoiding to exceed command
 ## line length limitations.
-	$(call am.xargs-map,am.mkdir-for-dist,$(am__dist_parent_dirs))
+	$(call am.xargs-map,am.mkdir-for-dist,$(am.dist.parent-dirs))
 ## Install the files and directories, applying a "VPATH rewrite"
 ## by hand where needed.
 ## To get the files in the distribution directory, use 'cp', not 'ln'.
@@ -166,7 +166,7 @@ endif %?TOPDIR_P%
 ## easily happen if "gettextize" was run on the distribution.
 	@rm -f $(am__dir)/$@-list
 	$(call am.xargs-map,am.write-list-of-distfiles, \
-	       $(am__dist_files_cooked))
+	       $(am.dist.files-cooked))
 	@while read file; do \
 ## Always look for the file or directory to distribute in the build
 ## directory first, in VPATH spirit.

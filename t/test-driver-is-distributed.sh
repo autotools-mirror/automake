@@ -53,7 +53,7 @@ END
   unindent > tests/Makefile.am << END
     check-local: test-sub
     test-sub:
-	echo ' ' \$(am__dist_common) ' ' | grep '[ /]$test_driver '
+	echo ' ' \$(am.dist.common-files) ' ' | grep '[ /]$test_driver '
     TESTS = foo.test
     EXTRA_DIST = \$(TESTS)
 END

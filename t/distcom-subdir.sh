@@ -41,7 +41,7 @@ mkdir subdir
 cat > subdir/Makefile.am << 'END'
 .PHONY: test-distcom
 test-distcom:
-	echo ' ' $(am__dist_common) ' ' | $(FGREP) ' $(top_srcdir)/depcomp '
+	echo ' ' $(am.dist.common-files) ' ' | $(FGREP) ' $(top_srcdir)/depcomp '
 END
 
 $ACLOCAL
@@ -53,7 +53,7 @@ cat >> subdir/Makefile.am << 'END'
 bin_PROGRAMS = foo
 .PHONY: test-distcom
 test-distcom:
-	echo ' ' $(am__dist_common) ' ' | $(FGREP) ' $(top_srcdir)/depcomp '
+	echo ' ' $(am.dist.common-files) ' ' | $(FGREP) ' $(top_srcdir)/depcomp '
 check-local: test-distcom
 END
 

@@ -36,7 +36,7 @@ $AUTOMAKE --add-missing --gnu >output 2>&1 || { cat output; exit 1; }
 cat output
 grep README output && exit 1
 
-sed -n -e '/^am__dist_common =.*\\$/ {
+sed -n -e '/^am.dist.common-files =.*\\$/ {
    :loop
    p
    n
@@ -46,7 +46,7 @@ sed -n -e '/^am__dist_common =.*\\$/ {
    t loop
    p
    n
-   }' -e '/^am__dist_common =/ p' Makefile.in | grep README
+   }' -e '/^am.dist.common-files =/ p' Makefile.in | grep README
 
 
 # Should warn about missing README.

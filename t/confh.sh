@@ -27,8 +27,8 @@ END
 cat > Makefile.am << 'END'
 .PHONY: test1 test2
 test1:
-	@echo am__dist_common = $(am__dist_common)
-	echo ' ' $(am__dist_common) ' ' | grep '[ /]include/config\.h\.in '
+	@echo am.dist.common-files = $(am.dist.common-files)
+	echo ' ' $(am.dist.common-files) ' ' | grep '[ /]include/config\.h\.in '
 test2: distdir
 	ls -l $(distdir)/*
 	test -f $(distdir)/include/config.h.in

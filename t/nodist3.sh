@@ -32,6 +32,6 @@ $ACLOCAL
 $AUTOMAKE
 
 grep '^dist:' Makefile.in && exit 1
-grep 'am__dist_sources' Makefile.in && exit 1
+grep 'am.dist.sources' Makefile.in && exit 1
 
 :

@@ -34,7 +34,7 @@ $AUTOMAKE
 test $(grep -c '^srcdir' Makefile.in) -eq 1
 
 # Also make sure include file is distributed.
-sed -n -e '/^am__dist_common =.*\\$/ {
+sed -n -e '/^am.dist.common-files =.*\\$/ {
    :loop
    p
    n
@@ -44,6 +44,6 @@ sed -n -e '/^am__dist_common =.*\\$/ {
    t loop
    p
    n
-   }' -e '/^am__dist_common =/ p' Makefile.in | grep Will_Be_Included_In_Makefile
+   }' -e '/^am.dist.common-files =/ p' Makefile.in | grep Will_Be_Included_In_Makefile
 
 :
