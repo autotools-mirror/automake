@@ -302,8 +302,8 @@ END { \
 am__rst_title = { sed 's/.*/   &   /;h;s/./=/g;p;x;s/ *$$//;p;g' && echo; }
 
 # This supports runtime overriding of $(TESTS) and $(XFAIL_TESTS).
-am__test_bases = \
-  $(call am__memoize,am__test_bases,$(call am__get_test_bases,$(TESTS)))
+!am__test_bases ?= \
+!  $(call am__memoize,am__test_bases,$(call am__get_test_bases,$(TESTS)))
 am__xfail_test_bases = \
   $(call am__memoize,am__xfail_test_bases,$(call am__get_test_bases,$(XFAIL_TESTS)))
 
@@ -476,11 +476,10 @@ recheck: all %CHECK_DEPS%
 	         | $(am__list_recheck_tests)` || exit 1; \
 ## Remove newlines and normalize whitespace.
 	bases=`echo $$bases`; \
-## FIXME: This could still cause command line length limits to be exceeded.
-## But that could happen only if a huge number of tests had failed in the
-## previous run, in which case we could expect the user to run "make check"
-## for safeness.  So, is this limitation worth lifting or not?
-	$(MAKE) $(TEST_SUITE_LOG) .am/doing-recheck=yes am__test_bases="$$bases"
+## Re-run the relevant tests, without hitting command-line length limits.
+	echo am__test_bases="$$bases" | \
+	  $(MAKE) -f- -f$(firstword $(MAKEFILE_LIST)) \
+	          $(TEST_SUITE_LOG) .am/doing-recheck=yes
 .PHONY: recheck
 
 ## One tricky requirement of the "recheck" target is that, in case (say)
