@@ -16,7 +16,7 @@
 
 # Test internal automake variables:
 #  - $(am.all-progs).
-#  - $(am__all_libs).
+#  - $(am.all-libs).
 #  - $(am__all_ltlibs).
 
 . ./defs || exit 1
@@ -63,11 +63,11 @@ my_SCRIPTS = x5
 .PHONY: debug test
 debug:
 	@echo  PROGS-BEG:  $(am.all-progs)   :PROGS-END
-	@echo   LIBS-BEG:  $(am__all_libs)    :LIBS-END
+	@echo   LIBS-BEG:  $(am.all-libs)    :LIBS-END
 	@echo LTLIBS-BEG:  $(am__all_ltlibs)  :LTLIBS-END
 test: debug
 	test '$(am.all-progs)'  = 'p1 p2 p3 p4 p5'
-	test '$(am__all_libs)'   = 'lib01.a lib02.a lib03.a lib04.a lib05.a'
+	test '$(am.all-libs)'   = 'lib01.a lib02.a lib03.a lib04.a lib05.a'
 	test '$(am__all_ltlibs)' = 'lib1.la lib2.la lib3.la lib4.la lib5.la'
 END
 
