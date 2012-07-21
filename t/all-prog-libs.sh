@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Test internal automake variables:
-#  - $(am__all_progs).
+#  - $(am.all-progs).
 #  - $(am__all_libs).
 #  - $(am__all_ltlibs).
 
@@ -62,11 +62,11 @@ my_SCRIPTS = x5
 
 .PHONY: debug test
 debug:
-	@echo  PROGS-BEG:  $(am__all_progs)   :PROGS-END
+	@echo  PROGS-BEG:  $(am.all-progs)   :PROGS-END
 	@echo   LIBS-BEG:  $(am__all_libs)    :LIBS-END
 	@echo LTLIBS-BEG:  $(am__all_ltlibs)  :LTLIBS-END
 test: debug
-	test '$(am__all_progs)'  = 'p1 p2 p3 p4 p5'
+	test '$(am.all-progs)'  = 'p1 p2 p3 p4 p5'
 	test '$(am__all_libs)'   = 'lib01.a lib02.a lib03.a lib04.a lib05.a'
 	test '$(am__all_ltlibs)' = 'lib1.la lib2.la lib3.la lib4.la lib5.la'
 END
