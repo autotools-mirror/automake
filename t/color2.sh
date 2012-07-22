@@ -58,12 +58,14 @@ rm -f expect-check Makefile
 
 # Do the tests.
 
-cat >>configure.ac <<END
+cat >>configure.ac << 'END'
+if $testsuite_colorized; then :; else
+  AC_SUBST([AM_COLOR_TESTS], [no])
+fi
 AC_OUTPUT
 END
 
 cat >Makefile.am <<'END'
-AUTOMAKE_OPTIONS = color-tests
 TESTS = $(check_SCRIPTS)
 check_SCRIPTS = pass fail skip xpass xfail error
 XFAIL_TESTS = xpass xfail
@@ -181,6 +183,18 @@ for vpath in false :; do
     || { cat stdout; exit 1; }
   cat stdout
   test_no_color
+
+  $srcdir/configure testsuite_colorized=false
+
+  TERM=ansi MAKE=$MAKE expect -f $srcdir/expect-make >stdout \
+    || { cat stdout; exit 1; }
+  cat stdout
+  test_no_color
+
+  TERM=ansi MAKE="env AM_COLOR_TESTS=always $MAKE" \
+    expect -f $srcdir/expect-make >stdout || { cat stdout; exit 1; }
+  cat stdout
+  test_color
 
   $MAKE distclean
   cd $srcdir

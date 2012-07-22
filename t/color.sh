@@ -34,7 +34,6 @@ AC_OUTPUT
 END
 
 cat >Makefile.am <<'END'
-AUTOMAKE_OPTIONS = color-tests
 TESTS = $(check_SCRIPTS)
 check_SCRIPTS = pass fail skip xpass xfail error
 XFAIL_TESTS = xpass xfail

@@ -229,6 +229,7 @@ t/colon6.sh \
 t/colon7.sh \
 t/color.sh \
 t/color2.sh \
+t/color-tests-opt.sh \
 t/comment.sh \
 t/comment2.sh \
 t/comment3.sh \

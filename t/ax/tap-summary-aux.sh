@@ -89,7 +89,6 @@ if test $use_colors = yes; then
   mgn="$esc[0;35m"
   brg="$esc[1m"
   std="$esc[m"
-  echo AUTOMAKE_OPTIONS = color-tests >> Makefile.am
 else
   red= grn= lgn= blu= mgn= brg= std=
 fi
