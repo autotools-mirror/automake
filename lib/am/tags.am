@@ -35,13 +35,17 @@ ID: $(am__tagged_files)
 ## ------ ##
 
 ETAGS = etags
-.PHONY: tags
+.PHONY: TAGS tags
 if %?SUBDIRS%
-AM_RECURSIVE_TARGETS += tags TAGS
-endif %?SUBDIRS%
-tags: TAGS
+AM_RECURSIVE_TARGETS += TAGS
+RECURSIVE_TARGETS += tags-recursive
+tags: tags-recursive
+else !%?SUBDIRS%
+tags: tags-am
+endif !%?SUBDIRS%
+TAGS: tags
 
-TAGS: %TAGSDIRS% $(TAGS_DEPENDENCIES) $(am__tagged_files)
+tags-am: $(TAGS_DEPENDENCIES) $(am__tagged_files)
 ## We use the positional parameters to build the subdir list with
 ## absolute names, without the need to worry about white space in `pwd`.
 	set x; \
@@ -96,14 +100,15 @@ TAGS: %TAGSDIRS% $(TAGS_DEPENDENCIES) $(am__tagged_files)
 CTAGS = ctags
 .PHONY: CTAGS ctags
 if %?SUBDIRS%
-AM_RECURSIVE_TARGETS += ctags CTAGS
-endif %?SUBDIRS%
-ctags: CTAGS
+AM_RECURSIVE_TARGETS += CTAGS
+RECURSIVE_TARGETS += ctags-recursive
+ctags: ctags-recursive
+else !%?SUBDIRS%
+ctags: ctags-am
+endif !%?SUBDIRS%
 
-## We have a dummy name here because 'tags' has already been in use
-## for a long time to mean Emacs-style tags.  Oops.  This means the
-## dependencies here are useless.
-CTAGS: %CTAGSDIRS% $(TAGS_DEPENDENCIES) $(am__tagged_files)
+CTAGS: ctags
+ctags-am: $(TAGS_DEPENDENCIES) $(am__tagged_files)
 ## Make sure the list of sources is unique.
 	list='$(am__tagged_files)'; \
 	unique=`for i in $$list; do \
@@ -134,24 +139,25 @@ GTAGS:
 ## ------- ##
 
 if %?TOPDIR_P%
-
 CSCOPE = cscope
 .PHONY: cscope clean-cscope
 AM_RECURSIVE_TARGETS += cscope
-
 cscope: cscope.files
 	test ! -s cscope.files \
 	  || $(CSCOPE) -b -q $(AM_CSCOPEFLAGS) $(CSCOPEFLAGS) -i cscope.files $(CSCOPE_ARGS)
-
 clean-cscope:
 	-rm -f cscope.files
-
-cscope.files: clean-cscope %CSCOPEDIRS% cscopelist
-
+cscope.files: clean-cscope cscopelist
 endif %?TOPDIR_P%
 
-.PHONY: cscopelist
-cscopelist: %CSCOPEDIRS% $(am__tagged_files)
+if %?SUBDIRS%
+RECURSIVE_TARGETS += cscopelist-recursive
+cscopelist: cscopelist-recursive
+else !%?SUBDIRS%
+cscopelist: cscopelist-am
+endif !%?SUBDIRS%
+
+cscopelist-am: $(am__tagged_files)
 	list='$(am__tagged_files)'; \
 	case "$(srcdir)" in \
 	  [\\/]* | ?:[\\/]*) sdir="$(srcdir)" ;; \

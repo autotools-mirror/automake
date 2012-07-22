@@ -464,9 +464,11 @@ my %required_targets =
    'install-ps-am'   => 1,
    'install-info-am' => 1,
    'installcheck-am' => 1,
-   'uninstall-am' => 1,
-
-   'install-man' => 1,
+   'uninstall-am'    => 1,
+   'tags-am'         => 1,
+   'ctags-am'        => 1,
+   'cscopelist-am'   => 1,
+   'install-man'     => 1,
   );
 
 # Queue to push require_conf_file requirements to.
@@ -3613,71 +3615,26 @@ sub handle_tags
                      '$(HEADERS) $(SOURCES) $(TAGS_FILES) $(LISP)'
                      . "@config", INTERNAL);
 
-    my @tag_deps = ();
-    my @ctag_deps = ();
-    my @cscope_deps = ();
-    if (var ('SUBDIRS'))
-    {
-	$output_rules .= ("tags-recursive:\n"
-			  . "\tlist='\$(SUBDIRS)'; for subdir in \$\$list; do \\\n"
-			  # Never fail here if a subdir fails; it
-			  # isn't important.
-			  . "\t  test \"\$\$subdir\" = . || (\$(am__cd) \$\$subdir"
-			  . " && \$(MAKE) \$(AM_MAKEFLAGS) tags); \\\n"
-			  . "\tdone\n");
-	push (@tag_deps, 'tags-recursive');
-	&depend ('.PHONY', 'tags-recursive');
-	&depend ('.MAKE', 'tags-recursive');
-
-	$output_rules .= ("ctags-recursive:\n"
-			  . "\tlist='\$(SUBDIRS)'; for subdir in \$\$list; do \\\n"
-			  # Never fail here if a subdir fails; it
-			  # isn't important.
-			  . "\t  test \"\$\$subdir\" = . || (\$(am__cd) \$\$subdir"
-			  . " && \$(MAKE) \$(AM_MAKEFLAGS) ctags); \\\n"
-			  . "\tdone\n");
-	push (@ctag_deps, 'ctags-recursive');
-	&depend ('.PHONY', 'ctags-recursive');
-	&depend ('.MAKE', 'ctags-recursive');
-
-	$output_rules .= ("cscopelist-recursive:\n"
-			  . "\tlist='\$(SUBDIRS)'; for subdir in \$\$list; do \\\n"
-			  # Never fail here if a subdir fails; it
-			  # isn't important.
-			  . "\t  test \"\$\$subdir\" = . || (\$(am__cd) \$\$subdir"
-			  . " && \$(MAKE) \$(AM_MAKEFLAGS) cscopelist); \\\n"
-			  . "\tdone\n");
-	push (@cscope_deps, 'cscopelist-recursive');
-	&depend ('.PHONY', 'cscopelist-recursive');
-	&depend ('.MAKE', 'cscopelist-recursive');
-    }
-
     if (rvar('am__tagged_files')->value_as_list_recursive
-          || var ('ETAGS_ARGS') || @tag_deps)
-    {
-	$output_rules .= &file_contents ('tags',
-					 new Automake::Location,
-					 TAGSDIRS  => "@tag_deps",
-					 CTAGSDIRS => "@ctag_deps",
-					 CSCOPEDIRS => "@cscope_deps");
-
+          || var ('ETAGS_ARGS') || var ('SUBDIRS'))
+      {
+	$output_rules .= &file_contents ('tags', new Automake::Location);
 	set_seen 'TAGS_DEPENDENCIES';
-    }
-    elsif (reject_var ('TAGS_DEPENDENCIES',
-		       "it doesn't make sense to define 'TAGS_DEPENDENCIES'"
-		       . " without\nsources or 'ETAGS_ARGS'"))
-    {
-    }
+      }
     else
-    {
+      {
+        reject_var ('TAGS_DEPENDENCIES',
+		    "it doesn't make sense to define 'TAGS_DEPENDENCIES'"
+		    . " without\nsources or 'ETAGS_ARGS'");
 	# Every Makefile must define some sort of TAGS rule.
 	# Otherwise, it would be possible for a top-level "make TAGS"
-	# to fail because some subdirectory failed.
-	$output_rules .= "tags: TAGS\nTAGS:\n\n";
-	# Ditto ctags and cscope.
-	$output_rules .= "ctags: CTAGS\nCTAGS:\n\n";
-	$output_rules .= "cscope cscopelist:\n\n";
-    }
+	# to fail because some subdirectory failed.  Ditto ctags and
+        # cscope.
+        $output_rules .=
+          "tags TAGS:\n\n" .
+          "ctags CTAGS:\n\n" .
+          "cscope cscopelist:\n\n";
+      }
 }
 
 
