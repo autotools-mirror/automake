@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Check user extensibility of silent-rules mode.
-# Aslo check that silent rules are disabled by default.
+# Also check that silent rules are disabled by default.
 
 . ./defs || exit 1
 
