@@ -39,7 +39,7 @@ mkdir subdir auxdir
 $ACLOCAL
 $AUTOMAKE
 
-grep '^am__config_aux_dir = \$(top_srcdir)/auxdir$' Makefile.in
-grep '^am__config_aux_dir = \$(top_srcdir)/auxdir$' subdir/Makefile.in
+grep '^am\.conf\.aux-dir = \$(top_srcdir)/auxdir$' Makefile.in
+grep '^am\.conf\.aux-dir = \$(top_srcdir)/auxdir$' subdir/Makefile.in
 
 :

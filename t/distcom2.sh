@@ -57,11 +57,11 @@ for opt in '' --no-force; do
   cat dc.txt # For debugging.
   cat subdir/dc.txt # Likewise.
 
-  $FGREP ' $(am__config_aux_dir)/depcomp ' subdir/dc.txt
+  $FGREP ' $(am.conf.aux-dir)/depcomp ' subdir/dc.txt
   # The 'compile' script will be listed in the am.dist.common-files of
   # the top-level Makefile because it's required in configure.ac
   # (by AM_PROG_CC_C_O).
-  $FGREP ' $(am__config_aux_dir)/compile ' dc.txt \
+  $FGREP ' $(am.conf.aux-dir)/compile ' dc.txt \
     || $FGREP ' compile ' dc.txt
 
 done

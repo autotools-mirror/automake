@@ -33,6 +33,6 @@ END
 $ACLOCAL
 $AUTOMAKE ././Makefile
 
-grep '^am__config_aux_dir = \$(top_srcdir)/\./\.$' Makefile.in
+grep '^am\.conf\.aux-dir = \$(top_srcdir)/\./\.$' Makefile.in
 
 :
