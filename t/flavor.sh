@@ -43,7 +43,7 @@ for flavor in --gnits --gnu --foreign --ignore-deps; do
   $MAKE
 
   # Two code paths in configure.am:
-  # - either a file in $(am__configure_deps) has been updated ...
+  # - either a file in $(am.remake.configure-deps) has been updated ...
   $sleep
   touch aclocal.m4
   $MAKE

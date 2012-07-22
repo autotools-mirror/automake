@@ -46,7 +46,7 @@ $FGREP "$magic1" mkfile.in && exit 1 # Sanity check.
 
 # Two code paths in configure.am:
 
-# - either a file in $(am__configure_deps) has been updated ...
+# - either a file in $(am.remake.configure-deps) has been updated ...
 $sleep
 echo "AC_SUBST([FOO])" >> configure.ac
 $MAKE
