@@ -37,7 +37,6 @@ t/dist-pr109765.sh \
 t/instdir-cond2.sh \
 t/java-nobase.sh \
 t/objext-pr10128.sh \
-t/parallel-tests-many.sh \
 t/pr8365-remake-timing.sh \
 t/lex-subobj-nodep.sh \
 t/remake-am-pr10111.sh \
@@ -770,7 +769,6 @@ t/parallel-tests-exit-statuses.sh \
 t/parallel-tests-console-output.sh \
 t/parallel-tests-once.sh \
 t/parallel-tests-trailing-bslash.sh \
-t/parallel-tests-many.sh \
 t/tests-environment.sh \
 t/am-tests-environment.sh \
 t/tests-environment-backcompat.sh \
