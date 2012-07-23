@@ -34,7 +34,14 @@ run_cmd ()
 run_cmd ./missing b7cb8259 --version && exit 1
 grep WARNING stderr && exit 1
 run_cmd ./missing b7cb8259 --grep && exit 1
-grep 'WARNING:.*missing on your system' stderr
+
+if test x"$am_test_prefer_config_shell" != x"yes"; then
+  # The /bin/sh from Solaris 10 is a spectacular failure.  After a failure
+  # due to a "command not found", it sets '$?' to '1'.
+  if (st=0; /bin/sh -c 'no--such--command' || st=$?; test $st -eq 127); then
+    grep 'WARNING:.*missing on your system' stderr
+  fi
+fi
 
 # missing itself it known to exist :)
 
