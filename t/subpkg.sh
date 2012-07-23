@@ -107,7 +107,8 @@ cd ..
 
 ./configure >stdout || { cat stdout; exit 1; }
 cat stdout
-grep '^checking whether cc understands -c and -o together' stdout
+# Don't pretend to know the name or path of the C compiler.
+grep '^checking whether .* understands -c and -o together' stdout
 
 $MAKE
 $MAKE distcheck
