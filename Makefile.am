@@ -350,7 +350,6 @@ XFAIL_TESTS = \
   t/interp3.sh \
   t/java-nobase.sh \
   t/objext-pr10128.sh \
-  t/parallel-tests-many.sh \
   t/pr8365-remake-timing.sh \
   t/remake-am-pr10111.sh \
   t/remake-m4-pr10111.sh \

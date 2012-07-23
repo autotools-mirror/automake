@@ -115,6 +115,7 @@ $(call am.util.strip-suffixes, $(TEST_EXTENSIONS), \
 
 am__recheck_rx = ^[ 	]*:recheck:[ 	]*
 am__global_test_result_rx = ^[ 	]*:global-test-result:[ 	]*
+am__test_result_rx = ^[ 	]*:test-result:[ 	]*
 am__copy_in_global_log_rx = ^[ 	]*:copy-in-global-log:[ 	]*
 
 # A command that, given a newline-separated list of test names on the
@@ -164,6 +165,64 @@ am__list_recheck_tests = $(AWK) '{ \
 ## problems when there are many tests (yes, even on Linux).
   close ($$0 ".trs"); \
   close ($$0 ".log"); \
+}'
+
+# A command that, given a newline-separated list of test names on the
+# standard input, output a shell code snippet setting variables that
+# count occurrences of each test result (PASS, FAIL, etc) declared in
+# the '.trs' files of that given tests.  For example, the count of
+# PASSes will be saved in the '$am_PASS' variable, the count of SKIPs
+# in the '$am_SKIP' variable, and so on.
+am__count_test_results = $(AWK) ' \
+## Don't leak open file descriptors, as this could cause serious
+## problems when there are many tests (yes, even on Linux).
+function close_current() \
+{ \
+  close ($$0 ".trs"); \
+  close ($$0 ".log"); \
+} \
+function error(msg) \
+{ \
+  print msg | "cat >&2"; \
+  exit_status = 1; \
+} \
+function input_error(file) \
+{ \
+  error("awk" ": cannot read \"" file "\""); \
+  close_current(); \
+} \
+BEGIN { exit_status = 0; } \
+{ \
+  while ((rc = (getline line < ($$0 ".trs"))) != 0) \
+    { \
+      if (rc < 0) \
+        { \
+          input_error($$0 ".trs"); \
+          next; \
+        } \
+      if (line ~ /$(am__test_result_rx)/) \
+        { \
+          sub("$(am__test_result_rx)", "", line); \
+          sub("[: 	].*$$", "", line); \
+          counts[line]++;\
+        } \
+    }; \
+  close_current(); \
+} \
+END { \
+  if (exit_status != 0) \
+    error("fatal: making $@: I/O error reading test results"); \
+  else \
+    { \
+      global_count = 0; \
+      for (k in counts) \
+        { \
+          print "am_" k "=" counts[k]; \
+          global_count += counts[k]; \
+        } \
+     } \
+  print "am_ALL=" global_count; \
+  exit(exit_status); \
 }'
 
 # A command that, given a newline-separated list of test names on the
@@ -243,8 +302,8 @@ END { \
 am__rst_title = { sed 's/.*/   &   /;h;s/./=/g;p;x;s/ *$$//;p;g' && echo; }
 
 # This supports runtime overriding of $(TESTS) and $(XFAIL_TESTS).
-am__test_bases = \
-  $(call am__memoize,am__test_bases,$(call am__get_test_bases,$(TESTS)))
+!am__test_bases ?= \
+!  $(call am__memoize,am__test_bases,$(call am__get_test_bases,$(TESTS)))
 am__xfail_test_bases = \
   $(call am__memoize,am__xfail_test_bases,$(call am__get_test_bases,$(XFAIL_TESTS)))
 
@@ -261,38 +320,40 @@ am__mostlyclean_files += $(am__test_results) $(am__test_logs)
 # $(TEST_LOGS) is a published interface.
 TEST_LOGS = $(am__test_logs)
 
+am.test-harness.workdir = $(am__dir)/test-harness
+
+am.test-harness.append-to-list-of-bases = \
+  @lst='$1'; for x in $$lst; do echo $$x; done \
+    >> $(am.test-harness.workdir)/bases$(am__newline)
+
+!define am.setup-test-harness-workdir
+!	@rm -rf $(am.test-harness.workdir)
+!	@$(MKDIR_P) $(am.test-harness.workdir)
+!	@touch $(am.test-harness.workdir)/bases
+!	$(call am.xargs-map,am.test-harness.append-to-list-of-bases, \
+!	       $(am__test_bases))
+!	@workdir='$(am.test-harness.workdir)' \
+!	  && sed 's/$$/.log/' $$workdir/bases > $$workdir/logs \
+!	  && sed 's/$$/.trs/' $$workdir/bases > $$workdir/trs
+!endef
+
 $(TEST_SUITE_LOG): $(am__test_logs) $(am__test_results)
+	$(am.setup-test-harness-workdir)
 	@$(am__sh_e_setup); $(am__tty_colors); \
 	fatal () { echo "fatal: making $@: $$*" >&2; exit 1; }; \
-## Detect a possible circular dependency, and error out.
-	case ' $(strip $(am__test_logs)) ' in *' $(TEST_SUITE_LOG) '*) \
-	  fatal "depends on itself (check TESTS content)";; \
-	esac; \
-	ws='[ 	]'; \
-	count_result () \
-	{ \
-	  r='$(strip $(am__test_results))'; \
-	  r=`grep "^$$ws*:test-result:$$ws*$${1-}" $$r </dev/null`; \
-## Catch I/O errors, and complain accordingly.
-	  test $$? -le 1 || fatal "I/O error reading test results"; \
-	  case $$r in \
-	    "") echo 0;; \
-	    * ) printf '%s\n' "$$r" | wc -l;; \
-	  esac; \
-	}; \
+	workdir='$(am.test-harness.workdir)'; \
+## Detect a possible circular dependency, and error out if it's found.
+	grep '^$(TEST_SUITE_LOG:.log=)$$' $$workdir/bases \
+	  && fatal "depends on itself (check TESTS content)"; \
 ## Prepare data for the test suite summary.  These do not take into account
 ## unreadable test results, but they'll be appropriately updated later if
 ## needed.
-	all=`count_result` \
-	  && pass=` count_result PASS` \
-	  && fail=` count_result FAIL` \
-	  && skip=` count_result SKIP` \
-	  && xfail=`count_result XFAIL` \
-	  && xpass=`count_result XPASS` \
-	  && error=`count_result ERROR` \
-	  || exit 1; \
+	am_PASS=0 am_FAIL=0 am_SKIP=0 am_XPASS=0 am_XFAIL=0 am_ERROR=0; \
+	count_test_results_command=`$(am__count_test_results) <$$workdir/bases` \
+	  && eval "$$count_test_results_command" \
+          || fatal "unknown error reading test results"; \
 ## Whether the testsuite was successful or not.
-	if test `expr $$fail + $$xpass + $$error` -eq 0; then \
+	if test `expr $$am_FAIL + $$am_XPASS + $$am_ERROR` -eq 0; then \
 	  success=true; \
 	else \
 	  success=false; \
@@ -328,13 +389,13 @@ $(TEST_SUITE_LOG): $(am__test_logs) $(am__test_results)
 	create_testsuite_report () \
 	{ \
 	  opts=$$*; \
-	  display_result_count $$opts "TOTAL:" $$all   "$$brg"; \
-	  display_result_count $$opts "PASS: " $$pass  "$$grn"; \
-	  display_result_count $$opts "SKIP: " $$skip  "$$blu"; \
-	  display_result_count $$opts "XFAIL:" $$xfail "$$lgn"; \
-	  display_result_count $$opts "FAIL: " $$fail  "$$red"; \
-	  display_result_count $$opts "XPASS:" $$xpass "$$red"; \
-	  display_result_count $$opts "ERROR:" $$error "$$mgn"; \
+	  display_result_count $$opts "TOTAL:" $$am_ALL   "$$brg"; \
+	  display_result_count $$opts "PASS: " $$am_PASS  "$$grn"; \
+	  display_result_count $$opts "SKIP: " $$am_SKIP  "$$blu"; \
+	  display_result_count $$opts "XFAIL:" $$am_XFAIL "$$lgn"; \
+	  display_result_count $$opts "FAIL: " $$am_FAIL  "$$red"; \
+	  display_result_count $$opts "XPASS:" $$am_XPASS "$$red"; \
+	  display_result_count $$opts "ERROR:" $$am_ERROR "$$mgn"; \
 	}; \
 ## Write "global" testsuite log.
 	if {								\
@@ -345,9 +406,7 @@ $(TEST_SUITE_LOG): $(am__test_logs) $(am__test_results)
 	  echo;								\
 	  echo ".. contents:: :depth: 2";				\
 	  echo;								\
-	  bases='$(am__test_bases)';					\
-	  for b in $$bases; do echo $$b; done				\
-	    | $(am__create_global_log);					\
+	  $(am__create_global_log) <$$workdir/bases;			\
 	} >$(TEST_SUITE_LOG).tmp; then					\
 	  mv -f $(TEST_SUITE_LOG).tmp $(TEST_SUITE_LOG);		\
 	else								\
@@ -386,9 +445,7 @@ am__mostlyclean_files += $(TEST_SUITE_LOG)
 ## ------------------------------------------ ##
 
 am__remove_if_not_lazy_check = \
-## Expand the given list only once, to avoid exceeding line length limits.
-  $(if $(filter yes,$(AM_LAZY_CHECK)),, \
-       list='$(strip $(1))'; test -z "$$list" || rm -f $$list)
+  $(if $(filter yes,$(AM_LAZY_CHECK)),,$(call .am.clean-cmd.f,$1))
 
 check-TESTS:
 	@$(call am__remove_if_not_lazy_check,$(am__test_results))
@@ -407,17 +464,20 @@ check-TESTS:
 ## Recheck must depend on $(check_SCRIPTS), $(check_PROGRAMS), etc.
 ## It must also depend on the 'all' target.  See automake bug#11252.
 recheck: all %CHECK_DEPS%
+	+$(am.setup-test-harness-workdir)
 ## See comments above in the check-TESTS recipe for why remove
 ## $(TEST_SUITE_LOG) here.
 	@test -z "$(TEST_SUITE_LOG)" || rm -f $(TEST_SUITE_LOG)
-	@bases='$(am__test_bases)'; \
 ## If running a "make recheck", we must only consider tests that had an
 ## unexpected outcome (FAIL or XPASS) in the earlier run.
-	bases=`for i in $$bases; do echo $$i; done \
-	         | $(am__list_recheck_tests)` || exit 1; \
+	@bases=`$(am__list_recheck_tests) \
+	          <$(am.test-harness.workdir)/bases` || exit 1; \
 ## Remove newlines and normalize whitespace.
 	bases=`echo $$bases`; \
-	$(MAKE) $(TEST_SUITE_LOG) .am/doing-recheck=yes am__test_bases="$$bases"
+## Re-run the relevant tests, without hitting command-line length limits.
+	echo am__test_bases="$$bases" | \
+	  $(MAKE) -f- -f$(firstword $(MAKEFILE_LIST)) \
+	          $(TEST_SUITE_LOG) .am/doing-recheck=yes
 .PHONY: recheck
 
 ## One tricky requirement of the "recheck" target is that, in case (say)
