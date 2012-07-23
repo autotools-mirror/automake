@@ -31,7 +31,7 @@ run_cmd ()
   return $st
 }
 
-./missing b7cb8259 --version && exit 1
+run_cmd ./missing b7cb8259 --version && exit 1
 grep WARNING stderr && exit 1
 run_cmd ./missing b7cb8259 --grep && exit 1
 grep 'WARNING:.*missing on your system' stderr
