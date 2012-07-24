@@ -130,7 +130,7 @@ for vpath in false :; do
   cat stdout
   test_no_color
 
-  AM_COLOR_TESTS=no MAKE=$MAKE expect -f $srcdir/expect-make >stdout \
+  MAKE="$MAKE AM_COLOR_TESTS=no" expect -f $srcdir/expect-make >stdout \
     || { cat stdout; exit 1; }
   cat stdout
   test_no_color
@@ -142,7 +142,7 @@ for vpath in false :; do
   cat stdout
   test_no_color
 
-  TERM=ansi MAKE="env AM_COLOR_TESTS=always $MAKE" \
+  TERM=ansi MAKE="$MAKE AM_COLOR_TESTS=always" \
     expect -f $srcdir/expect-make >stdout || { cat stdout; exit 1; }
   cat stdout
   test_color
