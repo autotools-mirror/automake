@@ -36,7 +36,9 @@ rm -f expect-check
 
 cat > Makefile.am << 'END'
 TESTS = all.test
+AM_COLOR_TESTS= no
 END
+
 . "$am_testauxdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"
 
 cat > all.test <<'END'

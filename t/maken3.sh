@@ -20,7 +20,7 @@
 #  2. the output from make is sufficiently complete.
 #
 # This test exercises the GCS-mandated targets (except for dist)
-# as well as tags, TAGS.
+# as well as tags.
 
 # For gen-testsuite-part: ==> try-with-serial-tests <==
 . ./defs || exit 1
@@ -94,8 +94,6 @@ installcheck-local:
 	@: > stamp-installcheck-sub
 tags:
 	@: > stamp-tags-sub
-TAGS:
-	@: > stamp-TAGS-sub
 mostlyclean-local:
 	@: > stamp-mostlyclean-sub
 maintainer-clean-local:
@@ -110,7 +108,7 @@ html:
 	@: > sub2-$@-should-not-be-executed
 install-info install-html install-dvi install-pdf install-ps:
 	@: > sub2-$@-should-not-be-executed
-installcheck installdirs tags TAGS mostlyclean:
+installcheck installdirs tags mostlyclean:
 	@: > sub2-$@-should-not-be-executed
 ## These targets cannot be overridden like this:
 ## install-strip distclean maintainer-clean
@@ -125,12 +123,12 @@ check_targets ()
     all install install-strip uninstall clean distclean check \
     info html dvi pdf ps \
     install-info install-html install-dvi install-pdf install-ps \
-    installcheck installdirs tags TAGS mostlyclean maintainer-clean
+    installcheck installdirs tags mostlyclean maintainer-clean
   do
     $MAKE -n $target >stdout || { cat stdout; exit 1; }
     cat stdout
     case $target in
-    install-* | installdirs | tags | TAGS ) ;;
+    install-* | installdirs | tags ) ;;
     *)
       grep "stamp-$target$" stdout || exit 1
       test ! -e "stamp-$target" || exit 1

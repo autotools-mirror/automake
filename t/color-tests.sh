@@ -14,8 +14,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Test Automake TESTS color output, using the expect(1) program.
-# Keep this in sync with the sister test 'color.test'.
+# Test Automake TESTS color output, by forcing it.
+# Keep this in sync with the sister test 'color2.test'.
 
 required='grep-nonprint'
 # For gen-testsuite-part: ==> try-with-serial-tests <==
@@ -29,18 +29,11 @@ blu="$esc\[1;34m"
 mgn="$esc\[0;35m"
 std="$esc\[m"
 
-# This test requires a working a working 'expect' program.
-(set +e; expect -c 'exit 77'; test $? -eq 77) \
-  || skip_ "requires a working expect program"
-
-# Do the tests.
-
 cat >>configure.ac <<END
 AC_OUTPUT
 END
 
 cat >Makefile.am <<'END'
-AUTOMAKE_OPTIONS = color-tests
 TESTS = $(check_SCRIPTS)
 check_SCRIPTS = pass fail skip xpass xfail error
 XFAIL_TESTS = xpass xfail
@@ -101,11 +94,6 @@ test_no_color ()
   :
 }
 
-cat >expect-make <<'END'
-eval spawn $env(MAKE) check
-expect eof
-END
-
 for vpath in false :; do
 
   if $vpath; then
@@ -118,18 +106,14 @@ for vpath in false :; do
 
   $srcdir/configure
 
-  TERM=ansi MAKE=$MAKE expect -f $srcdir/expect-make >stdout \
-    || { cat stdout; exit 1; }
+  # Forced colorization should take place also with non-ANSI terminals;
+  # hence the "TERM=dumb" definition.
+  $MAKE check AM_COLOR_TESTS=always TERM=dumb >stdout \
+    && { cat stdout; exit 1; }
   cat stdout
   test_color
 
-  TERM=dumb MAKE=$MAKE expect -f $srcdir/expect-make >stdout \
-    || { cat stdout; exit 1; }
-  cat stdout
-  test_no_color
-
-  AM_COLOR_TESTS=no MAKE=$MAKE expect -f $srcdir/expect-make >stdout \
-    || { cat stdout; exit 1; }
+  $MAKE check TERM=ansi >stdout && { cat stdout; exit 1; }
   cat stdout
   test_no_color
 
