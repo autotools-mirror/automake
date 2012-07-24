@@ -52,7 +52,7 @@ tcount=0
 
 T "basic usage" <<'END'
 
-foo = $(call am__memoize,foo,ok)
+foo = $(call am.memoize,foo,ok)
 
 test:
 	test '$(foo)' = ok
@@ -63,7 +63,7 @@ END
 
 T "variables expanding to blanks only (1)" <<'END'
 
-foo = $(call am__memoize,foo,$(am.chars.empty) )
+foo = $(call am.memoize,foo,$(am.chars.empty) )
 
 test:
 	test '$(foo)' = ' '
@@ -75,7 +75,7 @@ END
 T "variables expanding to blanks only (2)" <<END
 
 blank = \$(am.chars.empty) $tab$tab   \$(am.chars.empty)
-foo = \$(call am__memoize,foo,\$(blank))
+foo = \$(call am.memoize,foo,\$(blank))
 
 test:
 	test '\$(foo)' = ' $tab$tab   '
@@ -98,7 +98,7 @@ set -x # Re-enable shell traces.
 
 T "very long variable name" <<END
 
-$var = \$(call am__memoize,$var,foo)
+$var = \$(call am.memoize,$var,foo)
 
 test:
 	# Why we silence this?
@@ -122,7 +122,7 @@ set -x # Re-enable shell traces.
 
 T "very long variable name with long content" <<END
 
-$var = \$(call am__memoize,$var,$val)
+$var = \$(call am.memoize,$var,$val)
 
 test:
 	# Why we silence this?
@@ -135,7 +135,7 @@ END
 
 T "memoize indirect recursive variable expansion" <<'END'
 
-foo = $(call am__memoize,foo,$(indir))
+foo = $(call am.memoize,foo,$(indir))
 
 ## This is delibrately placed after the memoize call.
 indir = zardoz
@@ -149,7 +149,7 @@ END
 
 T "memoize indirect immediate variable expansion" <<'END'
 
-foo = $(call am__memoize,foo,$(indir))
+foo = $(call am.memoize,foo,$(indir))
 
 ## This is delibrately placed after the memoize call.
 indir := blob
@@ -164,7 +164,7 @@ END
 T "memoize function call (containing builtin calls)" <<'END'
 
 my_func = $(firstword $(sort $(1)))
-foo = $(call am__memoize,foo,$(call my_func, 6 3 1 7))
+foo = $(call am.memoize,foo,$(call my_func, 6 3 1 7))
 
 test:
 	test '$(foo)' = 1
@@ -175,7 +175,7 @@ END
 
 T "expanded as function argument" <<'END'
 
-foo = $(call am__memoize,foo,bar)
+foo = $(call am.memoize,foo,bar)
 func = ::$(0)::$(1)::
 
 test:
@@ -189,7 +189,7 @@ END
 
 T "expanded as function argument (trickier)" <<'END'
 
-foo = $(call am__memoize,foo,zardoz)
+foo = $(call am.memoize,foo,zardoz)
 indir_func = ::$($1)::
 
 test:
@@ -203,9 +203,9 @@ END
 
 T "expanded into another memoized variable" <<'END'
 
-foo = $(call am__memoize,foo,one $(bar))
-bar = $(call am__memoize,bar,two $(baz))
-baz = $(call am__memoize,baz,$(sort 4 3))
+foo = $(call am.memoize,foo,one $(bar))
+bar = $(call am.memoize,bar,two $(baz))
+baz = $(call am.memoize,baz,$(sort 4 3))
 
 test:
 	test '$(foo)' = 'one two 3 4'
@@ -217,7 +217,7 @@ END
 T "memoization actually takes place (1)" <<'END'
 
 indir := ok
-foo = $(call am__memoize,foo,$(indir))
+foo = $(call am.memoize,foo,$(indir))
 expand-it := $(foo)
 override indir := ko
 
@@ -232,7 +232,7 @@ T "memoization actually takes place (2)" <<'END'
 
 indir := ok
 expand = $(eval expanded-to := $$($1))
-foo = $(call am__memoize,foo,$(indir))
+foo = $(call am.memoize,foo,$(indir))
 $(call expand,foo)
 override indir := ko
 
@@ -246,8 +246,8 @@ END
 
 T "memoization actually takes place (3)" <<'END'
 
-foo1 = $(call am__memoize,foo1,$(shell test -f x && echo "+"))
-foo2 = $(call am__memoize,foo2,$(shell test -f y || echo "-"))
+foo1 = $(call am.memoize,foo1,$(shell test -f x && echo "+"))
+foo2 = $(call am.memoize,foo2,$(shell test -f y || echo "-"))
 
 test: one two
 two: one
@@ -275,7 +275,7 @@ END
 
 T "definition on multiple lines" <<'END'
 
-foo = $(call am__memoize,foo,a \
+foo = $(call am.memoize,foo,a \
   b \
   c \
   \
@@ -298,7 +298,7 @@ T "known GNU make issue (https://savannah.gnu.org/patch/?7534)" <<'END'
 setup := $(shell mkdir -p t/pm && : > t/pm/Cond2.pl)
 
 TESTS = $(wildcard t/pm/Cond2.pl)
-am__test_bases = $(call am__memoize,am__test_bases,$(TESTS))
+am__test_bases = $(call am.memoize,am__test_bases,$(TESTS))
 
 test:
 	test '$(am__test_bases)' = 't/pm/Cond2.pl'
@@ -320,7 +320,7 @@ for i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20; do
   mv -f t1 t
 done
 
-echo "list = \$(call am__memoize,list,$line \\" >> big.mk
+echo "list = \$(call am.memoize,list,$line \\" >> big.mk
 cat t >> big.mk
 echo "  $line)" >> big.mk
 
