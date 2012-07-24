@@ -47,12 +47,12 @@ sed 's/^[0-9][0-9]*:://' > Makefile << 'END'
 args32 := $(args16) $(args16)
 args64 := $(args32) $(args32)
 
-bar = test '$1' = '$(args4)'$(am__newline)
+bar = test '$1' = '$(args4)'$(am.chars.newline)
 test-xargs-map:
 	$(call am.xargs-map,bar,$(args16))
 
 args = $(error 'args' should be overridden from the command line)
-foo = @echo $1$(am__newline)
+foo = @echo $1$(am.chars.newline)
 echo-xargs-map:
 	$(call am.xargs-map,foo,$(args))
 END
