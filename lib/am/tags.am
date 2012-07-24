@@ -14,6 +14,15 @@
 ## You should have received a copy of the GNU General Public License
 ## along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+# Read a list of newline-separated strings from the standard input,
+# and print each of them once, without duplicates.  Input order is
+# *not* preserved.
+am__uniquify_input = $(AWK) '\
+  BEGIN { nonempty = 0; } \
+  { items[$$0] = 1; nonempty = 1; } \
+  END { if (nonempty) { for (i in items) print i; }; } \
+'
+
 ## ---- ##
 ## ID.  ##
 ## ---- ##
@@ -24,9 +33,7 @@ ID: $(am__tagged_files)
 	unique=`for i in $$list; do \
 ## Handle VPATH correctly.
 	    if test -f "$$i"; then echo $$i; else echo $(srcdir)/$$i; fi; \
-	  done | \
-	  $(AWK) '{ files[$$0] = 1; nonempty = 1; } \
-	      END { if (nonempty) { for (i in files) print i; }; }'`; \
+	  done | $(am__uniquify_input)`;
 	mkid -fID $$unique
 
 
@@ -75,9 +82,7 @@ tags-am: $(TAGS_DEPENDENCIES) $(am__tagged_files)
 	unique=`for i in $$list; do \
 ## Handle VPATH correctly.
 	    if test -f "$$i"; then echo $$i; else echo $(srcdir)/$$i; fi; \
-	  done | \
-	  $(AWK) '{ files[$$0] = 1; nonempty = 1; } \
-	      END { if (nonempty) { for (i in files) print i; }; }'`; \
+	  done | $(am__uniquify_input)`; \
 ## Remove the 'x' we added first:
 	shift; \
 ## Make sure we have something to run etags on.
@@ -114,9 +119,7 @@ ctags-am: $(TAGS_DEPENDENCIES) $(am__tagged_files)
 	unique=`for i in $$list; do \
 ## Handle VPATH correctly.
 	    if test -f "$$i"; then echo $$i; else echo $(srcdir)/$$i; fi; \
-	  done | \
-	  $(AWK) '{ files[$$0] = 1; nonempty = 1; } \
-	      END { if (nonempty) { for (i in files) print i; }; }'`; \
+	  done | $(am__uniquify_input)`; \
 ## Make sure we have something to run ctags on.
 	test -z "$(CTAGS_ARGS)$$unique" \
 	  || $(CTAGS) $(CTAGSFLAGS) $(AM_CTAGSFLAGS) $(CTAGS_ARGS) \
