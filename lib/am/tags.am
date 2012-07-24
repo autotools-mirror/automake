@@ -23,18 +23,22 @@ am__uniquify_input = $(AWK) '\
   END { if (nonempty) { for (i in items) print i; }; } \
 '
 
+# Make sure the list of sources is unique.  This is necessary because,
+# e.g., the same source file might be shared among _SOURCES variables
+# for different programs/libraries.
+am__define_uniq_tagged_files = \
+  list='$(am__tagged_files)'; \
+  unique=`for i in $$list; do \
+## Handle VPATH correctly.
+    if test -f "$$i"; then echo $$i; else echo $(srcdir)/$$i; fi; \
+  done | $(am__uniquify_input)`
+
 ## ---- ##
 ## ID.  ##
 ## ---- ##
 
 ID: $(am__tagged_files)
-## Make sure the list of sources is unique.
-	list='$(am__tagged_files)'; \
-	unique=`for i in $$list; do \
-## Handle VPATH correctly.
-	    if test -f "$$i"; then echo $$i; else echo $(srcdir)/$$i; fi; \
-	  done | $(am__uniquify_input)`;
-	mkid -fID $$unique
+	$(am__define_uniq_tagged_files); mkid -fID $$unique
 
 
 ## ------ ##
@@ -77,12 +81,7 @@ tags-am: $(TAGS_DEPENDENCIES) $(am__tagged_files)
 ?SUBDIRS?	      set "$$@" "$$include_option=$$here/$$subdir/TAGS"; \
 ?SUBDIRS?	  fi; \
 ?SUBDIRS?	done; \
-## Make sure the list of sources is unique.
-	list='$(am__tagged_files)'; \
-	unique=`for i in $$list; do \
-## Handle VPATH correctly.
-	    if test -f "$$i"; then echo $$i; else echo $(srcdir)/$$i; fi; \
-	  done | $(am__uniquify_input)`; \
+	$(am__define_uniq_tagged_files); \
 ## Remove the 'x' we added first:
 	shift; \
 ## Make sure we have something to run etags on.
@@ -114,12 +113,7 @@ endif !%?SUBDIRS%
 
 CTAGS: ctags
 ctags-am: $(TAGS_DEPENDENCIES) $(am__tagged_files)
-## Make sure the list of sources is unique.
-	list='$(am__tagged_files)'; \
-	unique=`for i in $$list; do \
-## Handle VPATH correctly.
-	    if test -f "$$i"; then echo $$i; else echo $(srcdir)/$$i; fi; \
-	  done | $(am__uniquify_input)`; \
+	$(am__define_uniq_tagged_files); \
 ## Make sure we have something to run ctags on.
 	test -z "$(CTAGS_ARGS)$$unique" \
 	  || $(CTAGS) $(CTAGSFLAGS) $(AM_CTAGSFLAGS) $(CTAGS_ARGS) \
