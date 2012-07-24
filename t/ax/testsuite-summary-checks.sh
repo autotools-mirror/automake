@@ -28,10 +28,8 @@ case $use_colors in
     # Forced colorization should take place also with non-ANSI
     # terminals; hence this setting.
     TERM=dumb; export TERM
-    am_opts='color-tests'
     ;;
   no)
-    am_opts=''
     ;;
   *)
     fatal_ "invalid use_colors='$use_colors'";;
@@ -39,7 +37,7 @@ esac
 
 cat > configure.ac <<END
 AC_INIT([GNU AutoFoo], [7.1], [bug-automake@gnu.org])
-AM_INIT_AUTOMAKE([$am_opts])
+AM_INIT_AUTOMAKE
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT
 END
