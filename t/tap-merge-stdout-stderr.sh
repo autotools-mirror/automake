@@ -27,7 +27,7 @@ AM_TEST_LOG_DRIVER_FLAGS = --comments --merge
 TESTS = all.test
 END
 
-. "$am_testauxdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"
+. tap-setup.sh
 
 cat > all.test <<END
 #!/bin/sh

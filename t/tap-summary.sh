@@ -20,4 +20,4 @@
 . test-defs.sh
 
 use_colors=no
-. "$am_testauxdir"/tap-summary-aux.sh
+. tap-summary-aux.sh

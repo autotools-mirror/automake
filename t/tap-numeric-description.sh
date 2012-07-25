@@ -18,7 +18,7 @@
 
 . ./defs || exit 1
 
-. "$am_testauxdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"
+. tap-setup.sh
 
 # Some random numbers to be used as test names.  The definitions below are
 # selected so that $x<n> != <n> for every n >= 1.  We can't use positional

@@ -22,7 +22,7 @@
 
 echo TESTS = one.test two.test > Makefile.am
 
-. "$am_testauxdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"
+. tap-setup.sh
 
 cat > one.test <<'END'
 #!/bin/sh

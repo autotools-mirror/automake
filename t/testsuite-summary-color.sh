@@ -21,7 +21,7 @@
 use_colors=yes
 use_vpath=no
 
-. "$am_testauxdir"/testsuite-summary-checks.sh || exit 99
+. testsuite-summary-checks.sh
 
 ./configure
 
