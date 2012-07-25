@@ -350,6 +350,16 @@ AM_TESTS_ENVIRONMENT = \
 AM_TESTS_FD_REDIRECT = 9>&2
 AM_TESTS_ENVIRONMENT += stderr_fileno_=9; export stderr_fileno_;
 
+# For sourcing of extra "shell libraries" by our test scripts.  As per
+# POSIX, sourcing a file with '.' will cause it to be looked up in $PATH
+# in case it is given with a relative name containing no slashes.
+AM_TESTS_ENVIRONMENT += \
+  if test $(srcdir) != .; then \
+    PATH='$(abs_srcdir)/t/ax'$(PATH_SEPARATOR)$$PATH; \
+  fi; \
+  PATH='$(abs_builddir)/t/ax'$(PATH_SEPARATOR)$$PATH; \
+  export PATH;
+
 # Hand-written tests.
 
 include $(srcdir)/t/list-of-tests.mk
