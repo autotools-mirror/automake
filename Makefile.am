@@ -462,13 +462,22 @@ check-local: check-tests-syntax
 .PHONY: check-tests-syntax
 
 ## Checking the list of tests.
-test_subdirs = t t/pm t/perf
+test_subdirs = t t/pm
 include $(srcdir)/t/CheckListOfTests.am
 
 # Run the testsuite with the installed aclocal and automake.
 installcheck-local: installcheck-testsuite
 installcheck-testsuite:
 	am_running_installcheck=yes $(MAKE) $(AM_MAKEFLAGS) check
+
+# Performance tests.
+.PHONY: perf
+perf: all
+	$(MAKE) $(AM_MAKEFLAGS) TEST_SUITE_LOG='$(PERF_TEST_SUITE_LOG)'	\
+	                        TESTS='$(perf_TESTS)' check
+PERF_TEST_SUITE_LOG = t/perf/test-suite.log
+CLEANFILES += $(PERF_TEST_SUITE_LOG)
+EXTRA_DIST += $(perf_TESTS)
 
 clean-local: clean-local-check
 .PHONY: clean-local-check

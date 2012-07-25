@@ -70,7 +70,6 @@ t/perf/testsuite-summary.sh
 handwritten_TESTS = \
 t/get-sysconf.sh \
 $(perl_TESTS) \
-$(perf_TESTS) \
 t/instspc.tap \
 t/aclocal.sh \
 t/aclocal3.sh \
