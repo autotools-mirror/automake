@@ -328,6 +328,14 @@ AC_DEFUN([_AM_CHECK_CANDIDATE_SHELL],
       [(set -x; P=1 true 2>&3) 3>&1 2>/dev/null | grep P=1],
       [am_score=9], [])
 
+    echo 'return 34' > conftest-return.sh
+    echo 'ok=no' >> conftest-return.sh
+    _AM_CHECK_SHELL_FEATURE([$1],
+      [can return early from "dot-sourced" files],
+      [ok=yes; . ./conftest-return.sh; test $? -eq 34 && test $ok = yes],
+      [rm -f conftest-return.sh],
+      [rm -f conftest-return.sh; am_score=1; break])
+
     echo 'alias false=echo' > conftest-alias.sh
     echo 'false && test "$(false 97)" = 97' >> conftest-alias.sh
     _AM_CHECK_SHELL_FEATURE([$1],
