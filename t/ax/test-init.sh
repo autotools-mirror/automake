@@ -635,15 +635,12 @@ require_compiler_ ()
 ##  required by them.                                          ##
 ## ----------------------------------------------------------- ##
 
-# Look for (and maybe set up) required tools and/or system features; skip
-# the current test if they are not found.
-for tool in : $required
-do
-  # Check that each required tool is present.
-  case $tool in
-    :) ;;
+require_tool ()
+{
+  am_tool=$1
+  case $1 in
     cc|c++|fortran|fortran77)
-      require_compiler_ $tool;;
+      require_compiler_ $1;;
     xsi-lib-shell)
       if test x"$am_test_prefer_config_shell" = x"yes"; then
         require_xsi "$SHELL"
@@ -862,16 +859,23 @@ do
       ;;
     *)
       # Generic case: the tool must support --version.
-      echo "$me: running $tool --version"
-      # It is not likely but possible that $tool is a special builtin,
-      # in which case the shell is allowed to exit after an error.  So
-      # we need the subshell here.  Also, some tools, like Sun cscope,
+      echo "$me: running $1 --version"
+      # It is not likely but possible that the required tool is a special
+      # builtin, in which case the shell is allowed to exit after an error.
+      # So we need the subshell here.  Also, some tools, like Sun cscope,
       # can be interactive without redirection.
-      ($tool --version) </dev/null \
-        || skip_all_ "required program '$tool' not available"
+      ($1 --version) </dev/null \
+        || skip_all_ "required program '$1' not available"
       ;;
   esac
+}
+
+# Look for (and maybe set up) required tools and/or system features; skip
+# the current test if they are not found.
+for am_tool in $required; do
+  require_tool $am_tool
 done
+unset am_tool
 
 # We might need extra macros, e.g., from Libtool or Gettext.
 case " $required " in *\ libtool*) . ./t/libtool-macros.dir/get.sh;; esac
