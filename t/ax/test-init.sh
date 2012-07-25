@@ -878,8 +878,6 @@ process_requirements ()
   esac
 }
 
-process_requirements $required
-
 ## ---------------------------------------------------------------- ##
 ##  Create and set up of the temporary directory used by the test.  ##
 ##  Set up of the exit trap for cleanup of said directory.          ##
@@ -955,8 +953,6 @@ am_set_exit_traps ()
   trap "trap '' 13; fatal_ 'caught signal SIGPIPE'" 13
 }
 
-am_set_exit_traps
-
 am_setup_testdir ()
 {
   # The subdirectory where the current test script will run and write its
@@ -995,21 +991,25 @@ am_setup_testdir ()
   fi
 }
 
-# Create and populate the temporary directory, if and as required.
-if test x"$am_create_testdir" = x"no"; then
-  am_test_subdir=
-else
-  am_setup_testdir
-fi
-
+am_test_setup ()
+{
+  process_requirements $required
+  am_set_exit_traps
+  # Create and populate the temporary directory, if required.
+  if test x"$am_create_testdir" = x"no"; then
+    am_test_subdir=
+  else
+    am_setup_testdir
+  fi
+  echo "Running from installcheck: $am_running_installcheck"
+  echo "Using TAP: $am_using_tap"
+  echo "PATH = $PATH"
+  set -x
+  pwd
+}
 
 ## ---------------- ##
 ##  Ready to go...  ##
 ## ---------------- ##
 
-echo "Running from installcheck: $am_running_installcheck"
-echo "Using TAP: $am_using_tap"
-echo "PATH = $PATH"
-
-set -x
-pwd
+am_test_setup
