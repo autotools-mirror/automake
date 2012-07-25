@@ -41,6 +41,43 @@ esc=''
 # is defined initially, so that saving and restoring $IFS works.
 IFS=$sp$tab$nl
 
+## ------------------------------------ ##
+##  General testsuite shell functions.  ##
+## ------------------------------------ ##
+
+# Print warnings (e.g., about skipped and failed tests) to this file
+# number.  Override by putting, say:
+#   AM_TESTS_ENVIRONMENT = stderr_fileno_=9; export stderr_fileno_;
+#   AM_TESTS_FD_REDIRECT = 9>&2
+# in your Makefile.am.
+# This is useful when using automake's parallel tests mode, to print the
+# reason for skip/failure to console, rather than to the *.log files.
+: ${stderr_fileno_=2}
+
+# Helper functions used by "plain" tests of the Automake testsuite
+# (i.e., tests that don't use any test protocol).
+# TAP tests will override these functions with their TAP-enhanced
+# equivalents later  (see sourcing of 'tap-functions.sh' below).
+# These are copied from Gnulib's 'tests/init.sh'.
+warn_ () { echo "$@" 1>&$stderr_fileno_; }
+fail_ () { warn_ "$me: failed test: $@"; exit 1; }
+skip_ () { warn_ "$me: skipped test: $@"; exit 77; }
+fatal_ () { warn_ "$me: hard error: $@"; exit 99; }
+framework_failure_ () { warn_ "$me: set-up failure: $@"; exit 99; }
+# For compatibility with TAP functions.
+skip_all_ () { skip_ "$@"; }
+
+if test $am_using_tap = yes; then
+  am_tap_funcs_file=$am_testauxdir/tap-functions.sh
+  if test -f "$am_tap_funcs_file"; then
+    . "$am_tap_funcs_file" \
+      || fatal_ "error sourcing $am_tap_funcs_file"
+  else
+    fatal_ " $am_tap_funcs_file not found" >&2
+  fi
+  unset am_tap_funcs_file
+fi
+
 
 ## ---------------------- ##
 ##  Environment cleanup.  ##
@@ -100,6 +137,7 @@ unset pfx
 # Re-enable, it had been temporarily disabled above.
 set -e
 
+
 ## ---------------------------- ##
 ##  Auxiliary shell functions.  ##
 ## ---------------------------- ##
@@ -132,23 +170,6 @@ _am_exit ()
   (\exit $1); \exit $1
 }
 alias exit=_am_exit
-
-if test $am_using_tap = yes; then
-  am_funcs_file=tap-functions.sh
-else
-  am_funcs_file=plain-functions.sh
-fi
-
-if test -f "$am_testauxdir/$am_funcs_file"; then
-  . "$am_testauxdir/$am_funcs_file" || {
-    echo "$me: error sourcing $am_testauxdir/$am_funcs_file" >&2
-    exit 99
-  }
-else
-  echo "$me: $am_testauxdir/$am_funcs_file not found" >&2
-  exit 99
-fi
-unset am_funcs_file
 
 # cross_compiling
 # ---------------
