@@ -933,33 +933,38 @@ am_exit_trap ()
   \exit $exit_status
 }
 
-trap 'am_exit_trap $?' 0
-trap "fatal_ 'caught signal SIGHUP'" 1
-trap "fatal_ 'caught signal SIGINT'" 2
-trap "fatal_ 'caught signal SIGTERM'" 15
-# Various shells seems to just ignore SIGQUIT under some circumstances,
-# even if the signal is not blocked; however, if the signal it trapped,
-# the trap gets correctly executed.  So we also trap SIGQUIT.
-# Here is a list of some shells that have been verified to exhibit the
-# problematic behavior with SIGQUIT:
-#  - zsh 4.3.12 on Debian GNU/Linux
-#  - /bin/ksh and /usr/xpg4/bin/sh on Solaris 10
-#  - Bash 3.2.51 on Solaris 10 and bash 4.1.5 on Debian GNU/Linux
-#  - AT&T ksh on Debian Gnu/Linux (deb package ksh, version 93u-1)
-# OTOH, at least these shells that do *not* exhibit that behaviour:
-#  - modern version of the Almquist Shell (at least 0.5.5.1), on
-#    both Solaris and GNU/Linux
-#  - public domain Korn Shell, version 5.2.14, on Debian GNU/Linux
-trap "fatal_ 'caught signal SIGQUIT'" 3
-# Ignore further SIGPIPE in the trap code.  This is required to avoid
-# a very weird issue with some shells, at least when the execution of
-# the automake testsuite is driven by the 'prove' utility: if prove
-# (or the make process that has spawned it) gets interrupted with
-# Ctrl-C, the shell might go in a loop, continually getting a SIGPIPE,
-# sometimes finally dumping core, other times hanging indefinitely.
-# See also Test::Harness bug [rt.cpan.org #70855], archived at
-# <https://rt.cpan.org/Ticket/Display.html?id=70855>
-trap "trap '' 13; fatal_ 'caught signal SIGPIPE'" 13
+am_set_exit_traps ()
+{
+  trap 'am_exit_trap $?' 0
+  trap "fatal_ 'caught signal SIGHUP'" 1
+  trap "fatal_ 'caught signal SIGINT'" 2
+  trap "fatal_ 'caught signal SIGTERM'" 15
+  # Various shells seems to just ignore SIGQUIT under some circumstances,
+  # even if the signal is not blocked; however, if the signal it trapped,
+  # the trap gets correctly executed.  So we also trap SIGQUIT.
+  # Here is a list of some shells that have been verified to exhibit the
+  # problematic behavior with SIGQUIT:
+  #  - zsh 4.3.12 on Debian GNU/Linux
+  #  - /bin/ksh and /usr/xpg4/bin/sh on Solaris 10
+  #  - Bash 3.2.51 on Solaris 10 and bash 4.1.5 on Debian GNU/Linux
+  #  - AT&T ksh on Debian Gnu/Linux (deb package ksh, version 93u-1)
+  # OTOH, at least these shells that do *not* exhibit that behaviour:
+  #  - modern version of the Almquist Shell (at least 0.5.5.1), on
+  #    both Solaris and GNU/Linux
+  #  - public domain Korn Shell, version 5.2.14, on Debian GNU/Linux
+  trap "fatal_ 'caught signal SIGQUIT'" 3
+  # Ignore further SIGPIPE in the trap code.  This is required to avoid
+  # a very weird issue with some shells, at least when the execution of
+  # the automake testsuite is driven by the 'prove' utility: if prove
+  # (or the make process that has spawned it) gets interrupted with
+  # Ctrl-C, the shell might go in a loop, continually getting a SIGPIPE,
+  # sometimes finally dumping core, other times hanging indefinitely.
+  # See also Test::Harness bug [rt.cpan.org #70855], archived at
+  # <https://rt.cpan.org/Ticket/Display.html?id=70855>
+  trap "trap '' 13; fatal_ 'caught signal SIGPIPE'" 13
+}
+
+am_set_exit_traps
 
 # Create and populate the temporary directory, if and as required.
 if test x"$am_create_testdir" = x"no"; then
