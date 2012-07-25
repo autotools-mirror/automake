@@ -379,13 +379,19 @@ EXTRA_DIST += gen-testsuite-part
 $(generated_TESTS): $(srcdir)/gen-testsuite-part
 $(srcdir)/t/testsuite-part.am: $(srcdir)/gen-testsuite-part Makefile.am
 
-# Static dependencies valid for each test case.
-check_SCRIPTS = t/wrap/aclocal-$(APIVERSION) t/wrap/automake-$(APIVERSION)
-dist_check_DATA = \
-  t/ax/test-init.sh  \
-  t/ax/plain-functions.sh  \
+# Static dependencies valid for each test case (also further
+# extended later).  Note that use 'noinst_' rather than 'check_'
+# as the prefix, because we really want them to be built by
+# "make all".  This makes it easier to run the test cases by
+# hand after having simply configured and built the package.
+
+nodist_noinst_SCRIPTS = \
+  t/wrap/aclocal-$(APIVERSION) \
+  t/wrap/automake-$(APIVERSION)
+dist_noinst_DATA = \
+  t/ax/test-init.sh \
+  t/ax/plain-functions.sh \
   t/ax/tap-functions.sh
-nodist_check_DATA = defs-static
 
 # Few more static dependencies.
 t/distcheck-missing-m4.log: t/ax/distcheck-hook-m4.am
@@ -399,6 +405,7 @@ defs-static: defs-static.in Makefile
 	$(generated_file_finalize)
 EXTRA_DIST += defs-static.in
 CLEANFILES += defs-static
+nodist_noinst_DATA = defs-static
 
 runtest: runtest.in Makefile
 	$(AM_V_at)rm -f $@ $@-t
@@ -551,7 +558,7 @@ amhello_configury = \
   missing \
   src/Makefile.in
 
-dist_noinst_DATA = $(amhello_sources)
+dist_noinst_DATA += $(amhello_sources)
 dist_doc_DATA = $(srcdir)/doc/amhello-1.0.tar.gz
 
 # We depend on configure.ac so that we regenerate the tarball
