@@ -899,7 +899,9 @@ process_requirements $required
 distdir=$me-1.0
 
 # Set up the exit trap.
-trap 'exit_status=$?
+am_exit_trap ()
+{
+  exit_status=$1
   set +e
   cd "$am_top_builddir"
   if test $am_using_tap = yes; then
@@ -929,7 +931,9 @@ trap 'exit_status=$?
   echo "$me: exit $exit_status"
   # Spurious escaping to ensure we do not call our "exit" alias.
   \exit $exit_status
-' 0
+}
+
+trap 'am_exit_trap $?' 0
 trap "fatal_ 'caught signal SIGHUP'" 1
 trap "fatal_ 'caught signal SIGINT'" 2
 trap "fatal_ 'caught signal SIGTERM'" 15
