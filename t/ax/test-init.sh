@@ -1028,9 +1028,3 @@ am_test_setup ()
   set -x
   pwd
 }
-
-## ---------------- ##
-##  Ready to go...  ##
-## ---------------- ##
-
-am_test_setup
