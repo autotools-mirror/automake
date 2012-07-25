@@ -870,17 +870,24 @@ require_tool ()
   esac
 }
 
-# Look for (and maybe set up) required tools and/or system features; skip
-# the current test if they are not found.
-for am_tool in $required; do
-  require_tool $am_tool
-done
-unset am_tool
+process_requirements ()
+{
+  # Look for (and maybe set up) required tools and/or system features;
+  # skip the current test if they are not found.
+  for am_tool in $*; do
+    require_tool $am_tool
+  done
+  unset am_tool
+  # We might need extra macros, e.g., from Libtool or Gettext.
+  case " $required " in
+    *\ libtool*) . ./t/libtool-macros.dir/get.sh;;
+  esac
+  case " $required " in
+    *\ gettext*) . ./t/gettext-macros.dir/get.sh;;
+  esac
+}
 
-# We might need extra macros, e.g., from Libtool or Gettext.
-case " $required " in *\ libtool*) . ./t/libtool-macros.dir/get.sh;; esac
-case " $required " in *\ gettext*) . ./t/gettext-macros.dir/get.sh;; esac
-
+process_requirements $required
 
 ## ---------------------------------------------------------------- ##
 ##  Create and set up of the temporary directory used by the test.  ##
