@@ -319,6 +319,11 @@ AC_DEFUN([_AM_CHECK_CANDIDATE_SHELL],
       [], [am_score=1; break])
 
     _AM_CHECK_SHELL_FEATURE([$1],
+      [can define exit traps in a shell function],
+      [fail=0 && foo() { trap 'fail=1' 0; } && foo && test $fail = 0],
+      [], [am_score=1; break])
+
+    _AM_CHECK_SHELL_FEATURE([$1],
       [corrupts stderr with "set -x"],
       [(set -x; P=1 true 2>&3) 3>&1 2>/dev/null | grep P=1],
       [am_score=9], [])
