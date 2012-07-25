@@ -398,8 +398,10 @@ $(srcdir)/t/testsuite-part.am: $(srcdir)/gen-testsuite-part Makefile.am
 nodist_noinst_SCRIPTS = \
   t/wrap/aclocal-$(APIVERSION) \
   t/wrap/automake-$(APIVERSION)
+
 dist_noinst_DATA = \
-  t/ax/test-init.sh \
+  t/ax/test-lib.sh \
+  t/ax/am-test-lib.sh \
   t/ax/tap-functions.sh
 
 # Few more static dependencies.
