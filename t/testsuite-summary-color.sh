@@ -16,7 +16,7 @@
 
 # Check coloring of the testsuite summary.
 
-. ./defs-static || exit 1
+. test-defs.sh
 
 use_colors=yes
 use_vpath=no

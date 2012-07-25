@@ -28,15 +28,15 @@ set -e
 ## --------------------- ##
 
 # Ensure $am_top_srcdir is set correctly.
-test -f "$am_top_srcdir/defs-static.in" || {
-   echo "$me: $am_top_srcdir/defs-static.in not found," \
+test -f "$am_top_srcdir/automake.in" || {
+   echo "$me: $am_top_srcdir/automake.in not found," \
         "check \$am_top_srcdir" >&2
    exit 99
 }
 
 # Ensure $am_top_builddir is set correctly.
-test -f "$am_top_builddir/defs-static" || {
-   echo "$me: $am_top_builddir/defs-static not found," \
+test -f "$am_top_builddir/automake" || {
+   echo "$me: $am_top_builddir/automake not found," \
         "check \$am_top_builddir" >&2
    exit 99
 }

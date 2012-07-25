@@ -15,31 +15,31 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Sanity check for the automake testsuite.
-# Make sure that $am_using_tap gets automatically defined by
-# './defs-static', but can be overridden by the individual tests.
+# Make sure that '$am_using_tap' gets automatically defined by
+# 'test-defs.sh', but can be overridden by the individual tests.
 
-. ./defs-static || exit 1
+. test-defs.sh
 
 set -ex
 
 $AM_TEST_RUNNER_SHELL -c \
-  '. ./defs-static && test $am_using_tap = yes' foo.tap
+  ". test-defs.sh && test \$am_using_tap = yes" foo.tap
 
 for name in foo.test tap tap.test foo-tap; do
   $AM_TEST_RUNNER_SHELL -c \
-    '. ./defs-static && test $am_using_tap = no' $name
+    ". test-defs.sh && test \$am_using_tap = no" $name
 done
 
-$AM_TEST_RUNNER_SHELL -c '
+$AM_TEST_RUNNER_SHELL -c "
   am_using_tap=no
-  . ./defs-static
-  test $am_using_tap = no
-' foo.tap
+  . test-defs.sh
+  test \$am_using_tap = no
+" foo.tap
 
-$AM_TEST_RUNNER_SHELL -c '
+$AM_TEST_RUNNER_SHELL -c "
   am_using_tap=yes
-  . ./defs-static
-  test $am_using_tap = yes
-' foo.test
+  . test-defs.sh
+  test \$am_using_tap = yes
+" foo.test
 
 :

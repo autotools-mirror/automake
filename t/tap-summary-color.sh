@@ -17,7 +17,7 @@
 # TAP support:
 #  - colorized testsuite summary
 
-. ./defs-static
+. test-defs.sh
 
 use_colors=yes
 . "$am_testauxdir"/tap-summary-aux.sh

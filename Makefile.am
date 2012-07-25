@@ -408,14 +408,14 @@ t/distcheck-missing-m4.log: t/ax/distcheck-hook-m4.am
 t/distcheck-outdated-m4.log: t/ax/distcheck-hook-m4.am
 EXTRA_DIST += t/ax/distcheck-hook-m4.am
 
-defs-static: defs-static.in Makefile
+t/ax/test-defs.sh: t/ax/test-defs.in Makefile
 	$(AM_V_at)rm -f $@ $@-t
-	$(AM_V_GEN)in=defs-static.in\
-	  && $(do_subst) <$(srcdir)/defs-static.in >$@-t
+	$(AM_V_GEN)in=t/ax/test-defs.in \
+	  && $(do_subst) <$(srcdir)/$$in >$@-t
 	$(generated_file_finalize)
-EXTRA_DIST += defs-static.in
-CLEANFILES += defs-static
-nodist_noinst_DATA = defs-static
+EXTRA_DIST += t/ax/test-defs.in
+CLEANFILES += t/ax/test-defs.sh
+nodist_noinst_DATA = t/ax/test-defs.sh
 
 runtest: runtest.in Makefile
 	$(AM_V_at)rm -f $@ $@-t

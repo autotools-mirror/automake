@@ -16,7 +16,7 @@
 
 # Check test counts in the testsuite summary.
 
-. ./defs-static || exit 1
+. test-defs.sh
 
 use_colors=no
 use_vpath=no
