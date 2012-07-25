@@ -42,15 +42,6 @@ esc=''
 IFS=$sp$tab$nl
 
 
-## ----------------------- ##
-##  Early debugging info.  ##
-## ----------------------- ##
-
-echo "Running from installcheck: $am_running_installcheck"
-echo "Using TAP: $am_using_tap"
-echo "PATH = $PATH"
-
-
 ## ---------------------- ##
 ##  Environment cleanup.  ##
 ## ---------------------- ##
@@ -1015,6 +1006,10 @@ fi
 ## ---------------- ##
 ##  Ready to go...  ##
 ## ---------------- ##
+
+echo "Running from installcheck: $am_running_installcheck"
+echo "Using TAP: $am_using_tap"
+echo "PATH = $PATH"
 
 set -x
 pwd
