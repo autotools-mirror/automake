@@ -966,10 +966,8 @@ am_set_exit_traps ()
 
 am_set_exit_traps
 
-# Create and populate the temporary directory, if and as required.
-if test x"$am_create_testdir" = x"no"; then
-  am_test_subdir=
-else
+am_setup_testdir ()
+{
   # The subdirectory where the current test script will run and write its
   # temporary/data files.  This will be created shortly, and will be removed
   # by the cleanup trap below if the test passes.  If the test doesn't pass,
@@ -1004,6 +1002,13 @@ else
       echo "AC_CONFIG_FILES([Makefile])"
     } >configure.ac || framework_failure_ "creating configure.ac skeleton"
   fi
+}
+
+# Create and populate the temporary directory, if and as required.
+if test x"$am_create_testdir" = x"no"; then
+  am_test_subdir=
+else
+  am_setup_testdir
 fi
 
 
