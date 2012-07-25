@@ -28,12 +28,26 @@ set -e; set -u
 error () { echo "$0: $*" >&2; exit 255; }
 
 # Some shell flags should be passed over to the test scripts.
-#while test $# -gt 0; do
-#  case $1 in
-#    --help) echo "Usage: $0 [SHELL-OPTIONS] TEST [TEST-OPTIONS]"; exit $?;;
-#    -*)
-#  esac
-#done
+shell_opts=
+while test $# -gt 0; do
+  case $1 in
+    --help)
+       echo "Usage: $0 [SHELL-OPTIONS] TEST [TEST-OPTIONS]"
+       exit $?
+       ;;
+    -o)
+       test $# -gt 1 || error "missing argument for option '-o'"
+       shell_opts="-o $2"
+       shift
+       ;;
+    -*)
+       # Assume it is an option to pass through to the shell.
+       shell_opts=$1;;
+     *)
+       break;;
+  esac
+  shift
+done
 
 test $# -gt 0 || error "missing argument"
 
@@ -58,5 +72,5 @@ case $tst in
       ;;
 esac
 
-wrapper "$AM_TEST_RUNNER_SHELL" "$tst" "$@"
+wrapper "$AM_TEST_RUNNER_SHELL" $shell_opts "$tst" "$@"
 error "dead code reached"
