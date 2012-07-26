@@ -20,7 +20,7 @@
 
 . ./defs || exit 1
 
-. "$am_testauxdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"
+. tap-setup.sh
 
 # Various errors that can all be squashed into a single test script.
 cat > foo.test << 'END'

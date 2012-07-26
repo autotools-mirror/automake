@@ -20,7 +20,7 @@
 
 . ./defs || exit 1
 
-. "$am_testauxdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"
+. tap-setup.sh
 
 cat > all.test <<END
 1..6

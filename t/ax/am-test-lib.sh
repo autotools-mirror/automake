@@ -19,56 +19,16 @@
 ###  IMPORTANT NOTE: keep this file 'set -e' clean.  ###
 ########################################################
 
-# Enable the errexit shell flag early.
-set -e
+# Do not source several times.
+test ${am_test_lib_sourced-no} = yes && return 0
+am_test_lib_sourced=yes
 
-
-## --------------------- ##
-##  Early sanity checks. ##
-## --------------------- ##
-
-# Ensure $am_top_srcdir is set correctly.
-test -f "$am_top_srcdir/defs-static.in" || {
-   echo "$me: $am_top_srcdir/defs-static.in not found," \
-        "check \$am_top_srcdir" >&2
-   exit 99
-}
-
-# Ensure $am_top_builddir is set correctly.
-test -f "$am_top_builddir/defs-static" || {
-   echo "$me: $am_top_builddir/defs-static not found," \
-        "check \$am_top_builddir" >&2
-   exit 99
-}
-
-
-## ------------------ ##
-##  Early variables.  ##
-## ------------------ ##
-
-# A single whitespace character.
-sp=' '
-# A tabulation character.
-tab='	'
-# A newline character.
-nl='
-'
 # A literal escape character.  Used by test checking colored output.
 esc=''
 
-# As autoconf-generated configure scripts do, ensure that IFS
-# is defined initially, so that saving and restoring $IFS works.
-IFS=$sp$tab$nl
-
-
-## ----------------------- ##
-##  Early debugging info.  ##
-## ----------------------- ##
-
-echo "Running from installcheck: $am_running_installcheck"
-echo "Using TAP: $am_using_tap"
-echo "PATH = $PATH"
-
+# This might be used in testcases checking distribution-related features.
+# Test scripts are free to override this if they need to.
+distdir=$me-1.0
 
 ## ---------------------- ##
 ##  Environment cleanup.  ##
@@ -127,56 +87,6 @@ unset pfx
 
 # Re-enable, it had been temporarily disabled above.
 set -e
-
-## ---------------------------- ##
-##  Auxiliary shell functions.  ##
-## ---------------------------- ##
-
-# Tell whether we should keep the test directories around, even in
-# case of success.  By default, we don't.
-am_keeping_testdirs ()
-{
-  case $keep_testdirs in
-     ""|n|no|NO) return 1;;
-              *) return 0;;
-  esac
-}
-
-# This is used in '_am_exit' and in the exit trap.  See comments in
-# the latter for more information.
-am__test_skipped=no
-
-# We use a trap below for cleanup.  This requires us to go through
-# hoops to get the right exit status transported through the signal.
-# Turn off errexit here so that we don't trip the bug with OSF1/Tru64
-# sh inside this function (FIXME: is this still relevant now that we
-# require a POSIX shell?).
-_am_exit ()
-{
-  set +e
-  # See comments in the exit trap for the reason we do this.
-  test 77 = $1 && am__test_skipped=yes
-  # Spurious escaping to ensure we do not call our 'exit' alias.
-  (\exit $1); \exit $1
-}
-alias exit=_am_exit
-
-if test $am_using_tap = yes; then
-  am_funcs_file=tap-functions.sh
-else
-  am_funcs_file=plain-functions.sh
-fi
-
-if test -f "$am_testauxdir/$am_funcs_file"; then
-  . "$am_testauxdir/$am_funcs_file" || {
-    echo "$me: error sourcing $am_testauxdir/$am_funcs_file" >&2
-    exit 99
-  }
-else
-  echo "$me: $am_testauxdir/$am_funcs_file not found" >&2
-  exit 99
-fi
-unset am_funcs_file
 
 # cross_compiling
 # ---------------
@@ -245,7 +155,7 @@ AUTOMAKE_run ()
   $AUTOMAKE ${1+"$@"} >stdout 2>stderr || am__got_rc=$?
   cat stderr >&2
   cat stdout
-  if test $am_using_tap != yes; then
+  if test $am_test_protocol = none; then
     test $am__got_rc -eq $am__exp_rc || exit 1
     return
   fi
@@ -428,41 +338,6 @@ am__useless_vpath_rebuild=""
 
 yl_distcheck () { useless_vpath_rebuild || $MAKE distcheck ${1+"$@"}; }
 
-# seq_ - print a sequence of numbers
-# ----------------------------------
-# This function simulates GNU seq(1) portably.  Valid usages:
-#  - seq LAST
-#  - seq FIRST LAST
-#  - seq FIRST INCREMENT LAST
-seq_ ()
-{
-  case $# in
-    0) fatal_ "seq_: missing argument";;
-    1) seq_first=1  seq_incr=1  seq_last=$1;;
-    2) seq_first=$1 seq_incr=1  seq_last=$2;;
-    3) seq_first=$1 seq_incr=$2 seq_last=$3;;
-    *) fatal_ "seq_: too many arguments";;
-  esac
-  i=$seq_first
-  while test $i -le $seq_last; do
-    echo $i
-    i=$(($i + $seq_incr))
-  done
-}
-
-# rm_rf_ [FILES OR DIRECTORIES ...]
-# ---------------------------------
-# Recursively remove the given files or directory, also handling the case
-# of non-writable subdirectories.
-rm_rf_ ()
-{
-  test $# -gt 0 || return 0
-  # Ignore failures in find, we are only interested in failures of the
-  # final rm.
-  find "$@" -type d ! -perm -700 -exec chmod u+rwx {} \; || :
-  rm -rf "$@"
-}
-
 # count_test_results total=N pass=N fail=N xpass=N xfail=N skip=N error=N
 # -----------------------------------------------------------------------
 # Check that a testsuite run driven by the parallel-tests harness has
@@ -499,37 +374,6 @@ count_test_results ()
     test $rc -eq 0
   )
 }
-
-commented_sed_unindent_prog='
-  /^$/b                    # Nothing to do for empty lines.
-  x                        # Get x<indent> into pattern space.
-  /^$/{                    # No prior x<indent>, go prepare it.
-    g                      # Copy this 1st non-blank line into pattern space.
-    s/^\(['"$tab"' ]*\).*/x\1/   # Prepare x<indent> in pattern space.
-  }                        # Now: x<indent> in pattern and <line> in hold.
-  G                        # Build x<indent>\n<line> in pattern space, and
-  h                        # duplicate it into hold space.
-  s/\n.*$//                # Restore x<indent> in pattern space, and
-  x                        # exchange with the above duplicate in hold space.
-  s/^x\(.*\)\n\1//         # Remove leading <indent> from <line>.
-  s/^x.*\n//               # Restore <line> when there is no leading <indent>.
-'
-
-# unindent [input files...]
-# -------------------------
-# Remove the "proper" amount of leading whitespace from the given files,
-# and output the result on stdout.  That amount is determined by looking
-# at the leading whitespace of the first non-blank line in the input
-# files.  If no input file is specified, standard input is implied.
-unindent ()
-{
-  if test x"$sed_unindent_prog" = x; then
-    sed_unindent_prog=$(printf '%s\n' "$commented_sed_unindent_prog" \
-                          | sed -e "s/  *# .*//")
-  fi
-  sed "$sed_unindent_prog" ${1+"$@"}
-}
-sed_unindent_prog="" # Avoid interferences from the environment.
 
 # get_shell_script SCRIPT-NAME
 # -----------------------------
@@ -654,25 +498,12 @@ require_compiler_ ()
 ##  required by them.                                          ##
 ## ----------------------------------------------------------- ##
 
-# Performance tests must be enabled explicitly.
-case $argv0 in
-  */perf/*)
-    case $AM_TESTSUITE_PERF in
-      [yY]|[yY]es|1) ;;
-      *) skip_ "performance tests not explicitly enabled" ;;
-    esac
-    ;;
-esac
-
-# Look for (and maybe set up) required tools and/or system features; skip
-# the current test if they are not found.
-for tool in : $required
-do
-  # Check that each required tool is present.
-  case $tool in
-    :) ;;
+require_tool ()
+{
+  am_tool=$1
+  case $1 in
     cc|c++|fortran|fortran77)
-      require_compiler_ $tool;;
+      require_compiler_ $1;;
     xsi-lib-shell)
       if test x"$am_test_prefer_config_shell" = x"yes"; then
         require_xsi "$SHELL"
@@ -891,94 +722,40 @@ do
       ;;
     *)
       # Generic case: the tool must support --version.
-      echo "$me: running $tool --version"
-      # It is not likely but possible that $tool is a special builtin,
-      # in which case the shell is allowed to exit after an error.  So
-      # we need the subshell here.  Also, some tools, like Sun cscope,
+      echo "$me: running $1 --version"
+      # It is not likely but possible that the required tool is a special
+      # builtin, in which case the shell is allowed to exit after an error.
+      # So we need the subshell here.  Also, some tools, like Sun cscope,
       # can be interactive without redirection.
-      ($tool --version) </dev/null \
-        || skip_all_ "required program '$tool' not available"
+      ($1 --version) </dev/null \
+        || skip_all_ "required program '$1' not available"
       ;;
   esac
-done
+}
 
-# We might need extra macros, e.g., from Libtool or Gettext.
-case " $required " in *\ libtool*) . ./t/libtool-macros.dir/get.sh;; esac
-case " $required " in *\ gettext*) . ./t/gettext-macros.dir/get.sh;; esac
-
+process_requirements ()
+{
+  # Look for (and maybe set up) required tools and/or system features;
+  # skip the current test if they are not found.
+  for am_tool in $*; do
+    require_tool $am_tool
+  done
+  unset am_tool
+  # We might need extra macros, e.g., from Libtool or Gettext.
+  case " $required " in
+    *\ libtool*) . ./t/libtool-macros.dir/get.sh;;
+  esac
+  case " $required " in
+    *\ gettext*) . ./t/gettext-macros.dir/get.sh;;
+  esac
+}
 
 ## ---------------------------------------------------------------- ##
 ##  Create and set up of the temporary directory used by the test.  ##
-##  Set up of the exit trap for cleanup of said directory.          ##
 ## ---------------------------------------------------------------- ##
 
-# This might be used in testcases checking distribution-related features.
-# Test scripts are free to override this if they need to.
-distdir=$me-1.0
-
-# Set up the exit trap.
-trap 'exit_status=$?
-  set +e
-  cd "$am_top_builddir"
-  if test $am_using_tap = yes; then
-    if test "$planned_" = later && test $exit_status -eq 0; then
-      plan_ "now"
-    fi
-    test $exit_status -eq 0 && test $tap_pass_count_ -eq $tap_count_ \
-      || keep_testdirs=yes
-  else
-    # This is to ensure that a test script does give a SKIP outcome just
-    # because a command in it happens to exit with status 77.  This
-    # behaviour, while from time to time useful to developers, is not
-    # meant to be enabled by default, as it could cause spurious failures
-    # in the wild.  Thus it will be enabled only when the variable
-    # "am_explicit_skips" is set to a "true" value.
-    case $am_explicit_skips in
-      [yY]|[yY]es|1)
-        if test $exit_status -eq 77 && test $am__test_skipped != yes; then
-          echo "$me: implicit skip turned into failure"
-          exit_status=78
-        fi;;
-    esac
-    test $exit_status -eq 0 || keep_testdirs=yes
-  fi
-  am_keeping_testdirs || rm_rf_ $am_test_subdir
-  set +x
-  echo "$me: exit $exit_status"
-  # Spurious escaping to ensure we do not call our "exit" alias.
-  \exit $exit_status
-' 0
-trap "fatal_ 'caught signal SIGHUP'" 1
-trap "fatal_ 'caught signal SIGINT'" 2
-trap "fatal_ 'caught signal SIGTERM'" 15
-# Various shells seems to just ignore SIGQUIT under some circumstances,
-# even if the signal is not blocked; however, if the signal it trapped,
-# the trap gets correctly executed.  So we also trap SIGQUIT.
-# Here is a list of some shells that have been verified to exhibit the
-# problematic behavior with SIGQUIT:
-#  - zsh 4.3.12 on Debian GNU/Linux
-#  - /bin/ksh and /usr/xpg4/bin/sh on Solaris 10
-#  - Bash 3.2.51 on Solaris 10 and bash 4.1.5 on Debian GNU/Linux
-#  - AT&T ksh on Debian Gnu/Linux (deb package ksh, version 93u-1)
-# OTOH, at least these shells that do *not* exhibit that behaviour:
-#  - modern version of the Almquist Shell (at least 0.5.5.1), on
-#    both Solaris and GNU/Linux
-#  - public domain Korn Shell, version 5.2.14, on Debian GNU/Linux
-trap "fatal_ 'caught signal SIGQUIT'" 3
-# Ignore further SIGPIPE in the trap code.  This is required to avoid
-# a very weird issue with some shells, at least when the execution of
-# the automake testsuite is driven by the 'prove' utility: if prove
-# (or the make process that has spawned it) gets interrupted with
-# Ctrl-C, the shell might go in a loop, continually getting a SIGPIPE,
-# sometimes finally dumping core, other times hanging indefinitely.
-# See also Test::Harness bug [rt.cpan.org #70855], archived at
-# <https://rt.cpan.org/Ticket/Display.html?id=70855>
-trap "trap '' 13; fatal_ 'caught signal SIGPIPE'" 13
-
-# Create and populate the temporary directory, if and as required.
-if test x"$am_create_testdir" = x"no"; then
-  am_test_subdir=
-else
+am_setup_testdir ()
+{
   # The subdirectory where the current test script will run and write its
   # temporary/data files.  This will be created shortly, and will be removed
   # by the cleanup trap below if the test passes.  If the test doesn't pass,
@@ -1013,12 +790,11 @@ else
       echo "AC_CONFIG_FILES([Makefile])"
     } >configure.ac || framework_failure_ "creating configure.ac skeleton"
   fi
-fi
+}
 
-
-## ---------------- ##
-##  Ready to go...  ##
-## ---------------- ##
-
-set -x
-pwd
+am_extra_info ()
+{
+  echo "Running from installcheck: $am_running_installcheck"
+  echo "Test Protocol: $am_test_protocol"
+  echo "PATH = $PATH"
+}

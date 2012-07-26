@@ -70,7 +70,6 @@ t/perf/testsuite-summary.sh
 handwritten_TESTS = \
 t/get-sysconf.sh \
 $(perl_TESTS) \
-$(perf_TESTS) \
 t/instspc.tap \
 t/aclocal.sh \
 t/aclocal3.sh \
@@ -955,7 +954,6 @@ t/repeated-options.sh \
 t/rulepat.sh \
 t/self-check-configure-help.sh \
 t/self-check-dir.tap \
-t/self-check-env-sanitize.tap \
 t/self-check-exit.tap \
 t/self-check-explicit-skips.sh \
 t/self-check-is_newest.tap \
@@ -963,7 +961,6 @@ t/self-check-me.tap \
 t/self-check-report.sh \
 t/self-check-seq.tap \
 t/self-check-is-blocked-signal.tap \
-t/self-check-tap.sh \
 t/self-check-unindent.tap \
 t/sanity.sh \
 t/scripts.sh \

@@ -26,7 +26,7 @@ TEST_LOG_COMPILER = cat
 TESTS = bail.test few.test noplan.test
 END
 
-. "$am_testauxdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"
+. tap-setup.sh
 
 cat > bail.test <<END
 1..1

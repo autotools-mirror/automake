@@ -144,7 +144,7 @@ END
 
 chmod a+x *.test
 
-. "$am_testauxdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"
+. tap-setup.sh
 
 # Don't care about exit status or number of test results, they should be
 # checked for in many other tests.
