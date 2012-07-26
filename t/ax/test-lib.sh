@@ -19,6 +19,10 @@
 ###  IMPORTANT NOTE: keep this file 'set -e' clean.  ###
 ########################################################
 
+# Do not source several times.
+test ${test_lib_sourced-no} = yes && return 0
+test_lib_sourced=yes
+
 # CDPATH is evil if used in non-interactive scripts (and even more
 # evil if exported in the environment).
 CDPATH=; unset CDPATH

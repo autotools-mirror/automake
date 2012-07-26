@@ -342,6 +342,8 @@ AM_TESTS_ENVIRONMENT = \
     am_test_prefer_config_shell \
     am_original_AUTOMAKE \
     am_original_ACLOCAL \
+    am_test_lib_sourced \
+    test_lib_sourced \
   ; do \
     eval test x"\$${$$v}" = x || unset $$v; \
   done;

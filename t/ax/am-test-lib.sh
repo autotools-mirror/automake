@@ -19,6 +19,10 @@
 ###  IMPORTANT NOTE: keep this file 'set -e' clean.  ###
 ########################################################
 
+# Do not source several times.
+test ${am_test_lib_sourced-no} = yes && return 0
+am_test_lib_sourced=yes
+
 # A literal escape character.  Used by test checking colored output.
 esc=''
 
