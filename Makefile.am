@@ -334,6 +334,7 @@ TESTS = ## Will be updated later.
 
 # Some testsuite-influential variables should be overridable from the
 # test scripts, but not from the environment.
+# Keep this in sync with the similar list in 'runtest.in'.
 AM_TESTS_ENVIRONMENT = \
   for v in \
     required \

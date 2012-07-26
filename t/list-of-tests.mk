@@ -954,7 +954,6 @@ t/repeated-options.sh \
 t/rulepat.sh \
 t/self-check-configure-help.sh \
 t/self-check-dir.tap \
-t/self-check-env-sanitize.tap \
 t/self-check-exit.tap \
 t/self-check-explicit-skips.sh \
 t/self-check-is_newest.tap \
