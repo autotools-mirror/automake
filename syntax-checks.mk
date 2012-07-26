@@ -283,6 +283,7 @@ sc_tests_make_without_am_makeflags:
 sc_tests_obsolete_variables:
 	@vars=" \
 	  using_tap \
+	  am_using_tap \
 	  test_prefer_config_shell \
 	  original_AUTOMAKE \
 	  original_ACLOCAL \

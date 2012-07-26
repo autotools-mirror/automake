@@ -125,7 +125,7 @@ framework_failure_ () { warn_ "$me: set-up failure: $@"; exit 99; }
 # For compatibility with TAP functions.
 skip_all_ () { skip_ "$@"; }
 
-if test $am_using_tap = yes; then
+if test $am_test_protocol = tap; then
   . tap-functions.sh
 fi
 
@@ -220,7 +220,7 @@ am_exit_trap ()
   exit_status=$1
   set +e
   cd "$am_top_builddir"
-  if test $am_using_tap = yes; then
+  if test $am_test_protocol = tap; then
     if test "$planned_" = later && test $exit_status -eq 0; then
       plan_ "now"
     fi

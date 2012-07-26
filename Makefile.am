@@ -337,7 +337,7 @@ TESTS = ## Will be updated later.
 AM_TESTS_ENVIRONMENT = \
   for v in \
     required \
-    am_using_tap \
+    am_test_protocol \
     am_serial_tests \
     am_test_prefer_config_shell \
     am_original_AUTOMAKE \

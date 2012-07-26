@@ -155,7 +155,7 @@ AUTOMAKE_run ()
   $AUTOMAKE ${1+"$@"} >stdout 2>stderr || am__got_rc=$?
   cat stderr >&2
   cat stdout
-  if test $am_using_tap != yes; then
+  if test $am_test_protocol = none; then
     test $am__got_rc -eq $am__exp_rc || exit 1
     return
   fi
@@ -795,6 +795,6 @@ am_setup_testdir ()
 am_extra_info ()
 {
   echo "Running from installcheck: $am_running_installcheck"
-  echo "Using TAP: $am_using_tap"
+  echo "Test Protocol: $am_test_protocol"
   echo "PATH = $PATH"
 }
