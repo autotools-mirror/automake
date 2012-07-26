@@ -19,6 +19,39 @@
 ###  IMPORTANT NOTE: keep this file 'set -e' clean.  ###
 ########################################################
 
+# CDPATH is evil if used in non-interactive scripts (and even more
+# evil if exported in the environment).
+CDPATH=; unset CDPATH
+
+# Be more Bourne compatible.
+# (Snippet inspired to configure's initialization in Autoconf 2.64)
+DUALCASE=1; export DUALCASE # for MKS sh
+if test -n "${ZSH_VERSION+set}" && (emulate sh) >/dev/null 2>&1; then
+  emulate sh
+  NULLCMD=:
+  setopt NO_GLOB_SUBST
+  # If Zsh is not started directly in POSIX-compatibility mode, it has some
+  # incompatibilities in the handling of $0 that conflict with our usage;
+  # i.e., $0 inside a file sourced with the '.' builtin is temporarily set
+  # to the name of the sourced file.  Work around that.
+  # Note that a bug in some versions of Zsh prevents us from resetting $0
+  # in a sourced script, so the use of $argv0.  For more info see:
+  #   <http://www.zsh.org/mla/workers/2009/msg01140.html>
+  # The apparently useless 'eval' here is needed by at least dash 0.5.2,
+  # to prevent it from bailing out with an error like:
+  #   "Syntax error: Bad substitution".
+  eval 'argv0=${functrace[-1]%:*}' && test -f "$argv0" || {
+    echo "Cannot determine the path of running test script." >&2
+    echo "Your Zsh (version $ZSH_VERSION) is probably too old." >&2
+    exit 99
+  }
+else
+  argv0=$0
+  # Avoid command substitution failure, for it might cause problems with
+  # "set -e" on some shells.
+  case `(set -o) 2>/dev/null || :` in *posix*) set -o posix;; esac
+fi
+
 # A single whitespace character.
 sp=' '
 # A tabulation character.
@@ -31,7 +64,14 @@ nl='
 # is defined initially, so that saving and restoring $IFS works.
 IFS=$sp$tab$nl
 
-# Source extra configuration.
+# The name of the current test (without the '.sh' or '.tap' suffix).
+me=${argv0##*/} # Strip all directory components.
+case $me in     # Strip test suffix.
+   *.tap) me=${me%.tap};;
+    *.sh) me=${me%.sh} ;;
+ esac
+
+# Source extra package-specific configuration.
 . test-defs.sh
 # And fail hard if something went wrong.
 test $? -eq 0 || exit 99
