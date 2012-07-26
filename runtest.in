@@ -61,12 +61,6 @@ test $# -gt 0 || error "missing argument"
 tst=$1; shift
 
 case $tst in
-   *.sh) wrapper () { exec "$@"; };;
-  *.tap) wrapper () { exec "$AM_PROVE_CMD" $AM_PROVEFLAGS -e "$@"; };;
-      *) error "test '$tst' has an unrecognized extension";;
-esac
-
-case $tst in
   /*) ;;
    *) if test -f ./$tst; then
         tst=./$tst
@@ -79,5 +73,14 @@ case $tst in
       ;;
 esac
 
-wrapper "$AM_TEST_RUNNER_SHELL" $shell_opts "$tst" "$@"
+case $tst in
+  *.sh)
+    exec $AM_TEST_RUNNER_SHELL $shell_opts "$tst" "$@" ;;
+  *.tap)
+    exec "$AM_PROVE_CMD" $AM_PROVEFLAGS -e \
+         "$AM_TEST_RUNNER_SHELL $shell_opts" "$tst" "$@" ;;
+  *)
+    error "test '$tst' has an unrecognized extension" ;;
+esac
+
 error "dead code reached"
