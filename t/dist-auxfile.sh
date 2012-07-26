@@ -79,8 +79,6 @@ END
   grep "^configure\\.ac:6:.* required file.*$auxdir_rx/zardoz"    stderr
 
   touch $auxdir/foo.txt $auxdir/bar.sh $auxdir/zardoz
-  cp "$am_scriptdir"/missing "$am_scriptdir"/install-sh $auxdir \
-    || fatal_ "fetching auxiliary scripts 'missing' and 'install-sh'"
   $AUTOMAKE
   ./configure
   $MAKE test

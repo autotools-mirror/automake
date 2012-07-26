@@ -161,6 +161,7 @@ General ideas
 
 * General Operation::           General operation of Automake
 * Strictness::                  Standards conformance checking
+* Auxiliary files::             Automatic installation of auxiliary files
 * Uniform::                     The Uniform Naming Scheme
 * Length Limitations::          Staying below the command line length limit
 * Canonicalization::            How derived variables are named
@@ -1783,6 +1784,7 @@ understand how Automake works.
 @menu
 * General Operation::           General operation of Automake
 * Strictness::                  Standards conformance checking
+* Auxiliary files::             Automatic installation of auxiliary files
 * Uniform::                     The Uniform Naming Scheme
 * Length Limitations::          Staying below the command line length limit
 * Canonicalization::            How derived variables are named
@@ -1965,6 +1967,29 @@ standard is actually published (which may never happen).
 @xref{Gnits}, for more information on the precise implications of the
 strictness level.
 
+@node Auxiliary files
+@section Automatic installation of auxiliary files
+
+Automake requires certain common files to exist in certain situations;
+for instance, @file{config.guess} is required if @file{configure.ac}
+invokes @code{AC_CANONICAL_HOST}.  Automake is distributed with several
+of these files (@pxref{Auxiliary Programs}); @command{automake} will
+automatically add the missing required files to the package, whenever
+needed.
+By default Automake tries to make a symbolic link pointing to its own
+copy of the missing file; this can be changed with @option{--copy}.
+
+Many of the potentially-missing files are common scripts whose
+location may be specified via the @code{AC_CONFIG_AUX_DIR} macro.
+Therefore, @code{AC_CONFIG_AUX_DIR}'s setting affects whether a
+file is considered missing, and where the missing file is added
+(@pxref{Optional}).
+
+In some strictness modes, additional files are installed, see
+@ref{Gnits} for more information.
+
+@cindex auxiliary files, automatic installation
+@cindex Automatic installation of auxiliary files
 
 @node Uniform
 @section The Uniform Naming Scheme
@@ -2416,9 +2441,8 @@ zardoz_LDADD = $(LIBOBJS)
 info_TEXINFOS = zardoz.texi
 @end example
 
-Now you can run @samp{automake --add-missing} to generate your
-@file{Makefile.in} and grab any auxiliary files you might need, and
-you're done!
+Now you can run @samp{automake} to generate your @file{Makefile.in} and
+grab any auxiliary files you might need, and you're done!
 
 
 @node true
@@ -2552,28 +2576,6 @@ have to run @command{autoconf} yourself for this purpose.
 @cindex @file{config.guess}
 
 @table @code
-@item -a
-@itemx --add-missing
-@opindex -a
-@opindex --add-missing
-Automake requires certain common files to exist in certain situations;
-for instance, @file{config.guess} is required if @file{configure.ac} invokes
-@code{AC_CANONICAL_HOST}.  Automake is distributed with several of these
-files (@pxref{Auxiliary Programs}); this option will cause the missing
-ones to be automatically added to the package, whenever possible.  In
-general if Automake tells you a file is missing, try using this option.
-By default Automake tries to make a symbolic link pointing to its own
-copy of the missing file; this can be changed with @option{--copy}.
-
-Many of the potentially-missing files are common scripts whose
-location may be specified via the @code{AC_CONFIG_AUX_DIR} macro.
-Therefore, @code{AC_CONFIG_AUX_DIR}'s setting affects whether a
-file is considered missing, and where the missing file is added
-(@pxref{Optional}).
-
-In some strictness modes, additional files are installed, see @ref{Gnits}
-for more information.
-
 @item --libdir=@var{dir}
 @opindex --libdir
 Look for Automake data files in directory @var{dir} instead of in the
@@ -2589,17 +2591,17 @@ scripts and data files (like e.g., @file{texinfo.texi} and
 @opindex -c
 @itemx --copy
 @opindex --copy
-When used with @option{--add-missing}, causes installed files to be
-copied.  The default is to make a symbolic link.
+Causes standard files (if any) to be copied.  The default is to make a
+symbolic link.
 
 @item -f
 @opindex -f
 @itemx --force-missing
 @opindex --force-missing
-When used with @option{--add-missing}, causes standard files to be reinstalled
-even if they already exist in the source tree.  This involves removing
-the file from the source tree before creating the new symlink (or, with
-@option{--copy}, copying the new file).
+Causes standard files to be reinstalled even if they already exist in
+the source tree.  This involves removing the file from the source tree
+before creating the new symlink (or, with @option{--copy}, copying the
+new file).
 
 @item --foreign
 @opindex --foreign
@@ -6845,7 +6847,7 @@ dependencies are computed by running all compilations through a
 special wrapper program called @command{depcomp}.  @command{depcomp}
 understands how to coax many different C and C++ compilers into
 generating dependency information in the format it requires.
-@samp{automake -a} will install @command{depcomp} into your source
+@samp{automake} will install @command{depcomp} into your source
 tree for you.  If @command{depcomp} can't figure out how to properly
 invoke your compiler, dependency tracking will simply be disabled for
 your build.
@@ -7800,8 +7802,7 @@ was last modified.
 
 The @file{version.texi} support requires the @command{mdate-sh}
 script; this script is supplied with Automake and automatically
-included when @command{automake} is invoked with the
-@option{--add-missing} option.
+included when @command{automake} is invoked.
 
 If you have multiple Texinfo files, and you want to use the
 @file{version.texi} feature, then you have to have a separate version
@@ -7828,8 +7829,8 @@ the same directory as the @file{Makefile.am} file that lists the
 @file{.texi} files.  If you used @code{AC_CONFIG_AUX_DIR} in
 @file{configure.ac} (@pxref{Input, , Finding `configure' Input,
 autoconf, The Autoconf Manual}), then @file{texinfo.tex} is looked for
-there.  In both cases, @command{automake} then supplies @file{texinfo.tex} if
-@option{--add-missing} is given, and takes care of its distribution.
+there.  In both cases, @command{automake} then supplies @file{texinfo.tex}
+and takes care of its distribution.
 However, if you set the @code{TEXINFO_TEX} variable (see below),
 it overrides the location of the file and turns off its installation
 into the source as well as its distribution.
@@ -8312,7 +8313,7 @@ in @file{configure.ac}).  Also, files that are read by @command{configure}
 Autoconf macros such as @code{AC_CONFIG_FILES} and siblings) are
 automatically distributed.  Files included in a @file{Makefile.am} (using
 @code{include}) or in @file{configure.ac} (using @code{m4_include}), and
-helper scripts installed with @samp{automake --add-missing} are also
+helper scripts installed by @samp{automake} itself are also
 distributed.
 
 @vindex EXTRA_DIST
@@ -10809,7 +10810,7 @@ The files @file{INSTALL}, @file{NEWS}, @file{README}, @file{AUTHORS},
 and @file{ChangeLog}, plus one of @file{COPYING.LIB}, @file{COPYING.LESSER}
 or @file{COPYING}, are required at the topmost directory of the package.
 
-If the @option{--add-missing} option is given, @command{automake} will
+@command{automake} will by default
 add a generic version of the @file{INSTALL} file as well as the
 @file{COPYING} file containing the text of the current version of the
 GNU General Public License existing at the time of this Automake release
@@ -11259,10 +11260,10 @@ Automake places no restrictions on the distribution of the resulting
 distribute their work under terms like those of the GPL, but doing so
 is not required to use Automake.
 
-Some of the files that can be automatically installed via the
-@option{--add-missing} switch do fall under the GPL@.  However, these also
-have a special exception allowing you to distribute them with your
-package, regardless of the licensing you choose.
+Some of the files that can be automatically installed bu @command{automake}
+do fall under the GPL@.  However, these also have a special exception
+allowing you to distribute them with your package, regardless of the
+licensing you choose.
 
 
 @node API Versioning
@@ -11343,12 +11344,12 @@ Automake maintains three kind of files in a package.
 @item auxiliary tools like @file{install-sh} or @file{py-compile}
 @end itemize
 
-@file{aclocal.m4} is generated by @command{aclocal} and contains some
-Automake-supplied M4 macros.  Auxiliary tools are installed by
-@samp{automake --add-missing} when needed.  @file{Makefile.in}s are
-built from @file{Makefile.am} by @command{automake}, and rely on the
-definitions of the M4 macros put in @file{aclocal.m4} as well as the
-behavior of the auxiliary tools installed.
+@file{aclocal.m4} is generated by @command{aclocal} and contains
+some Automake-supplied M4 macros.  Auxiliary tools are installed
+by @samp{automake} when needed.  @file{Makefile.in}s are built
+from @file{Makefile.am} by @command{automake}, and rely on the
+definitions of the M4 macros put in @file{aclocal.m4} as well as
+the behavior of the auxiliary tools installed.
 
 Because all of these files are closely related, it is important to
 regenerate all of them when upgrading to a newer Automake release.
@@ -11357,7 +11358,7 @@ The usual way to do that is
 @example
 aclocal # with any option needed (such a -I m4)
 autoconf
-automake --add-missing --force-missing
+automake --force-missing
 @end example
 
 @noindent

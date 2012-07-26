@@ -29,11 +29,10 @@ END
 : >INSTALL
 
 $ACLOCAL
-AUTOMAKE_fails
-grep 'COPYING' stderr
-
-AUTOMAKE_run --add-missing
+AUTOMAKE_run
 grep 'COPYING' stderr
 grep 'GNU General Public License' stderr
 grep 'Consider adding.*version control' stderr
 test -f COPYING
+
+:

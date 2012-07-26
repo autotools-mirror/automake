@@ -55,14 +55,9 @@ cat - libMakefile.am > libMakefile2.am << 'END'
 AUTOMAKE_OPTIONS = no-dependencies
 END
 
-# Make sure 'compile' is required.
-for m in $makefiles; do
-  AUTOMAKE_fails $m
-  $EGREP " required file.* '(compile|\./compile)'" stderr
-done
-
-: > compile
 $AUTOMAKE
+# Make sure 'compile' is required.
+test -f compile
 
 # Regression test for missing space.
 $FGREP ')-c' $makefiles && exit 1

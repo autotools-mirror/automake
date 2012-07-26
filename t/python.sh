@@ -39,10 +39,6 @@ python_PYTHON = in.py
 END
 
 $ACLOCAL
-
-AUTOMAKE_fails
-grep '^Makefile\.am:1:.* required file.*py-compile' stderr
-
 $AUTOMAKE -a
 grep '^py_compile *=' Makefile.in
 test -f py-compile

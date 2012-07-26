@@ -153,30 +153,13 @@ check_ ()
   # Test once with '--copy', once without.
   for action in link copy; do
     case $action in
-      link) opts='--add-missing';;
-      copy) opts='-a --copy';;
+      link) opts=;;
+      copy) opts=--copy;;
          *) fatal_ "invalid value '$action' for \$action";;
     esac
     pfx="[$action $name]"
     cp -R generic $action
     cd $action
-    # If the required auxiliary files are missing, and automake is
-    # not told to install them, it should complain and error out,
-    # and also give a useful suggestion.
-    AUTOMAKE_fails -d "$pfx missing files, automake fails"
-    for f in $files; do
-      command_ok_ \
-        "$pfx warn about missing file $f" \
-        $FGREP "required file '$build_aux/$f' not found" stderr
-      # Suggest the user to use '--add-missing'.
-      command_ok_ \
-        "$pfx suggest --add-missing for $f" \
-        grep ".*--add-missing.* install .*'$f'" stderr
-    done
-    # No files should be automatically installed by automake if it
-    # is not told to.
-    if ls "$build_aux" | grep .; then r='not ok'; else r=ok; fi
-    result_ "$r" "$pfx no extra files installed"
     AUTOMAKE_run -d "$pfx automake run successfully" -- $opts
     ls -l . $build_aux
     # The expected files should get installed correctly (e.g., no
