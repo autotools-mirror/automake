@@ -16,11 +16,9 @@
 
 # Check test counts in the testsuite summary.
 
-. test-defs.sh
+. test-lib.sh
 
-use_colors=no
-use_vpath=no
-
+use_colors=no; use_vpath=no
 . testsuite-summary-checks.sh
 
 ./configure

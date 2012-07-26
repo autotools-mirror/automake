@@ -17,7 +17,7 @@
 # TAP support:
 #  - colorized testsuite summary
 
-. test-defs.sh
+. test-lib.sh
 
 use_colors=no
 . tap-summary-aux.sh
