@@ -34,14 +34,6 @@ VAR = bar
 END
 
 $ACLOCAL
-
-# The issue would not manifest with threaded execution.
-unset AUTOMAKE_JOBS || :
-AUTOMAKE_run -Wno-error
-grep 'VAR multiply defined' stderr
-
-AUTOMAKE_JOBS=2
-export AUTOMAKE_JOBS
 AUTOMAKE_run -Wno-error
 grep 'VAR multiply defined' stderr
 

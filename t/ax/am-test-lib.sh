@@ -517,12 +517,6 @@ require_tool ()
       fi
       unset priv_check_temp overwrite_status
       ;;
-    # Extra quoting required to avoid maintainer-check spurious failures.
-    'perl-threads')
-      if test "$WANT_NO_THREADS" = "yes"; then
-        skip_all_ "Devel::Cover cannot cope with threads"
-      fi
-      ;;
     native)
       # Don't use "&&" here, to avoid a bug of 'set -e' present in
       # some (even relatively recent) versions of the BSD shell.

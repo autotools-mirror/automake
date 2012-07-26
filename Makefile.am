@@ -673,7 +673,6 @@ PERL_COVER = cover
 check-coverage-run recheck-coverage-run: all
 	$(MKDIR_P) $(PERL_COVERAGE_DB)
 	PERL5OPT="$$PERL5OPT $(PERL_COVERAGE_FLAGS)"; export PERL5OPT; \
-	WANT_NO_THREADS=yes; export WANT_NO_THREADS; unset AUTOMAKE_JOBS; \
 	$(MAKE) `echo $@ | sed 's/-coverage-run//'`
 
 check-coverage-report:

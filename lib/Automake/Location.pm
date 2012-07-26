@@ -59,13 +59,6 @@ Automake::Location - a class for location tracking, with a stack of contexts
   # that would otherwise be modified.
   my $where_copy = $where->clone;
 
-  # Serialize a Location object (for passing through a thread queue,
-  # for example)
-  my @array = $where->serialize ();
-
-  # De-serialize: recreate a Location object from a queue.
-  my $where = new Automake::Location::deserialize ($queue);
-
 =head1 DESCRIPTION
 
 C<Location> objects are used to keep track of locations in Automake,
@@ -205,46 +198,6 @@ sub dump ($)
       $res .= ": $pair->[1]\n";
     }
   return $res;
-}
-
-=item C<@array = $location-E<gt>serialize>
-
-Serialize a Location object (for passing through a thread queue,
-for example).
-
-=cut
-
-sub serialize ($)
-{
-  my ($self) = @_;
-  my @serial = ();
-  push @serial, $self->get;
-  my @contexts = $self->get_contexts;
-  for my $pair (@contexts)
-    {
-      push @serial, @{$pair};
-    }
-  push @serial, undef;
-  return @serial;
-}
-
-=item C<new Automake::Location::deserialize ($queue)>
-
-De-serialize: recreate a Location object from a queue.
-
-=cut
-
-sub deserialize ($)
-{
-  my ($queue) = @_;
-  my $position = $queue->dequeue ();
-  my $self = new Automake::Location $position;
-  while (my $position = $queue->dequeue ())
-    {
-      my $context = $queue->dequeue ();
-      push @{$self->{'contexts'}}, [$position, $context];
-    }
-  return $self;
 }
 
 =back
