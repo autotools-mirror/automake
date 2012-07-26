@@ -31,6 +31,11 @@ nl='
 # is defined initially, so that saving and restoring $IFS works.
 IFS=$sp$tab$nl
 
+# Source extra configuration.
+. test-defs.sh
+# And fail hard if something went wrong.
+test $? -eq 0 || exit 99
+
 # We use a trap below for cleanup.  This requires us to go through
 # hoops to get the right exit status transported through the signal.
 # Turn off errexit here so that we don't trip the bug with OSF1/Tru64
