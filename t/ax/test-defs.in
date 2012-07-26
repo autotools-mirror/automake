@@ -21,74 +21,15 @@
 # IMPORTANT NOTES AND REQUIREMENTS
 #   - Multiple inclusions of this file should be idempotent.
 #   - This code has to be 'set -e' clean.
-#   - This file should execute correctly with any system's /bin/sh
-#     shell, not only with configure-time detected $SHELL and/or
-#     $AM_TEST_RUNNER_SHELL.
-
-# CDPATH is evil if exported in the environment.
-CDPATH=; unset CDPATH
-
-# Be more Bourne compatible.
-# (Snippet inspired to configure's initialization in Autoconf 2.64)
-DUALCASE=1; export DUALCASE # for MKS sh
-if test -n "${ZSH_VERSION+set}" && (emulate sh) >/dev/null 2>&1; then
-  emulate sh
-  NULLCMD=:
-  setopt NO_GLOB_SUBST
-  # If Zsh is not started directly in POSIX-compatibility mode, it has some
-  # incompatibilities in the handling of $0 that conflict with our usage;
-  # i.e., $0 inside a file sourced with the '.' builtin is temporarily set
-  # to the name of the sourced file.  Work around that.
-  # Note that a bug in some versions of Zsh prevents us from resetting $0
-  # in a sourced script, so the use of $argv0.  For more info see:
-  #   <http://www.zsh.org/mla/workers/2009/msg01140.html>
-  # The apparently useless 'eval' here is needed by at least dash 0.5.2,
-  # to prevent it from bailing out with an error like:
-  #   "Syntax error: Bad substitution".
-  eval 'argv0=${functrace[-1]%:*}' && test -f "$argv0" || {
-    echo "Cannot determine the path of running test script." >&2
-    echo "Your Zsh (version $ZSH_VERSION) is probably too old." >&2
-    exit 99
-  }
-else
-  argv0=$0
-  # Avoid command substitution failure, for Tru64 sh -e and instspc*.test.
-  case `(set -o) 2>/dev/null || :` in *posix*) set -o posix;; esac
-fi
-
-# The name of the current test (without the '.sh' or '.tap' suffix).
-me=${argv0##*/} # Strip all directory components.
-case $me in     # Strip test suffix.
-   *.tap) me=${me%.tap};;
-    *.sh) me=${me%.sh} ;;
- esac
-
-# Check that the environment is properly sanitized.
-# Having variables exported to the empty string is OK, since our code
-# treats such variables as if they were unset.
-for var in \
-  required \
-  am_using_tap \
-  am_serial_tests \
-  am_create_testdir \
-  am_tap_implementation \
-  am_test_prefer_config_shell \
-  am_original_AUTOMAKE \
-  am_original_ACLOCAL \
-; do
-  if eval "test x\"\$$var\" != x" && env | grep "^$var=" >/dev/null; then
-    echo "$me: variable '$var' is set in the environment:" \
-         "this is unsafe" >&2
-    exit 99
-  fi
-done
-unset var
 
 # See whether the current test script is expected to use TAP or not.
 # Use a sensible default, while allowing the scripts to override this
 # check.
-if test -z "$am_using_tap"; then
-  case $argv0 in *.tap) am_using_tap=yes;; *) am_using_tap=no;; esac
+if test -z "$am_test_protocol"; then
+  case $argv0 in
+    *.tap) am_test_protocol=tap;;
+        *) am_test_protocol=none;;
+  esac
 fi
 
 am_rel_srcdir='@srcdir@'
@@ -162,8 +103,8 @@ AUTOUPDATE=${AM_TESTSUITE_AUTOUPDATE-${AUTOUPDATE-'@am_AUTOUPDATE@'}}
 
 # Tests who want complete control over aclocal or automake command-line
 # options should use $am_original_ACLOCAL or $am_original_AUTOMAKE.  The
-# "test -z" tests take care not to re-initialize them if defs-static
-# is re-sourced, as we want defs-static to remain really idempotent.
+# "test -z" tests take care not to re-initialize them if 'test-defs.sh'
+# is re-sourced, as we want that file to remain really idempotent.
 if test -z "$am_original_AUTOMAKE"; then
   am_original_AUTOMAKE=${AM_TESTSUITE_AUTOMAKE-${AUTOMAKE-"automake-$APIVERSION"}}
 fi
@@ -239,8 +180,5 @@ case $PATH in
   $am_bindir$PATH_SEPARATOR*) ;;
   *) PATH=$am_bindir$PATH_SEPARATOR$PATH;;
 esac
-
-# Make our helper script accessible by default.
-PATH=$am_testauxdir$PATH_SEPARATOR$PATH
 
 export PATH

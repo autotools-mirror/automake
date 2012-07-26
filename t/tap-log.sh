@@ -29,7 +29,7 @@ TESTS = pass.test skip.test xfail.test fail.test xpass.test error.test
 TEST_SUITE_LOG = global.log
 END
 
-. "$am_testauxdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"
+. tap-setup.sh
 
 # Custom markers, for use in grepping checks.
 cmarker=::: # comment marker

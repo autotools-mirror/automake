@@ -26,7 +26,7 @@ b.log: a.log
 c.log: b.log
 END
 
-. "$am_testauxdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"
+. tap-setup.sh
 
 cat > a.test << 'END'
 #!/bin/sh

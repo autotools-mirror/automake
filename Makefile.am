@@ -329,14 +329,17 @@ TESTS = ## Will be updated later.
 
 # Some testsuite-influential variables should be overridable from the
 # test scripts, but not from the environment.
+# Keep this in sync with the similar list in 'runtest.in'.
 AM_TESTS_ENVIRONMENT = \
   for v in \
     required \
-    am_using_tap \
+    am_test_protocol \
     am_serial_tests \
     am_test_prefer_config_shell \
     am_original_AUTOMAKE \
     am_original_ACLOCAL \
+    am_test_lib_sourced \
+    test_lib_sourced \
   ; do \
     eval test x"\$${$$v}" = x || unset $$v; \
   done;
@@ -344,6 +347,16 @@ AM_TESTS_ENVIRONMENT = \
 # the console if possible, so set up 'stderr_fileno_' properly.
 AM_TESTS_FD_REDIRECT = 9>&2
 AM_TESTS_ENVIRONMENT += stderr_fileno_=9; export stderr_fileno_;
+
+# For sourcing of extra "shell libraries" by our test scripts.  As per
+# POSIX, sourcing a file with '.' will cause it to be looked up in $PATH
+# in case it is given with a relative name containing no slashes.
+AM_TESTS_ENVIRONMENT += \
+  if test $(srcdir) != .; then \
+    PATH='$(abs_srcdir)/t/ax'$(PATH_SEPARATOR)$$PATH; \
+  fi; \
+  PATH='$(abs_builddir)/t/ax'$(PATH_SEPARATOR)$$PATH; \
+  export PATH;
 
 # Hand-written tests.
 
@@ -379,26 +392,34 @@ include $(srcdir)/contrib/t/local.am
 TESTS += $(contrib_TESTS)
 EXTRA_DIST += $(contrib_TESTS)
 
-# Static dependencies valid for each test case.
-check_SCRIPTS = t/wrap/aclocal-$(APIVERSION) t/wrap/automake-$(APIVERSION)
-dist_check_DATA = \
-  t/ax/test-init.sh  \
-  t/ax/plain-functions.sh  \
+# Static dependencies valid for each test case (also further
+# extended later).  Note that use 'noinst_' rather than 'check_'
+# as the prefix, because we really want them to be built by
+# "make all".  This makes it easier to run the test cases by
+# hand after having simply configured and built the package.
+
+nodist_noinst_SCRIPTS = \
+  t/wrap/aclocal-$(APIVERSION) \
+  t/wrap/automake-$(APIVERSION)
+
+dist_noinst_DATA = \
+  t/ax/test-lib.sh \
+  t/ax/am-test-lib.sh \
   t/ax/tap-functions.sh
-nodist_check_DATA = defs-static
 
 # Few more static dependencies.
 t/distcheck-missing-m4.log: t/ax/distcheck-hook-m4.am
 t/distcheck-outdated-m4.log: t/ax/distcheck-hook-m4.am
 EXTRA_DIST += t/ax/distcheck-hook-m4.am
 
-defs-static: defs-static.in Makefile
+t/ax/test-defs.sh: t/ax/test-defs.in Makefile
 	$(AM_V_at)rm -f $@ $@-t
-	$(AM_V_GEN)in=defs-static.in\
-	  && $(do_subst) <$(srcdir)/defs-static.in >$@-t
+	$(AM_V_GEN)in=t/ax/test-defs.in \
+	  && $(do_subst) <$(srcdir)/$$in >$@-t
 	$(generated_file_finalize)
-EXTRA_DIST += defs-static.in
-CLEANFILES += defs-static
+EXTRA_DIST += t/ax/test-defs.in
+CLEANFILES += t/ax/test-defs.sh
+nodist_noinst_DATA = t/ax/test-defs.sh
 
 runtest: runtest.in Makefile
 	$(AM_V_at)rm -f $@ $@-t
@@ -462,13 +483,22 @@ check-local: check-tests-syntax
 .PHONY: check-tests-syntax
 
 ## Checking the list of tests.
-test_subdirs = t t/pm t/perf contrib/t
+test_subdirs = t t/pm contrib/t
 include $(srcdir)/t/CheckListOfTests.am
 
 # Run the testsuite with the installed aclocal and automake.
 installcheck-local: installcheck-testsuite
 installcheck-testsuite:
 	am_running_installcheck=yes $(MAKE) $(AM_MAKEFLAGS) check
+
+# Performance tests.
+.PHONY: perf
+perf: all
+	$(MAKE) $(AM_MAKEFLAGS) TEST_SUITE_LOG='$(PERF_TEST_SUITE_LOG)'	\
+	                        TESTS='$(perf_TESTS)' check
+PERF_TEST_SUITE_LOG = t/perf/test-suite.log
+CLEANFILES += $(PERF_TEST_SUITE_LOG)
+EXTRA_DIST += $(perf_TESTS)
 
 clean-local: clean-local-check
 .PHONY: clean-local-check
@@ -545,7 +575,7 @@ amhello_configury = \
   missing \
   src/Makefile.in
 
-dist_noinst_DATA = $(amhello_sources)
+dist_noinst_DATA += $(amhello_sources)
 dist_doc_DATA = $(srcdir)/doc/amhello-1.0.tar.gz
 
 # We depend on configure.ac so that we regenerate the tarball

@@ -34,7 +34,7 @@ done
 
 chmod a+x *.test
 
-. "$am_testauxdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"
+. tap-setup.sh
 
 $MAKE check >stdout && { cat stdout; exit 1; }
 cat stdout

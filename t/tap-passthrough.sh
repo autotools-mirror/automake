@@ -24,7 +24,7 @@
 
 weirdchars=\''"\$@!&()[]<>#;,:.^?*/'
 
-. "$am_testauxdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"
+. tap-setup.sh
 
 #
 # Only successful tests.

@@ -21,7 +21,7 @@
 
 . ./defs || exit 1
 
-. "$am_testauxdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"
+. tap-setup.sh
 
 echo 'Bail out! 0' > a.test
 echo 'Bail out! 0.0' > b.test
