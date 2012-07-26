@@ -962,7 +962,6 @@ t/self-check-me.tap \
 t/self-check-report.sh \
 t/self-check-seq.tap \
 t/self-check-is-blocked-signal.tap \
-t/self-check-tap.sh \
 t/self-check-unindent.tap \
 t/sanity.sh \
 t/scripts.sh \
