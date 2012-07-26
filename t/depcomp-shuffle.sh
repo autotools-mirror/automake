@@ -18,6 +18,6 @@
 #  - in-tree build
 #  - no use of subdir objects
 
-. ./defs-static || exit 99
+. test-lib.sh
 xdir='' vpath='no'
-. "$am_testauxdir"/depcomp-shuffle.sh
+. depcomp-shuffle.sh

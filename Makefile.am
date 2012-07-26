@@ -305,8 +305,7 @@ include $(srcdir)/contrib/t/local.am
 all_TESTS = \
   $(wildcard $(srcdir)/t/*.sh) \
   $(wildcard $(srcdir)/t/*.tap) \
-  $(wildcard $(srcdir)/t/pm/*.pl) \
-  $(wildcard $(srcdir)/t/perf/*.sh)
+  $(wildcard $(srcdir)/t/pm/*.pl)
 
 # This is to ensure longer-running tests will be run earlier, which is
 # useful when running the testsuite in parallel on multicore machines.
@@ -360,14 +359,17 @@ XFAIL_TESTS = \
 
 # Some testsuite-influential variables should be overridable from the
 # test scripts, but not from the environment.
+# Keep this in sync with the similar list in 'runtest.in'.
 AM_TESTS_ENVIRONMENT = \
   for v in \
     required \
-    am_using_tap \
+    am_test_protocol \
     am_serial_tests \
     am_test_prefer_config_shell \
     am_original_AUTOMAKE \
     am_original_ACLOCAL \
+    am_test_lib_sourced \
+    test_lib_sourced \
   ; do \
     eval test x"\$${$$v}" = x || unset $$v; \
   done;
@@ -375,6 +377,16 @@ AM_TESTS_ENVIRONMENT = \
 # the console if possible, so set up 'stderr_fileno_' properly.
 AM_TESTS_FD_REDIRECT = 9>&2
 AM_TESTS_ENVIRONMENT += stderr_fileno_=9; export stderr_fileno_;
+
+# For sourcing of extra "shell libraries" by our test scripts.  As per
+# POSIX, sourcing a file with '.' will cause it to be looked up in $PATH
+# in case it is given with a relative name containing no slashes.
+AM_TESTS_ENVIRONMENT += \
+  if test $(srcdir) != .; then \
+    PATH='$(abs_srcdir)/t/ax'$(PATH_SEPARATOR)$$PATH; \
+  fi; \
+  PATH='$(abs_builddir)/t/ax'$(PATH_SEPARATOR)$$PATH; \
+  export PATH;
 
 # Automatically-computed dependencies for tests.
 include $(srcdir)/testsuite-autodeps.am
@@ -388,32 +400,38 @@ $(srcdir)/testsuite-autodeps.am: $(srcdir)/gen-testsuite-part
 	$(AM_V_at)chmod a-w $(@F)-t && mv -f $(@F)-t $@
 EXTRA_DIST += gen-testsuite-part
 
-# Static dependencies valid for each test case.
-check_SCRIPTS = t/wrap/aclocal-$(APIVERSION) t/wrap/automake-$(APIVERSION)
-dist_check_DATA = \
-  t/ax/test-init.sh  \
-  t/ax/plain-functions.sh  \
+# Static dependencies valid for each test case (also further
+# extended later).  Note that use 'noinst_' rather than 'check_'
+# as the prefix, because we really want them to be built by
+# "make all".  This makes it easier to run the test cases by
+# hand after having simply configured and built the package.
+
+nodist_noinst_SCRIPTS = \
+  t/wrap/aclocal-$(APIVERSION) \
+  t/wrap/automake-$(APIVERSION)
+
+dist_noinst_DATA = \
+  t/ax/test-lib.sh \
+  t/ax/am-test-lib.sh \
   t/ax/tap-functions.sh
-nodist_check_DATA = defs-static
 
 # Few more static dependencies.
 t/distcheck-missing-m4.log: t/ax/distcheck-hook-m4.am
 t/distcheck-outdated-m4.log: t/ax/distcheck-hook-m4.am
 EXTRA_DIST += t/ax/distcheck-hook-m4.am
 
-defs-static: defs-static.in Makefile
+t/ax/test-defs.sh: t/ax/test-defs.in Makefile
 	$(AM_V_at)rm -f $@ $@-t
 	$(AM_V_GEN)$(do_subst)
 	$(generated_file_finalize)
-EXTRA_DIST += defs-static.in
-CLEANFILES += defs-static
+EXTRA_DIST += t/ax/test-defs.in
+CLEANFILES += t/ax/test-defs.sh
+nodist_noinst_DATA = t/ax/test-defs.sh
 
 runtest: runtest.in Makefile
 	$(AM_V_at)rm -f $@ $@-t
-	$(AM_V_GEN)in=runtest.in \
-	  && $(MKDIR_P) t/ax \
-	  && $(do_subst) <$(srcdir)/runtest.in >$@-t \
-	  && chmod a+x $@-t
+	$(AM_V_GEN)$(do_subst)
+	$(AM_V_at)chmod a+x $@-t
 	$(generated_file_finalize)
 EXTRA_DIST += runtest.in
 CLEANFILES += runtest
@@ -474,10 +492,21 @@ installcheck-local: installcheck-testsuite
 installcheck-testsuite:
 	am_running_installcheck=yes $(MAKE) check
 
+# Performance tests.
+perf_TESTS = $(wildcard $(srcdir)/t/perf/*.sh) \
+             $(wildcard $(srcdir)/t/perf/*.tap)
+.PHONY: perf
+perf: all
+	$(MAKE) $(AM_MAKEFLAGS) TEST_SUITE_LOG='$(PERF_TEST_SUITE_LOG)'	\
+	                        TESTS='$(perf_TESTS)' check
+PERF_TEST_SUITE_LOG = t/perf/test-suite.log
+CLEANFILES += $(PERF_TEST_SUITE_LOG)
+EXTRA_DIST += $(perf_TESTS)
+
 clean-local: clean-local-check
 .PHONY: clean-local-check
 clean-local-check:
-## Directries candidate to be test directories match this wildcard.
+## Directories candidate to be test directories match this wildcard.
 	@globs='t/*.dir t/*/*.dir */t/*.dir */t/*/*.dir'; \
 ## The 'nullglob' bash option is not portable, so use perl.
 	dirs=`$(PERL) -e "print join(' ', glob('$$globs'));"` || exit 1; \
@@ -538,7 +567,7 @@ amhello_configury = \
   missing \
   src/Makefile.in
 
-dist_noinst_DATA = $(amhello_sources)
+dist_noinst_DATA += $(amhello_sources)
 dist_doc_DATA = $(srcdir)/doc/amhello-1.0.tar.gz
 
 # We depend on configure.ac so that we regenerate the tarball

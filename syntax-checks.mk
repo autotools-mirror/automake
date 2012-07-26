@@ -31,7 +31,11 @@ xtests := $(shell \
      done; \
    done | sort)
 
-xdefs = $(srcdir)/t/ax/test-init.sh $(srcdir)/defs $(srcdir)/defs-static.in
+xdefs = \
+  $(srcdir)/t/ax/am-test-lib.sh \
+  $(srcdir)/t/ax/test-lib.sh \
+  $(srcdir)/t/ax/test-defs.in \
+  $(srcdir)/defs
 
 ams := $(shell find $(srcdir) -name '*.dir' -prune -o -name '?*.am' -a -print)
 pms := $(dist_perllib_DATA)
@@ -421,6 +425,7 @@ sc_docs_no_make_e:
 sc_tests_obsolete_variables:
 	@vars=" \
 	  using_tap \
+	  am_using_tap \
 	  test_prefer_config_shell \
 	  original_AUTOMAKE \
 	  original_ACLOCAL \

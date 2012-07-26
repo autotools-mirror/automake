@@ -19,7 +19,7 @@
 
 . ./defs || exit 1
 
-. "$am_testauxdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"
+. tap-setup.sh
 
 # These nested loops below are clearer without indentation.
 i=0

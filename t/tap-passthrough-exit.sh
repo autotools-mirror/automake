@@ -38,7 +38,7 @@ END
   echo TESTS += exit-$e.test >> Makefile.am
 done
 
-. "$am_testauxdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"
+. tap-setup.sh
 
 st=0
 $MAKE check || st=$?

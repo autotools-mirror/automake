@@ -20,7 +20,7 @@
 
 . ./defs || exit 1
 
-. "$am_testauxdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"
+. tap-setup.sh
 
 cat > foo.test <<END
 some non-TAP text, will be copied in the global log

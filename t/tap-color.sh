@@ -36,7 +36,7 @@ TESTS = all.test skip.test bail.test badplan.test noplan.test \
         few.test many.test order.test afterlate.test
 END
 
-. "$am_testauxdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"
+. tap-setup.sh
 
 cat > all.test << 'END'
 1..5

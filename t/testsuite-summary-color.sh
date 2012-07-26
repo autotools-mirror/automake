@@ -16,12 +16,10 @@
 
 # Check coloring of the testsuite summary.
 
-. ./defs-static || exit 1
+. test-lib.sh
 
-use_colors=yes
-use_vpath=no
-
-. "$am_testauxdir"/testsuite-summary-checks.sh || exit 99
+use_colors=yes; use_vpath=no
+. testsuite-summary-checks.sh
 
 ./configure
 

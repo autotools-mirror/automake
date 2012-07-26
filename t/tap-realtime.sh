@@ -39,7 +39,7 @@ TESTS = all.test
 AM_COLOR_TESTS= no
 END
 
-. "$am_testauxdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"
+. tap-setup.sh
 
 cat > all.test <<'END'
 #! /bin/sh

@@ -22,7 +22,7 @@
 
 # Check that we are running from a proper directory: last thing we want
 # is to overwrite some random user files.
-test -f ../../defs-static && test -f ../../defs && test -d ../../t \
+test -f ../../automake && test -f ../../defs && test -d ../../t \
   || fatal_ "running from a wrong directory"
 
 test ! -f Makefile.am || mv Makefile.am Makefile.am~ \

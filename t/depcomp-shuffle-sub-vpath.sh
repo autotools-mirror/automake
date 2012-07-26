@@ -18,6 +18,6 @@
 #  - VPATH build
 #  - use of subdir objects
 
-. ./defs-static || exit '99'
+. test-lib.sh
 xdir='sub' vpath='yes'
-. "$am_testauxdir"/depcomp-shuffle.sh
+. depcomp-shuffle.sh
