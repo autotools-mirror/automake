@@ -503,7 +503,7 @@ EXTRA_DIST += $(perf_TESTS)
 clean-local: clean-local-check
 .PHONY: clean-local-check
 clean-local-check:
-## Directries candidate to be test directories match this wildcard.
+## Directories candidate to be test directories match this wildcard.
 	@globs='t/*.dir t/*/*.dir */t/*.dir */t/*/*.dir'; \
 ## The 'nullglob' bash option is not portable, so use perl.
 	dirs=`$(PERL) -e "print join(' ', glob('$$globs'));"` || exit 1; \
