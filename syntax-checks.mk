@@ -32,7 +32,8 @@ xtests := $(shell \
    done | sort)
 
 xdefs = \
-  $(srcdir)/t/ax/test-init.sh \
+  $(srcdir)/t/ax/am-test-lib.sh \
+  $(srcdir)/t/ax/test-lib.sh \
   $(srcdir)/t/ax/test-defs.in \
   $(srcdir)/defs
 
