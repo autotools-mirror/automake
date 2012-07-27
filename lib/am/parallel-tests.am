@@ -14,8 +14,6 @@
 ## You should have received a copy of the GNU General Public License
 ## along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-include color-tests.am
-
 ## New parallel test driver.
 ##
 ## The first version of the code here was adapted from check.mk, which was
@@ -66,38 +64,38 @@ am.test-suite.runtest = \
 am__tpfx = \
   $(if $1,$(call am.util.toupper,$(patsubst .%,%_,$1)))
 
-!define am.test-suite.handle-suffix
-!
+define am.test-suite.handle-suffix
+
 ## FIXME: This will pick up the default from the environment; are we sure
 ## FIXME: we want that?
-!$$(call am__tpfx,$1)LOG_DRIVER ?= $(SHELL) $(am.conf.aux-dir)/test-driver
-!
-!%.log %.trs: %$1 $$($$(call am__tpfx,$1)LOG_DEPENDENCIES)
-!	@$$(call am.test-suite.runtest,$$(call am__tpfx,$1))
-!
-!ifeq ($(am.conf.handle-exeext),yes)
-!ifdef EXEEXT
-!%.log %.trs: %$1$(EXEEXT) $$($$(call am__tpfx,$1)LOG_DEPENDENCIES)
-!	@$$(call am.test-suite.runtest,$$(call am__tpfx,$1))
-!endif # defined EXEEXT
-!endif # am.conf.handle-exeext = yes
-!
-!endef # am.test-suite.handle-suffix
-!
+$$(call am__tpfx,$1)LOG_DRIVER ?= $(SHELL) $(am.conf.aux-dir)/test-driver
+
+%.log %.trs: %$1 $$($$(call am__tpfx,$1)LOG_DEPENDENCIES)
+	@$$(call am.test-suite.runtest,$$(call am__tpfx,$1))
+
+ifeq ($(am.conf.handle-exeext),yes)
+ifdef EXEEXT
+%.log %.trs: %$1$(EXEEXT) $$($$(call am__tpfx,$1)LOG_DEPENDENCIES)
+	@$$(call am.test-suite.runtest,$$(call am__tpfx,$1))
+endif # defined EXEEXT
+endif # am.conf.handle-exeext = yes
+
+endef # am.test-suite.handle-suffix
+
 ## FIXME: this will pick up the default from the environment; are we sure
 ## FIXME: we want that?
-!TEST_EXTENSIONS ?= .test
-!$(foreach e,$(filter-out .%,$(TEST_EXTENSIONS)),\
-!     $(call am.error,invalid test extension: '$e'))
-!$(foreach e,$(TEST_EXTENSIONS), \
-!  $(eval $(call am.test-suite.handle-suffix,$e)))
+TEST_EXTENSIONS ?= .test
+$(foreach e,$(filter-out .%,$(TEST_EXTENSIONS)),\
+     $(call am.error,invalid test extension: '$e'))
+$(foreach e,$(TEST_EXTENSIONS), \
+  $(eval $(call am.test-suite.handle-suffix,$e)))
 ## It is *imperative* that the "empty" suffix goes last.  Otherwise, a
 ## declaration like "TESTS = all.test" would cause GNU make to mistakenly
 ## try to build the 'all.log' and 'all.trs' files from a non-existent
 ## 'all' program (because the Makefile contains an explicit 'all' target,
 ## albeit .PHONY), rather than from the 'all.test' script, thus causing
 ## all sort of mishaps and confusion.
-!$(eval $(call am.test-suite.handle-suffix))
+$(eval $(call am.test-suite.handle-suffix))
 
 # The names of the given tests scripts with any possible registered
 # test extension removed, as well as any leading '$(srcdir)' component
@@ -280,8 +278,8 @@ am.test-suite.rst-title = { sed 's/.*/   &   /;h;s/./=/g;p;x;s/ *$$//;p;g' && ec
 # These support runtime overriding of $(TESTS) and $(XFAIL_TESTS).
 # The first one must be left overridable (hence the definition with '?=',
 # because the 'recheck' target need to override  it (and in a tricky way).
-!am.test-suite.test-bases ?= \
-!  $(call am.memoize,am.test-suite.test-bases,$(call am.test-suite.get-test-bases,$(TESTS)))
+am.test-suite.test-bases ?= \
+  $(call am.memoize,am.test-suite.test-bases,$(call am.test-suite.get-test-bases,$(TESTS)))
 am.test-suite.xfail-test-bases = \
   $(call am.memoize,am.test-suite.xfail-test-bases,$(call am.test-suite.get-test-bases,$(XFAIL_TESTS)))
 
@@ -304,16 +302,16 @@ am.test-suite.append-to-list-of-bases = \
   @lst='$1'; for x in $$lst; do echo $$x; done \
     >> $(am.test-suite.workdir)/bases$(am.chars.newline)
 
-!define am.setup-test-harness-workdir
-!	@rm -rf $(am.test-suite.workdir)
-!	@$(MKDIR_P) $(am.test-suite.workdir)
-!	@touch $(am.test-suite.workdir)/bases
-!	$(call am.xargs-map,am.test-suite.append-to-list-of-bases, \
-!	       $(am.test-suite.test-bases))
-!	@workdir='$(am.test-suite.workdir)' \
-!	  && sed 's/$$/.log/' $$workdir/bases > $$workdir/logs \
-!	  && sed 's/$$/.trs/' $$workdir/bases > $$workdir/trs
-!endef
+define am.setup-test-harness-workdir
+	@rm -rf $(am.test-suite.workdir)
+	@$(MKDIR_P) $(am.test-suite.workdir)
+	@touch $(am.test-suite.workdir)/bases
+	$(call am.xargs-map,am.test-suite.append-to-list-of-bases, \
+	       $(am.test-suite.test-bases))
+	@workdir='$(am.test-suite.workdir)' \
+	  && sed 's/$$/.log/' $$workdir/bases > $$workdir/logs \
+	  && sed 's/$$/.trs/' $$workdir/bases > $$workdir/trs
+endef
 
 $(TEST_SUITE_LOG): $(am.test-suite.test-logs) $(am.test-suite.test-results)
 	$(am.setup-test-harness-workdir)
@@ -442,7 +440,7 @@ check-TESTS:
 
 ## Recheck must depend on $(check_SCRIPTS), $(check_PROGRAMS), etc.
 ## It must also depend on the 'all' target.  See automake bug#11252.
-recheck: all %CHECK_DEPS%
+recheck: all %CHECK-DEPS%
 	+$(am.setup-test-harness-workdir)
 ## See comments above in the check-TESTS recipe for why remove
 ## $(TEST_SUITE_LOG) here.
@@ -465,8 +463,8 @@ recheck: all %CHECK_DEPS%
 ## so that future "make recheck" invocations will still try to re-compile
 ## and re-run it (automake bug#11791).  This indirection is aimed at
 ## satisfying such a requirement.
-!ifeq ($(.am/doing-recheck),yes)
-!$(am.test-suite.test-logs) $(am.test-suite.test-results): .am/nil
-!endif
+ifeq ($(.am/doing-recheck),yes)
+$(am.test-suite.test-logs) $(am.test-suite.test-results): .am/nil
+endif
 
 AM_RECURSIVE_TARGETS += check recheck
