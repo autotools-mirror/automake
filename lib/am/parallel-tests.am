@@ -40,7 +40,7 @@ am.test-suite.runtest = \
 ## We need to invoke the test in way that won't cause a PATH search.
 ## Quotes around '$<' are required to avoid extra errors when a circular
 ## dependency is detected (e.g., because $(TEST_SUITE_LOG) is in
-## $(am__test_logs)), because in that case '$<' expands to empty and an
+## $(am.test-suite.test-logs)), because in that case '$<' expands to empty and an
 ## unquote usage of it could cause syntax errors in the shell.
   case '$<' in */*) tst='$<';; *) tst=./'$<';; esac;			\
 ## Executes the developer-defined and user-defined test
@@ -278,23 +278,23 @@ END { \
 am.test-suite.rst-title = { sed 's/.*/   &   /;h;s/./=/g;p;x;s/ *$$//;p;g' && echo; }
 
 # This supports runtime overriding of $(TESTS) and $(XFAIL_TESTS).
-!am__test_bases ?= \
-!  $(call am.memoize,am__test_bases,$(call am.test-suite.get-test-bases,$(TESTS)))
+!am.test-suite.test-bases ?= \
+!  $(call am.memoize,am.test-suite.test-bases,$(call am.test-suite.get-test-bases,$(TESTS)))
 am.test-suite.xfail-test-bases = \
   $(call am.memoize,am.test-suite.xfail-test-bases,$(call am.test-suite.get-test-bases,$(XFAIL_TESTS)))
 
 # The $(strip) is to work around the GNU make 3.80 bug where trailing
 # whitespace in "TESTS = foo.test $(empty)" causes $(TESTS_LOGS) to
 # erroneously expand to "foo.log .log".
-am__test_results = \
-  $(call am.memoize,am__test_results,$(addsuffix .trs,$(strip $(am__test_bases))))
-am__test_logs = \
-  $(call am.memoize,am__test_logs,$(addsuffix .log,$(strip $(am__test_bases))))
+am.test-suite.test-results = \
+  $(call am.memoize,am.test-suite.test-results,$(addsuffix .trs,$(strip $(am.test-suite.test-bases))))
+am.test-suite.test-logs = \
+  $(call am.memoize,am.test-suite.test-logs,$(addsuffix .log,$(strip $(am.test-suite.test-bases))))
 
-am__mostlyclean_files += $(am__test_results) $(am__test_logs)
+am__mostlyclean_files += $(am.test-suite.test-results) $(am.test-suite.test-logs)
 
 # $(TEST_LOGS) is a published interface.
-TEST_LOGS = $(am__test_logs)
+TEST_LOGS = $(am.test-suite.test-logs)
 
 am.test-suite.workdir = $(am__dir)/test-harness
 
@@ -307,13 +307,13 @@ am.test-suite.append-to-list-of-bases = \
 !	@$(MKDIR_P) $(am.test-suite.workdir)
 !	@touch $(am.test-suite.workdir)/bases
 !	$(call am.xargs-map,am.test-suite.append-to-list-of-bases, \
-!	       $(am__test_bases))
+!	       $(am.test-suite.test-bases))
 !	@workdir='$(am.test-suite.workdir)' \
 !	  && sed 's/$$/.log/' $$workdir/bases > $$workdir/logs \
 !	  && sed 's/$$/.trs/' $$workdir/bases > $$workdir/trs
 !endef
 
-$(TEST_SUITE_LOG): $(am__test_logs) $(am__test_results)
+$(TEST_SUITE_LOG): $(am.test-suite.test-logs) $(am.test-suite.test-results)
 	$(am.setup-test-harness-workdir)
 	@set +e; $(am.test-suite.tty-colors); \
 	fatal () { echo "fatal: making $@: $$*" >&2; exit 1; }; \
@@ -425,8 +425,8 @@ am__remove_if_not_lazy_check = \
   $(if $(filter yes,$(AM_LAZY_CHECK)),,$(call am.clean-cmd.f,$1))
 
 check-TESTS:
-	@$(call am__remove_if_not_lazy_check,$(am__test_results))
-	@$(call am__remove_if_not_lazy_check,$(am__test_logs))
+	@$(call am__remove_if_not_lazy_check,$(am.test-suite.test-results))
+	@$(call am__remove_if_not_lazy_check,$(am.test-suite.test-logs))
 ## We always have to remove TEST_SUITE_LOG, to ensure its rule is run
 ## in any case even in lazy mode: otherwise, if no test needs rerunning,
 ## or a prior run plus reruns all happen within the same timestamp (can
@@ -452,7 +452,7 @@ recheck: all %CHECK_DEPS%
 ## Remove newlines and normalize whitespace.
 	bases=`echo $$bases`; \
 ## Re-run the relevant tests, without hitting command-line length limits.
-	echo am__test_bases="$$bases" | \
+	echo am.test-suite.test-bases="$$bases" | \
 	  $(MAKE) -f- -f$(firstword $(MAKEFILE_LIST)) \
 	          $(TEST_SUITE_LOG) .am/doing-recheck=yes
 .PHONY: recheck
@@ -464,7 +464,7 @@ recheck: all %CHECK_DEPS%
 ## and re-run it (automake bug#11791).  This indirection is aimed at
 ## satisfying such a requirement.
 !ifeq ($(.am/doing-recheck),yes)
-!$(am__test_logs) $(am__test_results): .am/nil
+!$(am.test-suite.test-logs) $(am.test-suite.test-results): .am/nil
 !endif
 
 AM_RECURSIVE_TARGETS += check recheck

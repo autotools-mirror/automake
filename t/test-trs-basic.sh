@@ -34,7 +34,7 @@ SH_LOG_COMPILER = $(SHELL)
 ## $(am__tests_bases) are deliberate: they check for whitespace
 ## normalization.
 tb:
-	echo '$(am__test_bases)' > $@
+	echo '$(am.test-suite.test-bases)' > $@
 END
 
 cat > foo.test << 'END'

@@ -328,9 +328,9 @@ sc_no_am_makeflags:
 modern.DISTFILES = am.dist.all-files
 modern.DIST_COMMON = am.dist.common-files
 modern.DIST_SOURCES = am.dist.sources
-modern.am__TEST_BASES = am__test_bases
-modern.am__TEST_LOGS = am__test_logs
-modern.am__TEST_RESULTS = am__test_results
+modern.am__TEST_BASES = am.test-suite.test-bases
+modern.am__TEST_LOGS = am.test-suite.test-logs
+modern.am__TEST_RESULTS = am.test-suite.test-results
 modern.CONFIG_HEADER = AM_CONFIG_HEADERS
 modern.DEFAULT_INCLUDES = AM_DEFAULT_INCLUDES
 
