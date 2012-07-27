@@ -25,42 +25,50 @@ plan_ 10
 grep -v '^##' "$am_amdir"/header-vars.am > defn.mk \
   || fatal_ "fetching makefile fragment headers-vars.am"
 
-# WARNING: there are a lot of embedded tabs in this makefile.
+# WARNING: there are a lot of embedded tabs in the makefile
+# fragments used by this script.  They are all deliberate.
 # DO NOT "NORMALIZE" THEM TO SPACES!
-cat > Makefile << 'END'
-include ./defn.mk
 
-lower = abcdefghijklmnopqrstuvwxyz
-upper = ABCDEFGHIJKLMNOPQRSTUVWXYZ
-digits = 0123456789
-comma = ,
-dollar = $$
-bslash = \\
+i=0
+T ()
+{
+  i=$(($i + 1))
+  mkdir T$i.d
+  cd T$i.d
+  {
+    echo 'include ../defn.mk'
+    echo 'lower = abcdefghijklmnopqrstuvwxyz'
+    echo 'upper = ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+    echo 'digits = 0123456789'
+  } > Makefile
+  cat >> Makefile
+  command_ok_ "$*" $MAKE test
+  cd ..
+}
 
-default:
-	@echo Please select an explicit test; exit 1
-.PHONY: default
 
-.PHONY: test-strip-first-word
-test-strip-first-word:
+T 'am.util.strip-first-word' <<'END'
+test:
 	test '$(call am.util.strip-first-word,)'                = ''
 	test '$(call am.util.strip-first-word,1)'               = ''
 	test '$(call am.util.strip-first-word,1 1)'             = '1'
 	test '$(call am.util.strip-first-word,1 2)'             = '2'
 	test '$(call am.util.strip-first-word,1 2 3 4 5 6 7 8)' = '2 3 4 5 6 7 8'
 	test '$(call am.util.strip-first-word,  1	  2	)' = '2'
+END
 
-.PHONY: test-strip-last-word
-test-strip-last-word:
+T 'am.util.strip-last-word' <<'END'
+test:
 	test '$(call am.util.strip-last-word,)'                 = ''
 	test '$(call am.util.strip-last-word,1)'                = ''
 	test '$(call am.util.strip-last-word,1 1)'              = '1'
 	test '$(call am.util.strip-last-word,1 2)'              = '1'
 	test '$(call am.util.strip-last-word,1 2 3 4 5 6 7 8)'  = '1 2 3 4 5 6 7'
 	test '$(call am.util.strip-last-word,  1	  2	)' = '1'
+END
 
-.PHONY: test-uniq
-test-uniq:
+T 'am.util.uniq' <<'END'
+test:
 	test '$(call am.util.uniq,)'                    = ''
 	test '$(call am.util.uniq,1)'                   = '1'
 	test '$(call am.util.uniq,1 1)'                 = '1'
@@ -76,9 +84,10 @@ test-uniq:
 	test '$(call am.util.uniq,1 1 1 3 1 1 1)'       = '1 3'
 	test '$(call am.util.uniq,3 1 1 4 1 4 1 1)'     = '3 1 4'
 	test '$(call am.util.uniq,	1   3 	1  )'   = '1 3'
+END
 
-.PHONY: test-strip-suffixes
-test-strip-suffixes:
+T 'am.util.strip-suffixes' <<'END'
+test:
 	test '$(call am.util.strip-suffixes,,)'                 = ''
 	test '$(call am.util.strip-suffixes, 	  ,)'           = ''
 	test '$(call am.util.strip-suffixes,, 	  )'            = ''
@@ -107,9 +116,10 @@ test-strip-suffixes:
 	      = 'foo.b bar'
 	test '$(call am.util.strip-suffixes, .b.a .a, foo.b.a bar.a)' \
 	      = 'foo bar'
+END
 
-.PHONY: test-toupper
-test-toupper:
+T 'am.util.toupper' <<'END'
+test:
 	test '$(call am.util.toupper,a)'        = A
 	test '$(call am.util.toupper,A)'        = A
 	test '$(call am.util.toupper,aba)'      = ABA
@@ -124,9 +134,10 @@ test-toupper:
 	test '$(call am.util.toupper,zxzxzxZXZxzxzxzxzx)' = ZXZXZXZXZXZXZXZXZX
 	test '$(call am.util.toupper,$(lower))' = '$(upper)'
 	test '$(call am.util.toupper,$(upper))' = '$(upper)'
+END
 
-.PHONY: test-tolower
-test-tolower:
+T 'am.util.tolower' <<'END'
+test:
 	test '$(call am.util.tolower,A)'        = a
 	test '$(call am.util.tolower,a)'        = a
 	test '$(call am.util.tolower,ABA)'      = aba
@@ -141,9 +152,13 @@ test-tolower:
 	test '$(call am.util.tolower,ZXZXZXzxzXZXZXZXZX)' = zxzxzxzxzxzxzxzxzx
 	test '$(call am.util.tolower,$(upper))' = '$(lower)'
 	test '$(call am.util.tolower,$(lower))' = '$(lower)'
+END
 
-.PHONY: test-canonicalize
-test-canonicalize:
+T 'am.util.canon' <<'END'
+comma = ,
+dollar = $$
+bslash = \\
+test:
 	test '$(call am.util.canon,A)' = A
 	test '$(call am.util.canon, b)' = b
 	test '$(call am.util.canon, foo	 )' = foo
@@ -157,39 +172,32 @@ test-canonicalize:
 	test '$(call am.util.canon,$(comma))' = '_'
 	test '$(call am.util.canon,$(bslash)$(comma))' = '__'
 	test '$(call am.util.canon,x$(comma)@$(bslash))' = 'x_@_'
+END
 
-.PHONY: test-newline-1
-test-newline-1:
+T 'am.chars.newline (1)' <<'END'
+test:
 	@echo OK > fo1$(am.chars.newline)@touch ba1$(am.chars.newline)-false > qu1
 	test `cat fo1` = OK
 	test -f ba1
 	test -f qu1
+END
 
+T 'am.chars.newline (2)' <<'END'
 my_newline = $(am.chars.newline)
-.PHONY: test-newline-2
-test-newline-2:
+test:
 	@echo OK > fo2$(my_newline)@touch ba2$(my_newline)-false > qu2
 	test `cat fo2` = OK
 	test -f ba2
 	test -f qu2
+END
 
+T 'am.chars.newline (3)' <<'END'
+my_newline = $(am.chars.newline)
 command-1 = test x = x$(am.chars.newline)
 command-2 = test y = y$(my_newline)
-.PHONY: test-newline-3
-test-newline-3:
+test:
 	$(command-1)$(command-2)touch n3
 	test -f n3
 END
-
-command_ok_  am.util.strip-first-word   $MAKE test-strip-first-word
-command_ok_  am.util.strip-last-word    $MAKE test-strip-last-word
-command_ok_  am.util.uniq               $MAKE test-uniq
-command_ok_  am.util.strip-suffixes     $MAKE test-strip-suffixes
-command_ok_  am.util.tolower            $MAKE test-tolower
-command_ok_  am.util.toupper            $MAKE test-toupper
-command_ok_  am.util.canon              $MAKE test-canonicalize
-command_ok_  "am.chars.newline (1)"          $MAKE test-newline-1
-command_ok_  "am.chars.newline (2)"          $MAKE test-newline-2
-command_ok_  "am.chars.newline (3)"          $MAKE test-newline-3
 
 :
