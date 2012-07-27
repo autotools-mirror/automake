@@ -20,13 +20,9 @@
 am_create_testdir=empty
 . ./defs || exit 1
 
-cp "$am_amdir"/header-vars.am . \
+# Filter out Automake comments.
+grep -v '^##' "$am_amdir"/header-vars.am > defn.mk \
   || fatal_ "fetching makefile fragment headers-vars.am"
-
-# Filter out Automake comments and things that would need configure
-# substitutions.
-LC_ALL=C $EGREP -v '(^##|=.*@[a-zA-Z0-9_]+@)' header-vars.am > defn.mk
-rm -f header-vars.am
 
 sed 's/^[0-9][0-9]*:://' > Makefile << 'END'
 01::include ./defn.mk
