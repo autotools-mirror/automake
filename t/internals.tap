@@ -19,7 +19,7 @@
 am_create_testdir=empty
 . ./defs || exit 1
 
-plan_ 10
+plan_ 12
 
 # Filter out Automake comments.
 grep -v '^##' "$am_amdir"/header-vars.am > defn.mk \
@@ -42,10 +42,18 @@ T ()
     echo 'digits = 0123456789'
   } > Makefile
   cat >> Makefile
-  command_ok_ "$*" $MAKE test
+  test_name=$1; shift
+  command_ok_ "$test_name" $MAKE ${1+"$@"} test
   cd ..
 }
 
+T 'sanity check' FOO=ok <<'END'
+FOO = ko
+test:
+	test $(FOO) = ok
+	touch sane
+END
+test -f T1.d/sane || fatal_ "function 'T' is buggy"
 
 T 'am.util.strip-first-word' <<'END'
 test:
@@ -173,6 +181,50 @@ test:
 	test '$(call am.util.canon,$(bslash)$(comma))' = '__'
 	test '$(call am.util.canon,x$(comma)@$(bslash))' = 'x_@_'
 END
+
+FOO_ENVIRON=ok; export FOO_ENVIRON
+FOO_UNDEF=; unset FOO_UNDEF
+FOO_INDIR=; unset FOO_INDIR
+T 'am.vars.is-undef' FOO_CMDLINE=ok <<'END'
+
+FOO_MAKEFILE_1 = ok
+FOO_MAKEFILE_2 := ok
+override FOO_OVERRIDE_1 = ok
+override FOO_OVERRIDE_2 := ok
+FOO_EMPTY_1 =
+FOO_EMPTY_2 :=
+
+# Help avoiding typos.
+X = $(call am.vars.is-undef,$1)
+
+test:
+	@echo UNDEF:
+	test '$(call X,FOO_UNDEF)' = yes
+	@echo ENVIRON:
+	test '$(call X,FOO_ENVIRON)' = yes
+	@echo MAKEFILE 1:
+	test -z '$(call X,FOO_MAKEFILE_1)'
+	@echo MAKEFILE 2:
+	test -z '$(call X,FOO_MAKEFILE_2)'
+	@echo CMDLINE:
+	test -z '$(call X,FOO_CMDLINE)'
+	@echo OVERRIDE 1:
+	test -z '$(call X,FOO_OVERRIDE_1)'
+	@echo OVERRIDE 2:
+	test -z '$(call X,FOO_OVERRIDE_2)'
+	@echo EMPTY 1:
+	test -z '$(call X,FOO_EMPTY_1)'
+	@echo EMPTY 2:
+	test -z '$(call X,FOO_EMPTY_2)'
+	@echo DEFAULT:
+	test -z '$(call X,CC)'
+	@echo EXTRA SPACES:
+	test '$(call X,  FOO_UNDEF 	)' = yes
+	@echo SANITY CHECKS:
+	test '$(FOO_ENVIRON)' = ok
+	test '$(FOO_CMDLINE)' = ok
+END
+unset FOO_ENVIRON
 
 T 'am.chars.newline (1)' <<'END'
 test:

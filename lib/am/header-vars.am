@@ -45,6 +45,33 @@ define am.error
 $(warning $1)$(eval am.error.seen := yes)
 endef
 
+#
+# Sometimes, in our makefiles, we want to assign a default value to a
+# variable that might not have been assigned yet.  One might think that
+# using the GNU make assignment '?=' is enough:
+#
+#    VAR ?= DEFAULT-VALUE
+#
+# But alas, such a usage allows interferences from the environment; i.e.,
+# if an environment variable named 'VAR' is defined to, say, BAD-VALUE,
+# the construct above will result in the $(VAR) make variable being
+# defined to BAD-VALUE, not to DEFAULT-VALUE.
+#
+# Use the 'am.vars.is-undef' function to avoid this situation.  It tells
+# whether the given make variable is not "safely" defined, i.e., either
+# undefined, or defined to a value that is inherited from the environment.
+#
+# With such a tool, we can safely declare default values for variables
+# that avoids environmental interferences, as follow:
+#
+#     ifeq ($(call am.vars.is-undef,VAR),yes)
+#       VAR = DEFAULT-VALUE
+#     endif
+#
+define am.vars.is-undef
+$(if $(filter undefined environment,$(origin $(strip $1))),yes)
+endef
+
 # Some problematic characters (especially when used in arguments
 # to make functions, or for syntax highlighting).
 am.chars.bslash := \\
