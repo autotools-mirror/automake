@@ -36,7 +36,8 @@ $ACLOCAL
 $AUTOMAKE -Wno-override
 
 # "ps:" should be output in two conditions
-test $(grep -c '[^-]ps:' Makefile.in) -eq 2
+grep 'ps:' Makefile.in # For debugging.
+test $(grep -c '@ps:' Makefile.in) -eq 2
 grep '@COND_TRUE@ps: *foobar' Makefile.in
 grep '@COND_FALSE@ps: *ps-am' Makefile.in
 
