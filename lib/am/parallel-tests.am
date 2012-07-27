@@ -117,6 +117,35 @@ am__global_test_result_rx = ^[ 	]*:global-test-result:[ 	]*
 am__test_result_rx = ^[ 	]*:test-result:[ 	]*
 am__copy_in_global_log_rx = ^[ 	]*:copy-in-global-log:[ 	]*
 
+# Some awk code fragments used by one another and eventually by the
+# 'check' and 'recheck' recipes.
+# Note that in those scripts we are careful to close all the '.trs' and
+# '.log' files once we are done with them.  This is done to avoid leaking
+# open file descriptors, which could cause serious problems when there
+# are many tests and thus lots of '.log' and '.trs' files to open (yes,
+# there would be problems even on Linux).
+
+am.test-suite.awk-functions = \
+  function error(msg) \
+  { \
+    print msg | "cat >&2"; \
+    exit_status = 1; \
+  } \
+  function input_error(file) \
+  { \
+    error("awk" ": cannot read \"" file "\""); \
+## Never leak file descriptors, not even on errors.
+    close ($$0 ".trs"); close ($$0 ".log"); \
+  }
+
+# Loop on the lines in the current '.trs' or '.log' file,
+# punting on I/O errors.
+am.test-suite.awk-io-loop/BEGIN = \
+  while ((rc = (getline line < ($$0 ".$1"))) != 0) { \
+    if (rc < 0) { input_error($$0 ".$1"); next; }
+am.test-suite.awk-io-loop/END = \
+  }; close ($$0 ".$1");
+
 # A command that, given a newline-separated list of test names on the
 # standard input, print the name of the tests that are to be re-run
 # upon "make recheck".
@@ -127,6 +156,7 @@ am__list_recheck_tests = $(AWK) '{ \
     { \
       if (rc < 0) \
         { \
+##
 ## If we have encountered an I/O error here, there are three possibilities:
 ##
 ##  [1] The '.log' file exists, but the '.trs' does not; in this case,
@@ -160,10 +190,8 @@ am__list_recheck_tests = $(AWK) '{ \
     }; \
   if (recheck) \
     print $$0; \
-## Do not leak open file descriptors, as this could cause serious
-## problems when there are many tests (yes, even on Linux).
-  close ($$0 ".trs"); \
-  close ($$0 ".log"); \
+## Never leak file descriptors.
+  close ($$0 ".trs"); close ($$0 ".log"); \
 }'
 
 # A command that, given a newline-separated list of test names on the
@@ -173,40 +201,17 @@ am__list_recheck_tests = $(AWK) '{ \
 # PASSes will be saved in the '$am_PASS' variable, the count of SKIPs
 # in the '$am_SKIP' variable, and so on.
 am__count_test_results = $(AWK) ' \
-## Do not leak open file descriptors, as this could cause serious
-## problems when there are many tests (yes, even on Linux).
-function close_current() \
-{ \
-  close ($$0 ".trs"); \
-  close ($$0 ".log"); \
-} \
-function error(msg) \
-{ \
-  print msg | "cat >&2"; \
-  exit_status = 1; \
-} \
-function input_error(file) \
-{ \
-  error("awk" ": cannot read \"" file "\""); \
-  close_current(); \
-} \
+$(am.test-suite.awk-functions) \
 BEGIN { exit_status = 0; } \
 { \
-  while ((rc = (getline line < ($$0 ".trs"))) != 0) \
-    { \
-      if (rc < 0) \
-        { \
-          input_error($$0 ".trs"); \
-          next; \
-        } \
+  $(call am.test-suite.awk-io-loop/BEGIN,trs) \
       if (line ~ /$(am__test_result_rx)/) \
         { \
           sub("$(am__test_result_rx)", "", line); \
           sub("[: 	].*$$", "", line); \
           counts[line]++;\
         } \
-    }; \
-  close_current(); \
+  $(call am.test-suite.awk-io-loop/END,trs) \
 } \
 END { \
   if (exit_status != 0) \
@@ -227,23 +232,7 @@ END { \
 # A command that, given a newline-separated list of test names on the
 # standard input, create the global log from their .trs and .log files.
 am__create_global_log = $(AWK) ' \
-## Do not leak open file descriptors, as this could cause serious
-## problems when there are many tests (yes, even on Linux).
-function close_current() \
-{ \
-  close ($$0 ".trs"); \
-  close ($$0 ".log"); \
-} \
-function error(msg) \
-{ \
-  print msg | "cat >&2"; \
-  exit_status = 1; \
-} \
-function input_error(file) \
-{ \
-  error("awk" ": cannot read \"" file "\""); \
-  close_current(); \
-} \
+$(am.test-suite.awk-functions) \
 function rst_section(header) \
 { \
   print header; \
@@ -259,13 +248,7 @@ BEGIN { exit_status = 0; } \
 ## it outcome was, but we know that at least it has run).
   copy_in_global_log = 1; \
   global_test_result = "RUN"; \
-  while ((rc = (getline line < ($$0 ".trs"))) != 0) \
-    { \
-      if (rc < 0) \
-        { \
-          input_error($$0 ".trs"); \
-          next; \
-        } \
+  $(call am.test-suite.awk-io-loop/BEGIN,trs) \
       if (line ~ /$(am__global_test_result_rx)/) \
         { \
           sub("$(am__global_test_result_rx)", "", line); \
@@ -274,22 +257,15 @@ BEGIN { exit_status = 0; } \
         } \
       else if (line ~ /$(am__copy_in_global_log_rx)[nN][oO]/) \
         copy_in_global_log = 0; \
-    }; \
+  $(call am.test-suite.awk-io-loop/END,trs) \
   if (copy_in_global_log) \
     { \
       rst_section(global_test_result ": " $$0); \
-      while ((rc = (getline line < ($$0 ".log"))) != 0) \
-      { \
-        if (rc < 0) \
-          { \
-            input_error($$0 ".log"); \
-            next; \
-          } \
+      $(call am.test-suite.awk-io-loop/BEGIN,log) \
         print line; \
-      }; \
+      $(call am.test-suite.awk-io-loop/END,log) \
       printf "\n"; \
     }; \
-  close_current(); \
 } \
 END { \
   if (exit_status != 0) \
