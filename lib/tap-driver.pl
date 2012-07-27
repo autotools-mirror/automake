@@ -49,7 +49,7 @@ END
 my $HELP = "$ME: TAP-aware test driver for Automake testsuite harness." .
            "\n" . $USAGE;
 
-# Keep this in sync with `lib/am/check.am:$(am__tty_colors)'.
+# Keep in sync with 'lib/am/color-tests.am:$(am.test-suite.tty-colors)'.
 my %COLOR = (
   red => "\e[0;31m",
   grn => "\e[0;32m",
