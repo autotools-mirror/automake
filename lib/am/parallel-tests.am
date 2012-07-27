@@ -295,19 +295,19 @@ am__mostlyclean_files += $(am__test_results) $(am__test_logs)
 # $(TEST_LOGS) is a published interface.
 TEST_LOGS = $(am__test_logs)
 
-am.test-harness.workdir = $(am__dir)/test-harness
+am.test-suite.workdir = $(am__dir)/test-harness
 
-am.test-harness.append-to-list-of-bases = \
+am.test-suite.append-to-list-of-bases = \
   @lst='$1'; for x in $$lst; do echo $$x; done \
-    >> $(am.test-harness.workdir)/bases$(am.chars.newline)
+    >> $(am.test-suite.workdir)/bases$(am.chars.newline)
 
 !define am.setup-test-harness-workdir
-!	@rm -rf $(am.test-harness.workdir)
-!	@$(MKDIR_P) $(am.test-harness.workdir)
-!	@touch $(am.test-harness.workdir)/bases
-!	$(call am.xargs-map,am.test-harness.append-to-list-of-bases, \
+!	@rm -rf $(am.test-suite.workdir)
+!	@$(MKDIR_P) $(am.test-suite.workdir)
+!	@touch $(am.test-suite.workdir)/bases
+!	$(call am.xargs-map,am.test-suite.append-to-list-of-bases, \
 !	       $(am__test_bases))
-!	@workdir='$(am.test-harness.workdir)' \
+!	@workdir='$(am.test-suite.workdir)' \
 !	  && sed 's/$$/.log/' $$workdir/bases > $$workdir/logs \
 !	  && sed 's/$$/.trs/' $$workdir/bases > $$workdir/trs
 !endef
@@ -316,7 +316,7 @@ $(TEST_SUITE_LOG): $(am__test_logs) $(am__test_results)
 	$(am.setup-test-harness-workdir)
 	@set +e; $(am__tty_colors); \
 	fatal () { echo "fatal: making $@: $$*" >&2; exit 1; }; \
-	workdir='$(am.test-harness.workdir)'; \
+	workdir='$(am.test-suite.workdir)'; \
 ## Detect a possible circular dependency, and error out if it's found.
 	grep '^$(TEST_SUITE_LOG:.log=)$$' $$workdir/bases \
 	  && fatal "depends on itself (check TESTS content)"; \
@@ -446,7 +446,7 @@ recheck: all %CHECK_DEPS%
 ## If running a "make recheck", we must only consider tests that had an
 ## unexpected outcome (FAIL or XPASS) in the earlier run.
 	@bases=`$(am.test-suite.list-tests-to-recheck) \
-	          <$(am.test-harness.workdir)/bases` || exit 1; \
+	          <$(am.test-suite.workdir)/bases` || exit 1; \
 ## Remove newlines and normalize whitespace.
 	bases=`echo $$bases`; \
 ## Re-run the relevant tests, without hitting command-line length limits.
