@@ -60,27 +60,23 @@ am.test-suite.runtest = \
   "$$tst"								\
   $(AM_TESTS_FD_REDIRECT)
 
-# Turn e.g., ".test" in "_TEST", and return the empty string unchanged.
-am__tpfx = \
-  $(if $1,$(call am.util.toupper,$(patsubst .%,%_,$1)))
-
-define am.test-suite.handle-suffix
-
-ifeq ($$(call am.vars.is-undef,$$(call am__tpfx,$1)LOG_DRIVER),yes)
-$$(call am__tpfx,$1)LOG_DRIVER = $(SHELL) $(am.conf.aux-dir)/test-driver
+define am.test-suite.handle-suffix.helper
+ifeq ($$(call am.vars.is-undef,$(2)LOG_DRIVER),yes)
+$(2)LOG_DRIVER = $(SHELL) $(am.conf.aux-dir)/test-driver
 endif
-
-%.log %.trs: %$1 $$($$(call am__tpfx,$1)LOG_DEPENDENCIES)
-	@$$(call am.test-suite.runtest,$$(call am__tpfx,$1))
-
+%.log %.trs: %$1 $$($(2)LOG_DEPENDENCIES)
+	@$$(call am.test-suite.runtest,$2)
 ifeq ($(am.conf.handle-exeext),yes)
 ifdef EXEEXT
-%.log %.trs: %$1$(EXEEXT) $$($$(call am__tpfx,$1)LOG_DEPENDENCIES)
-	@$$(call am.test-suite.runtest,$$(call am__tpfx,$1))
+%.log %.trs: %$1$(EXEEXT) $$($(2)LOG_DEPENDENCIES)
+	@$$(call am.test-suite.runtest,$2)
 endif # defined EXEEXT
 endif # am.conf.handle-exeext = yes
+endef
 
-endef # am.test-suite.handle-suffix
+define am.test-suite.handle-suffix
+$(call $0.helper,$1,$(if $1,$(call am.util.toupper,$(patsubst .%,%_,$1))))
+endef
 
 ifeq ($(call am.vars.is-undef,TEST_EXTENSIONS),yes)
   TEST_EXTENSIONS := .test
