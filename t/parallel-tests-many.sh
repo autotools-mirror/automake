@@ -20,6 +20,8 @@
 
 . ./defs || exit 1
 
+expensive_
+
 echo AC_OUTPUT >> configure.ac
 
 cat > Makefile.am << 'END'

@@ -133,6 +133,13 @@ fi
 ##  Auxiliary shell functions.  ##
 ## ---------------------------- ##
 
+expensive_()
+{
+  if test x"$RUN_EXPENSIVE_TESTS" != x"yes"; then
+    skip_all_ 'expensive: disabled by default'
+  fi
+}
+
 # Tell whether we should keep the test directories around, even in
 # case of success.  By default, we don't.
 am_keeping_testdirs ()

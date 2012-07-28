@@ -21,6 +21,8 @@
 
 . ./defs || exit 1
 
+expensive_
+
 echo AC_OUTPUT >> configure.ac
 
 file=an-empty-file-with-a-long-name

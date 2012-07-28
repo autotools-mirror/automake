@@ -492,6 +492,10 @@ installcheck-local: installcheck-testsuite
 installcheck-testsuite:
 	am_running_installcheck=yes $(MAKE) check
 
+# Run the testsuite without skipping expensive tests by default.
+check-expensive installcheck-expensive: %-expensive:
+	$(MAKE) $* RUN_EXPENSIVE_TESTS=yes
+
 # Performance tests.
 perf_TESTS = $(wildcard $(srcdir)/t/perf/*.sh) \
              $(wildcard $(srcdir)/t/perf/*.tap)
