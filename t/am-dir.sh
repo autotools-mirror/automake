@@ -18,10 +18,10 @@
 # Check support for private automake working directory in builddir:
 #
 #  * internal variables:
-#      $(am__dir)
-#      $(am__abs_dir)
-#      $(am__top_dir)
-#      $(am__abs_top_dir)
+#      $(am.dir)
+#      $(am.abs-dir)
+#      $(am.top-dir)
+#      $(am.abs-top-dir)
 #
 #  * cleaning rules and "make distcheck" interaction.
 #
@@ -37,19 +37,19 @@ END
 
 cat > Makefile.am <<'END'
 SUBDIRS = . xsrc
-all-local: | $(am__dir)
+all-local: | $(am.dir)
 END
 
 mkdir xsrc
 cat >> xsrc/Makefile.am <<'END'
 subdir:
 	mkdir $@
-all-local: | $(am__dir) subdir
-	: > $(am__dir)/sub
-	: > $(am__top_dir)/top
-	(cd ./subdir && : > $(am__abs_dir)/abs-sub)
+all-local: | $(am.dir) subdir
+	: > $(am.dir)/sub
+	: > $(am.top-dir)/top
+	(cd ./subdir && : > $(am.abs-dir)/abs-sub)
 	rmdir subdir
-	(cd /tmp && : > $(am__abs_top_dir)/abs-top)
+	(cd /tmp && : > $(am.abs-top-dir)/abs-top)
 END
 
 sort > exp <<END
