@@ -3881,30 +3881,27 @@ sub handle_clean ($)
 {
   my ($makefile) = @_;
 
+  my (%f, %d);
+
   my @fkeys = keys %clean_files;
-  my @fmostly = grep { $clean_files{$_} == MOSTLY_CLEAN     } @fkeys;
-  my @fplain  = grep { $clean_files{$_} == CLEAN            } @fkeys;
-  my @fdist   = grep { $clean_files{$_} == DIST_CLEAN       } @fkeys;
-  my @fmaint  = grep { $clean_files{$_} == MAINTAINER_CLEAN } @fkeys;
+  $f{mostly} = [ grep { $clean_files{$_} == MOSTLY_CLEAN     } @fkeys ];
+  $f{normal} = [ grep { $clean_files{$_} == CLEAN            } @fkeys ];
+  $f{dist}   = [ grep { $clean_files{$_} == DIST_CLEAN       } @fkeys ];
+  $f{maint}  = [ grep { $clean_files{$_} == MAINTAINER_CLEAN } @fkeys ];
 
   my @dkeys = keys %clean_dirs;
-  my @dmostly = grep { $clean_dirs{$_} == MOSTLY_CLEAN     } @dkeys;
-  my @dplain  = grep { $clean_dirs{$_} == CLEAN            } @dkeys;
-  my @ddist   = grep { $clean_dirs{$_} == DIST_CLEAN       } @dkeys;
-  my @dmaint  = grep { $clean_dirs{$_} == MAINTAINER_CLEAN } @dkeys;
+  $d{mostly} = [ grep { $clean_dirs{$_} == MOSTLY_CLEAN     } @dkeys ];
+  $d{normal} = [ grep { $clean_dirs{$_} == CLEAN            } @dkeys ];
+  $d{dist}   = [ grep { $clean_dirs{$_} == DIST_CLEAN       } @dkeys ];
+  $d{maint}  = [ grep { $clean_dirs{$_} == MAINTAINER_CLEAN } @dkeys ];
 
-  $output_rules .= &file_contents
-    ('clean',
-     new Automake::Location,
-     'MOSTLYCLEAN-FILES'     => "@fmostly",
-     'CLEAN-FILES'           => "@fplain",
-     'DISTCLEAN-FILES'       => "@fdist",
-     'MAINTAINERCLEAN-FILES' => "@fmaint",
-     'MOSTLYCLEAN-DIRS'      => "@dmostly",
-     'CLEAN-DIRS'            => "@dplain",
-     'DISTCLEAN-DIRS'        => "@ddist",
-     'MAINTAINERCLEAN-DIRS'  => "@dmaint",
-    );
+  foreach my $kind (qw/mostly normal dist maint/)
+    {
+      define_variable ("am.clean.$kind.f.auto", INTERNAL, @{$f{$kind}});
+      define_variable ("am.clean.$kind.d.auto", INTERNAL, @{$d{$kind}});
+    }
+
+  $output_rules .= &file_contents ('clean', new Automake::Location);
 }
 
 
