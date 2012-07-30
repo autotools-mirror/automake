@@ -5724,6 +5724,35 @@ sub transform ($$)
 }
 
 # $TEXT
+# slurp_makefile_fragment ($MAKEFILE)
+# -----------------------------------
+# Load a $MAKEFILE, strip '##'-style comments, and return the result.
+# No extra parsing, %TRANSFORM application, or post-processing is
+# done (e.g., recognition of rules declaration or of make variables
+# definitions).
+sub slurp_makefile_fragment ($)
+{
+  my $file = shift;
+  local $_;
+  if (not defined ($_ = $am_file_cache{$file}))
+    {
+      verb "reading $file";
+      # Swallow the whole file.
+      my $fc_file = new Automake::XFile "< $file";
+      my $saved_dollar_slash = $/;
+      undef $/;
+      $_ = $fc_file->getline;
+      $/ = $saved_dollar_slash;
+      $fc_file->close;
+      # Remove ##-comments.
+      s/$IGNORE_PATTERN//gom;
+      # Remember the contents of the just-read file.
+      $am_file_cache{$file} = $_;
+    }
+  return $_;
+}
+
+# $TEXT
 # preprocess_file ($MAKEFILE, [%TRANSFORM])
 # -----------------------------------------
 # Load a $MAKEFILE, apply the %TRANSFORM, and return the result.
@@ -5764,23 +5793,10 @@ sub preprocess_file ($%)
 		 'SILENT'       => silent_flag (),
 		%transform);
 
-  if (! defined ($_ = $am_file_cache{$file}))
-    {
-      verb "reading $file";
-      # Swallow the whole file.
-      my $fc_file = new Automake::XFile "< $file";
-      my $saved_dollar_slash = $/;
-      undef $/;
-      $_ = $fc_file->getline;
-      $/ = $saved_dollar_slash;
-      $fc_file->close;
-      # Remove ##-comments.
-      # Besides we don't need more than two consecutive new-lines.
-      s/(?:$IGNORE_PATTERN|(?<=\n\n)\n+)//gom;
-      # Remember the contents of the just-read file.
-      $am_file_cache{$file} = $_;
-    }
+  local $_ = slurp_makefile_fragment ($file);
 
+  # We don't need more than two consecutive new-lines.
+  s/(?<=\n\n)\n+//gm;
   # Substitute Automake template tokens.
   s/(?: % \?? [\w\-]+ %
       | \? !? [\w\-]+ \?
