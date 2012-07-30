@@ -33,8 +33,6 @@ $AUTOCONF
 $AUTOMAKE
 
 $EGREP '\.stamp|class' Makefile.in # For debugging.
-grep '^all[-a-z]*:.*classjava\.stamp' Makefile.in
-test $(grep -c '^all[-a-z]*:.*classjava\.stamp' Makefile.in) -eq 1
 
 echo 'class a { }' > a.java
 echo 'class b { }' > b.java

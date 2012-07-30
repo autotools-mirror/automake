@@ -57,6 +57,6 @@ AUTOMAKE_run
 grep '^Makefile\.am:.*sub/foo\.c.*requires.*AM_PROG_CC_C_O' stderr
 grep README stderr && exit 1
 $EGREP '(install|override)' stderr && exit 1
-$EGREP 'distdir|\.tar' Makefile.in && exit 1
+$EGREP 'distdir|\.tar[ .]' Makefile.in && exit 1
 
 :
