@@ -422,6 +422,7 @@ EXTRA_DIST += t/ax/distcheck-hook-m4.am
 
 t/ax/test-defs.sh: t/ax/test-defs.in Makefile
 	$(AM_V_at)rm -f $@ $@-t
+	$(AM_V_at)$(MKDIR_P) $(@D)
 	$(AM_V_GEN)$(do_subst)
 	$(generated_file_finalize)
 EXTRA_DIST += t/ax/test-defs.in
