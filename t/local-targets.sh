@@ -28,17 +28,19 @@ END
 
 cat > Makefile.am <<'END'
 @SafeInclude@ ./inc.mk
-$(foreach x,all check installdirs,$(eval $(x)-local:: ; : > main-$(x)))
+$(foreach x,all check installdirs,$(eval $(x)-local: ; : > main-$(x)))
 END
 
 cat > inc.mk << 'END'
-all-local check-local installdirs-local:: %-local:
+all-local check-local installdirs-local: %-local: %-incl
+all-incl check-incl installdirs-incl: %-incl:
 	: > incl-$*
 END
 
 cat > GNUmakefile << 'END'
 include ./Makefile
-all-local check-local installdirs-local:: %-local:
+all-local check-local installdirs-local: %-local: %-wrap
+all-wrap check-wrap installdirs-wrap: %-wrap:
 	: > wrap-$*
 END
 
