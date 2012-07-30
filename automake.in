@@ -3180,22 +3180,9 @@ sub handle_data
 # Handle TAGS.
 sub handle_tags
 {
-    my @config;
-    foreach my $spec (@config_headers)
-      {
-        my ($out, @ins) = split_config_file_spec ($spec);
-	foreach my $in (@ins)
-	  {
-            # If the config header source is in this directory,
-	    # require it.
-	    push @config, basename ($in)
-              if $relative_dir eq dirname ($in);
-	   }
-      }
-
     define_variable ('am__tagged_files', INTERNAL,
-                     qw/$(HEADERS) $(SOURCES) $(TAGS_FILES) $(LISP)/,
-                     @config);
+                     qw/$(HEADERS) $(SOURCES) $(TAGS_FILES) $(LISP)
+                        $(am.config-hdr.local.in)/);
 
     if (rvar('am__tagged_files')->value_as_list_recursive
           || var ('ETAGS_ARGS') || var ('SUBDIRS'))
@@ -3900,18 +3887,9 @@ sub handle_footer
 # Generate "make all" and "make check" rules.
 sub handle_all_and_check ()
 {
-  my @local_headers = ();
-  foreach my $spec (@config_headers)
-    {
-      my ($out, @ins) = split_config_file_spec ($spec);
-      push (@local_headers, basename ($out))
-        if dirname ($out) eq $relative_dir;
-    }
-
   almost_verbatim ('all-target',
                    'ALL-DEPS' => "@all",
-                   'LOCAL-HEADERS' => "@local_headers");
-
+                   'LOCAL-HEADERS' => '$(am.config-hdr.local)');
   almost_verbatim ('check-target');
 }
 
