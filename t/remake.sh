@@ -33,6 +33,9 @@ mkdir sub
 $ACLOCAL
 $AUTOMAKE
 
-grep '^Makefile' sub/Makefile.in
+grep -i makefile sub/Makefile.in # For debugging.
+grep '^am\.relpath\.makefile = Makefile$' sub/Makefile.in
+grep '^am\.relpath\.makefile\.in = \$(srcdir)/Makefile\.in$' sub/Makefile.in
+grep '^am\.relpath\.makefile\.am = \$(srcdir)/Makefile\.am$' sub/Makefile.in
 
 :

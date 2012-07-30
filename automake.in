@@ -3570,20 +3570,16 @@ sub handle_config_headers ()
                    qw/$(am.config-hdr.local) $(am.config-hdr.non-local)/);
 }
 
-# &handle_configure ($MAKEFILE_AM, $MAKEFILE_IN, $MAKEFILE, @INPUTS)
-# ------------------------------------------------------------------
+# &handle_configure ($MAKEFILE, @INPUTS)
+# --------------------------------------
 # Handle remaking and configure stuff.
 # We need the name of the input file, to do proper remaking rules.
-sub handle_configure ($$$@)
+sub handle_configure ($@)
 {
-  my ($makefile_am, $makefile_in, $makefile, @inputs) = @_;
+  my ($makefile, @inputs) = @_;
 
   prog_error 'empty @inputs'
     unless @inputs;
-
-  my ($rel_makefile_am, $rel_makefile_in) = prepend_srcdir ($makefile_am,
-							    $makefile_in);
-  my $rel_makefile = basename $makefile;
 
   my $colon_infile = ':' . join (':', @inputs);
   $colon_infile = '' if $colon_infile eq ":$makefile.in";
@@ -3602,13 +3598,10 @@ sub handle_configure ($$$@)
   $output_rules .= file_contents
     ('configure',
      new Automake::Location,
-     MAKEFILE              => $rel_makefile,
      'MAKEFILE-DEPS'       => "@rewritten",
      'CONFIG-MAKEFILE'     => ($relative_dir eq '.') ? '$@' : '$(subdir)/$@',
-     'MAKEFILE-IN'         => $rel_makefile_in,
      'HAVE-MAKEFILE-IN-DEPS' => (@include_stack > 0),
      'MAKEFILE-IN-DEPS'    => "@include_stack",
-     'MAKEFILE-AM'         => $rel_makefile_am,
      'AUTOMAKE-OPTIONS'    => $automake_options,
      'MAKEFILE-AM-SOURCES' => "$makefile$colon_infile",
      'REGEN-ACLOCAL-M4'    => $regen_aclocal_m4,
@@ -3910,8 +3903,8 @@ sub handle_user_recursion ()
     }
 }
 
-# handle_clean ($MAKEFILE)
-# ------------------------
+# handle_clean()
+# --------------
 # Handle all 'clean' targets.
 sub handle_clean ($)
 {
@@ -3940,7 +3933,7 @@ sub handle_clean ($)
      'CLEAN-DIRS'            => "@dplain",
      'DISTCLEAN-DIRS'        => "@ddist",
      'MAINTAINERCLEAN-DIRS'  => "@dmaint",
-     'MAKEFILE'              => basename $makefile);
+    );
 }
 
 
@@ -6863,6 +6856,11 @@ sub generate_makefile ($$)
   # Must do this after reading .am file.
   define_variable ('subdir', INTERNAL, $relative_dir);
   define_variable ('am.conf.aux-dir', INTERNAL, $am_config_aux_dir);
+  define_variable ('am.relpath.makefile', INTERNAL, basename ($makefile));
+  define_variable ('am.relpath.makefile.am', INTERNAL,
+                   prepend_srcdir ($makefile_am));
+  define_variable ('am.relpath.makefile.in', INTERNAL,
+                   prepend_srcdir ($makefile_in));
 
   # If DIST_SUBDIRS is defined, make sure SUBDIRS is, so that
   # recursive rules are enabled.
@@ -6876,7 +6874,7 @@ sub generate_makefile ($$)
   verbatim ('am-dir');
 
   handle_config_headers;
-  handle_configure ($makefile_am, $makefile_in, $makefile, @inputs);
+  handle_configure ($makefile, @inputs);
   handle_gettext;
   handle_libraries;
   handle_ltlibraries;
@@ -6939,8 +6937,7 @@ sub generate_makefile ($$)
 
   my $output_checks = '';
   # See if any _SOURCES (or _LIBADD, or ...) variable were misspelled.
-  $output_checks .= preprocess_file ("$libdir/am/check-typos.am",
-                                     MAKEFILE => basename ($makefile));
+  $output_checks .= preprocess_file ("$libdir/am/check-typos.am");
   # Bail out if we have encountered errors at make runtime.  The
   # relevant diagnostic should have already been reported by any
   # call to the function '$(am.error)', so we just print a generic
