@@ -5823,14 +5823,27 @@ sub almost_verbatim ($%)
 
 # verbatim ($NAME)
 # ----------------
-# Load a "$libdir/am/$NAME.am", strip any '##'-style comment, and append
-# the result to the '$output_verbatim' variable.  No extra parsing or
-# post-processing is done (i.e., recognition of rules declaration or of
-# make variables definitions).
+# Load a "$libdir/am/$NAME.am", stripping any '##'-style comment.  No
+# extra parsing or post-processing is done (i.e., recognition of rules
+# declaration or of make variables definitions).
+# If used in scalar or list context, return the read makefile fragment.
+# While if used in void context, append it to the '$output_verbatim'
+# variable.
 sub verbatim ($)
 {
   my $name = shift;
-  $output_verbatim .= slurp_makefile_fragment ("$libdir/am/$name.am");
+  my $text .= slurp_makefile_fragment ("$libdir/am/$name.am");
+  if (defined wantarray)
+    {
+      # Scalar or list context.
+      return $text;
+    }
+  else
+    {
+      # Void context
+      $output_verbatim .= $text;
+      return;
+    }
 }
 
 # @PARAGRAPHS
