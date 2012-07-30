@@ -19,20 +19,19 @@ am.clean.normal.f += $(CLEANFILES)
 am.clean.dist.f   += $(DISTCLEANFILES)
 am.clean.maint.f  += $(MAINTAINERCLEANFILES)
 
-am.clean.mostly.f += $(am.clean.mostly.f.auto)
-am.clean.normal.f += $(am.clean.normal.f.auto)
-am.clean.dist.f   += $(am.clean.dist.f.auto)
-am.clean.maint.f  += $(am.clean.maint.f.auto)
-
-am.clean.mostly.d += $(am.clean.mostly.d.auto)
-am.clean.normal.d += $(am.clean.normal.d.auto)
-am.clean.dist.d   += $(am.clean.dist.d.auto)
-am.clean.maint.d  += $(am.clean.maint.d.auto)
+# Add files computed  automatically by the automake script, at automake
+# runtime.
+$(foreach t,f d, \
+  $(foreach k, mostly normal dist maint, \
+    $(eval am.clean.$k.$t += $(am.clean.$k.$t.auto))))
 
 am.clean.dist.f += $(CONFIG_CLEAN_FILES)
+
 # Some files must be cleaned only in VPATH builds -- e.g., those linked
 # in usages like "AC_CONFIG_LINKS([GNUmakefile:GNUmakefile])".
-am.clean.dist.f += $(if $(filter .,$(srcdir)),,$(CONFIG_CLEAN_VPATH_FILES))
+ifneq ($(srcdir),.)
+am.clean.dist.f += $(CONFIG_CLEAN_VPATH_FILES)
+endif
 
 # Built sources are automatically removed by maintainer-clean.
 # This is what mainline Automake does.
@@ -71,7 +70,9 @@ maintainer-clean:
 .PHONY: clean mostlyclean distclean maintainer-clean \
 clean-generic mostlyclean-generic distclean-generic maintainer-clean-generic
 
-?!SUBDIRS?clean: clean-am
-?!SUBDIRS?distclean: distclean-am
-?!SUBDIRS?mostlyclean: mostlyclean-am
-?!SUBDIRS?maintainer-clean: maintainer-clean-am
+ifndef SUBDIRS
+clean: clean-am
+distclean: distclean-am
+mostlyclean: mostlyclean-am
+maintainer-clean: maintainer-clean-am
+endif
