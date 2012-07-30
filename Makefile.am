@@ -186,8 +186,7 @@ EXTRA_DIST += lib/Automake/Config.in
 
 dist_am_DATA = \
   lib/am/am-dir.am \
-  lib/am/all-target.am \
-  lib/am/check-target.am \
+  lib/am/common-targets.am \
   lib/am/serial-tests.am \
   lib/am/parallel-tests.am \
   lib/am/check-typos.am \
@@ -202,7 +201,6 @@ dist_am_DATA = \
   lib/am/footer.am \
   lib/am/header-vars.am \
   lib/am/header.am \
-  lib/am/install.am \
   lib/am/inst-vars.am \
   lib/am/java.am \
   lib/am/lang-compile.am \

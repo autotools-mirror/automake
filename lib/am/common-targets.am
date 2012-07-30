@@ -14,6 +14,43 @@
 ## You should have received a copy of the GNU General Public License
 ## along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+## Handle our "flagship" targets 'all', 'install' and 'check', as
+## well as timely creation of config headers and $(BUILT_SOURCES).
+
+# ------------------- #
+#  The 'all' target.  #
+# ------------------- #
+
+.PHONY: all all-am all-local
+ifdef SUBDIRS
+.PHONY: all-recursive
+endif
+
+all-am: all-local $(am.all.targets)
+all: $(if $(SUBDIRS),all-recursive,all-am)
+
+# --------------------- #
+#  The 'check' target.  #
+# --------------------- #
+
+.PHONY: check check-am check-local
+ifdef SUBDIRS
+.PHONY: check-recursive
+endif
+
+# The check target must depend on the local equivalent of 'all', to
+# ensure all the primary targets are built; then it must build the
+# local check dependencies, and finally run the actual tests (as given
+# by $(TESTS), by DejaGNU, and by the 'check-local' target).
+am.test-suite.check-targets = check-DEJAGNU check-TESTS check-local
+.PHONY: $(am.test-suite.check-targets)
+check-am: $(am.test-suite.check-targets)
+$(am.test-suite.check-targets): all-am $(am.test-suite.deps)
+
+check: $(if $(SUBDIRS),check-recursive,check-am)
+## You should have received a copy of the GNU General Public License
+## along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 ## ----------------------------------------- ##
 ## installdirs -- Creating the installdirs.  ##
 ## ----------------------------------------- ##
@@ -27,19 +64,19 @@ endif
 
 $(if $(SUBDIRS),installdirs-am,installdirs): installdirs-local
 ifdef am__installdirs
-## The reason we loop over $(am__installdirs), instead of simply running
-## "$(MKDIR_P) $(am__installdirs), is that directories variable such as
-## "$(DESTDIR)$(mydir)" can potentially expand to "" if $(mydir) is
-## conditionally defined.  BTW, those directories are quoted in order
-## to support installation paths with spaces.
+# The reason we loop over $(am__installdirs), instead of simply running
+# "$(MKDIR_P) $(am__installdirs), is that directories variable such as
+# "$(DESTDIR)$(mydir)" can potentially expand to "" if $(mydir) is
+# conditionally defined.  BTW,  directories in $(am__installdirs) are
+# already quoted in order to support installation paths with spaces.
 	for dir in $(am__installdirs); do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
 	done
 endif
 
-## ----------------- ##
-## Install targets.  ##
-## ----------------- ##
+# ------------------ #
+#  Install targets.  #
+# ------------------ #
 
 .PHONY: install install-exec install-data uninstall
 .PHONY: install-exec-am install-data-am uninstall-am
@@ -107,4 +144,25 @@ ifdef bin_PROGRAMS
   ifdef nobase_lib_LTLIBRARIES
     install-binPROGRAMS: install-nobase_libLTLIBRARIES
   endif
+endif
+
+# -------------------------------------- #
+#  $(BUILT_SOURCES) and config headers.  #
+# -------------------------------------- #
+
+# We need to make sure $(BUILT_SOURCES) files are built before
+# any "ordinary" target (all, check, install, ...) is run.
+# Ditto for config.h (or files specified in AC_CONFIG_HEADERS).
+# But of course, we shouldn't attempt to build any of them when
+# running in dry mode.
+am.built-early = $(am.config-hdr.local) $(BUILT_SOURCES)
+ifeq ($(am.make.dry-run),true)
+# A trick to make the "make -n" output more useful, albeit not
+# completely accurate.
+all check install: | $(am.built-early)
+else
+$(foreach x,$(am.built-early),$(eval -include .am/built-sources/$(x)))
+.am/built-sources/%: | %
+	@$(am__ensure_target_dir_exists)
+	@touch $@
 endif
