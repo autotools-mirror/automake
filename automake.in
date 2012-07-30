@@ -501,9 +501,6 @@ my $am_relative_dir;
 # Same but wrt Makefile.in.
 my $relative_dir;
 
-# Relative path to the top directory.
-my $topsrcdir;
-
 # Greatest timestamp of the output's dependencies (excluding
 # configure's dependencies).
 my $output_deps_greatest_timestamp;
@@ -619,7 +616,6 @@ sub initialize_per_input ()
 
     $am_relative_dir = undef;
     $relative_dir = undef;
-    $topsrcdir = undef;
 
     $output_deps_greatest_timestamp = 0;
 
@@ -2104,8 +2100,10 @@ sub handle_LIBOBJS_or_ALLOCA ($)
       # we are already there, and since the targets are built without
       # a $(top_builddir), it helps BSD Make to match them with
       # dependencies.
-      $dir = "$config_libobj_dir/" if $config_libobj_dir ne '.';
-      $dir = "$topsrcdir/$dir" if $relative_dir ne '.';
+      $dir = "$config_libobj_dir/"
+        if $config_libobj_dir ne '.';
+      $dir = backname ($relative_dir) . "/$dir"
+        if $relative_dir ne '.';
       define_variable ('LIBOBJDIR', INTERNAL, $dir);
     }
   $clean_files{'$(LIBOBJDIR)*.$(OBJEXT)'} = MOSTLY_CLEAN;
@@ -6815,7 +6813,6 @@ sub generate_makefile ($$)
 
   $relative_dir = dirname ($makefile);
   $am_relative_dir = dirname ($makefile_am);
-  $topsrcdir = backname ($relative_dir);
 
   read_main_am_file ($makefile_am, $makefile_in);
   if (handle_options)
