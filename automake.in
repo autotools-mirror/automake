@@ -3013,7 +3013,7 @@ sub handle_texinfo ()
   if ($info_texinfos)
     {
       define_verbose_texinfo;
-      almost_verbatim ('texibuild');
+      verbatim ('texibuild');
       ($mostlyclean, $clean, $maintclean) = handle_texinfo_helper ($info_texinfos);
       chomp $mostlyclean;
       chomp $clean;
@@ -4065,15 +4065,15 @@ sub handle_tests
 
   if (var ('TESTS'))
     {
-      almost_verbatim ('color-tests');
+      verbatim ('color-tests');
       if (option 'serial-tests')
         {
-          almost_verbatim ('serial-tests');
+          verbatim ('serial-tests');
         }
       else
         {
           require_conf_file ("parallel-tests", FOREIGN, 'test-driver');
-          almost_verbatim ('parallel-tests');
+          verbatim ('parallel-tests');
 	}
     }
 }
@@ -5821,6 +5821,18 @@ sub almost_verbatim ($%)
   $output_verbatim .= preprocess_file ("$libdir/am/$name.am", @_);
 }
 
+# verbatim ($NAME)
+# ----------------
+# Load a "$libdir/am/$NAME.am", strip any '##'-style comment, and append
+# the result to the '$output_verbatim' variable.  No extra parsing or
+# post-processing is done (i.e., recognition of rules declaration or of
+# make variables definitions).
+sub verbatim ($)
+{
+  my $name = shift;
+  $output_verbatim .= slurp_makefile_fragment ("$libdir/am/$name.am");
+}
+
 # @PARAGRAPHS
 # &make_paragraphs ($MAKEFILE, [%TRANSFORM])
 # ------------------------------------------
@@ -6848,7 +6860,7 @@ sub generate_makefile ($$)
   check_gnu_standards;
   check_gnits_standards;
 
-  almost_verbatim ('am-dir');
+  verbatim ('am-dir');
 
   handle_config_headers;
   handle_configure ($makefile_am, $makefile_in, $makefile, @inputs);
@@ -6903,7 +6915,7 @@ sub generate_makefile ($$)
   handle_footer;
   # Special targets 'all', 'check' and 'install', handling of
   # $(BUILT_SOURCES), and related stuff.
-  almost_verbatim ('common-targets');
+  verbatim ('common-targets');
 
   handle_clean ($makefile);
   handle_factored_dependencies;
