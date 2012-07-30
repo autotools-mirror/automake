@@ -19,9 +19,9 @@
 #
 #  * internal variables:
 #      $(am.dir)
-#      $(am.abs-dir)
+#      $(am.dir.abs)
 #      $(am.top-dir)
-#      $(am.abs-top-dir)
+#      $(am.top-dir.abs)
 #
 #  * cleaning rules and "make distcheck" interaction.
 #
@@ -47,9 +47,9 @@ subdir:
 all-local: | $(am.dir) subdir
 	: > $(am.dir)/sub
 	: > $(am.top-dir)/top
-	(cd ./subdir && : > $(am.abs-dir)/abs-sub)
+	(cd ./subdir && : > $(am.dir.abs)/abs-sub)
 	rmdir subdir
-	(cd /tmp && : > $(am.abs-top-dir)/abs-top)
+	(cd /tmp && : > $(am.top-dir.abs)/abs-top)
 END
 
 sort > exp <<END
