@@ -3556,7 +3556,23 @@ sub rewrite_inputs_into_dependencies ($@)
   return @res;
 }
 
-
+sub handle_config_headers ()
+{
+  my @config_h;
+  foreach my $spec (@config_headers)
+    {
+      my ($out, @ins) = split_config_file_spec ($spec);
+      if ($relative_dir eq dirname ($out))
+	{
+	  push @config_h, basename ($out);
+	}
+      else
+	{
+	  push @config_h, "\$(top_builddir)/$out";
+	}
+    }
+  define_variable ("AM_CONFIG_HEADERS", INTERNAL, @config_h);
+}
 
 # &handle_configure ($MAKEFILE_AM, $MAKEFILE_IN, $MAKEFILE, @INPUTS)
 # ------------------------------------------------------------------
@@ -3657,22 +3673,6 @@ sub handle_configure ($$$@)
            $clean_files{$stamp} = DIST_CLEAN;
 	}
     }
-
-  my @config_h;
-  foreach my $spec (@config_headers)
-    {
-      my ($out, @ins) = split_config_file_spec ($spec);
-      if ($relative_dir eq dirname ($out))
-	{
-	  push @config_h, basename ($out);
-	}
-      else
-	{
-	  push @config_h, "\$(top_builddir)/$out";
-	}
-    }
-  define_variable ("AM_CONFIG_HEADERS", INTERNAL, @config_h)
-    if @config_h;
 
   # Now look for other files in this directory which must be remade
   # by config.status, and generate rules for them.
@@ -6865,6 +6865,7 @@ sub generate_makefile ($$)
 
   almost_verbatim ('am-dir');
 
+  handle_config_headers;
   handle_configure ($makefile_am, $makefile_in, $makefile, @inputs);
   handle_gettext;
   handle_libraries;
