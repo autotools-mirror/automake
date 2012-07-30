@@ -3558,20 +3558,23 @@ sub rewrite_inputs_into_dependencies ($@)
 
 sub handle_config_headers ()
 {
-  my @config_h;
+  my (@config_h_local, @config_h_nonlocal);
   foreach my $spec (@config_headers)
     {
       my ($out, @ins) = split_config_file_spec ($spec);
       if ($relative_dir eq dirname ($out))
 	{
-	  push @config_h, basename ($out);
+	  push @config_h_local, basename ($out);
 	}
       else
 	{
-	  push @config_h, "\$(top_builddir)/$out";
+	  push @config_h_nonlocal, "\$(top_builddir)/$out";
 	}
     }
-  define_variable ("AM_CONFIG_HEADERS", INTERNAL, @config_h);
+  define_variable ('am.config-hdr.local', INTERNAL, @config_h_local);
+  define_variable ('am.config-hdr.non-local', INTERNAL, @config_h_nonlocal);
+  define_variable ('AM_CONFIG_HEADERS', INTERNAL,
+                   qw/$(am.config-hdr.local) $(am.config-hdr.non-local)/);
 }
 
 # &handle_configure ($MAKEFILE_AM, $MAKEFILE_IN, $MAKEFILE, @INPUTS)
