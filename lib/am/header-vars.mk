@@ -119,8 +119,6 @@ unexport CDPATH
 # FIXME: maybe normalize/sanitize $(V)?
 V ?= 0
 
-am__mkdir = test -d $1 || $(MKDIR_P) $1
-
 # In a recipe, ensure the given directory exists, creating it if
 # necessary; but tries to do so avoiding useless forks, stats, and
 # extra recipe text (the latter is useful when doing "make V=1").
@@ -130,7 +128,7 @@ am__mkdir = test -d $1 || $(MKDIR_P) $1
 # usage patterns, one of them should always be true in non-VPATH
 # builds.
 am__ensure_dir_exists = \
-  $(if $(filter .,$1),:,$(if $(wildcard $1/),:,$(call am__mkdir,$1)))
+  $(if $(filter .,$1),:,$(if $(wildcard $1/),:,$(MKDIR_P) $1))
 
 # Ensure the directory containing the target of the current recipe
 # exists, by creating it if necessary.
