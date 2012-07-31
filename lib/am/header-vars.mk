@@ -278,7 +278,7 @@ am.util.strip-suffixes = $(strip \
 # counting.  Yay for us :-)
 am.max-cmdline-args := xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 
-# FIXME! The above accounts for max forty aguments; this is basically
+# FIXME! The above accounts for max forty arguments; this is basically
 # arbitrary.  In the long term, defining that after a configure-time test
 # on the command-line length limits, or at least on a system-by-system
 # basis, might be better.  But don't make the new limit too big (even if
