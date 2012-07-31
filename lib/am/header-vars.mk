@@ -309,11 +309,11 @@ $(if $2,$(strip \
   )$(if $($0.counter),$(call $1,$(strip $($0.partial-args)))))
 endef
 
-am.rm-f = $(if $(strip $1),rm -f $(strip $1)$(am.chars.newline))
-am.rm-rf = $(if $(strip $1),rm -rf $(strip $1)$(am.chars.newline))
+am.hack.rm-f = $(if $(strip $1),rm -f $(strip $1)$(am.chars.newline))
+am.hack.rm-rf = $(if $(strip $1),rm -rf $(strip $1)$(am.chars.newline))
 
-am.clean-cmd.f = $(call am.xargs-map,am.rm-f,$1)
-am.clean-cmd.d = $(call am.xargs-map,am.rm-rf,$1)
+am.clean-cmd.f = $(call am.xargs-map,am.hack.rm-f,$1)
+am.clean-cmd.d = $(call am.xargs-map,am.hack.rm-rf,$1)
 
 # Some derived variables that have been found to be useful.
 # These have since long been documented in the Automake manual and used
