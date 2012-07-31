@@ -127,12 +127,12 @@ V ?= 0
 # try to optimize for those cases -- especially because, for our
 # usage patterns, one of them should always be true in non-VPATH
 # builds.
-am__ensure_dir_exists = \
+am.cmd.ensure-dir-exists = \
   $(if $(filter .,$1),:,$(if $(wildcard $1/),:,$(MKDIR_P) $1))
 
 # Ensure the directory containing the target of the current recipe
 # exists, by creating it if necessary.
-am__ensure_target_dir_exists = $(call am__ensure_dir_exists,$(@D))
+am__ensure_target_dir_exists = $(call am.cmd.ensure-dir-exists,$(@D))
 
 # The 'all' target must be the default one, independently from the
 # position it is declared in the output Makefile.

@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Test Automake-provided internal macro 'am__ensure_dir_exists'.
+# Test Automake-provided internal macro 'am.cmd.ensure-dir-exists'.
 
 am_create_testdir=empty
 . ./defs || exit 1
@@ -32,13 +32,13 @@ all: $(files)
 .PHONY: all
 
 sanity-check:
-	$(warning $(call am__ensure_dir_exists,x))
-	$(if $(filter $(call am__ensure_dir_exists,x),:MKDIR_P:),, \
-             $(error am__ensure_dir_exists does not contain $$(MKDIR_P)))
+	$(warning $(call am.cmd.ensure-dir-exists,x))
+	$(if $(filter $(call am.cmd.ensure-dir-exists,x),:MKDIR_P:),, \
+             $(error am.cmd.ensure-dir-exists does not contain $$(MKDIR_P)))
 .PHONY: sanity-check
 
 $(files):
-	$(call am__ensure_dir_exists,x)
+	$(call am.cmd.ensure-dir-exists,x)
 	echo dummy > $@
 END
 
