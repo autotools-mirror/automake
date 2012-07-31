@@ -132,7 +132,7 @@ am.cmd.ensure-dir-exists = \
 
 # Ensure the directory containing the target of the current recipe
 # exists, by creating it if necessary.
-am__ensure_target_dir_exists = $(call am.cmd.ensure-dir-exists,$(@D))
+am.cmd.ensure-target-dir-exists = $(call am.cmd.ensure-dir-exists,$(@D))
 
 # The 'all' target must be the default one, independently from the
 # position it is declared in the output Makefile.

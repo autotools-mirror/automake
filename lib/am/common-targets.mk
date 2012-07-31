@@ -163,6 +163,6 @@ all check install: | $(am.built-early)
 else
 $(foreach x,$(am.built-early),$(eval -include .am/built-sources/$(x)))
 .am/built-sources/%: | %
-	@$(am__ensure_target_dir_exists)
+	@$(am.cmd.ensure-target-dir-exists)
 	@touch $@
 endif

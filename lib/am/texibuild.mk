@@ -21,7 +21,7 @@ MAKEINFOHTML = $(MAKEINFO) --html
 AM_MAKEINFOHTMLFLAGS ?= $(AM_MAKEINFOFLAGS)
 
 define am__texibuild_dvi_or_pdf
-	$1$(am__ensure_target_dir_exists) && \
+	$1$(am.cmd.ensure-target-dir-exists) && \
 	TEXINPUTS="$(am__TEXINFO_TEX_DIR)$(PATH_SEPARATOR)$$TEXINPUTS" \
 ## Must set MAKEINFO like this so that version.texi will be found even
 ## if it is in srcdir.
@@ -43,7 +43,7 @@ define am__texibuild_dvi_or_pdf
 endef
 
 define am__texibuild_info
-	$(if $1,,@$(am__ensure_target_dir_exists))
+	$(if $1,,@$(am.cmd.ensure-target-dir-exists))
 ## Back up the info files before running makeinfo. This is the cheapest
 ## way to ensure that
 ## 1) If the texinfo file shrinks (or if you start using --no-split),
@@ -78,7 +78,7 @@ define am__texibuild_info
 endef
 
 define am__texibuild_html
-	$(AM_V_MAKEINFO)$(am__ensure_target_dir_exists) \
+	$(AM_V_MAKEINFO)$(am.cmd.ensure-target-dir-exists) \
 ## When --split (the default) is used, makeinfo will output a
 ## directory.  However it will not update the time stamp of a
 ## previously existing directory, and when the names of the nodes
