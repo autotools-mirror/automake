@@ -20,7 +20,7 @@ am_create_testdir=empty
 . ./defs || exit 1
 
 # Filter out Automake comments.
-grep -v '^##' "$am_amdir"/header-vars.am > defn.mk \
+grep -v '^##' "$am_amdir"/header-vars.mk > defn.mk \
   || fatal_ "fetching makefile fragment headers-vars.am"
 
 cat > Makefile << 'END'

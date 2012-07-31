@@ -185,13 +185,15 @@ EXTRA_DIST += lib/Automake/Config.in
 ## --------------------- ##
 
 dist_am_DATA = \
-  lib/am/am-dir.am \
-  lib/am/common-targets.am \
-  lib/am/serial-tests.am \
-  lib/am/parallel-tests.am \
-  lib/am/check-typos.am \
-  lib/am/color-tests.am \
-  lib/am/clean.am \
+  lib/am/am-dir.mk \
+  lib/am/texibuild.mk \
+  lib/am/common-targets.mk \
+  lib/am/color-tests.mk \
+  lib/am/serial-tests.mk \
+  lib/am/parallel-tests.mk \
+  lib/am/check-typos.mk \
+  lib/am/clean.mk \
+  lib/am/header-vars.mk \
   lib/am/compile.am \
   lib/am/configure.am \
   lib/am/data.am \
@@ -199,7 +201,6 @@ dist_am_DATA = \
   lib/am/depend2.am \
   lib/am/distdir.am \
   lib/am/footer.am \
-  lib/am/header-vars.am \
   lib/am/header.am \
   lib/am/inst-vars.am \
   lib/am/java.am \
@@ -221,7 +222,6 @@ dist_am_DATA = \
   lib/am/tags.am \
   lib/am/texi-vers.am \
   lib/am/texi-spec.am \
-  lib/am/texibuild.am \
   lib/am/texinfos.am \
   lib/am/vala.am \
   lib/am/yacc.am

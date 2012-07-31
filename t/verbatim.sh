@@ -42,6 +42,7 @@ esac
 
 mkdir am
 cp "$am_amdir"/*.am ./am
+cp "$am_amdir"/*.mk ./am
 
 echo pkgdata_DATA = configure.ac > Makefile.am
 
