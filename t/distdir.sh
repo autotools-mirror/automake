@@ -14,11 +14,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Test to make sure subdirs in EXTRA_DIST work.  Also tests to make
-# sure *srcdir is properly handled.  Note that using './', as in
-#   EXTRA_DIST = ./joe
-# does not work portably: it fails with HP-UX and Tru64 make.
-# Also test the situation when the lsit of distributed files contains
+# Test to make sure subdirs in EXTRA_DIST work.
+# Also tests to make sure *srcdir is properly handled.
+# Also test the situation when the list of distributed files contains
 # a directory and a file in it, and repeated directories.
 
 . ./defs || exit 1
