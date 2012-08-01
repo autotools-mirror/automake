@@ -309,9 +309,26 @@ $(if $2,$(strip \
   )$(if $($0.counter),$(call $1,$(strip $($0.partial-args)))))
 endef
 
+# Used only by the 'am.clean-cmd.*' functions below.  Do not use in
+# other places.
 am.hack.rm-f = $(if $(strip $1),rm -f $(strip $1)$(am.chars.newline))
 am.hack.rm-rf = $(if $(strip $1),rm -rf $(strip $1)$(am.chars.newline))
 
+# Needed to ensure the invocations of "rm -f" and "rm -rf" in our cleaning
+# rules are not given too many arguments, which might cause command line
+# length limits to be exceeded.  These are only meant to be used in a
+# "sub-recipe" by their own; e.g.,
+#
+#    # This is ok.
+#    clean-x:
+#        @echo "Cleaning X Files"
+#        @$(call am.clean-cmd.f,$(X_FILES))
+#
+#    # This is *wrong*.
+#    clean-x:
+#        @echo "Cleaning X Files" \
+#          && $(call am.clean-cmd.f,$(X_FILES))
+#
 am.clean-cmd.f = $(call am.xargs-map,am.hack.rm-f,$1)
 am.clean-cmd.d = $(call am.xargs-map,am.hack.rm-rf,$1)
 
