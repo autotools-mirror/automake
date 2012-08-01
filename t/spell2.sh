@@ -41,7 +41,8 @@ $AUTOMAKE
 $MAKE 2>stderr && { cat stderr >&2; exit 1; }
 cat stderr >&2
 
-LC_ALL=C sed -e 's/^Makefile:[0-9][0-9]*: //' \
+LC_ALL=C sed -e 's|^Makefile:[0-9][0-9]*: ||' \
+             -e 's|^\.mk/.*\.mk:[0-9][0-9]*: ||' \
              -e '/^\*\*\*.*Automake-NG/d' stderr > got
 
 cat > exp << 'END'

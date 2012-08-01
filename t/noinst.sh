@@ -21,12 +21,18 @@
 
 cat > Makefile.am << 'END'
 all-local:
-	exit 1
+	echo ok > all-has-run
 END
+
+echo AC_OUTPUT >> configure.ac
 
 $ACLOCAL
 $AUTOMAKE
+$AUTOCONF
 
-grep '^install[-a-z]*:.* all' Makefile.in
+./configure --prefix=$(pwd)/oops
+$MAKE install
+test -f all-has-run
+test ! -e oops
 
 :

@@ -16,69 +16,19 @@
 
 # Option 'serial-tests'.
 
-am_create_testdir=empty
 . ./defs || exit 1
 
-hasnt_parallel_tests ()
-{
-  $EGREP -i 'test_suite_log|test_(logs|bases)|\.log.*:' $1 && exit 1
-  grep 'recheck.*:' $1 && exit 1
-  grep '^check-TESTS: \$(am__cooked_tests)$' $1
-}
-
-has_parallel_tests ()
-{
-  $EGREP '(^| )check-TESTS.*:' $1
-  $EGREP '(^| )recheck.*:' $1
-  $EGREP '^\$\(TEST_SUITE_LOG\):.* \$\(am\.test-suite\.test-logs\)( |$)' $1
-  grep '%\.log %\.trs *:' $1
-}
-
-mkdir one two
-
-cat > one/configure.ac <<END
-AC_INIT([$me], [1.0])
-AM_INIT_AUTOMAKE([serial-tests])
-AC_CONFIG_FILES([Makefile])
-END
-
-echo 'TESTS = foo.test bar.test' > one/Makefile.am
-
-cat > two/configure.ac <<END
-AC_INIT([$me], [2.0])
-AC_CONFIG_AUX_DIR([config])
-AM_INIT_AUTOMAKE([parallel-tests])
-AC_CONFIG_FILES([aMakefile bMakefile])
-END
-
-cp one/Makefile.am two/aMakefile.am
-cat - one/Makefile.am > two/bMakefile.am <<END
+cat > Makefile.am << 'END'
 AUTOMAKE_OPTIONS = serial-tests
+TESTS = foo.test bar.test
 END
 
-cd one
-touch missing install-sh
 $ACLOCAL
 $AUTOMAKE
-grep TEST Makefile.in # For debugging.
-hasnt_parallel_tests Makefile.in
+grep '^include .*.top_srcdir./\.mk/serial-tests\.mk$' Makefile.in
+$FGREP 'parallel-tests.mk' Makefile.in && exit 1
+test -f .mk/serial-tests.mk
+test ! -e .mk/parallel-tests.mk
 test ! -e test-driver
-cd ..
-
-cd two
-mkdir config
-$ACLOCAL
-$AUTOMAKE --add-missing
-grep TEST [ab]Makefile.in # For debugging.
-has_parallel_tests aMakefile.in
-hasnt_parallel_tests bMakefile.in
-mv aMakefile.in aMakefile.sav
-mv bMakefile.in bMakefile.sav
-test ! -e test-driver
-test -f config/test-driver
-$AUTOMAKE
-diff aMakefile.sav aMakefile.in
-diff bMakefile.sav bMakefile.in
-cd ..
 
 :

@@ -19,18 +19,7 @@
 
 . ./defs || exit 1
 
-cat > Makefile.am << 'END'
-SUBDIRS = sdir
-.PHONY: test
-test: distdir
-	test -f $(distdir)/src
-	test -f $(distdir)/src2
-	test -f $(distdir)/sdir/src3
-	test -f $(distdir)/sdir-no-make/src4
-	test 2 -gt `find $(distdir)/sdir -type d | wc -l`
-	test 2 -gt `find $(distdir)/sdir-no-make -type d | wc -l`
-	test 4 -gt `find $(distdir) -type d | wc -l`
-END
+echo SUBDIRS = sdir > Makefile.am
 
 : > src
 : > src2
@@ -52,6 +41,24 @@ $ACLOCAL
 $AUTOMAKE
 $AUTOCONF
 ./configure
-$MAKE test
+$MAKE distdir
+
+find $distdir # For debugging.
+
+rm -rf $distdir/.mk
+
+test -f $distdir/src
+test -f $distdir/src2
+test -f $distdir/sdir/src3
+test -f $distdir/sdir-no-make/src4
+
+count_distributed_dirs ()
+{
+  find $distdir${1+"/$1"} -type d | wc -l
+}
+
+test 2 -gt $(count_distributed_dirs 'sdir')
+test 2 -gt $(count_distributed_dirs 'sdir-no-make')
+test 4 -gt $(count_distributed_dirs)
 
 :

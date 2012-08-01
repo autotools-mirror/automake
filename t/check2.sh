@@ -56,9 +56,6 @@ cat stdout
 grep '^PASS: subrun\.sh *$' stdout
 grep 'PASS.*echo\.sh' stdout && exit 1
 
-$EGREP '^check:.*check-recursive' Makefile.in
-$EGREP '^check:.*check-am' dir/Makefile.in
-
 # Make sure subrun.sh is still on its line as above.  This means Automake
 # hasn't rewritten the TESTS line unnecessarily.
 grep '^  subrun\.sh$' Makefile.in

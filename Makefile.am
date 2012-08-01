@@ -568,7 +568,8 @@ amhello_configury = \
   depcomp \
   install-sh \
   missing \
-  src/Makefile.in
+  src/Makefile.in \
+  .mk
 
 dist_noinst_DATA += $(amhello_sources)
 dist_doc_DATA = $(srcdir)/doc/amhello-1.0.tar.gz

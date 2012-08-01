@@ -36,8 +36,6 @@ END
 $ACLOCAL
 $AUTOMAKE
 
-test $(grep -c installdirs-local Makefile.in) -eq 4
-
 cwd=$(pwd) || fatal_ "getting current working directory"
 
 $AUTOCONF

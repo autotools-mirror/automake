@@ -5776,16 +5776,23 @@ sub preprocess_file ($%)
 sub verbatim ($)
 {
   my $name = shift;
-  my $text .= slurp_makefile_fragment ("$libdir/am/$name.mk");
+  my $dir = '.mk';
+  my $file = "$dir/$name.mk";
+  my $text = slurp_makefile_fragment ("$libdir/am/$name.mk");
+  mkdir ($dir, 0755) if ! -d $dir;
+  my $fh = new Automake::XFile "> $file";
+  verb "creating $file";
+  print $fh $text;
+  my $out = "include \@top_srcdir\@/$file\n";
   if (defined wantarray)
     {
       # Scalar or list context.
-      return $text;
+      return $out;
     }
   else
     {
       # Void context
-      $output_verbatim .= $text;
+      $output_verbatim .= $out;
       return;
     }
 }

@@ -26,6 +26,7 @@ EOF
 
 $ACLOCAL
 $AUTOMAKE
-test $($FGREP -c '.PHONY:' Makefile.in) -gt 3
+grep '^\.PHONY: foo$' Makefile.in
+grep '^\.PHONY: bar$' Makefile.in
 
 :
