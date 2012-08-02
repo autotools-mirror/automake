@@ -28,8 +28,7 @@ test -f ../../automake && test -f ../../defs && test -d ../../t \
 test ! -f Makefile.am || mv Makefile.am Makefile.am~ \
   || fatal_ "failed to save Makefile.am"
 
-test -d ../tap-common-setup.dir \
-  && cp -fpR ../tap-common-setup.dir/* ../tap-common-setup.dir/.??* . \
+test -d ../tap-common-setup.dir && cp -fpR ../tap-common-setup.dir/* . \
   || fatal_ "couldn't get precomputed data files"
 
 fetch_tap_driver

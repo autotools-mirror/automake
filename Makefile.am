@@ -569,7 +569,7 @@ amhello_configury = \
   install-sh \
   missing \
   src/Makefile.in \
-  .mk
+  am-ng
 
 dist_noinst_DATA += $(amhello_sources)
 dist_doc_DATA = $(srcdir)/doc/amhello-1.0.tar.gz

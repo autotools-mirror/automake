@@ -25,10 +25,10 @@ END
 
 $ACLOCAL
 $AUTOMAKE
-grep '^include .*.top_srcdir./\.mk/serial-tests\.mk$' Makefile.in
+grep '^include .*/am-ng/serial-tests\.mk$' Makefile.in
 $FGREP 'parallel-tests.mk' Makefile.in && exit 1
-test -f .mk/serial-tests.mk
-test ! -e .mk/parallel-tests.mk
+test -f am-ng/serial-tests.mk
+test ! -e am-ng/parallel-tests.mk
 test ! -e test-driver
 
 :

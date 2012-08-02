@@ -27,7 +27,7 @@ for target in $targets; do
   $AUTOMAKE
   grep "${target}-local ${target}-local" Makefile.in && exit 1
   grep "${target}-am:.*${target}-local" Makefile.in \
-    || grep "${target}-am:.*${target}-local" .mk/*.mk
+    || grep "${target}-am:.*${target}-local" am-ng/*.mk
 done
 
 :

@@ -106,7 +106,7 @@ setup_srcdir ()
   srcdir=$1 # This is intended to be global.
   mkdir -p "$srcdir" \
     || fatal_ "couldn't create source directory '$srcdir'"
-  cp -pR "$ocwd/$srctree"/* "$ocwd/$srctree"/.??* "$srcdir"/ \
+  cp -pR "$ocwd/$srctree"/* "$srcdir"/ \
     || fatal_ "couldn't populate source directory '$srcdir'"
 }
 

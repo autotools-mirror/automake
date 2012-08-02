@@ -45,7 +45,7 @@ $MAKE distdir
 
 find $distdir # For debugging.
 
-rm -rf $distdir/.mk
+rm -rf $distdir/am-ng
 
 test -f $distdir/src
 test -f $distdir/src2

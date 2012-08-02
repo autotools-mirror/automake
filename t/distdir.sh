@@ -71,8 +71,7 @@ cat stdout
 
 # Make sure no './' appear in the directory names.  srcdir is '..', so
 # this also checks that no directory is created in the source tree.
-sed 's|/.mk/|@mk@|' stdout > stdout2
-grep 'MKDIR_P.*\.' stdout2 && exit 1
+grep 'MKDIR_P.*\.' stdout && exit 1
 
 cd ..
 ./configure --prefix "$(pwd)"
