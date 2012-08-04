@@ -1,4 +1,4 @@
-#!/bin/sh
+#!@PERL@ -w
 # @configure_input@
 
 # Copyright (C) 2012 Free Software Foundation, Inc.
@@ -16,21 +16,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Be Bourne compatible
-if test -n "${ZSH_VERSION+set}" && (emulate sh) >/dev/null 2>&1; then
-  emulate sh
-  NULLCMD=:
-  # Zsh 3.x and 4.x performs word splitting on ${1+"$@"}, which
-  # is contrary to our usage.  Disable this feature.
-  alias -g '${1+"$@"}'='"$@"'
-fi
-
-perllibdir="@abs_top_builddir@/lib@PATH_SEPARATOR@@abs_top_srcdir@/lib"
-export perllibdir
-# Don't trust ${1+"$@"}: it has subtle bugs in some Korn shells (for very
-# corner case only admittedly, but those have already bitten us -- see
-# automake bug#10898).
-case $# in
-  0) exec "@abs_top_builddir@/automake" "--libdir=@abs_top_srcdir@/lib";;
-  *) exec "@abs_top_builddir@/automake" "--libdir=@abs_top_srcdir@/lib" "$@";;
-esac
+BEGIN
+{
+  use strict;
+  my $libdir;
+  $libdir = '@abs_top_srcdir@/lib';
+  $libdir = '@abs_top_builddir@/lib' . '@PATH_SEPARATOR@' . $libdir
+    if '@srcdir@' ne '.';
+  $ENV{perllibdir} = $libdir;
+  unshift @ARGV, '--libdir=@abs_top_srcdir@/lib';
+}
+require '@abs_top_builddir@/automake';
