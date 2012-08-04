@@ -635,6 +635,7 @@ t/lisp-subdir.sh \
 t/lisp-subdir2.sh \
 t/lispdry.sh \
 t/lisp-pr11806.sh \
+t/lisp-flags.sh \
 t/listval.sh \
 t/location.sh \
 t/longline.sh \
