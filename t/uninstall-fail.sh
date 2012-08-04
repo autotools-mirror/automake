@@ -28,9 +28,14 @@ chmod a-w d || skip "cannot make directories unwritable"
 
 # On Solaris 10, if '/bin/rm' is run with the '-f' option, it doesn't
 # print any error message when failing to remove a file (due to e.g.,
-# "Permission denied").  Yikes.  We'll cater to this incompatibility
-# by relaxing a test below if a faulty 'rm' is detected.
-st=0; rm -f d/f 2>stderr || st=$?
+# "Permission denied").  And it gets weirder.  On OpenIndiana 11, the
+# /bin/sh shell (in many respects a decent POSIX shell) seems to somehow
+# "eat" the error message from 'rm' in some situation, although the 'rm'
+# utility itself correctly prints it when invoked from (say) 'env' or
+# 'bash'.  Yikes.
+# We'll cater to these incompatibilities by relaxing a test below if
+# a faulty shell or 'rm' program is detected.
+st=0; $SHELL -c 'rm -f d/f' 2>stderr || st=$?
 cat stderr >&2
 test $st -gt 0 || skip_ "can delete files from unwritable directories"
 if grep 'rm:' stderr; then
@@ -53,7 +58,8 @@ $ACLOCAL
 $AUTOMAKE
 $AUTOCONF
 
-# Make it harder to experience false postives when grepping error messages.
+# Weird name, to make it harder to experience false positives when
+# grepping error messages.
 inst=__inst-dir__
 
 ./configure --prefix="$(pwd)/$inst"
