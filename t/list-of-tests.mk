@@ -633,6 +633,7 @@ t/lisp8.sh \
 t/lisp-loadpath.sh \
 t/lisp-subdir.sh \
 t/lisp-subdir2.sh \
+t/lisp-subdir-mix.sh \
 t/lispdry.sh \
 t/lisp-pr11806.sh \
 t/lisp-flags.sh \
