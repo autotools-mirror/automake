@@ -40,7 +40,9 @@ int main ()
 }
 END
 
-echo '#define BARBAR "Zardoz!\n"' > foo.h
+# Use printf, not echo, to avoid '\n' being considered and escape
+# sequence and printed as a newline in 'foo.h'.
+printf '%s\n' '#define BARBAR "Zardoz!\n"' > foo.h
 
 cat > foo.vapi <<'END'
 [CCode (cprefix="", lower_case_cprefix="", cheader_filename="foo.h")]
@@ -74,7 +76,9 @@ cross_compiling || $MAKE test1 || exit 1
 
 # Simple check on remake rules.
 $sleep
-echo '#define BAZBAZ "Quux!\n"' > foo.h
+# Use printf, not echo, to avoid '\n' being considered and escape
+# sequence and printed as a newline in 'foo.h'.
+printf '%s\n' '#define BAZBAZ "Quux!\n"' > foo.h
 sed 's/BARBAR/BAZBAZ/' zardoz.vala > t && mv -f t zardoz.vala || exit 99
 $MAKE && exit 1
 sed 's/BARBAR/BAZBAZ/' foo.vapi > t && mv -f t foo.vapi || exit 99
