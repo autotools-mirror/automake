@@ -57,7 +57,6 @@ $MAKE
 test -f am-one.elc
 test ! -e am-two.elc
 test -f am-three.elc
-test -f elc-stamp
 
 $MAKE install
 test -f lisp/am-one.el
@@ -73,7 +72,6 @@ $MAKE distclean
 test ! -e am-one.elc
 test ! -e am-two.elc
 test ! -e am-three.elc
-test ! -e elc-stamp
 
 ./configure --with-lispdir="$cwd/lisp" want_two=1
 
@@ -81,7 +79,6 @@ $MAKE
 test -f am-one.elc
 test -f am-two.elc
 test -f am-three.elc
-test -f elc-stamp
 
 # Let's mutilate the source tree, to check the recover rule.
 rm -f am-*.elc
@@ -89,7 +86,6 @@ $MAKE
 test -f am-one.elc
 test -f am-two.elc
 test -f am-three.elc
-test -f elc-stamp
 
 $MAKE install
 test -f lisp/am-one.el
@@ -105,6 +101,5 @@ $MAKE distclean
 test ! -e am-one.elc
 test ! -e am-two.elc
 test ! -e am-three.elc
-test ! -e elc-stamp
 
 :

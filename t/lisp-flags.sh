@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2005-2012 Free Software Foundation, Inc.
+# Copyright (C) 2003-2012 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,13 +14,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Check the recover rule of lisp_LISP with parallel make.
+# Elisp byte-compilation honours AM_ELCFLAFS and ELCFLAGS.
 
-required='GNUmake emacs'
 . ./defs || exit 1
 
 cat > Makefile.am << 'EOF'
-dist_lisp_LISP = am-one.el am-two.el am-three.el
+lisp_LISP = foo.el
+AM_ELCFLAGS = __am_elcflags__
 EOF
 
 cat >> configure.ac << 'EOF'
@@ -28,34 +28,14 @@ AM_PATH_LISPDIR
 AC_OUTPUT
 EOF
 
-echo "(require 'am-two)" > am-one.el
-echo "(require 'am-three) (provide 'am-two)" > am-two.el
-echo "(provide 'am-three)" > am-three.el
-
 $ACLOCAL
 $AUTOCONF
 $AUTOMAKE --add-missing
-./configure
 
-# Use append mode here to avoid dropping output.  See automake bug#11413.
-: >stdout
-$MAKE -j >>stdout || { cat stdout; exit 1; }
+./configure EMACS='echo >$@' --with-lispdir="$(pwd)/unused"
 
-cat stdout
-
-test -f am-one.elc
-test -f am-two.elc
-test -f am-three.elc
-
-rm -f am-*.elc
-
-# Use append mode here to avoid dropping output.  See automake bug#11413.
-: >stdout
-$MAKE -j >>stdout || { cat stdout; exit 1; }
-
-cat stdout
-test -f am-one.elc
-test -f am-two.elc
-test -f am-three.elc
+: > foo.el
+ELCFLAGS='__usr_elcflags__' $MAKE -e
+grep '__am_elcflags__.*__usr_elcflags__' foo.elc
 
 :

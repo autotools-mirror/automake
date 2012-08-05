@@ -627,8 +627,13 @@ t/lisp5.sh \
 t/lisp6.sh \
 t/lisp7.sh \
 t/lisp8.sh \
+t/lisp-loadpath.sh \
+t/lisp-subdir.sh \
+t/lisp-subdir2.sh \
+t/lisp-subdir-mix.sh \
 t/lispdry.sh \
 t/lisp-pr11806.sh \
+t/lisp-flags.sh \
 t/listval.sh \
 t/location.sh \
 t/longline.sh \
