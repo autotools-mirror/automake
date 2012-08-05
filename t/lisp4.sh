@@ -32,7 +32,6 @@ test:
 	test ! -f am-one.elc
 	test ! -f am-two.elc
 	test ! -f am-three.elc
-	test ! -f elc-stamp
 
 install-test: install
 	test -f "$(lispdir)/am-one.el"

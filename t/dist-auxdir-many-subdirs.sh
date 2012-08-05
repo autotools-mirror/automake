@@ -56,8 +56,6 @@ END
     foo_SOURCES = foo.c
     ## For py-compile.
     python_PYTHON = bar.py
-    ## For elisp-comp.
-    lisp_LISP = baz.el
     ## For test-driver.
     TESTS =
 END
@@ -67,7 +65,6 @@ END
     missing
     depcomp
     py-compile
-    elisp-comp
     test-driver
   '
 

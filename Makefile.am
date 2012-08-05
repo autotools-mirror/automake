@@ -122,7 +122,6 @@ dist_script_DATA = \
   lib/install-sh \
   lib/mdate-sh \
   lib/missing \
-  lib/elisp-comp \
   lib/ylwrap \
   lib/depcomp \
   lib/compile \
