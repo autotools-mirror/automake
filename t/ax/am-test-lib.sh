@@ -740,7 +740,7 @@ process_requirements ()
   for am_tool in $*; do
     require_tool $am_tool
   done
-  unset am_tool
+  am_tool=; unset am_tool
   # We might need extra macros, e.g., from Libtool or Gettext.
   case " $required " in
     *\ libtool*) . ./t/libtool-macros.dir/get.sh;;
