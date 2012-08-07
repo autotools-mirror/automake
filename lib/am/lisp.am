@@ -22,6 +22,10 @@ endif %?INSTALL%
 ## Building.  ##
 ## ---------- ##
 
+if %?FIRST%
+am.elisp.includes = -L $1 $(if $(filter-out .,$(srcdir)), -L $(srcdir)/$1)
+endif
+
 %.elc: %.el
 ## We add $(builddir) and $(srcdir) to load-path, so that any '.el' files
 ## that $< depends upon can be found (including generated ones).
@@ -31,16 +35,12 @@ endif %?INSTALL%
 ## input (which would erronously put it in $(srcdir) in VPATH builds),
 ## so we override that, too.
 	if test "$(EMACS)" != "no"; then \
-	  am__subdir_includes=''; \
-	  case $@ in */*) \
-	    am__dir=`echo '$@' | sed 's,/[^/]*$$,,'`; \
-	    am__subdir_includes="-L $$am__dir -L $(srcdir)/$$am__dir"; \
-	  esac; \
 ## Emacs byte-compilation won't create this automatically, sadly.
-	  test -d $$am__dir || $(MKDIR_P) $$am__dir || exit 1; \
+	  $(call am.cmd.ensure-dir-exists,$(@D)); \
 	  $(EMACS) --batch \
 	    $(AM_ELCFLAGS) $(ELCFLAGS) \
-	    $$am__subdir_includes -L $(builddir) -L $(srcdir) \
+	    $(if $(filter-out .,$(@D)),$(call am.elisp.includes,$(@D))) \
+	    $(call am.elisp.includes,.) \
 	    --eval "(defun byte-compile-dest-file (f) \"$@\")" \
 	    --eval "(unless (byte-compile-file \"$<\") (kill-emacs 1))"; \
 	else :; fi
