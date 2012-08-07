@@ -355,3 +355,56 @@ POST_INSTALL = :
 NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
+
+# Strip all directories.
+am__strip_dir = f=`echo $$p | sed -e 's|^.*/||'`;
+
+# Number of files to install concurrently.
+am__install_max = 40
+# Take a $list of "nobase" files, strip $(srcdir) from them.
+# Split apart in setup variable and an action that can be used
+# in backticks or in a pipe.
+am__nobase_strip_setup = \
+  srcdirstrip=`echo "$(srcdir)" | sed 's/[].[^$$\\*|]/\\\\&/g'`
+am__nobase_strip = \
+  for p in $$list; do echo "$$p"; done | sed -e "s|$$srcdirstrip/||"
+# Take a "$list" of nobase files, collect them, indexed by their
+# srcdir-stripped dirnames.  For up to am__install_max files, output
+# a line containing the dirname and the files, space-separated.
+# The arbitrary limit helps avoid the quadratic scaling exhibited by
+# string concatenation in most shells, and should avoid line length
+# limitations, while still offering only negligible performance impact
+# through spawning more install commands than absolutely needed.
+am__nobase_list = $(am__nobase_strip_setup); \
+  for p in $$list; do echo "$$p $$p"; done | \
+  sed "s| $$srcdirstrip/| |;"' / .*\//!s/ .*/ ./; s,\( .*\)/[^/]*$$,\1,' | \
+  $(AWK) 'BEGIN { files["."] = "" } { files[$$2] = files[$$2] " " $$1; \
+    if (++n[$$2] == $(am__install_max)) \
+      { print $$2, files[$$2]; n[$$2] = 0; files[$$2] = "" } } \
+    END { for (dir in files) print dir, files[dir] }'
+# Collect up to 40 files per line from stdin.
+am__base_list = \
+  sed '$$!N;$$!N;$$!N;$$!N;$$!N;$$!N;$$!N;s/\n/ /g' | \
+  sed '$$!N;$$!N;$$!N;$$!N;s/\n/ /g'
+
+# A shell code fragment to uninstall files from a given directory.
+# It expects the $dir and $files shell variables to be defined respectively
+# to the directory where the files to be removed are, and to the list of
+# such files.
+# Some rm implementations complain if 'rm -f' is used without arguments,
+# so the fist "test -z" check (FIXME: this is probably obsolete; see
+# automake bug#10828).
+# At least Solaris /bin/sh still lacks 'test -e', so we use the multiple
+# "test ! -[fdr]" below instead (FIXME: this should become obsolete when
+# we can assume the $SHELL set by Autoconf-generated configure scripts is
+# a truly POSIX shell; see:
+# <http://lists.gnu.org/archive/html/bug-autoconf/2012-06/msg00009.html>).
+# We expect $dir to be either non-existent or a directory, so the
+# failure we'll experience if it is a regular file is indeed desired
+# and welcome (better to fail loudly than silently).
+am__uninstall_files_from_dir = { \
+  test -z "$$files" \
+    || { test ! -d "$$dir" && test ! -f "$$dir" && test ! -r "$$dir"; } \
+    || { echo " ( cd '$$dir' && rm -f" $$files ")"; \
+         cd "$$dir" && rm -f $$files; }; \
+  }

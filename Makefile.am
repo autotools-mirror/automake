@@ -201,7 +201,6 @@ dist_am_DATA = \
   lib/am/distdir.am \
   lib/am/footer.am \
   lib/am/header.am \
-  lib/am/inst-vars.am \
   lib/am/java.am \
   lib/am/lang-compile.am \
   lib/am/lex.am \
