@@ -135,26 +135,19 @@ install-html-am: am--install-html
 am--install-html: $(HTMLS)
 	@$(NORMAL_INSTALL)
 	$(call am__create_installdir,$(htmldir))
-	@list='$(HTMLS)'; list2=; test -n "$(htmldir)" || list=; \
-	for p in $$list; do \
-	  if test -f "$$p" || test -d "$$p"; then d=; else d="$(srcdir)/"; fi; \
-	  $(am__strip_dir) \
-## This indirection is required to work around a bug of the Solaris 10
-## shell /usr/xpg4/bin/sh.  The description of the bug can be found at
-## <http://lists.gnu.org/archive/html/bug-autoconf/2011-11/msg00005.html>
-## and the report of the original failure can be found at automake
-## bug#10026 <http://debbugs.gnu.org/cgi/bugreport.cgi?bug=10026#23>
-	  d2=$$d$$p; \
-	  if test -d "$$d2"; then \
+	@list=''; \
+	$(if $(and $(HTMLS),$(htmldir)),$(foreach i,$(HTMLS), \
+	  p=$(call am.vpath.rewrite,$i); \
+	  f=$(notdir $i); \
+	  if test -d "$$p"; then \
 	    echo " $(MKDIR_P) '$(DESTDIR)$(htmldir)/$$f'"; \
 	    $(MKDIR_P) "$(DESTDIR)$(htmldir)/$$f" || exit 1; \
-	    echo " $(INSTALL_DATA) '$$d2'/* '$(DESTDIR)$(htmldir)/$$f'"; \
-	    $(INSTALL_DATA) "$$d2"/* "$(DESTDIR)$(htmldir)/$$f" || exit $$?; \
+	    echo " $(INSTALL_DATA) '$$p'/* '$(DESTDIR)$(htmldir)/$$f'"; \
+	    $(INSTALL_DATA) "$$p"/* "$(DESTDIR)$(htmldir)/$$f" || exit $$?; \
 	  else \
-	    list2="$$list2 $$d2"; \
-	  fi; \
-	done; \
-	test -z "$$list2" || { echo "$$list2" | $(am__base_list) | \
+	    list="$$list $$p"; \
+	  fi;)) \
+	test -z "$$list" || { echo "$$list" | $(am__base_list) | \
 	while read files; do \
 	  echo " $(INSTALL_DATA) $$files '$(DESTDIR)$(htmldir)'"; \
 	  $(INSTALL_DATA) $$files "$(DESTDIR)$(htmldir)" || exit $$?; \

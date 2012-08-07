@@ -356,9 +356,6 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 
-# Strip all directories.
-am__strip_dir = f=`echo $$p | sed -e 's|^.*/||'`;
-
 # Number of files to install concurrently.
 am__install_max = 40
 # Take a $list of "nobase" files, strip $(srcdir) from them.
