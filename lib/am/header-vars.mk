@@ -358,13 +358,6 @@ POST_UNINSTALL = :
 
 # Number of files to install concurrently.
 am__install_max = 40
-# Take a $list of "nobase" files, strip $(srcdir) from them.
-# Split apart in setup variable and an action that can be used
-# in backticks or in a pipe.
-am__nobase_strip_setup = \
-  srcdirstrip=`echo "$(srcdir)" | sed 's/[].[^$$\\*|]/\\\\&/g'`
-am__nobase_strip = \
-  for p in $$list; do echo "$$p"; done | sed -e "s|$$srcdirstrip/||"
 # Take a "$list" of nobase files, collect them, indexed by their
 # srcdir-stripped dirnames.  For up to am__install_max files, output
 # a line containing the dirname and the files, space-separated.
@@ -372,7 +365,8 @@ am__nobase_strip = \
 # string concatenation in most shells, and should avoid line length
 # limitations, while still offering only negligible performance impact
 # through spawning more install commands than absolutely needed.
-am__nobase_list = $(am__nobase_strip_setup); \
+am__nobase_list = \
+  srcdirstrip=`echo "$(srcdir)" | sed 's/[].[^$$\\*|]/\\\\&/g'`; \
   for p in $$list; do echo "$$p $$p"; done | \
   sed "s| $$srcdirstrip/| |;"' / .*\//!s/ .*/ ./; s,\( .*\)/[^/]*$$,\1,' | \
   $(AWK) 'BEGIN { files["."] = "" } { files[$$2] = files[$$2] " " $$1; \

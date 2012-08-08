@@ -78,19 +78,13 @@ if %?INSTALL%
 .PHONY uninstall-am: uninstall-%DIR%PYTHON
 uninstall-%DIR%PYTHON:
 	@$(NORMAL_UNINSTALL)
-	@list='$(%DIR%_PYTHON)'; test -n "$(%NDIR%dir)" || list=; \
-?BASE?	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
-?!BASE?	$(am__nobase_strip_setup); files=`$(am__nobase_strip)`; \
-	test -n "$$files" || exit 0; \
-	dir='$(DESTDIR)$(%NDIR%dir)'; \
-## Also remove the .pyc and .pyo byte compiled versions.
-	filesc=`echo "$$files" | sed 's|$$|c|'`; \
-	fileso=`echo "$$files" | sed 's|$$|o|'`; \
-	st=0; \
-	for files in "$$files" "$$filesc" "$$fileso"; do \
-	  $(am__uninstall_files_from_dir) || st=$$?; \
-	done; \
-	exit $$st
+	@$(if $(and $(%DIR%_PYTHON),$(%NDIR%dir)), \
+	files='$(foreach i,\
+?BASE?	         $(notdir $(%DIR%_PYTHON)), \
+?!BASE?	         $(patsubst $(srcdir)/%,%,$(%DIR%_PYTHON)), \
+## Also remove the '.pyc' and '.py'o byte-compiled versions.
+	         $(i) $(i)c $(i)o)'; \
+	dir='$(DESTDIR)$(%NDIR%dir)'; $(am__uninstall_files_from_dir))
 endif %?INSTALL%
 
 
