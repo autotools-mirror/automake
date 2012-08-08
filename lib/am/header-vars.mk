@@ -90,6 +90,12 @@ am.chars.squote := '
 # definition of $(am.chars.newline) just below for a significant example.
 am.chars.empty :=
 
+# A single whitespace.
+am.chars.space := $(am.chars.empty) $(am.chars.empty)
+
+# A single tabulation character.
+am.chars.tab := $(am.chars.empty)	$(am.chars.empty)
+
 # A literal newline character, that does not get stripped if used
 # at the end of the expansion of another macro.
 define am.chars.newline
@@ -381,6 +387,26 @@ am__base_list = \
   sed '$$!N;$$!N;$$!N;$$!N;$$!N;$$!N;$$!N;s/\n/ /g' | \
   sed '$$!N;$$!N;$$!N;$$!N;s/\n/ /g'
 
+# New function, backslash-escape whitespace in the given string.
+define am.util.whitespace-escape
+$(subst $(am.chars.space),\$(am.chars.space),$(subst $(am.chars.tab),\$(am.chars.tab),$1))
+endef
+
+# Determine whether the given file exists.  Since this function is
+# expected to be used on paths referencing $(DESTDIR), it must be
+# ready to cope with whitespaces and shell metacharacters.
+# FIXME: here we assume that the shell found by Autoconf-generated
+# configure supports "test -e"; that is not completely correct ATM, but
+# future versions of Autoconf will reject non-POSIX shells, so we should
+# be safe in the long term.
+define am.util.file-exists
+$(strip \
+  $(if $(strip $(findstring *,$1) $(findstring ?,$1) \
+               $(findstring [,$1) $(findstring ],$1)), \
+    $(shell test -e '$(subst $(am.chars.squote),'\'',$1)' && echo yes), \
+    $(if $(wildcard $(call am.util.whitespace-escape,$1)),yes)))
+endef
+
 # $(call am.uninst.cmd,DIR,FILES,[RM-OPTS])
 # -----------------------------------------
 # Uninstall the given files from the given directory, avoiding to hit
@@ -390,25 +416,14 @@ am__base_list = \
 # passed to the rm invocation removing the files (this ca be useful in
 # case such files are actually directories (as happens with the HTML
 # documentation), in which case rm should be passed the '-r' option.
-# At least Solaris /bin/sh still lacks 'test -e', so we use the multiple
-# "test ! -[fdr]" below instead (FIXME: this should become obsolete when
-# we can assume the $SHELL set by Autoconf-generated configure scripts is
-# a truly POSIX shell; see:
-# <http://lists.gnu.org/archive/html/bug-autoconf/2012-06/msg00009.html>).
-# We expect $dir to be either non-existent or a directory, so the
-# failure we'll experience if it is a regular file is indeed desired
-# and welcome (better to fail loudly than silently).
-# Similarly to the 'am.clean-cmd.f' above, this function is only meant to
-# be used in a "sub-recipe" by its own.
-am.uninst.cmd.aux = \
-  $(if $(and $2,$1), \
-    { test ! -d '$(DESTDIR)'$2 \
-      && test ! -f '$(DESTDIR)'$2 \
-      && test ! -r '$(DESTDIR)'$2; } \
-    || { \
-      echo " cd '$(DESTDIR)$2' && rm -f $1" \
-        && cd '$(DESTDIR)$2' \
-	&& rm -f$(if $3, $3) $1; }$(am.chars.newline))
-am.uninst.cmd = \
-  @$(call am.xargs-map,$0.aux,$(strip $2),$(strip $1),$(strip $3))
+# Similarly to the 'am.clean-cmd.f' above, this function is only meant
+# to be used in a "sub-recipe" by its own.
 
+define am.uninst.cmd.aux
+$(if $(and $2,$1),$(if $(call am.util.file-exists,$(DESTDIR)$2),$(strip \
+)cd '$(DESTDIR)$2' && rm -f$(if $3, $3) $1$(am.chars.newline)))
+endef
+
+define am.uninst.cmd
+$(call am.xargs-map,$0.aux,$(strip $2),$(strip $1),$(strip $3))
+endef

@@ -19,7 +19,7 @@
 am_create_testdir=empty
 . ./defs || exit 1
 
-plan_ 12
+plan_ 13
 
 # Filter out Automake comments.
 grep -v '^##' "$am_amdir"/header-vars.mk > defn.mk \
@@ -250,6 +250,33 @@ command-2 = test y = y$(my_newline)
 test:
 	$(command-1)$(command-2)touch n3
 	test -f n3
+END
+
+T 'am.util.file-exists' <<'END'
+prepare:
+	: > 'a'
+	test -f 'a'
+	: > '?'
+	test -f '?'
+	: > 'foo bar'
+	test -f 'foo bar'
+	mkdir 'a  b'
+	test -d 'a  b'
+	: > 'a  b'/'c	d'
+	test -f 'a  b'/'c	d'
+test: prepare
+	test x'$(call am.util.file-exists,.)' = x'yes'
+	test x'$(call am.util.file-exists,Makefile)' = x'yes'
+	test x'$(call am.util.file-exists,.././defn.mk)' = x'yes'
+	test x'$(call am.util.file-exists,none)' = x
+	test x'$(call am.util.file-exists,Makefile oops)' = x
+	test x'$(call am.util.file-exists,foo bar)' = x'yes'
+	test x'$(call am.util.file-exists,a  b)' = x'yes'
+	test x'$(call am.util.file-exists,a  b/c	d)' = x'yes'
+	test x'$(call am.util.file-exists,*)' = x
+	test x'$(call am.util.file-exists,a)' = x'yes'
+	test x'$(call am.util.file-exists,[ab])' = x
+	test x'$(call am.util.file-exists,?)' = x'yes'
 END
 
 :
