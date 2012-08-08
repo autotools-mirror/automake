@@ -233,29 +233,27 @@ if %?LOCAL-TEXIS%
 
 uninstall-dvi-am:
 	@$(NORMAL_UNINSTALL)
-	$(if $(and $(DVIS),$(dvidir)),rm -f $(addprefix '$(DESTDIR)$(dvidir)'/,$(notdir $(DVIS))))
+	$(call am.uninst.cmd,$(dvidir),$(notdir $(DVIS)))
 
 uninstall-pdf-am:
 	@$(NORMAL_UNINSTALL)
-	$(if $(and $(PDFS),$(pdfdir)),rm -f $(addprefix '$(DESTDIR)$(pdfdir)'/,$(notdir $(PDFS))))
+	$(call am.uninst.cmd,$(pdfdir),$(notdir $(PDFS)))
 
 uninstall-ps-am:
 	@$(NORMAL_UNINSTALL)
-	$(if $(and $(PSS),$(psdir)),rm -f $(addprefix '$(DESTDIR)$(psdir)'/,$(notdir $(PSS))))
+	$(call am.uninst.cmd,$(psdir),$(notdir $(PSS)))
 
 uninstall-html-am:
 	@$(NORMAL_UNINSTALL)
 ## The HTML 'files' can be directories actually, hence the '-r'.
-	$(if $(and $(HTMLS),$(htmldir)),rm -rf $(addprefix '$(DESTDIR)$(htmldir)'/,$(notdir $(HTMLS))))
+	$(call am.uninst.cmd,$(htmldir),$(notdir $(HTMLS)),-r)
 
 uninstall-info-am:
 	@$(PRE_UNINSTALL)
 ## Run two loops here so that we can handle PRE_UNINSTALL and
 ## NORMAL_UNINSTALL correctly.
 	@if test -d '$(DESTDIR)$(infodir)' && $(am__can_run_installinfo); then \
-	  list='$(INFO_DEPS)'; \
-	  for file in $$list; do \
-	    relfile=`echo "$$file" | sed 's|^.*/||'`; \
+	  list='$(notdir $(INFO_DEPS))'; for relfile in $$list; do \
 ## install-info needs the actual info file.  We use the installed one,
 ## rather than relying on one still being in srcdir or builddir.
 ## However, "make uninstall && make uninstall" should not fail,
@@ -266,14 +264,8 @@ uninstall-info-am:
 	  done; \
 	else :; fi
 	@$(NORMAL_UNINSTALL)
-	@list='$(INFO_DEPS)'; \
-	for file in $$list; do \
-	  relfile=`echo "$$file" | sed 's|^.*/||'`; \
-	  (if test -d "$(DESTDIR)$(infodir)" && cd "$(DESTDIR)$(infodir)"; then \
-	     echo " cd '$(DESTDIR)$(infodir)' && rm -f $$relfile $$relfile-[0-9] $$relfile-[0-9][0-9]"; \
-	     rm -f $$relfile $$relfile-[0-9] $$relfile-[0-9][0-9]; \
-	   else :; fi); \
-	done
+	$(call am.uninst.cmd,$(infodir),\
+	  $(foreach i,$(notdir $(INFO_DEPS)),$i $i-[0-9] $i-[0-9][0-9]))
 
 endif %?LOCAL-TEXIS%
 

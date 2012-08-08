@@ -54,13 +54,15 @@ if %?INSTALL%
 .PHONY uninstall-am: uninstall-%DIR%SCRIPTS
 uninstall-%DIR%SCRIPTS:
 	@$(NORMAL_UNINSTALL)
-	@test -n '$(and $(%DIR%_SCRIPTS),$(%NDIR%dir))' || exit 0; \
-?BASE?	files='$(notdir $(%DIR%_SCRIPTS))'; \
-?!BASE?	files='$(patsubst $(srcdir)/%,%,$(%DIR%_SCRIPTS))'; \
-	files=`for f in $$files; do echo "$$f"; done | sed -e \
-?BASE?		  '$(transform)'`; \
-?!BASE?	          'h;s,.*/,,;$(transform);x;s|[^/]*$$||;G;s,\n,,'`; \
-	dir='$(DESTDIR)$(%NDIR%dir)'; $(am__uninstall_files_from_dir)
+## The need to apply $(transform) is quite tricky, and forces us to
+## go though a $(shell) invocation.
+	$(call am.uninst.cmd,$(%NDIR%dir),$(shell \
+?BASE?	  files='$(notdir $(%DIR%_SCRIPTS))' && \
+?!BASE?	  files='$(patsubst $(srcdir)/%,%,$(%DIR%_SCRIPTS))' && \
+	  for f in $$files; do echo "$$f"; done | sed -e \
+?BASE?	    '$(transform)' \
+?!BASE?	    'h;s,.*/,,;$(transform);x;s|[^/]*$$||;G;s,\n,,' \
+	 ))
 endif %?INSTALL%
 
 

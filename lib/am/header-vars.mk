@@ -381,13 +381,15 @@ am__base_list = \
   sed '$$!N;$$!N;$$!N;$$!N;$$!N;$$!N;$$!N;s/\n/ /g' | \
   sed '$$!N;$$!N;$$!N;$$!N;s/\n/ /g'
 
-# A shell code fragment to uninstall files from a given directory.
-# It expects the $dir and $files shell variables to be defined respectively
-# to the directory where the files to be removed are, and to the list of
-# such files.
-# Some rm implementations complain if 'rm -f' is used without arguments,
-# so the fist "test -z" check (FIXME: this is probably obsolete; see
-# automake bug#10828).
+# $(call am.uninst.cmd,DIR,FILES,[RM-OPTS])
+# -----------------------------------------
+# Uninstall the given files from the given directory, avoiding to hit
+# command line length limits, and honoring $(DESTDIR).  If the given DIR
+# is actually an empty name, or it it refers to a non-existing file, it
+# is assumed nothing is to be removed.  The RM-OPTS (if present) are
+# passed to the rm invocation removing the files (this ca be useful in
+# case such files are actually directories (as happens with the HTML
+# documentation), in which case rm should be passed the '-r' option.
 # At least Solaris /bin/sh still lacks 'test -e', so we use the multiple
 # "test ! -[fdr]" below instead (FIXME: this should become obsolete when
 # we can assume the $SHELL set by Autoconf-generated configure scripts is
@@ -396,9 +398,17 @@ am__base_list = \
 # We expect $dir to be either non-existent or a directory, so the
 # failure we'll experience if it is a regular file is indeed desired
 # and welcome (better to fail loudly than silently).
-am__uninstall_files_from_dir = { \
-  test -z "$$files" \
-    || { test ! -d "$$dir" && test ! -f "$$dir" && test ! -r "$$dir"; } \
-    || { echo " ( cd '$$dir' && rm -f" $$files ")"; \
-         cd "$$dir" && rm -f $$files; }; \
-  }
+# Similarly to the 'am.clean-cmd.f' above, this function is only meant to
+# be used in a "sub-recipe" by its own.
+am.uninst.cmd.aux = \
+  $(if $(and $2,$1), \
+    { test ! -d '$(DESTDIR)'$2 \
+      && test ! -f '$(DESTDIR)'$2 \
+      && test ! -r '$(DESTDIR)'$2; } \
+    || { \
+      echo " cd '$(DESTDIR)$2' && rm -f $1" \
+        && cd '$(DESTDIR)$2' \
+	&& rm -f$(if $3, $3) $1; }$(am.chars.newline))
+am.uninst.cmd = \
+  @$(call am.xargs-map,$0.aux,$(strip $2),$(strip $1),$(strip $3))
+
