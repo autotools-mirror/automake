@@ -285,10 +285,12 @@ am.max-cmdline-args := xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 # the system would allow it), or our implementation will likely suffer in
 # performance and in memory consumption.
 
-# $(call am.xargs-map,FUNCTION,LIST)
-# ----------------------------------
-# Map the function $1 on the arguments $2, ensuring that each
-# call of $1 has at most 40 arguments.
+# $(call am.xargs-map,FUNCTION,LIST,[EXTRA-ARGS..])
+# -------------------------------------------------
+# Map the function $1 on the whitespace-separated list $2, ensuring that
+# each call of $1 has at most 40 entries from that list at once.  If
+# further arguments are given (up to $9), they are passed to each $1
+# invocation.
 # This implementation is hacky, but the more elegant or "naive" ones
 # (based on recursion) proved to be ludicrously memory-hungry with
 # huge lists.
@@ -303,10 +305,11 @@ $(if $2,$(strip \
     )$(eval $0.counter := $$($0.counter)x)$(strip \
     )$(eval $0.partial-args += $$i)$(strip \
     )$(if $(filter $(am.max-cmdline-args),$($0.counter)),$(strip \
-      )$(call $1,$(strip $($0.partial-args)))$(strip \
+      )$(call $1,$(strip $($0.partial-args)),$3,$4,$5,$6,$7,$8,$9)$(strip \
       )$(eval $0.partial-args :=)$(strip \
       )$(eval $0.counter :=)))$(strip \
-  )$(if $($0.counter),$(call $1,$(strip $($0.partial-args)))))
+  )$(if $($0.counter),$(call $1,$(strip \
+                        $($0.partial-args)),$3,$4,$5,$6,$7,$8,$9)))
 endef
 
 # Used only by the 'am.clean-cmd.*' functions below.  Do not use in
