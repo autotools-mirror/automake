@@ -17,6 +17,7 @@
 # Test to make sure that noinst_* and check_* are not installed.
 # From Pavel Roskin.
 
+required=cc
 . ./defs || exit 1
 
 cat > Makefile.am << 'END'
@@ -36,6 +37,7 @@ cat >> configure.ac << 'END'
 AC_PROG_CC
 AM_PROG_AR
 AC_PROG_RANLIB
+AC_OUTPUT
 END
 
 : > ar-lib
@@ -43,7 +45,26 @@ END
 $ACLOCAL
 $AUTOMAKE
 
-grep 'noinstdir' Makefile.in && exit 1
-grep 'checkdir' Makefile.in && exit 1
+$EGREP '(noinst|check)dir' Makefile.in && exit 1
+
+$AUTOCONF
+./configure --prefix="$(pwd)/inst"
+
+echo 'int main (void) { return 0; }' > foo.c
+echo 'int main (void) { return 0; }' > bar.c
+
+echo 'int foo (void) { return 0; }' > libfoo.c
+echo 'int bar (void) { return 0; }' > libbar.c
+
+: > foo.sh
+: > foo.xpm
+: > foo.h
+: > bar.sh
+: > bar.xpm
+: > bar.h
+
+$MAKE
+$MAKE install
+test ! -e inst
 
 :
