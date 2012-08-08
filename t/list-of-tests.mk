@@ -963,7 +963,6 @@ t/self-check-seq.tap \
 t/self-check-is-blocked-signal.tap \
 t/self-check-unindent.tap \
 t/sanity.sh \
-t/scripts.sh \
 t/seenc.sh \
 t/silent.sh \
 t/silent2.sh \
