@@ -48,17 +48,12 @@ tags-am: $(TAGS_DEPENDENCIES) $(am.tags.files)
 ## We use the positional parameters to build the subdir list with
 ## absolute names, without the need to worry about white space in `pwd`.
 	set x; \
-## Exuberant Ctags wants --etags-include,
-## GNU Etags             --include
-## Furthermore Exuberant Ctags 5.5.4 fails to create TAGS files
-## when no files are supplied, despite any --etags-include option.
-## A workaround is to pass '.' as a file.  This is what $empty_fix is for.
+## Exuberant Ctags wants --etags-include.
+##       GNU Etags wants --include.
 ?SUBDIRS?	if ($(ETAGS) --etags-include --version) >/dev/null 2>&1; then \
 ?SUBDIRS?	  include_option=--etags-include; \
-?SUBDIRS?	  empty_fix=.; \
 ?SUBDIRS?	else \
 ?SUBDIRS?	  include_option=--include; \
-?SUBDIRS?	  empty_fix=; \
 ?SUBDIRS?	fi; \
 ?SUBDIRS?	list='$(SUBDIRS)'; for subdir in $$list; do \
 ## Do nothing if we're trying to look in '.'.
@@ -71,12 +66,10 @@ tags-am: $(TAGS_DEPENDENCIES) $(am.tags.files)
 ## Remove the 'x' we added first:
 	shift; \
 ## Make sure we have something to run etags on.
-	unique='$(am.tags.files.unique)'; \
-	if test -z "$(ETAGS_ARGS)$$*$$unique"; then :; else \
-	  test -n "$$unique" || unique=$$empty_fix; \
+	test -z "$(ETAGS_ARGS)$$*$(am.tags.files.unique)" || { \
 	  $(ETAGS) $(ETAGSFLAGS) $(AM_ETAGSFLAGS) $(ETAGS_ARGS) \
-	    $${1+"$$@"} $$unique; \
-	fi
+	    $${1+"$$@"} $(am.tags.files.unique); \
+	}
 
 
 ## --------------- ##
