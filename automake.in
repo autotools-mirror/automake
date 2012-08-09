@@ -3147,36 +3147,6 @@ sub handle_data
 		     'pkgdata', 'lisp', 'noinst', 'check');
 }
 
-# Handle TAGS.
-sub handle_tags
-{
-    define_variable ('am.tags.files', INTERNAL,
-                     qw/$(HEADERS) $(SOURCES) $(TAGS_FILES) $(LISP)
-                        $(am.config-hdr.local.in)/);
-
-    if (rvar('am.tags.files')->value_as_list_recursive
-          || var ('ETAGS_ARGS') || var ('SUBDIRS'))
-      {
-	$output_rules .= &file_contents ('tags', new Automake::Location);
-	set_seen 'TAGS_DEPENDENCIES';
-      }
-    else
-      {
-        reject_var ('TAGS_DEPENDENCIES',
-		    "it doesn't make sense to define 'TAGS_DEPENDENCIES'"
-		    . " without\nsources or 'ETAGS_ARGS'");
-	# Every Makefile must define some sort of TAGS rule.
-	# Otherwise, it would be possible for a top-level "make TAGS"
-	# to fail because some subdirectory failed.  Ditto ctags and
-        # cscope.
-        $output_rules .=
-          "tags TAGS:\n\n" .
-          "ctags CTAGS:\n\n" .
-          "cscope cscopelist:\n\n";
-      }
-}
-
-
 # user_phony_rule ($NAME)
 # -----------------------
 # Return false if rule $NAME does not exist.  Otherwise,
@@ -6788,9 +6758,9 @@ sub generate_makefile ($$)
   handle_man_pages;
   handle_data;
   handle_headers;
+  verbatim ('tags');
   handle_subdirs;
   handle_user_recursion;
-  handle_tags;
   handle_minor_options;
 
   # Must come after invocation of handle_programs, handle_libraries and

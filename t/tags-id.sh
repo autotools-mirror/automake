@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2010-2012 Free Software Foundation, Inc.
+# Copyright (C) 1996-2012 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,29 +14,33 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# TAGS_DEPENDENCIES only make sense if other tag-worthy things (such as
-# sources) exist.
+# Test for bug reported by Harlan Stenn: the tags target doesn't work
+# when there are only headers in a directory.
 
+required=mkid
 . ./defs || exit 1
 
-cat >> configure.ac << 'END'
-AC_PROG_CC
-AC_OUTPUT
+echo AC_OUTPUT >> configure.ac
+
+cat > Makefile.am << 'END'
+noinst_HEADERS = iguana.h
+test-id: ID
+	test -f $(srcdir)/iguana.h
+	test -f ID
+check-local: test-id
 END
 
-cat >Makefile.am << 'END'
-TAGS_DEPENDENCIES = foo
+cat > iguana.h << 'END'
+#define FOO "bar"
+int zap (int x, char y);
 END
 
 $ACLOCAL
-AUTOMAKE_fails
-grep 'define.*TAGS_DEPENDENCIES.*without' stderr
+$AUTOCONF
+$AUTOMAKE
 
-cat >>Makefile.am << 'END'
-bin_PROGRAMS = bar
-END
-
-AUTOMAKE_run
-grep 'define.*TAGS_DEPENDENCIES.*without' stderr && exit 1
+./configure
+$MAKE test-id
+$MAKE distcheck
 
 :

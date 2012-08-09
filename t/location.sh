@@ -32,7 +32,7 @@ if COND2
   lib_LIBRARIES = libfoo.a
 endif
 if COND1
-  bin_PROGRAMS += ctags
+  bin_PROGRAMS += distdir
 endif
 VAR = 1 \
       2 \
@@ -77,9 +77,9 @@ sed 's/^> //' > expected << 'END'
 > Makefile.am:1:   while processing program 'libfoo.a'
 > library.am: ... 'libfoo.a' previously defined here
 > Makefile.am:3:   while processing library 'libfoo.a'
-> tags.am: warning: redefinition of 'ctags' ...
-> program.am: ... 'ctags$(EXEEXT)' previously defined here
-> Makefile.am:6:   while processing program 'ctags'
+> distdir.am: warning: redefinition of 'distdir' ...
+> program.am: ... 'distdir$(EXEEXT)' previously defined here
+> Makefile.am:6:   while processing program 'distdir'
 END
 
 cat expected

@@ -193,6 +193,7 @@ dist_am_DATA = \
   lib/am/check-typos.mk \
   lib/am/clean.mk \
   lib/am/header-vars.mk \
+  lib/am/tags.mk \
   lib/am/compile.am \
   lib/am/configure.am \
   lib/am/data.am \
@@ -217,7 +218,6 @@ dist_am_DATA = \
   lib/am/remake-hdr.am \
   lib/am/scripts.am \
   lib/am/subdirs.am \
-  lib/am/tags.am \
   lib/am/texi-vers.am \
   lib/am/texi-spec.am \
   lib/am/texinfos.am \

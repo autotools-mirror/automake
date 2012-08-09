@@ -23,11 +23,11 @@ AC_PROG_CC
 END
 
 cat > Makefile.am << 'END'
-bin_PROGRAMS = ctags
+bin_PROGRAMS = distdir
 END
 
 $ACLOCAL
 AUTOMAKE_fails -a
-grep 'redefinition.*ctags' stderr
+grep 'redefinition.*distdir' stderr
 
 :
