@@ -21,6 +21,22 @@ am.tags.files.unique = \
  $(call am.memoize,am.tags.files.unique,$(sort \
    $(foreach f,$(am.tags.files),$(call am.vpath.rewrite,$f))))
 
+# Option to include other TAGS files in an etags-generated file.
+# Exuberant Ctags wants '--etags-include', GNU Etags wants '--include'.
+am.tags.include-option = \
+ $(call am.memoize,am.tags.include-option,$(strip $(shell \
+   if { $(ETAGS) --etags-include --version; } >/dev/null 2>&1; then \
+     printf '%s\n' --etags-include; \
+   else \
+     printf '%s\n' --include; \
+   fi)))
+
+# TAGS files in $(SUBDIRS) entries (if any) that must be included in
+# the top-level TAGS file.
+am.tags.subfiles = \
+  $(call am.memoize,am.tags.subfiles,$(strip \
+    $(foreach d,$(filter-out .,$(SUBDIRS)),$(wildcard $d/TAGS))))
+
 ## ---- ##
 ## ID.  ##
 ## ---- ##
@@ -45,30 +61,12 @@ endif !%?SUBDIRS%
 TAGS: tags
 
 tags-am: $(TAGS_DEPENDENCIES) $(am.tags.files)
-## We use the positional parameters to build the subdir list with
-## absolute names, without the need to worry about white space in `pwd`.
-	set x; \
-## Exuberant Ctags wants --etags-include.
-##       GNU Etags wants --include.
-?SUBDIRS?	if ($(ETAGS) --etags-include --version) >/dev/null 2>&1; then \
-?SUBDIRS?	  include_option=--etags-include; \
-?SUBDIRS?	else \
-?SUBDIRS?	  include_option=--include; \
-?SUBDIRS?	fi; \
-?SUBDIRS?	list='$(SUBDIRS)'; for subdir in $$list; do \
-## Do nothing if we're trying to look in '.'.
-?SUBDIRS?	  if test "$$subdir" = .; then :; else \
-?SUBDIRS?	    test ! -f $$subdir/TAGS || \
-## Note that the = is mandatory for --etags-include.
-?SUBDIRS?	      set "$$@" "$$include_option=$(CURDIR)/$$subdir/TAGS"; \
-?SUBDIRS?	  fi; \
-?SUBDIRS?	done; \
-## Remove the 'x' we added first:
-	shift; \
 ## Make sure we have something to run etags on.
-	test -z "$(ETAGS_ARGS)$$*$(am.tags.files.unique)" || { \
-	  $(ETAGS) $(ETAGSFLAGS) $(AM_ETAGSFLAGS) $(ETAGS_ARGS) \
-	    $${1+"$$@"} $(am.tags.files.unique); \
+	test -z '$(ETAGS_ARGS)$(am.tags.subfiles)$(am.tags.files.unique)' || { \
+	  $(ETAGS) \
+	    $(ETAGSFLAGS) $(AM_ETAGSFLAGS) $(ETAGS_ARGS) \
+	    $(foreach f,$(am.tags.subfiles),'$(am.tags.include-option)=$(CURDIR)/$f') \
+	    $(am.tags.files.unique); \
 	}
 
 
