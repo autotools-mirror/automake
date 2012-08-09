@@ -14,31 +14,19 @@
 ## You should have received a copy of the GNU General Public License
 ## along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Read a list of newline-separated strings from the standard input,
-# and print each of them once, without duplicates.  Input order is
-# *not* preserved.
-am__uniquify_input = $(AWK) '\
-  BEGIN { nonempty = 0; } \
-  { items[$$0] = 1; nonempty = 1; } \
-  END { if (nonempty) { for (i in items) print i; }; } \
-'
-
-# Make sure the list of sources is unique.  This is necessary because,
-# e.g., the same source file might be shared among _SOURCES variables
-# for different programs/libraries.
-am__define_uniq_tagged_files = \
-  list='$(am.tags.files)'; \
-  unique=`for i in $$list; do \
-## Handle VPATH correctly.
-    if test -f "$$i"; then echo $$i; else echo $(srcdir)/$$i; fi; \
-  done | $(am__uniquify_input)`
+# Use $(sort) rather than $(am.util.uniq) here, because the former is
+# faster on long lists, and we don't care about the order of the list
+# anyway.
+am.tags.files.unique = \
+ $(call am.memoize,am.tags.files.unique,$(sort \
+   $(foreach f,$(am.tags.files),$(call am.vpath.rewrite,$f))))
 
 ## ---- ##
 ## ID.  ##
 ## ---- ##
 
 ID: $(am.tags.files)
-	$(am__define_uniq_tagged_files); mkid -fID $$unique
+	mkid -fID $(am.tags.files.unique)
 
 
 ## ------ ##
@@ -60,7 +48,6 @@ tags-am: $(TAGS_DEPENDENCIES) $(am.tags.files)
 ## We use the positional parameters to build the subdir list with
 ## absolute names, without the need to worry about white space in `pwd`.
 	set x; \
-	here=`pwd`; \
 ## Exuberant Ctags wants --etags-include,
 ## GNU Etags             --include
 ## Furthermore Exuberant Ctags 5.5.4 fails to create TAGS files
@@ -78,13 +65,13 @@ tags-am: $(TAGS_DEPENDENCIES) $(am.tags.files)
 ?SUBDIRS?	  if test "$$subdir" = .; then :; else \
 ?SUBDIRS?	    test ! -f $$subdir/TAGS || \
 ## Note that the = is mandatory for --etags-include.
-?SUBDIRS?	      set "$$@" "$$include_option=$$here/$$subdir/TAGS"; \
+?SUBDIRS?	      set "$$@" "$$include_option=$(CURDIR)/$$subdir/TAGS"; \
 ?SUBDIRS?	  fi; \
 ?SUBDIRS?	done; \
-	$(am__define_uniq_tagged_files); \
 ## Remove the 'x' we added first:
 	shift; \
 ## Make sure we have something to run etags on.
+	unique='$(am.tags.files.unique)'; \
 	if test -z "$(ETAGS_ARGS)$$*$$unique"; then :; else \
 	  test -n "$$unique" || unique=$$empty_fix; \
 	  if test $$# -gt 0; then \
@@ -113,11 +100,10 @@ endif !%?SUBDIRS%
 
 CTAGS: ctags
 ctags-am: $(TAGS_DEPENDENCIES) $(am.tags.files)
-	$(am__define_uniq_tagged_files); \
 ## Make sure we have something to run ctags on.
-	test -z "$(CTAGS_ARGS)$$unique" \
+	test -z "$(CTAGS_ARGS)$(am.tags.files.unique)" \
 	  || $(CTAGS) $(CTAGSFLAGS) $(AM_CTAGSFLAGS) $(CTAGS_ARGS) \
-	     $$unique
+	     $(am.tags.files.unique)
 
 
 ## --------------- ##
@@ -126,9 +112,7 @@ ctags-am: $(TAGS_DEPENDENCIES) $(am.tags.files)
 
 .PHONY: GTAGS
 GTAGS:
-	here=`cd $(top_builddir) && pwd` \
-	  && cd $(top_srcdir) \
-	  && gtags -i $(GTAGS_ARGS) "$$here"
+	cd $(top_srcdir) && gtags -i $(GTAGS_ARGS) '$(abs_top_builddir)'
 
 
 ## ------- ##
