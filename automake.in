@@ -370,9 +370,6 @@ my $seen_canonical = 0;
 # Location of that macro.
 my $canonical_location;
 
-# Where AM_MAINTAINER_MODE appears.
-my $seen_maint_mode;
-
 # Actual version we've seen.
 my $package_version = '';
 
@@ -4244,7 +4241,6 @@ sub scan_autoconf_traces ($)
 		AM_GNU_GETTEXT => 0,
 		AM_GNU_GETTEXT_INTL_SUBDIR => 0,
 		AM_INIT_AUTOMAKE => 0,
-		AM_MAINTAINER_MODE => 0,
 		AM_PROG_AR => 0,
 		AM_PROG_CC_C_O => 0,
 		_AM_SUBST_NOTMAKE => 1,
@@ -4433,10 +4429,6 @@ EOF
 	      @opts = map { { option => $_, where => $where } } @opts;
 	      exit $exit_code if process_global_option_list (@opts);
 	    }
-	}
-      elsif ($macro eq 'AM_MAINTAINER_MODE')
-	{
-	  $seen_maint_mode = $where;
 	}
       elsif ($macro eq 'AM_PROG_AR')
 	{
@@ -5411,11 +5403,6 @@ sub read_am_file ($$)
 	chomp;
 	$_ .= "\n";
 
-	# Don't look at MAINTAINER_MODE_TRUE here.  That shouldn't be
-	# used by users.  @MAINT@ is an anachronism now.
-	$_ =~ s/\@MAINT\@//g
-	    unless $seen_maint_mode;
-
 	my $new_saw_bk = check_trailing_slash ($where, $_);
 
 	if (/$IGNORE_PATTERN/o)
@@ -5717,10 +5704,7 @@ sub preprocess_file ($%)
 
   # Complete %transform with global options.
   # Note that %transform goes last, so it overrides global options.
-  %transform = ( 'MAINTAINER-MODE'
-		 => $seen_maint_mode ? subst ('MAINTAINER_MODE_TRUE') : '',
-
-		 'XZ'          => !! option 'dist-xz',
+  %transform = ( 'XZ'          => !! option 'dist-xz',
 		 'LZMA'        => !! option 'dist-lzma',
 		 'LZIP'        => !! option 'dist-lzip',
 		 'BZIP2'       => !! option 'dist-bzip2',

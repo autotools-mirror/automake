@@ -21,7 +21,6 @@
 . ./defs || exit 1
 
 cat >> configure.ac << 'END'
-AM_MAINTAINER_MODE
 AC_OUTPUT
 END
 
@@ -38,7 +37,7 @@ $AUTOCONF
 for flavor in --gnits --gnu --foreign --ignore-deps; do
 
   $AUTOMAKE --add-missing $flavor
-  ./configure --enable-maintainer-mode
+  ./configure
   grep " $flavor" Makefile
   $MAKE
 

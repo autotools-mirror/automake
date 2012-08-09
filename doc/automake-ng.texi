@@ -372,7 +372,7 @@ When Automake Isn't Enough
 Frequently Asked Questions about Automake
 
 * CVS::                         CVS and generated files
-* maintainer-mode::             missing and AM_MAINTAINER_MODE
+* maintainer tools::            The missing script and maintainer tools
 * Wildcards::                   Why doesn't Automake support wildcards?
 * Limitations on File Names::   Limitations on source and installed file names
 * Errors with distclean::       Files left in build directory after distclean
@@ -3084,17 +3084,6 @@ This macro specifies that the @file{intl/} subdirectory is to be built,
 even if the @code{AM_GNU_GETTEXT} macro was invoked with a first argument
 of @samp{external}.
 
-@item AM_MAINTAINER_MODE(@ovar{default-mode})
-@opindex --enable-maintainer-mode
-@opindex --disable-maintainer-mode
-This macro adds an @option{--enable-maintainer-mode} option to
-@command{configure}.  If this is used, @command{automake} will cause
-``maintainer-only'' rules to be turned off by default in the
-generated @file{Makefile.in}s, unless @var{default-mode} is
-@samp{enable}.  This macro defines the @code{MAINTAINER_MODE}
-conditional, which you can use in your own @file{Makefile.am}.
-@xref{maintainer-mode}.
-
 @item AM_SUBST_NOTMAKE(@var{var})
 Prevent Automake from defining a variable @var{var}, even if it is
 substituted by @command{config.status}.  Normally, Automake defines a
@@ -4021,8 +4010,8 @@ Find a maintainer tool @var{program} and define the @var{name}
 environment variable with its location.  If @var{program} is not
 detected, then @var{name} will instead invoke the @command{missing}
 script, in order to give useful advice to the user about the missing
-maintainer tool.  @xref{maintainer-mode}, for more information on when
-the @command{missing} script is appropriate.
+maintainer tool.  @xref{maintainer tools}, for more information on
+when the @command{missing} script is appropriate.
 
 @item AM_SILENT_RULES
 @acindex AM_SILENT_RULES
@@ -6157,10 +6146,6 @@ autoconf, The Autoconf Manual}), but using @code{AM_PROG_LEX} macro
 When @command{lex} is invoked, it is passed @code{AM_LFLAGS} and
 @code{LFLAGS}.  The latter is a user variable and the former is
 intended for the @file{Makefile.am} author.
-
-When @code{AM_MAINTAINER_MODE} (@pxref{maintainer-mode}) is used, the
-rebuild rule for distributed Yacc and Lex sources are only used when
-@code{maintainer-mode} is enabled, or when the files have been erased.
 
 @cindex @command{ylwrap}
 @cindex @command{yacc}, multiple parsers
@@ -9786,10 +9771,6 @@ to this by writing an @code{installcheck-local} rule.
 Automake generates rules to automatically rebuild @file{Makefile}s,
 @file{configure}, and other derived files like @file{Makefile.in}.
 
-@acindex AM_MAINTAINER_MODE
-If you are using @code{AM_MAINTAINER_MODE} in @file{configure.ac}, then
-these automatic rebuilding rules are only enabled in maintainer mode.
-
 @vindex CONFIG_STATUS_DEPENDENCIES
 @vindex CONFIGURE_DEPENDENCIES
 @cindex @file{version.sh}, example
@@ -11394,7 +11375,7 @@ lists.
 
 @menu
 * CVS::                         CVS and generated files
-* maintainer-mode::             missing and AM_MAINTAINER_MODE
+* maintainer tools::            The missing script and maintainer tools
 * Wildcards::                   Why doesn't Automake support wildcards?
 * Limitations on File Names::   Limitations on source and installed file names
 * Errors with distclean::       Files left in build directory after distclean
@@ -11485,7 +11466,7 @@ inaccurate.  Some rebuild rules will be triggered and attempt to
 run developer tools such as @command{autoconf} or @command{automake}.
 
 Calls to such tools are all wrapped into a call to the @command{missing}
-script discussed later (@pxref{maintainer-mode}), so that the user will
+script discussed later (@pxref{maintainer tools}), so that the user will
 see more descriptive warnings about missing or out-of-date tools, and
 possible suggestions about how to obtain them, rather than just some
 ``command not found'' error, or (worse) some obscure message from some
@@ -11524,7 +11505,7 @@ touch doc/*.info
 In distributed development, developers are likely to have different
 version of the maintainer tools installed.  In this case rebuilds
 triggered by timestamp lossage will lead to spurious changes
-to generated files.  There are several solutions to this:
+to generated files.  There are some popular solutions to this:
 
 @itemize
 @item
@@ -11534,10 +11515,6 @@ project you work on uses different versions.)
 @item
 Or people use a script to fix the timestamp after a checkout (the GCC
 folks have such a script).
-@item
-Or @file{configure.ac} uses @code{AM_MAINTAINER_MODE}, which will
-disable all of these rebuild rules by default.  This is further discussed
-in @ref{maintainer-mode}.
 @end itemize
 
 @item
@@ -11600,14 +11577,14 @@ concerns about version mismatch between developers' tools.  The
 Gettext manual has a section about this, see @ref{CVS Issues, CVS
 Issues, Integrating with CVS, gettext, GNU gettext tools}.
 
-@node maintainer-mode
-@section @command{missing} and @code{AM_MAINTAINER_MODE}
+@node maintainer tools
+@section The @command{missing} script and maintainer tools
 
 @subheading @command{missing}
 @cindex @command{missing}, purpose
 
 The @command{missing} script is a wrapper around several maintainer
-tools, designed to warn users if a maintainer tool is required but
+tools, designed to warn users if one of them is required but
 missing.  Typical maintainer tools are @command{autoconf},
 @command{automake}, @command{bison}, etc.  Because file generated by
 these tools are shipped with the other sources of a package, these
@@ -11624,64 +11601,6 @@ error message like @samp{sh: @var{tool}: command not found}.  Similarly,
 tool it attempted to use seems too old (be warned that diagnosing this
 correctly is typically more difficult that detecting missing tools, and
 requires cooperation from the tool itself, so it won't always work).
-
-If the required tool is installed, @command{missing} will run it and
-won't attempt to continue after failures.  This is correct during
-development: developers love fixing failures.  However, users with
-missing or too old maintainer tools may get an error when the rebuild
-rule is spuriously triggered, halting the build.  This failure to let
-the build continue is one of the arguments of the
-@code{AM_MAINTAINER_MODE} advocates.
-
-@subheading @code{AM_MAINTAINER_MODE}
-@cindex @code{AM_MAINTAINER_MODE}, purpose
-@acindex AM_MAINTAINER_MODE
-
-@code{AM_MAINTAINER_MODE} allows you to choose whether the so called
-"rebuild rules" should be enabled or disabled.  With
-@code{AM_MAINTAINER_MODE([enable])}, they are enabled by default,
-otherwise they are disabled by default.  In the latter case, if
-you have @code{AM_MAINTAINER_MODE} in @file{configure.ac}, and run
-@samp{./configure && make}, then @command{make} will *never* attempt to
-rebuild @file{configure}, @file{Makefile.in}s, Lex or Yacc outputs, etc.
-I.e., this disables build rules for files that are usually distributed
-and that users should normally not have to update.
-
-The user can override the default setting by passing either
-@samp{--enable-maintainer-mode} or @samp{--disable-maintainer-mode}
-to @command{configure}.
-
-People use @code{AM_MAINTAINER_MODE} either because they do not want their
-users (or themselves) annoyed by timestamps lossage (@pxref{CVS}), or
-because they simply can't stand the rebuild rules and prefer running
-maintainer tools explicitly.
-
-@code{AM_MAINTAINER_MODE} also allows you to disable some custom build
-rules conditionally.  Some developers use this feature to disable
-rules that need exotic tools that users may not have available.
-
-Several years ago Fran@,{c}ois Pinard pointed out several arguments
-against this @code{AM_MAINTAINER_MODE} macro.  Most of them relate to
-insecurity.  By removing dependencies you get non-dependable builds:
-changes to sources files can have no effect on generated files and this
-can be very confusing when unnoticed.  He adds that security shouldn't
-be reserved to maintainers (what @option{--enable-maintainer-mode}
-suggests), on the contrary.  If one user has to modify a
-@file{Makefile.am}, then either @file{Makefile.in} should be updated
-or a warning should be output (this is what Automake uses
-@command{missing} for) but the last thing you want is that nothing
-happens and the user doesn't notice it (this is what happens when
-rebuild rules are disabled by @code{AM_MAINTAINER_MODE}).
-
-Jim Meyering, the inventor of the @code{AM_MAINTAINER_MODE} macro was
-swayed by Fran@,{c}ois's arguments, and got rid of
-@code{AM_MAINTAINER_MODE} in all of his packages.
-
-Still many people continue to use @code{AM_MAINTAINER_MODE}, because
-it helps them working on projects where all files are kept under version
-control, and because @command{missing} isn't enough if you have the
-wrong version of the tools.
-
 
 @node Wildcards
 @section Why doesn't Automake support wildcards?
