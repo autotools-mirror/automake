@@ -37,11 +37,6 @@ END
 
 $ACLOCAL
 $AUTOMAKE
-$FGREP '$(DISTCHECK_CONFIGURE_FLAGS)' Makefile.in
-$FGREP '$(AM_DISTCHECK_CONFIGURE_FLAGS)' Makefile.in
-grep 'DISTCHECK_CONFIGURE_FLAGS.*AM_DISTCHECK_CONFIGURE_FLAGS' Makefile.in \
-  && exit 1
-
 $AUTOCONF
 ./configure --enable-success sentence='it works :-)'
 

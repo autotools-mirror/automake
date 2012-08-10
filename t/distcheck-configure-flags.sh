@@ -32,8 +32,6 @@ unset sentence || :
 
 $ACLOCAL
 $AUTOMAKE
-$FGREP '$(DISTCHECK_CONFIGURE_FLAGS)' Makefile.in
-
 $AUTOCONF
 ./configure --enable-success sentence='it works :-)'
 

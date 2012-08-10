@@ -195,11 +195,11 @@ dist_am_DATA = \
   lib/am/header-vars.mk \
   lib/am/tags.mk \
   lib/am/dejagnu.mk \
+  lib/am/distcheck.mk \
   lib/am/compile.am \
   lib/am/configure.am \
   lib/am/data.am \
   lib/am/depend2.am \
-  lib/am/distcheck.am \
   lib/am/distdir.am \
   lib/am/footer.am \
   lib/am/header.am \

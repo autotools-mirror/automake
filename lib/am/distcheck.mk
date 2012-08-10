@@ -15,9 +15,9 @@
 #  Checking the distribution.  #
 # ---------------------------- #
 
-if %?SUBDIRS%
+ifdef SUBDIRS
 AM_RECURSIVE_TARGETS += distcheck
-endif %?SUBDIRS%
+endif
 
 # This target untars the dist file and tries a VPATH configuration.  Then
 # it guarantees that the distribution is self-contained by making another
@@ -136,10 +136,12 @@ distuninstallcheck:
 	        $(distuninstallcheck_listfiles) ; \
 	        exit 1; } >&2
 
-## Define distcleancheck_listfiles and distcleancheck separately
-## from distcheck, so that they can be overridden by the user.
+# Define '$(distcleancheck_listfiles)' and 'distcleancheck' separately
+# from distcheck, so that they can be overridden by the user.
+ifeq ($(call am.vars.is-undef,distcleancheck_listfiles),yes)
+  distcleancheck_listfiles := find . -type f -print
+endif
 .PHONY: distcleancheck
-distcleancheck_listfiles = find . -type f -print
 distcleancheck: distclean
 	@if test '$(srcdir)' = . ; then \
 	  echo "ERROR: distcleancheck can only run from a VPATH build" ; \
