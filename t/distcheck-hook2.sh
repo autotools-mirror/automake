@@ -60,13 +60,6 @@ $AUTOMAKE
 $AUTOCONF
 cd ..
 
-# For debugging.
-$FGREP 'distcheck-hook' Makefile.in subpkg/Makefile.in
-
-$FGREP 'distcheck-hook' subpkg/Makefile.in && exit 1
-$FGREP '$(MAKE) distcheck-hook' Makefile.in
-grep '^distcheck-hook:' Makefile.in
-
 ./configure
 
 $MAKE

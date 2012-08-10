@@ -35,10 +35,6 @@ END
 
 $ACLOCAL
 $AUTOMAKE
-$FGREP 'distcheck-hook' Makefile.in
-$FGREP '$(MAKE) distcheck-hook' Makefile.in
-grep '^distcheck-hook:' Makefile.in
-
 $AUTOCONF
 ./configure
 
