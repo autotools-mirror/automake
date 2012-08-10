@@ -313,57 +313,49 @@ endif %?TOPDIR_P%
 
 if %?TOPDIR_P%
 
-?GZIP?DIST_ARCHIVES += $(distdir).tar.gz
+am.dist.ext.gzip  = tar.gz
+am.dist.ext.bzip2 = tar.bz2
+am.dist.ext.xz    = tar.xz
+am.dist.ext.lzip  = tar.lz
+am.dist.ext.tarZ  = tar.Z
+am.dist.ext.shar  = shar.gz
+am.dist.ext.zip   = zip
+
+DIST_TARGETS  = $(foreach x,$(am.dist.formats),dist-$x)
+DIST_ARCHIVES = $(foreach x,$(am.dist.formats),$(distdir).$(am.dist.ext.$x))
+# FIXME: hack to prevent the dumb Automake parser from mangling the list of
+# .PHONY targets.
+$(am.chars.empty).PHONY: $(foreach x,$(am.dist.formats),dist-$x)
+
 GZIP_ENV = --best
-.PHONY: dist-gzip
 dist-gzip: distdir
 	tardir=$(distdir) && $(am__tar) | GZIP=$(GZIP_ENV) gzip -c >$(distdir).tar.gz
 	$(am__post_remove_distdir)
 
-?BZIP2?DIST_ARCHIVES += $(distdir).tar.bz2
-.PHONY: dist-bzip2
 dist-bzip2: distdir
 	tardir=$(distdir) && $(am__tar) | BZIP2=$${BZIP2--9} bzip2 -c >$(distdir).tar.bz2
 	$(am__post_remove_distdir)
 
-?LZIP?DIST_ARCHIVES += $(distdir).tar.lz
-.PHONY: dist-lzip
 dist-lzip: distdir
 	tardir=$(distdir) && $(am__tar) | lzip -c $${LZIP_OPT--9} >$(distdir).tar.lz
 	$(am__post_remove_distdir)
 
-?XZ?DIST_ARCHIVES += $(distdir).tar.xz
-.PHONY: dist-xz
 dist-xz: distdir
 	tardir=$(distdir) && $(am__tar) | XZ_OPT=$${XZ_OPT--e} xz -c >$(distdir).tar.xz
 	$(am__post_remove_distdir)
 
-?COMPRESS?DIST_ARCHIVES += $(distdir).tar.Z
-.PHONY: dist-tarZ
 dist-tarZ: distdir
 	tardir=$(distdir) && $(am__tar) | compress -c >$(distdir).tar.Z
 	$(am__post_remove_distdir)
 
-?SHAR?DIST_ARCHIVES += $(distdir).shar.gz
-.PHONY: dist-shar
 dist-shar: distdir
 	shar $(distdir) | GZIP=$(GZIP_ENV) gzip -c >$(distdir).shar.gz
 	$(am__post_remove_distdir)
 
-?ZIP?DIST_ARCHIVES += $(distdir).zip
-.PHONY: dist-zip
 dist-zip: distdir
 	rm -f $(distdir).zip
 	zip -rq $(distdir).zip $(distdir)
 	$(am__post_remove_distdir)
-
-?LZIP?DIST_TARGETS += dist-lzip
-?XZ?DIST_TARGETS += dist-xz
-?SHAR?DIST_TARGETS += dist-shar
-?BZIP2?DIST_TARGETS += dist-bzip2
-?GZIP?DIST_TARGETS += dist-gzip
-?ZIP?DIST_TARGETS += dist-zip
-?COMPRESS?DIST_TARGETS += dist-tarZ
 
 endif %?TOPDIR_P%
 
