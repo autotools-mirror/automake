@@ -14,7 +14,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Check gettext support.
+# Automake gettext support: regression check for PR/381:
+# 'SUBDIRS = po intl' must not be required if 'po/' doesn't exist.
 
 required='gettext'
 . ./defs || exit 1
@@ -24,35 +25,21 @@ AM_GNU_GETTEXT
 AC_OUTPUT
 END
 
-: > Makefile.am
-: > config.rpath
-mkdir po intl
-
 $ACLOCAL
-$AUTOCONF
 
-# po/ and intl/ are required.
+: > config.guess
+: > config.rpath
+: > config.sub
 
-AUTOMAKE_fails --add-missing
-grep 'AM_GNU_GETTEXT.*SUBDIRS' stderr
+test ! -d po # Sanity check.
+mkdir sub
+echo 'SUBDIRS = sub' > Makefile.am
+$AUTOMAKE
 
-echo 'SUBDIRS = po' >Makefile.am
-AUTOMAKE_fails --add-missing
-grep 'AM_GNU_GETTEXT.*intl' stderr
+# Still, SUBDIRS must be defined.
 
-echo 'SUBDIRS = intl' >Makefile.am
-AUTOMAKE_fails --add-missing
-grep 'AM_GNU_GETTEXT.*po' stderr
-
-# Ok.
-
-echo 'SUBDIRS = po intl' >Makefile.am
-$AUTOMAKE --add-missing
-
-# Make sure distcheck runs './configure --with-included-gettext'.
-./configure
-echo distdir: > po/Makefile
-echo distdir: > intl/Makefile
-$MAKE -n distcheck | grep '.*--with-included-gettext'
+: > Makefile.am
+AUTOMAKE_fails
+grep '^configure\.ac:.*AM_GNU_GETTEXT used but SUBDIRS not defined' stderr
 
 :

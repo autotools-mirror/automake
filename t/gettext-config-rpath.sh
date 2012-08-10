@@ -14,45 +14,32 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Check gettext support.
+# Check the config.rpath requirement.
 
 required='gettext'
 . ./defs || exit 1
 
 cat >> configure.ac << 'END'
 AM_GNU_GETTEXT
+# config.rpath is required by versions >= 0.14.3.
+AM_GNU_GETTEXT_VERSION([0.14.3])
 AC_OUTPUT
 END
 
-: > Makefile.am
-: > config.rpath
+echo 'SUBDIRS = po intl' >Makefile.am
 mkdir po intl
 
-$ACLOCAL
-$AUTOCONF
-
-# po/ and intl/ are required.
+# If aclocal fails here, it may be that gettext is too old to provide
+# AM_GNU_GETTEXT_VERSION.  Similarly, autopoint will fail if it's
+# from an older version.  If gettext is too old to provide autopoint,
+# this will fail as well, so we're safe here.
+if ! $ACLOCAL && autopoint -n; then
+  skip_ "too old gettext installation"
+fi
 
 AUTOMAKE_fails --add-missing
-grep 'AM_GNU_GETTEXT.*SUBDIRS' stderr
-
-echo 'SUBDIRS = po' >Makefile.am
-AUTOMAKE_fails --add-missing
-grep 'AM_GNU_GETTEXT.*intl' stderr
-
-echo 'SUBDIRS = intl' >Makefile.am
-AUTOMAKE_fails --add-missing
-grep 'AM_GNU_GETTEXT.*po' stderr
-
-# Ok.
-
-echo 'SUBDIRS = po intl' >Makefile.am
-$AUTOMAKE --add-missing
-
-# Make sure distcheck runs './configure --with-included-gettext'.
-./configure
-echo distdir: > po/Makefile
-echo distdir: > intl/Makefile
-$MAKE -n distcheck | grep '.*--with-included-gettext'
+grep '^configure\.ac:.*required file.*config.rpath' stderr
+: > config.rpath
+$AUTOMAKE
 
 :
