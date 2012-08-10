@@ -244,7 +244,6 @@ dist_automake_ac_DATA = \
   m4/install-sh.m4 \
   m4/lex.m4 \
   m4/lispdir.m4 \
-  m4/maintainer.m4 \
   m4/minuso.m4 \
   m4/missing.m4 \
   m4/options.m4 \

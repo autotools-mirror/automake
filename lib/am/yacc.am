@@ -14,38 +14,14 @@
 ## You should have received a copy of the GNU General Public License
 ## along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-## We want to disable the Yacc rebuild rule when
-##   1. AM_MAINTAINER_MODE is used, and
-##   2. --enable-maintainer-mode is not specified, and
-##   3. parser.c already exist, and
-##   4. parser.y and parser.c are distributed.
-## Point #3 is because "make maintainer-clean" erases parser.c, yet
-## the GNU Coding Standards require that ./configure; make works even
-## after that.
-## Point #4 is because parsers listed in nodist_*_SOURCES are always
-## built on the user's side, so it makes no sense to disable them.
-##
-## Points #1, #2, #3 are solved by unconditionally prefixing the rule
-## with $(am.yacc.maybe-skip) defined below only when needed.
-##
-## Point #4 requires a condition on whether parser.y/parser.c are
-## distributed or not.  We cannot have a generic rule that works in
-## both cases, so we ensure in automake that nodist_ parsers always
-## use non-generic rules.
 if %?FIRST%
-if %?MAINTAINER-MODE%
-@MAINTAINER_MODE_FALSE@am.yacc.maybe-skip = test -f $@ ||
-endif %?MAINTAINER-MODE%
 am.yacc.c2h = $(basename $1)$(subst c,h,$(suffix $1))
 endif %?FIRST%
 
 ?GENERIC?%%DERIVED-EXT%: %%EXT%
 ?!GENERIC?%OBJ%: %SOURCE%
 	%SILENT%$(am.cmd.ensure-target-dir-exists)
-	%VERBOSE% \
-?GENERIC?	$(am.yacc.maybe-skip) \
-?!GENERIC??DIST_SOURCE?	$(am.yacc.maybe-skip) \
-	$(SHELL) $(YLWRAP) $< \
+	%VERBOSE%$(SHELL) $(YLWRAP) $< \
 	  y.tab.c $@ \
 	  y.tab.h $(call am.yacc.c2h,$@) \
 	  y.output $(basename $@).output \
