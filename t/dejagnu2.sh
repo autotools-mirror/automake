@@ -31,16 +31,10 @@ END
 
 $ACLOCAL
 $AUTOCONF
-$AUTOMAKE -Wno-override
-
-grep 'site\.exp' Makefile.in
-test $(grep -c '^site\.exp:' Makefile.in) -eq 1
+$AUTOMAKE
 
 ./configure
 $MAKE site.exp
 grep ':GREP:ME:' site.exp
-
-AUTOMAKE_fails
-grep '^Makefile\.am:3:.*site\.exp' stderr
 
 :
