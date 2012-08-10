@@ -61,25 +61,21 @@ install-%DIR%LISP: $(%DIR%_LISP) $(ELCFILES)
 	@if test "$(EMACS)" != no && test -n "$(%NDIR%dir)"; then \
 ## Funny invocation because Makefile variable can be empty, leading to
 ## a syntax error in sh.
-	  list='$(%DIR%_LISP)'; \
-	  if test -n "$$list"; then \
+	  $(if $(%DIR%_LISP), \
 	    echo " $(MKDIR_P) '$(DESTDIR)$(%NDIR%dir)'"; \
 	    $(MKDIR_P) "$(DESTDIR)$(%NDIR%dir)" || exit 1; \
-	  fi; \
-	  for p in $$list; do \
-## A lisp file can be in the source directory or the build directory.
-	    if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
-?BASE?	    $(am__strip_dir) \
-?!BASE?	    f=$$p; \
-	    echo " $(%DIR%LISP_INSTALL) '$$d$$p' '$(DESTDIR)$(%NDIR%dir)/$$f'"; \
-	    $(%DIR%LISP_INSTALL) "$$d$$p" "$(DESTDIR)$(%NDIR%dir)/$$f" || exit $$?; \
+	    $(foreach i, $(%DIR%_LISP), \
+	      p=$(call am.vpath.rewrite,$i); \
+?BASE?	      f=$(notdir $i); \
+?!BASE?	      f=$i; \
+	      echo " $(%DIR%LISP_INSTALL) '$$p' '$(DESTDIR)$(%NDIR%dir)/$$f'"; \
+	      $(%DIR%LISP_INSTALL) "$$p" "$(DESTDIR)$(%NDIR%dir)/$$f" || exit $$?; \
 ## Only install .elc file if it exists.
-	    if test -f $${p}c; then \
-	      echo " $(%DIR%LISP_INSTALL) '$${p}c' '$(DESTDIR)$(%NDIR%dir)/$${f}c'"; \
-	      $(%DIR%LISP_INSTALL) "$${p}c" "$(DESTDIR)$(%NDIR%dir)/$${f}c" || exit $$?; \
-	    else : ; fi; \
-	  done; \
-	else : ; fi
+	      if test -f $${p}c; then \
+	        echo " $(%DIR%LISP_INSTALL) '$${p}c' '$(DESTDIR)$(%NDIR%dir)/$${f}c'"; \
+	        $(%DIR%LISP_INSTALL) "$${p}c" "$(DESTDIR)$(%NDIR%dir)/$${f}c" || exit $$?; \
+	      else : ; fi;)) \
+	  :; else :; fi;
 endif %?INSTALL%
 
 
@@ -92,12 +88,13 @@ if %?INSTALL%
 uninstall-%DIR%LISP:
 	@$(NORMAL_UNINSTALL)
 ## Do not uninstall anything if EMACS was not found.
-	@test "$(EMACS)" != no && test -n "$(%NDIR%dir)" || exit 0; \
-	list='$(%DIR%_LISP)'; \
-?BASE?	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
-?!BASE?	$(am__nobase_strip_setup); files=`$(am__nobase_strip)`; \
-	files="$$files "`echo "$$files" | sed 's|$$|c|'`; \
-	dir='$(DESTDIR)$(%NDIR%dir)'; $(am__uninstall_files_from_dir)
+## FIXME: we should actually check more strictly for $(EMACS) = "no".
+	$(call am.uninst.cmd,$(if $(filter no,$(EMACS)),,$(%NDIR%dir)), \
+	   $(foreach i,\
+?BASE?	     $(notdir $(%DIR%_LISP)), \
+?!BASE?	     $(patsubst $(srcdir)/%,%,$(%DIR%_LISP)), \
+## Also remove the '.elc' byte-compiled versions (if any).
+	     $(i) $(i)c))
 endif %?INSTALL%
 
 

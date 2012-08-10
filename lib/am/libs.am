@@ -63,11 +63,11 @@ endif !%?BASE%
 ## useless; sh never actually executes this command.  Read the GNU
 ## Standards for a little enlightenment on this.
 	@$(POST_INSTALL)
-	@list='$(%DIR%_LIBRARIES)'; test -n "$(%NDIR%dir)" || list=; \
-	for p in $$list; do \
-	  if test -f $$p; then \
-?BASE?	    $(am__strip_dir) \
-?!BASE?	    f=$$p; \
+?BASE?	@list='$(notdir $(%DIR%_LIBRARIES))'; \
+?!BASE?	@list='$(%DIR%_LIBRARIES)'; \
+	test -n "$(%NDIR%dir)" || list=; \
+	for f in $$list; do \
+	  if test -f $$f; then \
 ## Must ranlib after installing because mod time changes.
 ## cd to target directory because AIX ranlib messes up with whitespace
 ## in the argument.
@@ -86,10 +86,10 @@ if %?INSTALL%
 .PHONY uninstall-am: uninstall-%DIR%LIBRARIES
 uninstall-%DIR%LIBRARIES:
 	@$(NORMAL_UNINSTALL)
-	@list='$(%DIR%_LIBRARIES)'; test -n "$(%NDIR%dir)" || list=; \
-?BASE?	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
-?!BASE?	$(am__nobase_strip_setup); files=`$(am__nobase_strip)`; \
-	dir='$(DESTDIR)$(%NDIR%dir)'; $(am__uninstall_files_from_dir)
+	$(call am.uninst.cmd,$(%NDIR%dir), \
+?BASE?	  $(notdir $(%DIR%_LIBRARIES)) \
+?!BASE?	  $(patsubst $(srcdir)/%,%,$(%DIR%_LIBRARIES)) \
+	)
 endif %?INSTALL%
 
 

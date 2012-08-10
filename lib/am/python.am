@@ -26,24 +26,12 @@ am__installdirs += "$(DESTDIR)$(%NDIR%dir)"
 ?!EXEC?.PHONY install-data-am: install-%DIR%PYTHON
 install-%DIR%PYTHON: $(%DIR%_PYTHON)
 	@$(NORMAL_INSTALL)
+	@$(if $(and $(%NDIR%dir),$(%DIR%_PYTHON)),$(strip \
+	   )$(MKDIR_P) "$(DESTDIR)$(%NDIR%dir)")
 if %?BASE%
-	@list='$(%DIR%_PYTHON)'; dlist=; list2=; test -n "$(%NDIR%dir)" || list=; \
-	if test -n "$$list"; then \
-	  echo " $(MKDIR_P) '$(DESTDIR)$(%NDIR%dir)'"; \
-	  $(MKDIR_P) "$(DESTDIR)$(%NDIR%dir)" || exit 1; \
-	fi; \
-	for p in $$list; do \
-## A file can be in the source directory or the build directory.
-	  if test -f "$$p"; then b=; else b="$(srcdir)/"; fi; \
-	  if test -f $$b$$p; then \
-## Compute basename of source file.  Unless this is a nobase_ target, we
-## want to install 'python/foo.py' as '$(DESTDIR)$(%NDIR%dir)/foo.py',
-## not '$(DESTDIR)$(%NDIR%dir)/python/foo.py'.
-	    $(am__strip_dir) \
-	    dlist="$$dlist $$f"; \
-	    list2="$$list2 $$b$$p"; \
-	  else :; fi; \
-	done; \
+	@test -n "$(%NDIR%dir)" && test -n "$(%DIR%_PYTHON)" || exit 0; \
+	dlist='$(notdir $(%DIR%_PYTHON))'; \
+	list2='$(foreach i,$(%DIR%_PYTHON),$(call am.vpath.rewrite,$i))'; \
 	for file in $$list2; do echo $$file; done | $(am__base_list) | \
 	while read files; do \
 ## Don't perform translation, since script name is important.
@@ -58,10 +46,6 @@ if %?BASE%
 	else :; fi
 else !%?BASE%
 	@list='$(%DIR%_PYTHON)'; test -n "$(%NDIR%dir)" || list=; \
-	if test -n "$$list"; then \
-	  echo " $(MKDIR_P) '$(DESTDIR)$(%NDIR%dir)'"; \
-	  $(MKDIR_P) "$(DESTDIR)$(%NDIR%dir)" || exit 1; \
-	fi; \
 	$(am__nobase_list) | while read dir files; do \
 	  xfiles=; for p in $$files; do \
 ## A file can be in the source directory or the build directory.
@@ -94,19 +78,12 @@ if %?INSTALL%
 .PHONY uninstall-am: uninstall-%DIR%PYTHON
 uninstall-%DIR%PYTHON:
 	@$(NORMAL_UNINSTALL)
-	@list='$(%DIR%_PYTHON)'; test -n "$(%NDIR%dir)" || list=; \
-?BASE?	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
-?!BASE?	$(am__nobase_strip_setup); files=`$(am__nobase_strip)`; \
-	test -n "$$files" || exit 0; \
-	dir='$(DESTDIR)$(%NDIR%dir)'; \
-## Also remove the .pyc and .pyo byte compiled versions.
-	filesc=`echo "$$files" | sed 's|$$|c|'`; \
-	fileso=`echo "$$files" | sed 's|$$|o|'`; \
-	st=0; \
-	for files in "$$files" "$$filesc" "$$fileso"; do \
-	  $(am__uninstall_files_from_dir) || st=$$?; \
-	done; \
-	exit $$st
+	$(call am.uninst.cmd,$(%NDIR%dir), \
+	  $(foreach i,\
+?BASE?	    $(notdir $(%DIR%_PYTHON)), \
+?!BASE?	    $(patsubst $(srcdir)/%,%,$(%DIR%_PYTHON)), \
+## Also remove the '.pyc' and '.py'o byte-compiled versions.
+	      $(i) $(i)c $(i)o))
 endif %?INSTALL%
 
 

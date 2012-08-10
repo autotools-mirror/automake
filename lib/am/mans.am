@@ -125,21 +125,22 @@ uninstall-man%SECTION%:
 	@$(NORMAL_UNINSTALL)
 if %?NOTRANS_MANS%
 ## Handle MANS with notrans_ prefix
-	@list='%NOTRANS_SECT_LIST%'; test -n "$(man%SECTION%dir)" || exit 0; \
-	files=`{ for i in $$list; do echo "$$i"; done; \
+	$(call am.uninst.cmd,$(man%SECTION%dir),$(shell \
+	{ list='%NOTRANS_SECT_LIST%'; \
+	for i in $$list; do echo "$$i"; done; \
 ## Extract all items from notrans_man_MANS that should go in this section.
 ## This must be done dynamically to support conditionals.
 ?HAVE_NOTRANS?	l2='%NOTRANS_LIST%'; for i in $$l2; do echo "$$i"; done | \
 ## Accept for 'man1' files like 'foo.1c' but not 'sub.1/foo.2' or 'foo-2.1.4'.
 ?HAVE_NOTRANS?	  sed -n '/\.%SECTION%[a-z]*$$/p'; \
 ## Extract basename of manpage, change the extension if needed.
-	} | sed 's,.*/,,;s,\.[^%SECTION%][0-9a-z]*$$,.%SECTION%,'`; \
-	dir='$(DESTDIR)$(man%SECTION%dir)'; $(am__uninstall_files_from_dir)
+	} | sed -e 's,.*/,,;s,\.[^%SECTION%][0-9a-z]*$$,.%SECTION%,'))
 endif %?NOTRANS_MANS%
 if %?TRANS_MANS%
 ## Handle MANS without notrans_ prefix
-	@list='%TRANS_SECT_LIST%'; test -n "$(man%SECTION%dir)" || exit 0; \
-	files=`{ for i in $$list; do echo "$$i"; done; \
+	$(call am.uninst.cmd,$(man%SECTION%dir),$(shell \
+	{ list='%TRANS_SECT_LIST%'; \
+	for i in $$list; do echo "$$i"; done; \
 ## Extract all items from man_MANS that should go in this section.
 ## This must be done dynamically to support conditionals.
 ?HAVE_TRANS?	l2='%TRANS_LIST%'; for i in $$l2; do echo "$$i"; done | \
@@ -148,6 +149,5 @@ if %?TRANS_MANS%
 ## Extract basename of manpage, run it through the program rename
 ## transform, and change the extension if needed.
 	} | sed -e 's,.*/,,;h;s,.*\.,,;s,^[^%SECTION%][0-9a-z]*$$,%SECTION%,;x' \
-	      -e 's,\.[0-9a-z]*$$,,;$(transform);G;s,\n,.,'`; \
-	dir='$(DESTDIR)$(man%SECTION%dir)'; $(am__uninstall_files_from_dir)
+	        -e 's,\.[0-9a-z]*$$,,;$(transform);G;s,\n,.,'))
 endif %?TRANS_MANS%

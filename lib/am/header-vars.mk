@@ -90,6 +90,12 @@ am.chars.squote := '
 # definition of $(am.chars.newline) just below for a significant example.
 am.chars.empty :=
 
+# A single whitespace.
+am.chars.space := $(am.chars.empty) $(am.chars.empty)
+
+# A single tabulation character.
+am.chars.tab := $(am.chars.empty)	$(am.chars.empty)
+
 # A literal newline character, that does not get stripped if used
 # at the end of the expansion of another macro.
 define am.chars.newline
@@ -285,10 +291,12 @@ am.max-cmdline-args := xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 # the system would allow it), or our implementation will likely suffer in
 # performance and in memory consumption.
 
-# $(call am.xargs-map,FUNCTION,LIST)
-# ----------------------------------
-# Map the function $1 on the arguments $2, ensuring that each
-# call of $1 has at most 40 arguments.
+# $(call am.xargs-map,FUNCTION,LIST,[EXTRA-ARGS..])
+# -------------------------------------------------
+# Map the function $1 on the whitespace-separated list $2, ensuring that
+# each call of $1 has at most 40 entries from that list at once.  If
+# further arguments are given (up to $9), they are passed to each $1
+# invocation.
 # This implementation is hacky, but the more elegant or "naive" ones
 # (based on recursion) proved to be ludicrously memory-hungry with
 # huge lists.
@@ -303,10 +311,11 @@ $(if $2,$(strip \
     )$(eval $0.counter := $$($0.counter)x)$(strip \
     )$(eval $0.partial-args += $$i)$(strip \
     )$(if $(filter $(am.max-cmdline-args),$($0.counter)),$(strip \
-      )$(call $1,$(strip $($0.partial-args)))$(strip \
+      )$(call $1,$(strip $($0.partial-args)),$3,$4,$5,$6,$7,$8,$9)$(strip \
       )$(eval $0.partial-args :=)$(strip \
       )$(eval $0.counter :=)))$(strip \
-  )$(if $($0.counter),$(call $1,$(strip $($0.partial-args)))))
+  )$(if $($0.counter),$(call $1,$(strip \
+                        $($0.partial-args)),$3,$4,$5,$6,$7,$8,$9)))
 endef
 
 # Used only by the 'am.clean-cmd.*' functions below.  Do not use in
@@ -356,18 +365,8 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 
-# Strip all directories.
-am__strip_dir = f=`echo $$p | sed -e 's|^.*/||'`;
-
 # Number of files to install concurrently.
 am__install_max = 40
-# Take a $list of "nobase" files, strip $(srcdir) from them.
-# Split apart in setup variable and an action that can be used
-# in backticks or in a pipe.
-am__nobase_strip_setup = \
-  srcdirstrip=`echo "$(srcdir)" | sed 's/[].[^$$\\*|]/\\\\&/g'`
-am__nobase_strip = \
-  for p in $$list; do echo "$$p"; done | sed -e "s|$$srcdirstrip/||"
 # Take a "$list" of nobase files, collect them, indexed by their
 # srcdir-stripped dirnames.  For up to am__install_max files, output
 # a line containing the dirname and the files, space-separated.
@@ -375,7 +374,8 @@ am__nobase_strip = \
 # string concatenation in most shells, and should avoid line length
 # limitations, while still offering only negligible performance impact
 # through spawning more install commands than absolutely needed.
-am__nobase_list = $(am__nobase_strip_setup); \
+am__nobase_list = \
+  srcdirstrip=`echo "$(srcdir)" | sed 's/[].[^$$\\*|]/\\\\&/g'`; \
   for p in $$list; do echo "$$p $$p"; done | \
   sed "s| $$srcdirstrip/| |;"' / .*\//!s/ .*/ ./; s,\( .*\)/[^/]*$$,\1,' | \
   $(AWK) 'BEGIN { files["."] = "" } { files[$$2] = files[$$2] " " $$1; \
@@ -387,24 +387,43 @@ am__base_list = \
   sed '$$!N;$$!N;$$!N;$$!N;$$!N;$$!N;$$!N;s/\n/ /g' | \
   sed '$$!N;$$!N;$$!N;$$!N;s/\n/ /g'
 
-# A shell code fragment to uninstall files from a given directory.
-# It expects the $dir and $files shell variables to be defined respectively
-# to the directory where the files to be removed are, and to the list of
-# such files.
-# Some rm implementations complain if 'rm -f' is used without arguments,
-# so the fist "test -z" check (FIXME: this is probably obsolete; see
-# automake bug#10828).
-# At least Solaris /bin/sh still lacks 'test -e', so we use the multiple
-# "test ! -[fdr]" below instead (FIXME: this should become obsolete when
-# we can assume the $SHELL set by Autoconf-generated configure scripts is
-# a truly POSIX shell; see:
-# <http://lists.gnu.org/archive/html/bug-autoconf/2012-06/msg00009.html>).
-# We expect $dir to be either non-existent or a directory, so the
-# failure we'll experience if it is a regular file is indeed desired
-# and welcome (better to fail loudly than silently).
-am__uninstall_files_from_dir = { \
-  test -z "$$files" \
-    || { test ! -d "$$dir" && test ! -f "$$dir" && test ! -r "$$dir"; } \
-    || { echo " ( cd '$$dir' && rm -f" $$files ")"; \
-         cd "$$dir" && rm -f $$files; }; \
-  }
+# New function, backslash-escape whitespace in the given string.
+define am.util.whitespace-escape
+$(subst $(am.chars.space),\$(am.chars.space),$(subst $(am.chars.tab),\$(am.chars.tab),$1))
+endef
+
+# Determine whether the given file exists.  Since this function is
+# expected to be used on paths referencing $(DESTDIR), it must be
+# ready to cope with whitespaces and shell metacharacters.
+# FIXME: here we assume that the shell found by Autoconf-generated
+# configure supports "test -e"; that is not completely correct ATM, but
+# future versions of Autoconf will reject non-POSIX shells, so we should
+# be safe in the long term.
+define am.util.file-exists
+$(strip \
+  $(if $(strip $(findstring *,$1) $(findstring ?,$1) \
+               $(findstring [,$1) $(findstring ],$1)), \
+    $(shell test -e '$(subst $(am.chars.squote),'\'',$1)' && echo yes), \
+    $(if $(wildcard $(call am.util.whitespace-escape,$1)),yes)))
+endef
+
+# $(call am.uninst.cmd,DIR,FILES,[RM-OPTS])
+# -----------------------------------------
+# Uninstall the given files from the given directory, avoiding to hit
+# command line length limits, and honoring $(DESTDIR).  If the given DIR
+# is actually an empty name, or it it refers to a non-existing file, it
+# is assumed nothing is to be removed.  The RM-OPTS (if present) are
+# passed to the rm invocation removing the files (this ca be useful in
+# case such files are actually directories (as happens with the HTML
+# documentation), in which case rm should be passed the '-r' option.
+# Similarly to the 'am.clean-cmd.f' above, this function is only meant
+# to be used in a "sub-recipe" by its own.
+
+define am.uninst.cmd.aux
+$(if $(and $2,$1),$(if $(call am.util.file-exists,$(DESTDIR)$2),$(strip \
+)cd '$(DESTDIR)$2' && rm -f$(if $3, $3) $1$(am.chars.newline)))
+endef
+
+define am.uninst.cmd
+$(call am.xargs-map,$0.aux,$(strip $2),$(strip $1),$(strip $3))
+endef

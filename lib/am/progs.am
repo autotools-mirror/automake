@@ -84,18 +84,17 @@ if %?INSTALL%
 .PHONY uninstall-am: uninstall-%DIR%PROGRAMS
 uninstall-%DIR%PROGRAMS:
 	@$(NORMAL_UNINSTALL)
-	@list='$(%DIR%_PROGRAMS)'; test -n "$(%NDIR%dir)" || list=; \
-	files=`for p in $$list; do echo "$$p"; done | \
-## Remove any leading directory before applying $(transform),
-## but keep the directory part in the hold buffer, in order to
-## reapply it again afterwards in the nobase case.  Append $(EXEEXT).
-	  sed -e 'h;s,^.*/,,;s/$(EXEEXT)$$//;$(transform)' \
-	      -e 's/$$/$(EXEEXT)/' \
-?!BASE?	      -e 'x;s,[^/]*$$,,;G;s,\n,,' \
-	`; \
-	test -n "$$list" || exit 0; \
-	echo " ( cd '$(DESTDIR)$(%NDIR%dir)' && rm -f" $$files ")"; \
-	cd "$(DESTDIR)$(%NDIR%dir)" && rm -f $$files
+## The need to apply $(transform) is quite tricky, and forces us to
+## go though a $(shell) invocation.
+	$(call am.uninst.cmd,$(%NDIR%dir),$(shell \
+	  list='$(%DIR%_PROGRAMS)'; for p in $$list; do echo "$$p"; done | \
+## Remove any leading directory before applying $(transform), but keep
+## the directory part in the hold buffer, in order to reapply it again
+## afterwards in the nobase case.  Append $(EXEEXT).
+	    sed -e 'h;s,^.*/,,;s/$(EXEEXT)$$//;$(transform)' \
+	        -e 's/$$/$(EXEEXT)/' \
+?!BASE?	        -e 'x;s,[^/]*$$,,;G;s,\n,,' \
+        ))
 endif %?INSTALL%
 
 
