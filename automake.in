@@ -5707,10 +5707,6 @@ sub preprocess_file ($%)
 		 'SUBDIRS'      => !! var ('SUBDIRS'),
 		 'TOPDIR_P'     => $relative_dir eq '.',
 
-		 'BUILD'    => ($seen_canonical >= AC_CANONICAL_BUILD),
-		 'HOST'     => ($seen_canonical >= AC_CANONICAL_HOST),
-		 'TARGET'   => ($seen_canonical >= AC_CANONICAL_TARGET),
-
 		 'LIBTOOL'      => !! var ('LIBTOOL'),
 		 'NONLIBTOOL'   => 1,
 		 'SILENT'       => silent_flag (),
@@ -6707,7 +6703,8 @@ sub generate_makefile ($$)
 	}
     }
 
-  # Must do this after reading .am file.
+  # Some of these must do this after reading .am file.
+
   define_variable ('subdir', INTERNAL, $relative_dir);
   define_variable ('am.conf.is-topdir', INTERNAL,
                    $relative_dir eq '.' ? "yes" : "");
@@ -6717,6 +6714,13 @@ sub generate_makefile ($$)
                    prepend_srcdir ($makefile_am));
   define_variable ('am.relpath.makefile.in', INTERNAL,
                    prepend_srcdir ($makefile_in));
+
+  define_variable 'am.conf.build-triplet', INTERNAL,
+                  $seen_canonical >= AC_CANONICAL_BUILD ? '$(build)' : '';
+  define_variable 'am.conf.host-triplet', INTERNAL,
+                  $seen_canonical >= AC_CANONICAL_HOST ? '$(host)' : '';
+  define_variable 'am.conf.target-triplet', INTERNAL,
+                  $seen_canonical >= AC_CANONICAL_TARGET ? '$(target)' : '';
 
   # If DIST_SUBDIRS is defined, make sure SUBDIRS is, so that
   # recursive rules are enabled.
