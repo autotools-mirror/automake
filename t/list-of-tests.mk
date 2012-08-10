@@ -493,7 +493,6 @@ t/help-silent.sh \
 t/help-upc.sh \
 t/hfs.sh \
 t/implicit.sh \
-t/info.sh \
 t/init.sh \
 t/init2.sh \
 t/insh2.sh \
@@ -962,7 +961,6 @@ t/self-check-seq.tap \
 t/self-check-is-blocked-signal.tap \
 t/self-check-unindent.tap \
 t/sanity.sh \
-t/scripts.sh \
 t/seenc.sh \
 t/silent.sh \
 t/silent2.sh \
