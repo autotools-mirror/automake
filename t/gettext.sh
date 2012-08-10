@@ -35,7 +35,6 @@ mkdir po intl
 # If aclocal fails here, it may be that gettext is too old to
 # provide AM_GNU_GETTEXT_VERSION.
 if $ACLOCAL; then
-
   # autopoint will fail if it's from an older version.
   # If gettext is too old to provide autopoint, this will
   # fail as well, so we're safe here.
@@ -49,7 +48,9 @@ fi
 sed '/AM_GNU_GETTEXT_VERSION/d' configure.ac >configure.int
 mv -f configure.int configure.ac
 
+rm -rf autom4te.cache
 $ACLOCAL
+$AUTOCONF
 
 # po/ and intl/ are required.
 
@@ -70,12 +71,15 @@ echo 'SUBDIRS = po intl' >Makefile.am
 $AUTOMAKE --add-missing
 
 # Make sure distcheck runs './configure --with-included-gettext'.
-grep 'with-included-gettext' Makefile.in
+./configure
+echo distdir: > po/Makefile
+echo distdir: > intl/Makefile
+$MAKE -n distcheck | grep '.*--with-included-gettext'
 
 # 'SUBDIRS = po intl' isn't required if po/ doesn't exist.
 # PR/381.
 
-rmdir po
+rm -rf po
 mkdir sub
 echo 'SUBDIRS = sub' >Makefile.am
 $AUTOMAKE
@@ -85,3 +89,5 @@ $AUTOMAKE
 : >Makefile.am
 AUTOMAKE_fails --add-missing
 grep 'AM_GNU_GETTEXT.*SUBDIRS' stderr
+
+:
