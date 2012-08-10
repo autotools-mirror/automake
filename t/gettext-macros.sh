@@ -80,7 +80,7 @@ echo "export ACLOCAL_PATH" >> get.sh
 
 # Even recent versions of gettext used the now-obsolete 'AM_PROG_MKDIR_P'
 # m4 macro.  So we need the following to avoid spurious errors.
-echo 'AC_DEFUN([AM_MKDIR_P], [AC_MKDIR_P([$@])])' >> m4/mk-dirp.m4
+echo 'AC_DEFUN([AM_PROG_MKDIR_P], [AC_PROG_MKDIR_P([$@])])' >m4/am-mkdirp.m4
 
 . ./get.sh
 
