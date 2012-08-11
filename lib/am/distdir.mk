@@ -104,16 +104,15 @@ top_distdir = $(distdir)
 # the moment, which is mostly an arbitrary value, but seems high enough
 # in practice.  See automake bug#10470.
 am.dist.remove-distdir = \
-  if test -d "$(distdir)"; then \
     find "$(distdir)" -type d ! -perm -200 -exec chmod u+w {} ';' \
       && rm -rf "$(distdir)" \
-      || { sleep 5 && rm -rf "$(distdir)"; }; \
-  else :; fi
+      || { sleep 5 && rm -rf "$(distdir)"; }
 
 # Define this separately, so that if can be overridden by the recursive
 # make invocation in 'dist-all'.  That is needed to support concurrent
 # creation of different tarball formats.
-am.dist.post-remove-distdir = $(am.dist.remove-distdir)
+am.dist.post-remove-distdir = \
+  test ! -d "$(distdir)" || { $(am.dist.remove-distdir); }
 
 endif # am.conf.is-topdir
 
@@ -168,7 +167,8 @@ ifdef am.conf.check-news
 	  *) echo "NEWS not updated; not releasing" 1>&2; exit 1;; \
 	esac
 endif # am.conf.is-topdir
-	$(am.dist.remove-distdir)
+## Avoid this command if there is no directory to clean.
+	$(if $(wildcard $(distdir)/),$(am.dist.remove-distdir))
 	test -d "$(distdir)" || mkdir "$(distdir)"
 endif # am.conf.check-news
 ## Make the subdirectories for the files, avoiding to exceed command
@@ -245,11 +245,11 @@ ifdef DIST_SUBDIRS
 ## Disable am.dist.remove-distdir so that sub-packages do not clear a
 ## directory we have already cleared and might even have populated
 ## (e.g. shared AUX dir in the sub-package).
-		am.dist.remove-distdir=: \
-## No need to fix modes more than once:
-		am.dist.skip-mode-fix=: \
+		am.dist.remove-distdir='' \
 ## Disable filename length check:
 		am.dist.filename-filter='' \
+## No need to fix modes more than once:
+		am.dist.skip-mode-fix=yes \
 	      || exit 1; \
 	  fi; \
 	done
@@ -260,9 +260,8 @@ endif # DIST_SUBDIRS
 ## We must explicitly set distdir and top_distdir for these sub-makes.
 ##
 ifdef am.dist.extra-targets
-	$(MAKE) \
-	  top_distdir="$(top_distdir)" distdir="$(distdir)" \
-	  $(am.dist.extra-targets)
+	$(MAKE) $(am.dist.extra-targets) $(if $(am.conf.is-topdir),, \
+	  top_distdir="$(top_distdir)" distdir="$(distdir)")
 endif
 ##
 ## This complex find command will try to avoid changing the modes of
@@ -283,13 +282,14 @@ endif
 ## hierarchy of subpackages.
 ##
 ifdef am.conf.is-topdir
-	test -n "$(am.dist.skip-mode-fix)" \
-	|| find "$(distdir)" -type d ! -perm -755 \
-		-exec chmod u+rwx,go+rx {} \; -o \
+ifndef am.dist.skip-mode-fix
+	find "$(distdir)" \
+	  -type d ! -perm -755 -exec chmod u+rwx,go+rx {} \; -o \
 	  ! -type d ! -perm -444 -links 1 -exec chmod a+r {} \; -o \
 	  ! -type d ! -perm -400 -exec chmod a+r {} \; -o \
 	  ! -type d ! -perm -444 -exec $(install_sh) -c -m a+r {} {} \; \
 	|| chmod -R a+r "$(distdir)"
+endif # !am.dist.skip-mode-fix
 ifdef am.dist.filename-filter
 	@if find "$(distdir)" -type f -print \
 	    | grep '^$(am.dist.filename-filter)' 1>&2; then \
