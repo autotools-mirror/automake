@@ -99,7 +99,7 @@ distcheck: dist
 ## Make sure to remove the dists we created in the test build directory.
 	  && rm -rf $(DIST_ARCHIVES) \
 	  && $(MAKE) distcleancheck
-	$(am__post_remove_distdir)
+	$(am.dist.post-remove-distdir)
 	@(echo "$(distdir) archives ready for distribution: "; \
 	  list='$(DIST_ARCHIVES)'; for i in $$list; do echo $$i; done) | \
 	  sed -e 1h -e 1s/./=/g -e 1p -e 1x -e '$$p' -e '$$x'
