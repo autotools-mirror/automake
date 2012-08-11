@@ -117,7 +117,7 @@ am.dist.post-remove-distdir = $(am.dist.remove-distdir)
 
 endif # am.conf.is-topdir
 
-ifdef SUBDIRS
+ifdef DIST_SUBDIRS
 # Computes a relative pathname RELDIR such that DIR1/RELDIR = DIR2.
 # Input:
 #   - dir1      relative pathname, relative to the current directory.
@@ -149,10 +149,10 @@ am.dist.relativize-path = \
     dir1=`echo "$$dir1" | sed -e "$$sed_rest"`; \
   done; \
   reldir="$$dir2"
-endif # SUBDIRS
+endif # DIST_SUBDIRS
 
 .PHONY: distdir
-ifdef SUBDIR
+ifdef DIST_SUBDIRS
 AM_RECURSIVE_TARGETS += distdir
 endif
 
@@ -224,7 +224,7 @@ endif
 ## at the top level do the right thing.  If we're in the topmost
 ## directory, then we use 'distdir' instead of 'top_distdir'; this lets
 ## us work correctly with an enclosing package.
-ifdef SUBDIRS
+ifdef DIST_SUBDIRS
 	@list='$(DIST_SUBDIRS)'; for subdir in $$list; do \
 	  if test "$$subdir" = .; then :; else \
 	    $(am.make.dry-run) \
@@ -252,7 +252,7 @@ ifdef SUBDIRS
 	      || exit 1; \
 	  fi; \
 	done
-endif # SUBDIRS
+endif # DIST_SUBDIRS
 ##
 ## We might have to perform some last second updates, such as updating
 ## info files.
