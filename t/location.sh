@@ -19,7 +19,6 @@
 . ./defs || exit 1
 
 cat >> configure.ac << 'END'
-AM_CONDITIONAL([COND1], [true])
 AM_CONDITIONAL([COND2], [true])
 AC_PROG_CC
 AM_PROG_AR
@@ -30,9 +29,6 @@ cat > Makefile.am << 'END'
 bin_PROGRAMS = libfoo.a
 if COND2
   lib_LIBRARIES = libfoo.a
-endif
-if COND1
-  bin_PROGRAMS += distdir
 endif
 VAR = 1 \
       2 \
@@ -62,8 +58,8 @@ smash_useless_diffs stderr >observed
 # Apparently useless use of sed here required to avoid spuriously
 # triggering some maintainer-checks failures.
 sed 's/^> //' > expected << 'END'
-> Makefile.am:12: warning: VAR multiply defined in condition TRUE ...
-> Makefile.am:8: ... 'VAR' previously defined here
+> Makefile.am:9: warning: VAR multiply defined in condition TRUE ...
+> Makefile.am:5: ... 'VAR' previously defined here
 > automake: error: libfoo_a_OBJECTS should not be defined
 > Makefile.am:3:   while processing library 'libfoo.a'
 > automake: error: use 'libfoo_a_LDADD', not 'libfoo_a_LIBADD'
@@ -77,9 +73,6 @@ sed 's/^> //' > expected << 'END'
 > Makefile.am:1:   while processing program 'libfoo.a'
 > library.am: ... 'libfoo.a' previously defined here
 > Makefile.am:3:   while processing library 'libfoo.a'
-> distdir.am: warning: redefinition of 'distdir' ...
-> program.am: ... 'distdir$(EXEEXT)' previously defined here
-> Makefile.am:6:   while processing program 'distdir'
 END
 
 cat expected

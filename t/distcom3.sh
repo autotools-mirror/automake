@@ -19,9 +19,13 @@
 
 . ./defs || exit 1
 
+echo AC_OUTPUT >> configure.ac
+
 cat > Makefile.am << 'END'
 README:
 	echo 'I bet you are reading me.' > README
+test-distcommon:
+	echo ' ' $(am.dist.common-files) ' ' | grep ' README '
 END
 
 # Files required by '--gnu'.
@@ -36,20 +40,14 @@ $AUTOMAKE --add-missing --gnu >output 2>&1 || { cat output; exit 1; }
 cat output
 grep README output && exit 1
 
-sed -n -e '/^am.dist.common-files =.*\\$/ {
-   :loop
-   p
-   n
-   t clear
-   :clear
-   s/\\$/\\/
-   t loop
-   p
-   n
-   }' -e '/^am.dist.common-files =/ p' Makefile.in | grep README
-
+$AUTOCONF
+./configure
+$MAKE test-distcommon
+$MAKE distdir
+test -f $distdir/README
 
 # Should warn about missing README.
+rm -f README
 : > Makefile.am
 AUTOMAKE_fails --add-missing --gnu
 grep 'required file.*README.*not found' stderr

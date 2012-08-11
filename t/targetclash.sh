@@ -23,11 +23,12 @@ AC_PROG_CC
 END
 
 cat > Makefile.am << 'END'
-bin_PROGRAMS = distdir
+data_DATA =
+bin_PROGRAMS = uninstall-dataDATA
 END
 
 $ACLOCAL
 AUTOMAKE_fails -a
-grep 'redefinition.*distdir' stderr
+grep 'redefinition.*uninstall-dataDATA' stderr
 
 :
