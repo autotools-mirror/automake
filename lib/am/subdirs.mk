@@ -14,13 +14,17 @@
 ## You should have received a copy of the GNU General Public License
 ## along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-RECURSIVE_TARGETS += all-recursive check-recursive installcheck-recursive
-RECURSIVE_CLEAN_TARGETS = mostlyclean-recursive clean-recursive	\
-  distclean-recursive maintainer-clean-recursive
+RECURSIVE_TARGETS += \
+  all-recursive \
+  check-recursive \
+  installcheck-recursive \
+  mostlyclean-recursive \
+  clean-recursive \
+  distclean-recursive \
+  maintainer-clean-recursive
 
 am.recurs.all-targets = \
   $(RECURSIVE_TARGETS) \
-  $(RECURSIVE_CLEAN_TARGETS) \
   $(am.recurs.extra-targets)
 
 # All documented targets which invoke 'make' recursively, or depend
