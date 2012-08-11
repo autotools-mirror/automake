@@ -21,14 +21,11 @@
 
 TEST_SUITE_HTML = $(TEST_SUITE_LOG:.log=.html)
 
-mostlyclean-local: mostlyclean-check-html
-.PHONY: mostlyclean-check-html
-mostlyclean-check-html:
-## Expand $(TEST_LOGS) only once, to avoid exceeding line length limits.
-	list='$(TEST_LOGS:.log=.html)'; test -z "$$list" || rm -f $$list
-	rm -f $(TEST_SUITE_HTML)
+## This expects MOSTLYCLEANFILES to be pre-defined by the clients (even
+## if just to the empty value).  Not ans unreasonable request.
+MOSTLYCLEANFILES += $(TEST_SUITE_HTML) $(TEST_LOGS:.log=.html)
 
-.log.html:
+%.html: %.log
 	@list='$(RST2HTML) rst2html rst2html.py';			\
 	while :; do							\
 	  for r2h in $$list; do						\
@@ -45,12 +42,11 @@ mostlyclean-check-html:
 # Beware of concurrent executions.  Run "check" not "check-TESTS", as
 # check-SCRIPTS and other dependencies are rebuilt by the former only.
 # And expect check to fail.
-check-html recheck-html:
-	@target=`echo $@ | sed 's/-html$$//'`; \
-	rv=0; $(MAKE) $$target || rv=$$?; \
-## The nullification of $(TEST_LOGS) is required to ensure that
+check-html recheck-html: %-html:
+	@rv=0; $(MAKE) $* || rv=$$?; \
+## The nullification of $(TESTS) is required to ensure that
 ## "make recheck-html" do not try to uselessly re-run tests.
-	$(MAKE) $(TEST_SUITE_HTML) TEST_LOGS= || exit 4; \
+	$(MAKE) $(TEST_SUITE_HTML) TESTS= || exit 4; \
 	exit $$rv
 
 .PHONY: check-html recheck-html

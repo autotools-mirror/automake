@@ -45,6 +45,8 @@ check_SCRIPTS = bla
 bla:
 	echo bla > $@
 CLEANFILES = bla
+## Initialization of this required by 'check-html.am', below.
+MOSTLYCLEANFILES =
 include $(srcdir)/check-html.am
 END
 
@@ -120,7 +122,7 @@ test ! -e mylog.html
 
 $MAKE clean
 test ! -e mylog.html
-$MAKE check-html TEST_LOGS=foo.log
+$MAKE check-html TESTS=foo
 test -f bla
 test -f foo.log
 test ! -e bar.log

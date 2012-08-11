@@ -34,6 +34,9 @@ cp "$am_top_srcdir"/contrib/check-html.am . \
 
 cat >> configure.ac << 'END'
 AM_EXTRA_RECURSIVE_TARGETS([check-html])
+# This variable must be defined in each Makefile.am that includes
+# 'check-html.am'.  It's simpler to do this once here.
+AC_SUBST([MOSTLYCLEANFILES], [])
 AC_CONFIG_FILES([sub/Makefile sub/more/Makefile])
 AC_OUTPUT
 END
@@ -105,7 +108,6 @@ set -x
 test ! -f test.log
 test -f x.txt
 END
-
 
 cat > sub/more/mu << 'END'
 #!/bin/sh
