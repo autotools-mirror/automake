@@ -416,7 +416,7 @@ require_tool ()
       echo "$me: running $CC -?"
       $CC -? || skip_all_ "Microsoft C compiler '$CC' not available"
       ;;
-    etags)
+    ${ETAGS-etags})
       # Exuberant Ctags will create a TAGS file even
       # when asked for --help or --version.  (Emacs's etags
       # does not have such problem.)  Use -o /dev/null
