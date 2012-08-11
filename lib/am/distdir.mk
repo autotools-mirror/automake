@@ -283,7 +283,7 @@ endif
 ## hierarchy of subpackages.
 ##
 ifdef am.conf.is-topdir
-	-test -n "$(am.dist.skip-mode-fix)" \
+	test -n "$(am.dist.skip-mode-fix)" \
 	|| find "$(distdir)" -type d ! -perm -755 \
 		-exec chmod u+rwx,go+rx {} \; -o \
 	  ! -type d ! -perm -444 -links 1 -exec chmod a+r {} \; -o \
