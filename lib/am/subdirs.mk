@@ -18,16 +18,16 @@ RECURSIVE_TARGETS += all-recursive check-recursive installcheck-recursive
 RECURSIVE_CLEAN_TARGETS = mostlyclean-recursive clean-recursive	\
   distclean-recursive maintainer-clean-recursive
 
-am__recursive_targets = \
+am.recurs.all-targets = \
   $(RECURSIVE_TARGETS) \
   $(RECURSIVE_CLEAN_TARGETS) \
   $(am.recurs.extra-targets)
 
 # All documented targets which invoke 'make' recursively, or depend
 # on targets that do so.  GNUmakefile from gnulib depends on this.
-AM_RECURSIVE_TARGETS += $(am__recursive_targets:-recursive=)
+AM_RECURSIVE_TARGETS += $(am.recurs.all-targets:-recursive=)
 
-.PHONY: $(am__recursive_targets)
+.PHONY: $(am.recurs.all-targets)
 
 # This directory's subdirectories are mostly independent; you can cd
 # into them and run 'make' without going through this Makefile.
@@ -36,7 +36,7 @@ AM_RECURSIVE_TARGETS += $(am__recursive_targets:-recursive=)
 #     (which will cause the Makefiles to be regenerated when you run 'make');
 # (2) otherwise, pass the desired values on the 'make' command line.
 
-$(am__recursive_targets): %-recursive:
+$(am.recurs.all-targets): %-recursive:
 ## Using $failcom allows "-k" to keep its natural meaning when running a
 ## recursive rule.
 	@fail= failcom='exit 1'; \
