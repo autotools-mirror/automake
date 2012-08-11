@@ -162,14 +162,15 @@ distdir: $(am.dist.all-files) | $(am.dir)
 ## in case some explanatory text is desirable.
 ##
 ifdef am.conf.is-topdir
-	@$(if $(am.conf.check-news), \
-	sed 15q $(srcdir)/NEWS | grep -F '$(VERSION)' || { \
-	  echo "NEWS not updated; not releasing" 1>&2; \
-	  exit 1; \
-	})
+ifdef am.conf.check-news
+	@case `sed 15q $(srcdir)/NEWS` in \
+	  *'$(VERSION)'*) : ;; \
+	  *) echo "NEWS not updated; not releasing" 1>&2; exit 1;; \
+	esac
+endif # am.conf.is-topdir
 	$(am.dist.remove-distdir)
 	test -d "$(distdir)" || mkdir "$(distdir)"
-endif
+endif # am.conf.check-news
 ## Make the subdirectories for the files, avoiding to exceed command
 ## line length limitations.
 	$(call am.xargs-map,am.dist.xmkdir,$(am.dist.parent-dirs))
@@ -258,10 +259,11 @@ endif # DIST_SUBDIRS
 ## info files.
 ## We must explicitly set distdir and top_distdir for these sub-makes.
 ##
-	$(if $(am.dist.extra-targets), \
+ifdef am.dist.extra-targets
 	$(MAKE) \
 	  top_distdir="$(top_distdir)" distdir="$(distdir)" \
-	  $(am.dist.extra-targets))
+	  $(am.dist.extra-targets)
+endif
 ##
 ## This complex find command will try to avoid changing the modes of
 ## links into the source tree, in case they're hard-linked.
@@ -288,10 +290,11 @@ ifdef am.conf.is-topdir
 	  ! -type d ! -perm -400 -exec chmod a+r {} \; -o \
 	  ! -type d ! -perm -444 -exec $(install_sh) -c -m a+r {} {} \; \
 	|| chmod -R a+r "$(distdir)"
-	@$(if $(am.dist.filename-filter), \
-	if find "$(distdir)" -type f -print \
+ifdef am.dist.filename-filter
+	@if find "$(distdir)" -type f -print \
 	    | grep '^$(am.dist.filename-filter)' 1>&2; then \
 	  echo '$@: error: the above filenames are too long' 1>&2; \
 	  exit 1; \
-	else :; fi)
-endif
+	else :; fi
+endif # am.dist.filename-filter
+endif # am.conf.is-topdir
