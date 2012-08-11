@@ -14,28 +14,28 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Check support for no-dist-gzip with lzma.
+# Obsolete archive formats.
 
 . ./defs || exit 1
 
-errmsg='support for lzma.*removed'
+$ACLOCAL
 
-echo AUTOMAKE_OPTIONS = dist-lzma > Makefile.am
-$ACLOCAL --force
-AUTOMAKE_fails -Wnone -Wno-error
-grep "^Makefile\\.am:1:.*$errmsg" stderr
+for fmt in lzma shar; do
+  echo AUTOMAKE_OPTIONS = dist-$fmt > Makefile.am
+  AUTOMAKE_fails -Wnone -Wno-error
+  grep "^Makefile\\.am:1:.*support for $fmt.*removed" stderr
+done
+
+rm -rf autom4te*.cache
 
 cat > configure.ac << 'END'
 AC_INIT([lzma], [1.0])
-AM_INIT_AUTOMAKE([no-dist-gzip dist-lzma])
+AM_INIT_AUTOMAKE([dist-tarZ])
 AC_CONFIG_FILES([Makefile])
-AC_OUTPUT
 END
 : > Makefile.am
-
-rm -rf autom4te*.cache
 $ACLOCAL
 AUTOMAKE_fails -Wnone -Wno-error
-grep "^configure\\.ac:2:.*$errmsg" stderr
+grep "^configure\\.ac:2:.*legacy 'compress' program.* no more supported" stderr
 
 :

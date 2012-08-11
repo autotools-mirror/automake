@@ -20,7 +20,7 @@
 am_create_testdir=empty
 . ./defs || exit 1
 
-plan_ 70
+plan_ 59
 
 # ---------------------------------------------------- #
 #  Common and/or auxiliary subroutines and variables.  #
@@ -46,12 +46,10 @@ setup_vars_for_compression_format ()
   suffix=NONE compressor=NONE
   case $1 in
     gzip) suffix=tar.gz  compressor=gzip     ;;
-    tarZ) suffix=tar.Z   compressor=compress ;;
     lzip) suffix=tar.lz  compressor=lzip     ;;
       xz) suffix=tar.xz  compressor=xz       ;;
    bzip2) suffix=tar.bz2 compressor=bzip2    ;;
      zip) suffix=zip     compressor=zip      ;;
-    shar) suffix=shar.gz compressor=shar     ;;
        *) fatal_ "invalid compression format '$1'";;
   esac
 }
@@ -103,7 +101,7 @@ have_compressor ()
   fatal_ "have_compressor(): dead code reached"
 }
 
-all_compression_formats='gzip tarZ lzip xz bzip2 zip shar'
+all_compression_formats='gzip lzip xz bzip2 zip'
 
 all_compressors=$(
   for x in $all_compression_formats; do
@@ -293,9 +291,8 @@ END
 
 #      $1 $2  $3   $4     $5  $6
 nogzip in am  and  bzip2  in  am
-nogzip in ac  and  xz     in  am
-nogzip in am  and  lzip   in  ac
-nogzip in ac  and  tarZ   in  ac
+nogzip in ac  and  xz     in  ac
+nogzip in am  and  lzip   in  am
 
 
 # ----------------------------------------------------------- #
@@ -318,9 +315,9 @@ end_subtest
 # since there are the most likely to be all found on the great majority
 # of systems.
 
-start_subtest parallel-compression ac_opts=dist-bzip2 am_opts=dist-tarZ
+start_subtest parallel-compression ac_opts=dist-bzip2 am_opts=dist-xz
 
-desc=gzip+bzip2+tarZ
+desc=gzip+bzip2+xz
 tarname=parallel-compression-1.0
 
 check_tarball ()
@@ -356,7 +353,7 @@ else
   ls -l # For debugging.
   command_ok_ "$desc [check .tar.gz tarball]"  check_tarball gzip
   command_ok_ "$desc [check .tar.bz2 tarball]" check_tarball bzip2
-  command_ok_ "$desc [check .tar.Z tarball]"   check_tarball tarZ
+  command_ok_ "$desc [check .tar.Z tarball]"   check_tarball xz
 fi
 
 unset tarname desc skip_reason

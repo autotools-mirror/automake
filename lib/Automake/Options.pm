@@ -272,8 +272,6 @@ sub _is_valid_easy_option ($)
     dejagnu
     dist-bzip2
     dist-lzip
-    dist-shar
-    dist-tarZ
     dist-xz
     dist-zip
     ng
@@ -330,6 +328,16 @@ sub _process_option_list (\%@)
         {
           error ($where, "support for lzma-compressed distribution " .
                          "archives has been removed");
+        }
+      elsif ($_ eq 'dist-tarZ')
+        {
+          error ($where, "distribution archives compressed with legacy " .
+                         "'compress' program are no more supported");
+        }
+      elsif ($_ eq 'dist-shar')
+        {
+          error ($where, "support for shar distribution archives has " .
+                         "been removed");
         }
       elsif (/^filename-length-max=(\d+)$/)
         {
