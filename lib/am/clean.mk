@@ -63,9 +63,9 @@ maintainer-clean-generic:
 # this, and it's not unreasonable to expect user-defined rules might
 # do that as well).
 distclean:
-	rm -f $(am.relpath.makefile) $(am__config_distclean_files)
+	rm -f $(am.relpath.makefile) $(am.clean.config-files)
 maintainer-clean:
-	rm -f $(am.relpath.makefile) $(am__config_distclean_files)
+	rm -f $(am.relpath.makefile) $(am.clean.config-files)
 
 .PHONY: clean mostlyclean distclean maintainer-clean \
 clean-generic mostlyclean-generic distclean-generic maintainer-clean-generic
