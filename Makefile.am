@@ -197,6 +197,7 @@ dist_am_DATA = \
   lib/am/dejagnu.mk \
   lib/am/distcheck.mk \
   lib/am/distdir.mk \
+  lib/am/subdirs.mk \
   lib/am/compile.am \
   lib/am/configure.am \
   lib/am/data.am \
@@ -218,7 +219,6 @@ dist_am_DATA = \
   lib/am/python.am \
   lib/am/remake-hdr.am \
   lib/am/scripts.am \
-  lib/am/subdirs.am \
   lib/am/texi-vers.am \
   lib/am/texi-spec.am \
   lib/am/texinfos.am \

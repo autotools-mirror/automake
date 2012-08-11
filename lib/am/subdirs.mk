@@ -23,8 +23,8 @@ am__recursive_targets = \
   $(RECURSIVE_CLEAN_TARGETS) \
   $(am.recurs.extra-targets)
 
-## All documented targets which invoke 'make' recursively, or depend
-## on targets that do so.  GNUmakefile from gnulib depends on this.
+# All documented targets which invoke 'make' recursively, or depend
+# on targets that do so.  GNUmakefile from gnulib depends on this.
 AM_RECURSIVE_TARGETS += $(am__recursive_targets:-recursive=)
 
 .PHONY: $(am__recursive_targets)
@@ -72,4 +72,3 @@ mostlyclean: mostlyclean-recursive
 clean: clean-recursive
 distclean: distclean-recursive
 maintainer-clean: maintainer-clean-recursive
-
