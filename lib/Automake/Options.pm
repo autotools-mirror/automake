@@ -314,12 +314,6 @@ sub _process_option_list (\%@)
         {
           set_strictness ($_);
         }
-      elsif (/^(.*\/)?ansi2knr$/)
-        {
-          # Obsolete (and now removed) de-ANSI-fication support.
-          error ($where,
-                 "automatic de-ANSI-fication support has been removed");
-        }
       elsif ($_ eq 'cygnus')
         {
           error $where, "support for Cygnus-style trees has been removed";
