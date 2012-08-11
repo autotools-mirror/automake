@@ -26,10 +26,6 @@
 # with tar 1.11.2).  We do not do anything specific w.r.t. this
 # incompatibility since packages where empty directories need to be
 # present in the archive are really unusual.
-#
-# We order DIST_TARGETS by expected duration of the compressors,
-# slowest first, for better parallelism in "make dist".  Do not
-# reorder DIST_ARCHIVES, users may expect gzip to be first.
 
 am.dist.ext.gzip  = tar.gz
 am.dist.ext.bzip2 = tar.bz2
