@@ -2691,7 +2691,6 @@ sub scan_texinfo_file ($)
   return ($outfile, $vfile);
 }
 
-# ($MOSTLYCLEAN, $TEXICLEAN, $MAINTCLEAN)
 # handle_texinfo_helper ($info_texinfos)
 # --------------------------------------
 # Handle all Texinfo source; helper for handle_texinfo.
@@ -2701,7 +2700,6 @@ sub handle_texinfo_helper ($)
   my (@infobase, @info_deps_list, @texi_deps);
   my %versions;
   my $done = 0;
-  my (@mostly_cleans, @texi_cleans, @maint_cleans) = ('', '', '');
 
   # Build a regex matching user-cleaned files.
   my $d = var 'DISTCLEANFILES';
@@ -2734,8 +2732,8 @@ sub handle_texinfo_helper ($)
 	or next;
       # Directory of auxiliary files and build by-products used by texi2dvi
       # and texi2pdf.
-      push @mostly_cleans, "$infobase.t2d";
-      push @mostly_cleans, "$infobase.t2p";
+      $clean_dirs{"$infobase.t2d"} = MOSTLY_CLEAN;
+      $clean_dirs{"$infobase.t2p"} = MOSTLY_CLEAN;
 
       # If the Texinfo source is in a subdirectory, create the
       # resulting info in this subdirectory.  If it is in the current
@@ -2870,7 +2868,13 @@ sub handle_texinfo_helper ($)
                                       SOURCE_REAL      => $texi,
                                       );
 
-      push @texi_cleans, "$dpfx.dvi", "$dpfx.pdf", "$dpfx.ps", "$dpfx.html";
+      $clean_files{"$dpfx.dvi"} = CLEAN;
+      $clean_files{"$dpfx.pdf"} = CLEAN;
+      $clean_files{"$dpfx.ps"}  = CLEAN;
+      # Add to %clean_dirs, not $clean_files, because this will be a
+      # directory (unless '--no-split' is used in MAKEINFOFLAGS).
+      $clean_dirs{"$dpfx.html"} = CLEAN;
+
       push @info_deps_list, $out_file;
 
       # If a vers*.texi file is needed, emit the rule.
@@ -2957,10 +2961,6 @@ sub handle_texinfo_helper ($)
 				   'texinfo.tex');
 	}
     }
-
-  return (makefile_wrap ("", "\t  ", @mostly_cleans),
-	  makefile_wrap ("", "\t  ", @texi_cleans),
-	  makefile_wrap ("", "\t  ", @maint_cleans));
 }
 
 
@@ -2974,23 +2974,12 @@ sub handle_texinfo ()
   reject_var 'html_TEXINFOS', "HTML generation not yet supported";
 
   my $info_texinfos = var ('info_TEXINFOS');
-  my ($mostlyclean, $clean, $maintclean) = ('', '', '');
   if ($info_texinfos)
     {
       define_verbose_texinfo;
       verbatim ('texibuild');
-      ($mostlyclean, $clean, $maintclean) = handle_texinfo_helper ($info_texinfos);
-      chomp $mostlyclean;
-      chomp $clean;
-      chomp $maintclean;
+      handle_texinfo_helper ($info_texinfos);
     }
-  # Append to dirs, not files, because the files in '$*clean' can also
-  # contain any directory created by "makeinfo --html", as well as the
-  # '*.t2d' and '*.t2p' directories used by texi2dvi and texi2pdf.
-  $clean_dirs{$mostlyclean} = MOSTLY_CLEAN;
-  $clean_dirs{$clean} = CLEAN;
-  $clean_dirs{$maintclean} = MAINTAINER_CLEAN;
-
   $output_rules .=  file_contents ('texinfos',
 				   new Automake::Location,
 				   'LOCAL-TEXIS' => !!$info_texinfos);
