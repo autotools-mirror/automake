@@ -44,7 +44,7 @@ test-ctags: ctags
 	grep 'main' sub1/tags
 	grep 'choke_me' sub1/tags && exit 1; :
 	grep 'subsub/foo\.h' sub2/tags
-	grep 'DUMMY_DUMMY' sub2/tags
+	grep 'IsBigger' sub2/tags
 	grep 'bar\.f77' sub2/subsub/tags
 	grep 'foo\.cxx' sub2/subsub/tags
 	grep 'foo\.h' sub2/subsub/tags && exit 1; :
@@ -71,7 +71,9 @@ cat > sub2/Makefile.am << 'END'
 SUBDIRS = subsub .
 noinst_HEADERS = subsub/foo.h
 subsub/foo.h:
-	echo '#define DUMMY_DUMMY 0' >$@
+	# Use and inlined function, not a #define, for the sake of
+	# Emacs an XEmacs ctags (at least up to versions 22 and 23).
+	echo 'inline int IsBigger (int a, int b) { return (a > b); }' >$@
 CLEANFILES = $(noinst_HEADERS)
 END
 
