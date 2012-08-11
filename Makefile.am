@@ -196,11 +196,11 @@ dist_am_DATA = \
   lib/am/tags.mk \
   lib/am/dejagnu.mk \
   lib/am/distcheck.mk \
+  lib/am/distdir.mk \
   lib/am/compile.am \
   lib/am/configure.am \
   lib/am/data.am \
   lib/am/depend2.am \
-  lib/am/distdir.am \
   lib/am/footer.am \
   lib/am/header.am \
   lib/am/java.am \

@@ -84,10 +84,13 @@ am.dist.write-filelist = \
   @lst='$1'; for x in $$lst; do echo $$x; done \
     >> $(am.dir)/$@-list$(am.chars.newline)
 
-if %?TOPDIR_P%
+ifdef am.conf.is-topdir
 
 # This is user-overridable.
+ifeq ($(call am.vars.is-undef,distdir),yes)
 distdir = $(PACKAGE)-$(VERSION)
+endif
+
 # This is not, but must be public to be avaialable in the "dist-hook"
 # rules (this is also documented in the Automake manual).
 top_distdir = $(distdir)
@@ -112,9 +115,9 @@ am.dist.remove-distdir = \
 # creation of different tarball formats.
 am.dist.post-remove-distdir = $(am.dist.remove-distdir)
 
-endif %?TOPDIR_P%
+endif # am.conf.is-topdir
 
-if %?SUBDIRS%
+ifdef SUBDIRS
 # Computes a relative pathname RELDIR such that DIR1/RELDIR = DIR2.
 # Input:
 #   - dir1      relative pathname, relative to the current directory.
@@ -146,29 +149,27 @@ am.dist.relativize-path = \
     dir1=`echo "$$dir1" | sed -e "$$sed_rest"`; \
   done; \
   reldir="$$dir2"
-endif %?SUBDIRS%
+endif # SUBDIRS
 
 .PHONY: distdir
-if %?SUBDIRS%
+ifdef SUBDIR
 AM_RECURSIVE_TARGETS += distdir
-endif %?SUBDIRS%
+endif
 
 distdir: $(am.dist.all-files) | $(am.dir)
 ##
 ## For Gnits users, this is pretty handy.  Look at 15 lines
 ## in case some explanatory text is desirable.
 ##
-if %?TOPDIR_P%
+ifdef am.conf.is-topdir
 	@$(if $(am.conf.check-news), \
 	sed 15q $(srcdir)/NEWS | grep -F '$(VERSION)' || { \
 	  echo "NEWS not updated; not releasing" 1>&2; \
 	  exit 1; \
 	})
-endif %?TOPDIR_P%
-if %?TOPDIR_P%
 	$(am.dist.remove-distdir)
 	test -d "$(distdir)" || mkdir "$(distdir)"
-endif %?TOPDIR_P%
+endif
 ## Make the subdirectories for the files, avoiding to exceed command
 ## line length limitations.
 	$(call am.xargs-map,am.dist.xmkdir,$(am.dist.parent-dirs))
@@ -223,7 +224,7 @@ endif %?TOPDIR_P%
 ## at the top level do the right thing.  If we're in the topmost
 ## directory, then we use 'distdir' instead of 'top_distdir'; this lets
 ## us work correctly with an enclosing package.
-if %?SUBDIRS%
+ifdef SUBDIRS
 	@list='$(DIST_SUBDIRS)'; for subdir in $$list; do \
 	  if test "$$subdir" = .; then :; else \
 	    $(am.make.dry-run) \
@@ -251,7 +252,7 @@ if %?SUBDIRS%
 	      || exit 1; \
 	  fi; \
 	done
-endif %?SUBDIRS%
+endif # SUBDIRS
 ##
 ## We might have to perform some last second updates, such as updating
 ## info files.
@@ -279,7 +280,7 @@ endif %?SUBDIRS%
 ## the whole subtree again.  This is a complexity reduction for a deep
 ## hierarchy of subpackages.
 ##
-if %?TOPDIR_P%
+ifdef am.conf.is-topdir
 	-test -n "$(am.dist.skip-mode-fix)" \
 	|| find "$(distdir)" -type d ! -perm -755 \
 		-exec chmod u+rwx,go+rx {} \; -o \
@@ -293,4 +294,4 @@ if %?TOPDIR_P%
 	  echo '$@: error: the above filenames are too long' 1>&2; \
 	  exit 1; \
 	else :; fi)
-endif %?TOPDIR_P%
+endif
