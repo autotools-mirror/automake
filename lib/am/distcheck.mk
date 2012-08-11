@@ -11,6 +11,73 @@
 ## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 ## GNU General Public License for more details.
 
+
+# ---------------------------------------- #
+#  Building various distribution flavors.  #
+# ---------------------------------------- #
+
+# Note that we don't use GNU tar's '-z' option.  One reason (but
+# not the only reason) is that some versions of tar (e.g., OSF1)
+# interpret '-z' differently.
+#
+# The -o option of GNU tar used to exclude empty directories.  This
+# behavior was fixed in tar 1.12 (released on 1997-04-25).  But older
+# versions of tar are still used (for instance NetBSD 1.6.1 ships
+# with tar 1.11.2).  We do not do anything specific w.r.t. this
+# incompatibility since packages where empty directories need to be
+# present in the archive are really unusual.
+#
+# We order DIST_TARGETS by expected duration of the compressors,
+# slowest first, for better parallelism in "make dist".  Do not
+# reorder DIST_ARCHIVES, users may expect gzip to be first.
+
+am.dist.ext.gzip  = tar.gz
+am.dist.ext.bzip2 = tar.bz2
+am.dist.ext.xz    = tar.xz
+am.dist.ext.lzip  = tar.lz
+am.dist.ext.zip   = zip
+
+DIST_TARGETS  = $(foreach x,$(am.dist.formats),dist-$x)
+DIST_ARCHIVES = $(foreach x,$(am.dist.formats),$(distdir).$(am.dist.ext.$x))
+.PHONY: $(foreach x,$(am.dist.formats),dist-$x)
+
+GZIP_ENV = --best
+dist-gzip: distdir
+	tardir=$(distdir) && $(am__tar) | GZIP=$(GZIP_ENV) gzip -c >$(distdir).tar.gz
+	$(am.dist.post-remove-distdir)
+
+dist-bzip2: distdir
+	tardir=$(distdir) && $(am__tar) | BZIP2=$${BZIP2--9} bzip2 -c >$(distdir).tar.bz2
+	$(am.dist.post-remove-distdir)
+
+dist-lzip: distdir
+	tardir=$(distdir) && $(am__tar) | lzip -c $${LZIP_OPT--9} >$(distdir).tar.lz
+	$(am.dist.post-remove-distdir)
+
+dist-xz: distdir
+	tardir=$(distdir) && $(am__tar) | XZ_OPT=$${XZ_OPT--e} xz -c >$(distdir).tar.xz
+	$(am.dist.post-remove-distdir)
+
+dist-zip: distdir
+	rm -f $(distdir).zip
+	zip -rq $(distdir).zip $(distdir)
+	$(am.dist.post-remove-distdir)
+
+
+# -------------------------------------------------- #
+#  Building all the requested distribution flavors.  #
+# -------------------------------------------------- #
+
+ifdef
+AM_RECURSIVE_TARGETS += dist dist-all
+endif
+
+.PHONY: dist dist-all
+dist dist-all:
+	$(MAKE) $(DIST_TARGETS) am.dist.post-remove-distdir='@:'
+	$(am.dist.post-remove-distdir)
+
+
 # ---------------------------- #
 #  Checking the distribution.  #
 # ---------------------------- #
