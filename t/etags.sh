@@ -17,7 +17,7 @@
 # Test to make sure tags and subdirs work correctly.  Bug report by
 # François Pinard, and later by Akim Demaille.
 
-required=etags
+required=${ETAGS:=etags}
 . ./defs || exit 1
 
 cat >> configure.ac << 'END'
@@ -84,8 +84,8 @@ $AUTOCONF
 $AUTOMAKE -i
 
 ./configure
-$MAKE test-tags
-$MAKE distcheck
+$MAKE test-tags ETAGS="$ETAGS"
+$MAKE distcheck ETAGS="$ETAGS"
 
 $MAKE distclean
 find . -name TAGS | grep . && exit 1

@@ -16,7 +16,7 @@
 
 # Test vi-style tags.
 
-required=ctags
+required=${CTAGS:=ctags}
 . ./defs || exit 1
 
 cat >> configure.ac << 'END'
@@ -100,8 +100,8 @@ $AUTOCONF
 $AUTOMAKE -i
 
 ./configure
-$MAKE test-ctags
-$MAKE distcheck
+$MAKE test-ctags CTAGS="$CTAGS"
+$MAKE distcheck CTAGS="$CTAGS"
 
 $MAKE distclean
 find . -name tags | grep . && exit 1
