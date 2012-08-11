@@ -88,8 +88,14 @@ rm -rf $me-1.0          # Remove $(distdir).
 
 : > distfiles.am
 for f in $list; do
-  echo dummy > $f
+  test "$f" = install-sh || echo dummy > $f
 done
+
+# The 'install-sh' script must have legit content, because it's going
+# to be used by the "make distdir" target on systems lacking a decent
+# 'install' program.
+cp "$am_scriptdir/install-sh" . \
+  || fatal_ "fetching auxiliary script 'install-sh'"
 
 ls -l # For debugging.
 
