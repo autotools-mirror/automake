@@ -247,10 +247,10 @@ if %?SUBDIRS%
 ## directory we have already cleared and might even have populated
 ## (e.g. shared AUX dir in the sub-package).
 		am.dist.remove-distdir=: \
-## Disable filename length check:
-		am.dist.skip-length-check=: \
 ## No need to fix modes more than once:
 		am.dist.skip-mode-fix=: \
+## Disable filename length check:
+		am.dist.filename-filter='' \
 	      || exit 1; \
 	  fi; \
 	done
@@ -291,11 +291,10 @@ if %?TOPDIR_P%
 	  ! -type d ! -perm -400 -exec chmod a+r {} \; -o \
 	  ! -type d ! -perm -444 -exec $(install_sh) -c -m a+r {} {} \; \
 	|| chmod -R a+r "$(distdir)"
-if %?FILENAME_FILTER%
-	@if test -z "$(am.dist.skip-length-check)" && find "$(distdir)" -type f -print | \
-	  grep '^%FILENAME_FILTER%' 1>&2; then \
-	  echo 'error: the above filenames are too long' 1>&2; \
+	@$(if $(am.dist.filename-filter), \
+	if find "$(distdir)" -type f -print \
+	    | grep '^$(am.dist.filename-filter)' 1>&2; then \
+	  echo '$@: error: the above filenames are too long' 1>&2; \
 	  exit 1; \
-	else :; fi
-endif %?FILENAME_FILTER%
+	else :; fi)
 endif %?TOPDIR_P%

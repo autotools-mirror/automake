@@ -3292,6 +3292,10 @@ sub handle_dist ()
                    $seen_gettext && !$seen_gettext_external ? 'yes' : '');
   define_variable ('am.dist.formats', INTERNAL, @archive_formats);
 
+  my $flm = option 'filename-length-max';
+  define_variable ('am.dist.filename-filter', INTERNAL,
+                   $flm ? ('.' x $flm->[1]) : '');
+
   # If the target 'dist-hook' exists, make sure it is run.  This
   # allows users to do random weird things to the distribution
   # before it is packaged up.
@@ -3299,13 +3303,9 @@ sub handle_dist ()
     if user_phony_rule 'dist-hook';
   $transform{'DIST-TARGETS'} = join (' ', @dist_targets);
 
-  my $flm = option ('filename-length-max');
-  my $filename_filter = $flm ? '.' x $flm->[1] : '';
-
   $output_rules .= &file_contents ('distdir',
 				   new Automake::Location,
 				   %transform,
-				   FILENAME_FILTER => $filename_filter,
                                    'DIST-COMMON' => "@dist_common");
   verbatim ('distcheck') if $relative_dir eq '.';
 }
