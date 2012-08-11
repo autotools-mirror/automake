@@ -20,16 +20,16 @@
 
 cat >> configure.ac << \END
 AC_SUBST([FOO], [foo])
-file1=this.in
-echo @FOO@ >$file1
-file2=that
-file3=mumble
-file4=foo
-AC_CONFIG_FILES([this:$file1],, [file1=$file1])
-AC_CONFIG_FILES([sub/this:$file1])
-AC_CONFIG_FILES([${file2}:this],, [file2=$file2])
-AC_CONFIG_FILES([$file3],, [file3=$file3])
-AC_CONFIG_FILES([$file4:foo.in],, [file4=$file4])
+xfile1=this.in
+echo @FOO@ >$xfile1
+xfile2=that
+xfile3=mumble
+xfile4=foo
+AC_CONFIG_FILES([this:$xfile1],, [xfile1=$xfile1])
+AC_CONFIG_FILES([sub/this:$xfile1])
+AC_CONFIG_FILES([${xfile2}:this],, [xfile2=$xfile2])
+AC_CONFIG_FILES([$xfile3],, [xfile3=$xfile3])
+AC_CONFIG_FILES([$xfile4:foo.in],, [xfile4=$xfile4])
 AC_CONFIG_FILES([sub/Makefile])
 AC_OUTPUT
 END
@@ -53,7 +53,7 @@ $ACLOCAL
 $AUTOCONF
 $AUTOMAKE
 
-$FGREP ' $file' Makefile.in sub/Makefile.in && exit 1
+$FGREP ' $xfile' Makefile.in sub/Makefile.in && exit 1
 
 ./configure
 $MAKE distcheck
