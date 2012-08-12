@@ -17,42 +17,51 @@
 # Check support for different compression formats used by distribution
 # archives.
 
-am_create_testdir=empty
 . ./defs || exit 1
 
-plan_ 59
+plan_ 18
 
-# ---------------------------------------------------- #
-#  Common and/or auxiliary subroutines and variables.  #
-# ---------------------------------------------------- #
-
-ocwd=$(pwd) || fatal_ "getting current working directory"
+# -------------------------------------- #
+#  Auxiliary subroutines and variables.  #
+# -------------------------------------- #
 
 TAR='' && unset TAR
-
-# Create common aclocal.m4 file, for later tests.
-mkdir setup \
-  && cd setup \
-  && echo 'AC_INIT([x], [0]) AM_INIT_AUTOMAKE' > configure.ac \
-  && $ACLOCAL \
-  && mv aclocal.m4 .. \
-  && cd .. \
-  && rm -rf setup \
-  || fatal_ "creating common aclocal.m4 file"
 
 # Set variables '$compressor' and '$suffix'.
 setup_vars_for_compression_format ()
 {
-  suffix=NONE compressor=NONE
+  suffix=NONE
   case $1 in
-    gzip) suffix=tar.gz  compressor=gzip     ;;
-    lzip) suffix=tar.lz  compressor=lzip     ;;
-      xz) suffix=tar.xz  compressor=xz       ;;
-   bzip2) suffix=tar.bz2 compressor=bzip2    ;;
-     zip) suffix=zip     compressor=zip      ;;
+    gzip) suffix=tar.gz  ;;
+    lzip) suffix=tar.lz  ;;
+      xz) suffix=tar.xz  ;;
+   bzip2) suffix=tar.bz2 ;;
+     zip) suffix=zip     ;;
        *) fatal_ "invalid compression format '$1'";;
   esac
+  compressor=$1
 }
+
+check_tarball ()
+{
+  format=$1
+  (
+    setup_vars_for_compression_format $format \
+      && tarball=$distdir.$suffix \
+      && test -f $tarball \
+      && mkdir check-$format \
+      && cp $tarball check-$format \
+      && cd check-$format \
+      && $compressor -d $tarball \
+      && tar xvf $distdir.tar \
+      && diff ../Makefile.in $distdir/Makefile.in \
+      && diff ../aclocal.m4  $distdir/aclocal.m4 \
+      && diff ../configure   $distdir/configure \
+      && cd .. \
+      && rm -rf check-$format
+   )
+}
+
 
 have_compressor ()
 {
@@ -113,326 +122,91 @@ have_all_compressors ()
   test -z "$missing_compressors"
 }
 
-start_subtest ()
+clean_dist ()
 {
-  name=$1; shift
-  test -n "$name" || fatal_ "start_subtest: no subtest name given"
-  if test $# -gt 0; then
-    eval "$@" || fatal_ "start_subtest: evaluating assignments"
-  fi
-  ac_opts=$(echo $ac_opts | tr ',' ' ')
-  am_opts=$(echo $am_opts | tr ',' ' ')
-  mkdir "$name"
-  cd "$name"
-  unindent > configure.ac <<END
-    AC_INIT([$name], [1.0])
-    AM_INIT_AUTOMAKE([$ac_opts])
-    AC_CONFIG_FILES([Makefile])
-    AC_OUTPUT
-END
-  echo "AUTOMAKE_OPTIONS = $am_opts" > Makefile.am
-  # It is imperative that aclocal.m4 is copied after configure.ac has
-  # been created, to avoid a spurious trigger of the automatic remake
-  # rules for configure & co.
-  cp "$ocwd"/aclocal.m4 \
-     "$am_scriptdir"/missing \
-     "$am_scriptdir"/install-sh \
-     .
+  rm -rf *$distdir*
 }
 
-end_subtest ()
-{
-  unset name; unset ac_opts; unset am_opts;
-  cd "$ocwd" || fatal_ "couldn't chdir back to '$ocwd'"
-}
+# ------------------------- #
+#  Setup and basic checks.  #
+# ------------------------- #
 
-command_ok_if_have_compressor ()
-{
+echo AC_OUTPUT >> configure.ac
+: > Makefile.am
+
+$ACLOCAL && $AUTOCONF && $AUTOMAKE -a || fatal_ "autotools failed"
+./configure || fatal_ "./configure failed"
+
+command_ok_ "make distcheck"  $MAKE distcheck
+
+command_ok_ "only gzip archive is built by default" \
+            test "$(ls *$distdir*)" = $distdir.tar.gz
+
+
+# ------------------------------------- # 
+#  Test all known formats, separately.  #
+# ------------------------------------- # 
+
+for format in $all_compression_formats; do
+  setup_vars_for_compression_format "$format"
+  desc="$format distribution format"
+  command_ok_ "$desc [seems accepted]" \
+              $MAKE -n dist AM_DIST_FORMATS="$format"
   if have_compressor "$compressor"; then
-    command_ok_ "$@"
+    command_ok_ "$desc $format distribution format [works]" \
+      eval '$MAKE dist AM_DIST_FORMATS="$format" \
+              && ls -l *$distdir* \
+              && test -f $distdir.$suffix \
+              && test "$(echo *$distdir*)" = $distdir.$suffix'
   else
     skip_ -r "'$compressor' not available" "$1"
   fi
-}
-
-can_compress ()
-{
-  test $# -eq 2 || fatal_ "can_compress: bad number of arguments"
-  tarname=$1 format=$2
-  setup_vars_for_compression_format "$format"
-
-  command_ok_ "'dist-$format' target always created" $MAKE -n dist-$format
-
-  command_ok_if_have_compressor "'make dist-$format' work by default" \
-    eval '
-      rm -rf *$tarname* \
-        && $MAKE dist-$format \
-        && ls -l *$tarname* \
-        && test -f $tarname-1.0.$suffix \
-        && test "$(echo *$tarname*)" = $tarname-1.0.$suffix'
-
-  unset suffix compressor format tarname
-}
-
-# ---------------------------------------- #
-#  Defaults layout of the dist-* targets.  #
-# ---------------------------------------- #
-
-start_subtest defaults
-
-command_ok_ "default [automake]"        $AUTOMAKE
-command_ok_ "default [autoconf]"        $AUTOCONF
-command_ok_ "default [configure]"       ./configure
-command_ok_ "default [make distcheck]"  $MAKE distcheck
-
-command_ok_ "'make dist' only builds *.tar.gz by default" \
-            test "$(ls *defaults*)" = defaults-1.0.tar.gz
-
-rm -rf *defaults*
-
-for fmt in $all_compression_formats; do
-  can_compress defaults $fmt
+  clean_dist
+  unset desc suffix compressor format
 done
-unset fmt
-
-end_subtest
-
-# ----------------------------------------------------------- #
-#  Check diagnostic for no-dist-gzip without another dist-*.  #
-# ----------------------------------------------------------- #
-
-nogzip_stderr ()
-{
-  grep "$1:.*no-dist-gzip" stderr \
-    && grep "$1:.* at least one archive format must be enabled" stderr
-}
-
-nogzip_automake_failure ()
-{
-  AUTOMAKE_fails -d "no-dist-gzip ($1) without other formats is an error"
-  command_ok_ "no-dist-gzip ($1) without other formats gives diagnostic" \
-              nogzip_stderr "$2"
-}
-
-start_subtest am-nogz-only am_opts=no-dist-gzip ac_opts=
-nogzip_automake_failure 'am' 'Makefile\.am:1'
-end_subtest
-
-start_subtest ac-nogz-only am_opts= ac_opts=no-dist-gzip
-nogzip_automake_failure 'ac' 'configure\.ac:2'
-end_subtest
-
-# ------------------------------------------------- #
-#  Check use of no-dist-gzip with a dist-* option.  #
-# ------------------------------------------------- #
-
-append_to_opt ()
-{
-  var=$1_opts val=$2
-  eval "$var=\${$var:+\"\$$var,\"}\$val" || fatal_ "evaluating \${$var}"
-  unset var val
-}
-
-nogzip ()
-{
-  test $#,$1,$3,$5 = 6,in,and,in \
-    && case $2,$6 in ac,ac|ac,am|am,ac|am,am) :;; *) false;; esac \
-    || fatal_ "nogzip: invalid usage"
-  format=$4 where_dist_nogzip=$2 where_dist_format=$6
-  shift 6
-
-  am_opts= ac_opts=
-  append_to_opt $where_dist_format dist-$format
-  append_to_opt $where_dist_nogzip no-dist-gzip
-  setup_vars_for_compression_format "$format"
-  # Do these before the am_opts and ac_opts variable can be munged
-  # by 'start_subtest'.
-  desc=
-  test -n "$am_opts" && desc=${desc:+"$desc "}"am=$am_opts"
-  test -n "$ac_opts" && desc=${desc:+"$desc "}"ac=$ac_opts"
-
-  start_subtest nogzip-$format am_opts=$am_opts ac_opts=$ac_opts
-
-  unindent >> Makefile.am <<END
-    check-ark-name:
-	test \$(am.dist.default-archives) = \$(distdir).$suffix
-    check-ark-exists:
-	test -f \$(distdir).$suffix
-    check-no-tar-gz:
-	test ! -f \$(distdir).tar.gz
-END
-
-  command_ok_ "$desc [automake]" $AUTOMAKE
-  command_ok_ "$desc [autoconf]" $AUTOCONF
-  command_ok_ "$desc [configure]" ./configure
-  command_ok_ "$desc [ark-name]" $MAKE check-ark-name
-  command_ok_if_have_compressor "$desc [distcheck]" $MAKE distcheck
-  command_ok_if_have_compressor "$desc [ark-exists]" $MAKE check-ark-exists
-  command_ok_ "$desc [no .tar.gz]"  $MAKE check-no-tar-gz
-
-  unset desc
-
-  end_subtest
-}
-
-#      $1 $2  $3   $4     $5  $6
-nogzip in am  and  bzip2  in  am
-nogzip in ac  and  xz     in  ac
-nogzip in am  and  lzip   in  am
-
-
-# ----------------------------------------------------------- #
-#  The 'dist-gzip' target is created also with no-dist-gzip.  #
-# ----------------------------------------------------------- #
-
-start_subtest dist-gzip-persistence am_opts=no-dist-gzip,dist-xz
-command_ok_ "dist-gzip persistence [automake]"  $AUTOMAKE
-command_ok_ "dist-gzip persistence [autoconf]"  $AUTOCONF
-command_ok_ "dist-gzip persistence [configure]" ./configure
-can_compress dist-gzip-persistence gzip
-end_subtest
-
 
 # ----------------------- #
 #  Parallel compression.  #
 # ----------------------- #
 
-# We only use formats requiring 'gzip', 'bzip2' and 'compress' programs,
-# since there are the most likely to be all found on the great majority
-# of systems.
+# We only use formats requiring 'gzip', 'bzip2' and 'xz' programs,
+# since there are the most likely to be all found on the great
+# majority of systems.
 
-start_subtest parallel-compression ac_opts=dist-bzip2 am_opts=dist-xz
-
-desc=gzip+bzip2+xz
-tarname=parallel-compression-1.0
-
-check_tarball ()
-{
-  format=$1
-  setup_vars_for_compression_format $format
-  (
-    tarball=$tarname.$suffix \
-      && test -f $tarball \
-      && mkdir check-$format \
-      && cp $tarball check-$format \
-      && cd check-$format \
-      && $compressor -d $tarball \
-      && tar xvf $tarname.tar \
-      && diff ../Makefile.in $tarname/Makefile.in \
-      && cd .. \
-      && rm -rf check-$format
-   )
-}
-
-command_ok_ "$desc [automake]" $AUTOMAKE
+desc='parallel compression'
 
 skip_reason=
-have_compressor compress || skip_reason="'compress' not available"
+have_compressor xz || skip_reason="'xz' not available"
 have_compressor bzip2 || skip_reason="'bzip2' not available"
 
 if test -n "$skip_reason"; then
   skip_row_ 6 -r "$skip_reason" "$desc"
 else
-  command_ok_ "$desc [autoconf]" $AUTOCONF
-  command_ok_ "$desc [configure]" ./configure
-  command_ok_ "$desc [make -j4 dist-all]"  $MAKE -j4 dist
+  command_ok_ "$desc [make -j8 distcheck]"  \
+              $MAKE -j8 distcheck AM_DIST_FORMATS='gzip bzip2 xz'
   ls -l # For debugging.
   command_ok_ "$desc [check .tar.gz tarball]"  check_tarball gzip
   command_ok_ "$desc [check .tar.bz2 tarball]" check_tarball bzip2
   command_ok_ "$desc [check .tar.xz tarball]"  check_tarball xz
 fi
 
-unset tarname desc skip_reason
+clean_dist
+unset desc skip_reason
 
-end_subtest
 
+# ------------------------------- #
+#  Invalid distribution formats.  #
+# ------------------------------- #
 
-# --------------------------------------------------------- #
-#  The various 'dist-*' targets can happily work together.  #
-# --------------------------------------------------------- #
+command_ok_ "invalid distribution formats [exit status]"  eval '
+  ! $MAKE dist AM_DIST_FORMATS="foobar tarZ shar" 2>stderr'
 
-start_subtest all-together
+cat stderr >&2 # For debugging.
 
-desc='all compressors together'
-tarname=all-together-1.0
-
-echo 'AM_INIT_AUTOMAKE([' > am-init.m4
-echo 'AUTOMAKE_OPTIONS =' > Makefile.am
-
-# Add half 'dist-*' options to AM_INIT_AUTOMAKE, half to AUTOMAKE_OPTIONS.
-flip=:
-for fmt in $all_compression_formats; do
-  test $fmt = gzip && continue
-  if $flip; then
-    echo "  dist-$fmt" >> am-init.m4
-    flip=false
-  else
-    echo "AUTOMAKE_OPTIONS += dist-$fmt" >> Makefile.am
-    flip=:
-  fi
-done
-unset flip fmt
-
-echo '])' >> am-init.m4
-
-sed 's/AM_INIT_AUTOMAKE.*/m4_include([am-init.m4])/' configure.ac > t
-mv -f t configure.ac
-
-# For debugging.
-cat Makefile.am
-cat configure.ac
-cat am-init.m4
-
-command_ok_ "$desc [aclocal]" $ACLOCAL --force
-command_ok_ "$desc [automake]" $AUTOMAKE
-command_ok_ "$desc [autoconf]" $AUTOCONF
-command_ok_ "$desc [configure]" ./configure
-
-if have_all_compressors; then
-  command_ok_ "$desc [make distcheck, real]" $MAKE distcheck
-else
-  skip_ -r "not all compressors available" "$desc [make distcheck, real]"
-fi
-
-# We fake existence of all the compressors here, so that we don't have
-# to require any of them to run the further tests.  This is especially
-# important since it's very unlikely that a non-developer has all the
-# compression tools installed on his machine at the same time.
-
-mkdir bin
-cd bin
-cat > check-distdir <<END
-#!/bin/sh
-{ ls -l '$tarname' && diff Makefile.am '$tarname'/Makefile.am; } >&2 \
-  || { echo "== distdir fail =="; exit 1; }
-END
-cat > grep-distdir-error <<'END'
-#!/bin/sh
-grep 'distdir fail' && exit 1
-:
-END
-chmod a+x check-distdir grep-distdir-error
-for prog in tar $all_compressors; do
-  case $prog in
-    tar|zip) cp check-distdir $prog;;
-          *) cp grep-distdir-error $prog;;
-  esac
-done
-unset prog
-ls -l # For debugging.
-cd ..
-
-oPATH=$PATH
-PATH=$(pwd)/bin$PATH_SEPARATOR$PATH; export PATH
-
-command_ok_ \
-  "$desc ['make dist-all', stubbed]" \
-  $MAKE dist-all
-
-command_ok_ "$desc ['make dist -j4', stubbed]" $MAKE -j4 dist
-
-PATH=$oPATH; export PATH
-
-end_subtest
+command_ok_ "invalid distribution formats [error report]"  eval '
+  sed -e "s/^/ /" -e "s/$/ /" stderr >stderr2 \
+    && grep "[iI]nvalid distribution format.* foobar " stderr2 \
+    && grep "[iI]nvalid distribution format.* tarZ "   stderr2 \
+    && grep "[iI]nvalid distribution format.* shar "   stderr2'
 
 :

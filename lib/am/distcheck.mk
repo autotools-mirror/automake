@@ -67,7 +67,21 @@ am.dist.create-cmd.zip = \
 am.dist.extract-cmd.zip = \
   unzip $(distdir).zip
 
-am.dist.all-targets = $(patsubst %,dist-%,$(am.dist.all-formats))
+# This is namespace-safe, so it's OK to accept values from
+# the environment.
+AM_DIST_FORMATS ?= gzip
+
+am.dist.bad-targets := \
+  $(filter-out $(am.dist.all-formats),$(AM_DIST_FORMATS))
+ifdef am.dist.bad-targets
+  $(call am.fatal,Invalid distribution formats: $(am.dist.bad-targets))
+endif
+
+am.dist.all-targets = $(patsubst %,.am/dist-%,$(am.dist.all-formats))
+am.dist.default-targets = $(patsubst %,.am/dist-%,$(AM_DIST_FORMATS))
+
+am.dist.default-archives = \
+  $(foreach x,$(AM_DIST_FORMATS),$(distdir).$(am.dist.ext.$x))
 
 define am.dist.create-archive-for-format.aux
 $(or $(am.dist.create-cmd.$1), \
@@ -90,28 +104,16 @@ am.dist.extract-archive-for-format = $(call $0.aux,$(strip $1))
 # commit v0.0-7569-gec58403).  So keep it.
 GZIP_ENV = --best
 
-am.dist.default-targets = \
-  $(foreach x,$(am.dist.formats),dist-$x)
-am.dist.default-archives = \
-  $(foreach x,$(am.dist.formats),$(distdir).$(am.dist.ext.$x))
-
 .PHONY: $(am.dist.all-targets)
-$(am.dist.all-targets): dist-%: distdir
+$(am.dist.all-targets): .am/dist-%: distdir
 	$(call am.dist.create-archive-for-format,$*)
-	$(am.dist.post-remove-distdir)
-
-
-# -------------------------------------------------- #
-#  Building all the requested distribution flavors.  #
-# -------------------------------------------------- #
 
 ifdef SUBDIRS
 AM_RECURSIVE_TARGETS += dist dist-all
 endif
 
 .PHONY: dist dist-all
-dist dist-all:
-	$(MAKE) $(am.dist.default-targets) am.dist.post-remove-distdir='@:'
+dist dist-all: $(am.dist.default-targets)
 	$(am.dist.post-remove-distdir)
 
 
@@ -129,7 +131,7 @@ endif
 .PHONY: distcheck
 distcheck: dist
 	$(call am.dist.extract-archive-for-format, \
-	  $(firstword $(am.dist.formats)))
+	  $(firstword $(AM_DIST_FORMATS)))
 ## Make the new source tree read-only.  Distributions ought to work in
 ## this case.  However, make the top-level directory writable so we
 ## can make our new subdirs.

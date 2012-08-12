@@ -270,15 +270,10 @@ sub _is_valid_easy_option ($)
     check-news
     color-tests
     dejagnu
-    dist-bzip2
-    dist-lzip
-    dist-xz
-    dist-zip
     ng
     no-define
     no-dependencies
     no-dist
-    no-dist-gzip
     no-exeext
     no-installinfo
     no-installman
@@ -318,20 +313,11 @@ sub _process_option_list (\%@)
         {
           error $where, "support for Cygnus-style trees has been removed";
         }
-      elsif ($_ eq 'dist-lzma')
+      elsif (/^(?:no-)?dist-.*/)
         {
-          error ($where, "support for lzma-compressed distribution " .
-                         "archives has been removed");
-        }
-      elsif ($_ eq 'dist-tarZ')
-        {
-          error ($where, "distribution archives compressed with legacy " .
-                         "'compress' program are no more supported");
-        }
-      elsif ($_ eq 'dist-shar')
-        {
-          error ($where, "support for shar distribution archives has " .
-                         "been removed");
+          error ($where,
+                 "'$_' option and the like are no more supported;\n" .
+                 "use AM_DIST_FORMATS in top-level Makefile.am instead");
         }
       elsif (/^filename-length-max=(\d+)$/)
         {

@@ -3930,7 +3930,7 @@ By default this macro @code{AC_DEFINE}'s @code{PACKAGE} and
 @code{VERSION}.  This can be avoided by passing the @option{no-define}
 option:
 @example
-AM_INIT_AUTOMAKE([gnits 1.5 no-define dist-bzip2])
+AM_INIT_AUTOMAKE([gnits 1.11.6 no-define parallel-tests])
 @end example
 
 @item AM_PATH_LISPDIR
@@ -8271,9 +8271,6 @@ distribution.  The file is named based on the @code{PACKAGE} and
 @code{VERSION} variables defined by @code{AM_INIT_AUTOMAKE}
 (@pxref{Macros}); more precisely the gzipped @code{tar} file is named
 @samp{@var{package}-@var{version}.tar.gz}.
-@vindex GZIP_ENV
-You can use the @command{make} variable @code{GZIP_ENV} to control how gzip
-is run.  The default setting is @option{--best}.
 
 @cindex @code{m4_include}, distribution
 @cindex @code{include}, distribution
@@ -8547,48 +8544,73 @@ distuninstallcheck:
 @node The Types of Distributions
 @section The Types of Distributions
 
-Automake generates rules to provide archives of the project for
-distributions in various formats.  Their targets are:
+Automake-generated @code{dist} rule can generated distributions in
+various formats, depending on the content of the @code{AM_DIST_FORMATS}
+variable; this is overridable at runtime, defaults to @code{gzip}, and
+can contain several formats at once, to produce several kind of archives
+in one go.  The recognized formats are:
 
 @table @asis
+@vindex GZIP_ENV
+@item @code{gzip}
+Usual compression with GNU @command{gzip}.  Not very size-efficient
+these days, but very portable and fast.  You can use the @command{make}
+variable @code{GZIP_ENV} to control which options @code{make dist}
+passes to @code{gzip} (the default setting being @option{--best}).
+For example:
+@smallexample
+make dist GZIP_ENV=--fast
+@end smallexample
+@cindex gzip compression
+@cindex Compression, gzip format
+
 @vindex BZIP2
-@item @code{dist-bzip2}
-Generate a bzip2 tar archive of the distribution.  bzip2 archives are
-frequently smaller than gzipped archives.
-By default, this rule makes @samp{bzip2} use a compression option of @option{-9}.
-To make it use a different one, set the @env{BZIP2} environment variable.
-For example, @samp{make dist-bzip2 BZIP2=-7}.
-@trindex dist-bzip2
+@item @code{bzip2}
+Archives compressed with @command{bzip2} are frequently smaller than
+gzipped archives (albeit becoming more and more obsolescent today,
+superseded by more advanced formats like @code{xz}).  You can use
+the environment variable @code{BZIP2} to control which options
+@code{make dist} passes to @code{gzip} (the default setting being
+@option{-9}).  For example:
+@smallexample
+make dist AM_DIST_FORMATS=bzip2 BZIP2=-7
+@end smallexample
+@cindex bzip2 compression
+@cindex Compression, bzip2 format
 
-@item @code{dist-gzip}
-Generate a gzip tar archive of the distribution.
-@trindex dist-gzip
-
-@item @code{dist-lzip}
+@vindex LZIP_OPT
+@item @code{lzip}
 Generate an @samp{lzip} tar archive of the distribution.  @command{lzip}
 archives are frequently smaller than @command{bzip2}-compressed archives.
-@trindex dist-lzip
+You can use the environment variable @code{LZIP_OPT} to control which
+options @code{make dist} passes to @code{gzip} (the default setting
+being @option{-9}).  For example:
+@smallexample
+make dist AM_DIST_FORMATS=lzip LZIP_OPT=--fast
+@end smallexample
+@cindex lzip compression
+@cindex Compression, lzip format
 
 @vindex XZ_OPT
-@item @code{dist-xz}
+@item @code{xz}
 Generate an @samp{xz} tar archive of the distribution.  @command{xz}
 archives are frequently smaller than @command{bzip2}-compressed archives.
 By default, this rule makes @samp{xz} use a compression option of
 @option{-e}.  To make it use a different one, set the @env{XZ_OPT}
 environment variable.  For example, run this command to use the
 default compression ratio, but with a progress indicator:
-@samp{make dist-xz XZ_OPT=-7e}.
-@trindex dist-xz
+@smallexample
+make dist AM_DIST_FORMATS=xz XZ_OPT=-7e
+@end smallexample
+@cindex xz compression
+@cindex Compression, xz format
 
-@item @code{dist-zip}
+@item @code{zip}
 Generate a zip archive of the distribution.
-@trindex dist-zip
+@cindex zip compression
+@cindex Compression, zip format
 
 @end table
-
-The rule @code{dist} (and its historical synonym @code{dist-all}) will
-create archives in all the enabled formats, @ref{Options}.  By
-default, only the @code{dist-gzip} target is hooked to @code{dist}.
 
 
 @node Tests
@@ -9909,24 +9931,6 @@ in the first few lines of the @file{NEWS} file.
 @opindex dejagnu
 Cause @command{dejagnu}-specific rules to be generated.  @xref{DejaGnu Tests}.
 
-@item @option{dist-bzip2}
-@cindex Option, @option{dist-bzip2}
-@opindex dist-bzip2
-Hook @code{dist-bzip2} to @code{dist}.
-@trindex dist-bzip2
-
-@item @option{dist-lzip}
-@cindex Option, @option{dist-lzip}
-@opindex dist-lzip
-Hook @code{dist-lzip} to @code{dist}.
-@trindex dist-lzip
-
-@item @option{dist-zip}
-@cindex Option, @option{dist-zip}
-@opindex dist-zip
-Hook @code{dist-zip} to @code{dist}.
-@trindex dist-zip
-
 @item @option{filename-length-max=99}
 @cindex Option, @option{filename-length-max=99}
 @opindex filename-length-max=99
@@ -9968,12 +9972,6 @@ disable automatic dependency tracking.
 @opindex no-dist
 Don't emit any code related to @code{dist} target.  This is useful
 when a package has its own method for making distributions.
-
-@item @option{no-dist-gzip}
-@cindex Option, @option{no-dist-gzip}
-@opindex no-dist-gzip
-Do not hook @code{dist-gzip} to @code{dist}.
-@trindex no-dist-gzip
 
 @item @option{no-exeext}
 @cindex Option, @option{no-exeext}
@@ -10089,10 +10087,7 @@ AM_INSTALLCHECK_STD_OPTIONS_EXEMPT = false$(EXEEXT) true.sh
 @opindex tar-pax
 
 These three mutually exclusive options select the tar format to use
-when generating tarballs with @samp{make dist}.  (The tar file created
-is then compressed according to the set of @option{no-dist-gzip},
-@option{dist-bzip2}, @option{dist-lzip}, @option{dist-xz} and
-@option{dist-zip} options in use.)
+when generating tarballs with @samp{make dist}.
 
 These options must be passed as arguments to @code{AM_INIT_AUTOMAKE}
 (@pxref{Macros}) because they can require additional configure checks.

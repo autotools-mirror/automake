@@ -46,6 +46,8 @@ set +e
 unset MFLAGS MAKEFLAGS MAKELEVEL
 # Unset verbosity flag.
 unset V
+# Distribution formats.
+unset AM_DIST_FORMATS
 # Also unset variables that might let "make install" divert files
 # into unwanted directories.
 unset DESTDIR
