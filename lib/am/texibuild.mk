@@ -66,12 +66,12 @@ define am.texi.build.info
 	               -I $(@D) -I $(srcdir)/$(@D) -o $@ $<; \
 	then \
 	  rc=0; \
-	  $(if $(am__info_insrc),cd $(srcdir);) \
+	  $(if $(am__info_insrc),cd $(srcdir) || exit 1;) \
 	else \
 	  rc=$$?; \
 ## Beware that backup info files might come from a subdirectory.
 	  $(if $(am__info_insrc),cd $(srcdir) &&) \
-	  $$restore $$backupdir/* $(@D); \
+	  $$restore $$backupdir/* $(@D) || exit 1; \
 	fi; \
 	rm -rf $$backupdir; exit $$rc
 endef
@@ -90,12 +90,10 @@ define am.texi.build.html
 	                    -I $(@D) -I $(srcdir)/$(@D) \
 			    -o $(@:.html=.htp) $<; \
 	then \
-	  rm -rf $@; \
-	  mv $(@:.html=.htp) $@; \
+	  rm -rf $@ && mv $(@:.html=.htp) $@; \
 	else \
 ## on failure, remove the temporary directory before exiting.
-	  rm -rf $(@:.html=.htp) $@; \
-	  exit 1; \
+	  rm -rf $(@:.html=.htp) $@; exit 1; \
 	fi
 endef
 
