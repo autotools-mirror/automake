@@ -209,7 +209,7 @@ distuninstallcheck_listfiles = find . -type f -print
 # uninstall, so we must be prepared to account for it.  The following
 # check is not 100% strict, but is definitely good enough, and even
 # accounts for overridden $(infodir).
-am__distuninstallcheck_listfiles = $(distuninstallcheck_listfiles) \
+am.dist.uninstallcheck-listfiles = $(distuninstallcheck_listfiles) \
   | sed 's|^\./|$(prefix)/|' | grep -v '$(infodir)/dir$$'
 distuninstallcheck:
 	@test -n '$(distuninstallcheck_dir)' || { \
@@ -221,7 +221,7 @@ distuninstallcheck:
 	  echo 'ERROR: cannot chdir into $(distuninstallcheck_dir)' >&2; \
 	  exit 1; \
 	}; \
-	test `$(am__distuninstallcheck_listfiles) | wc -l` -eq 0 \
+	test `$(am.dist.uninstallcheck-listfiles) | wc -l` -eq 0 \
 	   || { echo "ERROR: files left after uninstall:" ; \
 	        if test -n "$(DESTDIR)"; then \
 	          echo "  (check DESTDIR support)"; \
