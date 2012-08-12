@@ -212,24 +212,54 @@ Distribution
 
      EXTRA_DIST = $(wildcard doc/*.txt $(srcdir)/doc/*.txt)  # Better.
 
-* The make variables $(DISTFILES), $(DIST_COMMON), $(DIST_SOURCES),
-  $(DIST_TARGETS), $(DIST_ARCHIVES) had never been documented
-  in mainline Automake, and were always intended to be internal
-  variables.  But that was not clear from their names.  So we have
-  renamed rename like this:
+* The make variables $(DISTFILES), $(DIST_COMMON), $(DIST_SOURCES) and
+  $(DIST_ARCHIVES) had never been documented in mainline Automake, and
+  were always intended to be internal variables.  But that was not clear
+  from their names.  So we have renamed rename like this:
 
     DISTFILES      =>  am.dist.all-files
     DIST_COMMON    =>  am.dist.common-files
     DIST_SOURCES   =>  am.dist.sources
-    DIST_TARGETS   =>  am.dist.default-targets
     DIST_ARCHIVES  =>  am.dist.default-archives
 
   Do not use any of these variables in your Makefiles!
 
 * Support for distribution archived in the '.shar.gz' and '.tar.Z' formats
-  have been removed.  Accordingly, the targets 'dist-shar' and 'dist-tarZ'
-  are no more present in the generated Makefiles, and the use of the
-  Automake options 'dist-shar' and 'dist-tarZ' will elicit a fatal error.
+  have been removed; and with them the targets 'dist-shar' and 'dist-tarZ'.
+
+* The API to specify the formats of distribution tarballs has been changed
+  completely.
+  
+  Instead of using the various 'dist-*' automake options, the developer is
+  now expected to specify the default formats of its distribution tarballs
+  with the special variable AM_DIST_FORMATS; for example, where once would
+  have been:
+    
+      AM_INIT_AUTOMAKE([dist-bzip2 dist-zip])
+    
+  now it must be:
+    
+      AM_DIST_FORMATS = gzip bzip2 zip
+    
+  and similarly, where once would have been:
+    
+      AUTOMAKE_OPTIONS = no-dist-gzip dist-bzip2 dist-xz
+    
+  now is it simply:
+    
+      AM_DIST_FORMATS = bzip2 xz
+
+* The various 'dist-*' targets (dist-gzip, dist-xz, dist-lzip, dist-bzip2
+  and dist-gz) has been removed.  If the user wants to generate tarballs
+  for formats not specified by the default AM_DIST_FORMATS, he can simply
+  override that variable dynamically:
+
+      # Will generate a '.zip' archive and a '.tar.xz' archive, and not
+      # further ones.
+      make dist AM_DIST_FORMATS='zip xz'
+
+* The DIST_TARGETS variable has been removed (as a side-effect of the
+  previous change).
 
 
 Obsolete Features Removed

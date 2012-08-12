@@ -22,15 +22,26 @@ required=bzip2
 
 cat >configure.ac <<END
 AC_INIT([$me], [1.0])
-AM_INIT_AUTOMAKE([foreign foreign dist-bzip2 no-dist-gzip dist-bzip2])
+AM_INIT_AUTOMAKE([foreign foreign no-installman serial-tests \
+                  no-installman])
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT
 END
 
 cat > Makefile.am <<'END'
-AUTOMAKE_OPTIONS = no-dist-gzip no-dist-gzip dist-bzip2
-AUTOMAKE_OPTIONS += dist-bzip2 foreign
+AUTOMAKE_OPTIONS =  no-installman no-installman serial-tests
+AUTOMAKE_OPTIONS += serial-tests foreign
+TESTS = foo
+EXTRA_DIST = foo
+CLEANFILES = bar.out
 END
+
+cat > foo <<'END'
+#!/bin/sh
+echo RUN RUN
+: > bar.out
+END
+chmod a+x foo
 
 $ACLOCAL
 $AUTOCONF
@@ -39,9 +50,10 @@ $AUTOMAKE --foreign --foreign -Wall 2>stderr && test ! -s stderr \
 
 ./configure
 
-$MAKE
+$MAKE check
+test -f bar.out
+test ! -e foo.log
+test ! -e test-suite.log
 $MAKE distcheck
-test -f $me-1.0.tar.bz2
-test ! -e $me-1.0.tar.gz
 
 :
