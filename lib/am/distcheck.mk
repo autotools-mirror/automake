@@ -105,7 +105,7 @@ $(am.dist.all-targets): dist-%: distdir
 #  Building all the requested distribution flavors.  #
 # -------------------------------------------------- #
 
-ifdef
+ifdef SUBDIRS
 AM_RECURSIVE_TARGETS += dist dist-all
 endif
 
