@@ -14,6 +14,7 @@
 ## You should have received a copy of the GNU General Public License
 ## along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+# Files added by the automake script.
 am.dist.common-files += $(am.dist.common-files.internal)
 
 # Makefile fragments used internally by automake-generated Makefiles.
