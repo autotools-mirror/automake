@@ -61,16 +61,16 @@ define am.texi.build.info
 	    if test -f $$f; then mv $$f $$backupdir; restore=mv; else :; fi; \
 	  done; \
 	else :; fi && \
-	$(if $(am__info_insrc),cd '$(CURDIR)' &&) \
+	$(if $(am.texi.info-in-srcdir),cd '$(CURDIR)' &&) \
 	if $(MAKEINFO) $(AM_MAKEINFOFLAGS) $(MAKEINFOFLAGS) \
 	               -I $(@D) -I $(srcdir)/$(@D) -o $@ $<; \
 	then \
 	  rc=0; \
-	  $(if $(am__info_insrc),cd $(srcdir) || exit 1;) \
+	  $(if $(am.texi.info-in-srcdir),cd $(srcdir) || exit 1;) \
 	else \
 	  rc=$$?; \
 ## Beware that backup info files might come from a subdirectory.
-	  $(if $(am__info_insrc),cd $(srcdir) &&) \
+	  $(if $(am.texi.info-in-srcdir),cd $(srcdir) &&) \
 	  $$restore $$backupdir/* $(@D) || exit 1; \
 	fi; \
 	rm -rf $$backupdir; exit $$rc
@@ -98,7 +98,7 @@ define am.texi.build.html
 endef
 
 %.info: %.texi
-	$(call am.texi.build.info,$(am__info_insrc))
+	$(call am.texi.build.info,$(am.texi.info-in-srcdir))
 %.dvi: %.texi
 	$(call am.texi.build.dvi-or-pdf,$(AM_V_TEXI2DVI),$(TEXI2DVI),$(@:.dvi=.t2d))
 %.pdf: %.texi
