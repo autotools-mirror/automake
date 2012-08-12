@@ -191,7 +191,7 @@ distcheck: dist
 	  && rm -rf "$$dc_destdir" \
 	  && $(MAKE) dist \
 ## Make sure to remove the dists we created in the test build directory.
-	  && rm -rf $(am.dist.default-archives) \
+	  && rm -f $(am.dist.default-archives) \
 	  && $(MAKE) distcleancheck
 	$(am.dist.post-remove-distdir)
 	@(echo "$(distdir) archives ready for distribution: "; \
