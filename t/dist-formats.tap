@@ -61,20 +61,6 @@ have_compressor ()
     # Assume gzip(1) is available on every reasonable portability target.
     gzip)
       return 0;;
-    # On Cygwin, as of 9/2/2012, 'compress' is provided by sharutils
-    # and is just a dummy script that is not able to actually compress
-    # (it can only decompress).  So, check that the 'compress' program
-    # is actually able to compress input.
-    # Note that, at least on GNU/Linux, 'compress' does (and is
-    # documented to) exit with status 2 if the output is larger than
-    # the input after (attempted) compression; so we need to pass it
-    # an input that it can actually reduce in size when compressing.
-    compress)
-      for x in 1 2 3 4 5 6 7 8; do
-        echo aaaaaaaaaaaaaaaaaaaaa
-      done | compress -c >/dev/null && return 0
-      return 1
-      ;;
     *)
       case $1 in
         # Do not use --version, or older versions bzip2 would try to
@@ -353,7 +339,7 @@ else
   ls -l # For debugging.
   command_ok_ "$desc [check .tar.gz tarball]"  check_tarball gzip
   command_ok_ "$desc [check .tar.bz2 tarball]" check_tarball bzip2
-  command_ok_ "$desc [check .tar.Z tarball]"   check_tarball xz
+  command_ok_ "$desc [check .tar.xz tarball]"  check_tarball xz
 fi
 
 unset tarname desc skip_reason
@@ -428,8 +414,8 @@ END
 chmod a+x check-distdir grep-distdir-error
 for prog in tar $all_compressors; do
   case $prog in
-    tar|shar|zip) cp check-distdir $prog;;
-               *) cp grep-distdir-error $prog;;
+    tar|zip) cp check-distdir $prog;;
+          *) cp grep-distdir-error $prog;;
   esac
 done
 unset prog
