@@ -20,7 +20,7 @@ DVIPS = dvips
 MAKEINFOHTML = $(MAKEINFO) --html
 AM_MAKEINFOHTMLFLAGS ?= $(AM_MAKEINFOFLAGS)
 
-define am__texibuild_dvi_or_pdf
+define am.texi.build.dvi-or-pdf
 	$1$(am.cmd.ensure-target-dir-exists) && \
 	TEXINPUTS="$(am__TEXINFO_TEX_DIR)$(PATH_SEPARATOR)$$TEXINPUTS" \
 ## Must set MAKEINFO like this so that version.texi will be found even
@@ -106,9 +106,9 @@ endef
 %.info: %.texi
 	$(call am__texibuild_info,$(am__info_insrc))
 %.dvi: %.texi
-	$(call am__texibuild_dvi_or_pdf,$(AM_V_TEXI2DVI),$(TEXI2DVI),$(@:.dvi=.t2d))
+	$(call am.texi.build.dvi-or-pdf,$(AM_V_TEXI2DVI),$(TEXI2DVI),$(@:.dvi=.t2d))
 %.pdf: %.texi
-	$(call am__texibuild_dvi_or_pdf,$(AM_V_TEXI2PDF),$(TEXI2PDF),$(@:.pdf=.t2p))
+	$(call am.texi.build.dvi-or-pdf,$(AM_V_TEXI2PDF),$(TEXI2PDF),$(@:.pdf=.t2p))
 %.html: %.texi
 	$(call am__texibuild_html)
 
