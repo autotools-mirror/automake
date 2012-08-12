@@ -52,7 +52,7 @@ define am.texi.build.info
 ##    to fail, the info files are not removed.  (They are needed by the
 ##    developer while he writes documentation.)
 	$(AM_V_MAKEINFO)restore=: && backupdir=.am$$$$ && \
-	$(if $1,am__cwd=`pwd` && cd $(srcdir) &&) \
+	$(if $1,cd $(srcdir) &&) \
 	rm -rf $$backupdir && mkdir $$backupdir && \
 ## If makeinfo is not installed we must not backup the files so
 ## 'missing' can do its job and touch $@ if it exists.
@@ -61,7 +61,7 @@ define am.texi.build.info
 	    if test -f $$f; then mv $$f $$backupdir; restore=mv; else :; fi; \
 	  done; \
 	else :; fi && \
-	$(if $(am__info_insrc),cd "$$am__cwd" &&) \
+	$(if $(am__info_insrc),cd '$(CURDIR)' &&) \
 	if $(MAKEINFO) $(AM_MAKEINFOFLAGS) $(MAKEINFOFLAGS) \
 	               -I $(@D) -I $(srcdir)/$(@D) -o $@ $<; \
 	then \
