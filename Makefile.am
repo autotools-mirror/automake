@@ -185,7 +185,6 @@ EXTRA_DIST += lib/Automake/Config.in
 
 dist_am_DATA = \
   lib/am/am-dir.mk \
-  lib/am/texibuild.mk \
   lib/am/common-targets.mk \
   lib/am/color-tests.mk \
   lib/am/serial-tests.mk \
@@ -198,6 +197,8 @@ dist_am_DATA = \
   lib/am/distcheck.mk \
   lib/am/distdir.mk \
   lib/am/subdirs.mk \
+  lib/am/texibuild.mk \
+  lib/am/texinfos.mk \
   lib/am/compile.am \
   lib/am/configure.am \
   lib/am/data.am \
@@ -221,7 +222,6 @@ dist_am_DATA = \
   lib/am/scripts.am \
   lib/am/texi-vers.am \
   lib/am/texi-spec.am \
-  lib/am/texinfos.am \
   lib/am/vala.am \
   lib/am/yacc.am
 

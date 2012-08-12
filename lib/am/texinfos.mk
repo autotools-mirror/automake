@@ -18,13 +18,17 @@
 # FIXME: this should probably be generalized and moved to header-vars.mk
 am.texi.create-installdir = $(if $(and $1,$^),$(MKDIR_P) '$(DESTDIR)$1',@:)
 
+# Avoid interferences from the environment.
+ifeq ($(call am.vars.is-undef,info_TEXINFOS),yes)
+  info_TEXINFOS :=
+endif
 
 ## ---------- ##
 ## Building.  ##
 ## ---------- ##
 
 .PHONY: dvi dvi-am html html-am info info-am pdf pdf-am ps ps-am
-if %?SUBDIRS%
+ifdef SUBDIRS
 RECURSIVE_TARGETS += dvi-recursive html-recursive info-recursive
 RECURSIVE_TARGETS += pdf-recursive ps-recursive
 dvi: dvi-recursive
@@ -32,27 +36,27 @@ html: html-recursive
 info: info-recursive
 pdf: pdf-recursive
 ps: ps-recursive
-else !%?SUBDIRS%
+else
 dvi: dvi-am
 html: html-am
 info: info-am
 pdf: pdf-am
 ps: ps-am
-endif !%?SUBDIRS%
+endif
 
-if %?LOCAL-TEXIS%
+ifdef info_TEXINFOS
 dvi-am: $(DVIS)
 html-am: $(HTMLS)
 info-am: $(INFO_DEPS)
 pdf-am: $(PDFS)
 ps-am: $(PSS)
-else ! %?LOCAL-TEXIS%
+else
 dvi-am:
 html-am:
 info-am:
 pdf-am:
 ps-am:
-endif ! %?LOCAL-TEXIS%
+endif
 
 
 ## ------------ ##
@@ -78,12 +82,12 @@ am.texi.can-run-installinfo = \
 ##
 ## TEXINFOS primary are always installed in infodir, hence install-data
 ## is hard coded.
-if %?INSTALL-INFO%
-if %?LOCAL-TEXIS%
+ifndef am.conf.install-info
+ifdef info_TEXINFOS
 am__installdirs += "$(DESTDIR)$(infodir)"
 install-data-am: install-info-am
-endif %?LOCAL-TEXIS%
-endif %?INSTALL-INFO%
+endif
+endif
 .PHONY: \
   install-dvi  install-dvi-am \
   install-html install-html-am \
@@ -91,7 +95,7 @@ endif %?INSTALL-INFO%
   install-pdf  install-pdf-am \
   install-ps   install-ps-am
 
-if %?SUBDIRS%
+ifdef SUBDIRS
 RECURSIVE_TARGETS += \
   install-dvi-recursive \
   install-html-recursive \
@@ -103,15 +107,15 @@ install-html: install-html-recursive
 install-info: install-info-recursive
 install-pdf: install-pdf-recursive
 install-ps: install-ps-recursive
-else !%?SUBDIRS%
+else
 install-dvi: install-dvi-am
 install-html: install-html-am
 install-info: install-info-am
 install-pdf: install-pdf-am
 install-ps: install-ps-am
-endif !%?SUBDIRS%
+endif
 
-if %?LOCAL-TEXIS%
+ifdef info_TEXINFOS
 
 # In GNU make, '$^' used in a recipe contains every dependency for the
 # target, even those not declared when the recipe is read; for example,
@@ -208,20 +212,21 @@ install-html-am: .am/install-html
 	  $(INSTALL_DATA) $$files "$(DESTDIR)$(psdir)" || exit $$?; \
 	done
 
-else ! %?LOCAL-TEXIS%
+else # !info_TEXINFOS
 install-dvi-am:
 install-html-am:
 install-info-am:
 install-pdf-am:
 install-ps-am:
-endif ! %?LOCAL-TEXIS%
+endif # !info_TEXINFOS
 
 
-## -------------- ##
-## Uninstalling.  ##
-## -------------- ##
+## --------------------------- ##
+## Uninstalling and cleaning.  ##
+## --------------------------- ##
 
-if %?LOCAL-TEXIS%
+ifdef info_TEXINFOS
+
 .PHONY uninstall-am: \
   uninstall-dvi-am \
   uninstall-html-am \
@@ -265,20 +270,12 @@ uninstall-info-am:
 	$(call am.uninst.cmd,$(infodir),\
 	  $(foreach i,$(notdir $(INFO_DEPS)),$i $i-[0-9] $i-[0-9][0-9]))
 
-endif %?LOCAL-TEXIS%
 
-if %?LOCAL-TEXIS%
 .PHONY: dist-info
 dist-info: $(INFO_DEPS)
 	@$(foreach f,$(foreach x,$^,$(wildcard $x $x-[0-9] $x-[0-9][0-9])), \
 	  cp -p $f $(distdir)/$(patsubst $(srcdir)/%,%,$f);)
-endif %?LOCAL-TEXIS%
 
-
-## ---------- ##
-## Cleaning.  ##
-## ---------- ##
-
-if %?LOCAL-TEXIS%
 am.clean.maint.f += $(foreach f,$(INFO_DEPS),$f $f-[0-9] $f-[0-9][0-9])
-endif %?LOCAL-TEXIS%
+
+endif # !info_TEXINFOS

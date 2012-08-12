@@ -146,6 +146,16 @@ test ! -e share/$me/html/main.html
 test ! -e share/$me/html/main2.html
 test ! -e share/$me/html/main3.html
 
+$MAKE dvi
+test -f main.dvi
+test -f sub/main2.dvi
+test -f rec/main3.dvi
+
+$MAKE clean
+test ! -e main.dvi
+test ! -e sub/main2.dvi
+test ! -e rec/main3.dvi
+
 $MAKE install-dvi
 test -f share/$me/dvi/main.dvi
 test -f share/$me/dvi/main2.dvi

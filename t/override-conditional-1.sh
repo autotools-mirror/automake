@@ -24,10 +24,11 @@ AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
+man1_MANS = foo.1
 foobar:
 	: > $@
 if COND
-ps: foobar
+install-man: foobar
 	:
 endif
 END
@@ -35,20 +36,25 @@ END
 $ACLOCAL
 $AUTOMAKE -Wno-override
 
-# "ps:" should be output in two conditions
-grep 'ps:' Makefile.in # For debugging.
-test $(grep -c '@ps:' Makefile.in) -eq 2
-grep '@COND_TRUE@ps: *foobar' Makefile.in
-grep '@COND_FALSE@ps: *ps-am' Makefile.in
+# "install-man:" should be output in two conditions
+grep 'install-man' Makefile.in # For debugging.
+test $(grep -c '@install-man:' Makefile.in) -eq 2
+grep '@COND_TRUE@install-man: *foobar' Makefile.in
+grep '@COND_FALSE@install-man:' Makefile.in
 
 $AUTOCONF
+: > foo.1
 
-./configure cond=no
-$MAKE ps
+./configure cond=no --prefix="$(pwd)/inst"
+$MAKE install-man
+test -d inst
 test ! -e foobar
 
-./configure cond=yes
-$MAKE ps
+rm -rf inst
+
+./configure cond=yes --prefix="$(pwd)/inst"
+$MAKE install-man
+test ! -e inst
 test -f foobar
 
 :
