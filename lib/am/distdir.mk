@@ -77,7 +77,7 @@ am.dist.parent-dirs = \
     $(filter-out ., $(patsubst ./%,%,$(dir $(am.dist.files-cooked)))))))
 
 # These two variables are used in the 'distdir' rule below to avoid
-# potetial problems with overly long command lines (the infamous
+# potential problems with overly long command lines (the infamous
 # "Argument list too long" error).
 am.dist.xmkdir = \
   @$(MKDIR_P) $(patsubst %,"$(distdir)"/%,$1)$(am.chars.newline)
@@ -96,7 +96,7 @@ endif
 # rules (this is also documented in the Automake manual).
 top_distdir = $(distdir)
 
-# A failed "make distcheck" might leace some parts of the $(distdir)
+# A failed "make distcheck" might leave some parts of the $(distdir)
 # readonly, so we need these hoops to ensure it is removed correctly.
 # On MSYS (1.0.17, at least) it is not possible to remove a directory
 # that is in use; so, if the first rm fails, we sleep some seconds and
