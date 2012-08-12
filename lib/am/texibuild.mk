@@ -42,7 +42,7 @@ define am.texi.build.dvi-or-pdf
 endef
 
 define am.texi.build.info
-	$(if $1,,@$(am.cmd.ensure-target-dir-exists))
+	$(if $1,,$(AM_V_at)$(am.cmd.ensure-target-dir-exists))
 ## Back up the info files before running makeinfo. This is the cheapest
 ## way to ensure that
 ## 1) If the texinfo file shrinks (or if you start using --no-split),
