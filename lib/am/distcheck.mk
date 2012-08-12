@@ -90,8 +90,10 @@ am.dist.extract-archive-for-format = $(call $0.aux,$(strip $1))
 # commit v0.0-7569-gec58403).  So keep it.
 GZIP_ENV = --best
 
-DIST_TARGETS  = $(foreach x,$(am.dist.formats),dist-$x)
-DIST_ARCHIVES = $(foreach x,$(am.dist.formats),$(distdir).$(am.dist.ext.$x))
+am.dist.default-targets = \
+  $(foreach x,$(am.dist.formats),dist-$x)
+am.dist.default-archives = \
+  $(foreach x,$(am.dist.formats),$(distdir).$(am.dist.ext.$x))
 
 .PHONY: $(am.dist.all-targets)
 $(am.dist.all-targets): dist-%: distdir
@@ -109,7 +111,7 @@ endif
 
 .PHONY: dist dist-all
 dist dist-all:
-	$(MAKE) $(DIST_TARGETS) am.dist.post-remove-distdir='@:'
+	$(MAKE) $(am.dist.default-targets) am.dist.post-remove-distdir='@:'
 	$(am.dist.post-remove-distdir)
 
 
@@ -189,12 +191,13 @@ distcheck: dist
 	  && rm -rf "$$dc_destdir" \
 	  && $(MAKE) dist \
 ## Make sure to remove the dists we created in the test build directory.
-	  && rm -rf $(DIST_ARCHIVES) \
+	  && rm -rf $(am.dist.default-archives) \
 	  && $(MAKE) distcleancheck
 	$(am.dist.post-remove-distdir)
 	@(echo "$(distdir) archives ready for distribution: "; \
-	  list='$(DIST_ARCHIVES)'; for i in $$list; do echo $$i; done) | \
-	  sed -e 1h -e 1s/./=/g -e 1p -e 1x -e '$$p' -e '$$x'
+	  list='$(am.dist.default-archives)'; \
+	  for i in $$list; do echo $$i; done; \
+	 ) | sed -e 1h -e 1s/./=/g -e 1p -e 1x -e '$$p' -e '$$x'
 
 # Define distuninstallcheck_listfiles and distuninstallcheck separately
 # from distcheck, so that they can be overridden by the user.
