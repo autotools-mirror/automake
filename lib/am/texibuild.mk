@@ -91,13 +91,9 @@ define am.texi.build.html
 			    -o $(@:.html=.htp) $<; \
 	then \
 	  rm -rf $@; \
-## Work around a bug in Texinfo 4.1 (-o foo.html outputs files in foo/
-## instead of foo.html/).
-	  if test ! -d $(@:.html=.htp) && test -d $(@:.html=); then \
-	    mv $(@:.html=) $@; else mv $(@:.html=.htp) $@; fi; \
+	  mv $(@:.html=.htp) $@; \
 	else \
-	  if test ! -d $(@:.html=.htp) && test -d $(@:.html=); then \
-	    rm -rf $(@:.html=); else rm -Rf $(@:.html=.htp) $@; fi; \
+	  rm -rf $(@:.html=.htp) $@; \
 	  exit 1; \
 	fi
 endef
