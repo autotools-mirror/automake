@@ -77,7 +77,7 @@ define am__texibuild_info
 	rm -rf $$backupdir; exit $$rc
 endef
 
-define am__texibuild_html
+define am.texi.build.html
 	$(AM_V_MAKEINFO)$(am.cmd.ensure-target-dir-exists) \
 ## When --split (the default) is used, makeinfo will output a
 ## directory.  However it will not update the time stamp of a
@@ -110,7 +110,7 @@ endef
 %.pdf: %.texi
 	$(call am.texi.build.dvi-or-pdf,$(AM_V_TEXI2PDF),$(TEXI2PDF),$(@:.pdf=.t2p))
 %.html: %.texi
-	$(call am__texibuild_html)
+	$(call am.texi.build.html)
 
 ## The way to make PostScript, for those who want it.
 %.ps: %.dvi
