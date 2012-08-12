@@ -42,7 +42,7 @@ define am.texi.build.dvi-or-pdf
 	   -o $@ $< $(AM_V_TEXI_DEVNULL_REDIRECT)
 endef
 
-define am__texibuild_info
+define am.texi.build.info
 	$(if $1,,@$(am.cmd.ensure-target-dir-exists))
 ## Back up the info files before running makeinfo. This is the cheapest
 ## way to ensure that
@@ -104,7 +104,7 @@ define am.texi.build.html
 endef
 
 %.info: %.texi
-	$(call am__texibuild_info,$(am__info_insrc))
+	$(call am.texi.build.info,$(am__info_insrc))
 %.dvi: %.texi
 	$(call am.texi.build.dvi-or-pdf,$(AM_V_TEXI2DVI),$(TEXI2DVI),$(@:.dvi=.t2d))
 %.pdf: %.texi
