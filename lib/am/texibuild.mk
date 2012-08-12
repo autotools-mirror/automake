@@ -27,7 +27,6 @@ define am.texi.build.dvi-or-pdf
 ## if it is in srcdir.
 	MAKEINFO='$(MAKEINFO) $(AM_MAKEINFOFLAGS) $(MAKEINFOFLAGS) \
 	                      -I $(@D) -I $(srcdir)/$(@D)' \
-
 ## texi2dvi and  texi2pdf don't silence everything with -q, redirect
 ## to /dev/null instead.  We still want -q ($(AM_V_TEXI_QUIETOPTS))
 ## because it turns on batch mode.
