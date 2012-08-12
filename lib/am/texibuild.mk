@@ -93,6 +93,7 @@ define am.texi.build.html
 	  rm -rf $@; \
 	  mv $(@:.html=.htp) $@; \
 	else \
+## on failure, remove the temporary directory before exiting.
 	  rm -rf $(@:.html=.htp) $@; \
 	  exit 1; \
 	fi
