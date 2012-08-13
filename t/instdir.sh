@@ -16,7 +16,7 @@
 
 # If $(foodir) is the empty string, then nothing should be installed there.
 # This test only ensures this if $(foo_PRIMARY) is also empty, see
-# instdir2.test and siblings instdir-*.test for nonempty contents.
+# 'instdir2.sh' and siblings 'instdir-*.sh' for nonempty contents.
 
 . ./defs || exit 1
 

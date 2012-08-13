@@ -14,25 +14,47 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Test ACTION-IF-TRUE in AM_PATH_PYTHON.
-# Similar to python8.test, but requiring a version.
+# Test detection of too old Python, also forcing the python to use.
+# See also related test 't/python-am-path-missing.sh'.
 
+am_create_testdir=empty
 required=python
 . ./defs || exit 1
 
-cat >>configure.ac <<'EOF'
-# $PYTHON is supposed to be properly set in ACTION-IF-TRUE.
-AM_PATH_PYTHON([0.0], [$PYTHON -c 'print("%u:%u" % (1-1, 2**0))' > py.out])
-AC_OUTPUT
-EOF
+py_too_old ()
+{
+  ./configure ${1+"PYTHON=$1"} >stdout 2>stderr && {
+    cat stdout
+    cat stderr >&2
+    exit 1
+  }
+  cat stdout
+  cat stderr >&2
+  grep "whether $1 version is >= 9999\\.9\\.\\.\\. no *$" stdout
+  grep '[Pp]ython interpreter is too old' stderr
+}
 
-: > Makefile.am
+PYTHON=; unset PYTHON
+
+cat > configure.ac <<END
+AC_INIT([$me], [1.0])
+# Hopefully the Python team will never release such a version.
+AM_PATH_PYTHON([9999.9])
+END
 
 $ACLOCAL
 $AUTOCONF
-$AUTOMAKE --add-missing
 
-./configure
-test x"$(cat py.out)" = x0:1
+py_too_old python
+
+mkdir bin
+cat > bin/my-python << 'END'
+#! /bin/sh
+exec python ${1+"$@"}
+END
+chmod a+x bin/my-python
+PATH=$(pwd)/bin$PATH_SEPARATOR$PATH
+
+py_too_old my-python
 
 :

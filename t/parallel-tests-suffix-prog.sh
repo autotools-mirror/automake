@@ -16,7 +16,7 @@
 
 # Check parallel-tests features:
 # - suffix rules, with PROGRAMS involved
-# See also sister test 'parallel-tests-suffix.test'.
+# See also sister test 'parallel-tests-suffix.sh'.
 
 required='cc native'
 . ./defs || exit 1

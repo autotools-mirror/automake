@@ -18,7 +18,7 @@
 # Yacc sources are cleaned by "make clean", while C++ source and
 # header files derived from distributed Yacc sources are cleaned by
 # "make maintainer-clean".
-# See also sister test 'yacc-clean.test'.
+# See also sister test 'yacc-clean.sh'.
 
 required='c++ yacc'
 . ./defs || exit 1

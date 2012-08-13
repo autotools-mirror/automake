@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Make sure AC_LIBOBJ and friends work.
-# Please keep this in sync with sister test 'libobj16a.test'.
+# Please keep this in sync with sister test 'libobj16a.sh'.
 
 required=cc
 . ./defs || exit 1

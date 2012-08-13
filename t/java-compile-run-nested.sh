@@ -20,9 +20,9 @@
 # This test uses a typical "nested" source tree setup (i.e., different
 # components/aspects are separated into different subdirectories), and
 # uses the parallel testsuite driver.
-# The sister test 'java-compile-run-flat.test' do similar checks with a
-# "flat" setup (i.e., everything in the top-level directory), and forcing
-# the use of the older 'serial-tests' driver.
+# The sister test 'java-compile-run-flat.sh' do similar checks with
+# a "flat" setup (i.e., everything in the top-level directory), and
+# forcing the use of the older 'serial-tests' driver.
 
 required='java javac'
 . ./defs || exit 1

@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Test the 'recheck' target for TAP test protocol.
-# Keep in sync with 'test-driver-custom-multitest-recheck.test'.
+# Keep in sync with 'test-driver-custom-multitest-recheck.sh'.
 
 . ./defs || exit 1
 

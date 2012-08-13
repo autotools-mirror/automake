@@ -15,11 +15,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Check silent-rules mode, with gcc depmode and many languages at once.
-# This test partly overlaps with other silent*.test, but it serves as
+# This test partly overlaps with other 'silent*.sh', but it serves as
 # a stress test by using many different languages at once -- so don't
 # remove this test script.
 # This test requires the GNU compilers; keep it in sync with sister test
-# 'silent-many-generic.test', which should work with generic compilers.
+# 'silent-many-generic.sh', which should work with generic compilers.
 
 required='gcc g++ gfortran lex yacc'
 . ./defs || exit 1
@@ -204,7 +204,7 @@ $FGREP 'fo2-foo6.c' Makefile.in
 depmodes="am_cv_CC_dependencies_compiler_type=gcc \
           am_cv_CXX_dependencies_compiler_type=gcc"
 # This apparently useless "for" loop is here to simplify the syncing
-# with sister test 'silent-many-generic.test'.
+# with sister test 'silent-many-generic.sh'.
 for config_args in \
   "$depmodes"
 do

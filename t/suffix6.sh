@@ -16,8 +16,8 @@
 
 # Test to make sure Automake supports implicit rules with dot-less
 # extensions.  Also make sure that '.o' and '.obj' are handled like
-# '.$(OBJEXT)'.  See also related "semantic" tests suffix6b.test
-# and suffix6c.test.
+# '.$(OBJEXT)'.  See also related "semantic" tests 'suffix6b.sh'
+# and 'suffix6c.sh'.
 
 . ./defs || exit 1
 

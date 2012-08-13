@@ -16,7 +16,7 @@
 
 # Make sure that when two files define the same macro in the same
 # directory, the macro from the lexically greatest file is used.
-# Same as acloca11.test, but without calling MACRO2.
+# Same as acloca11.sh, but without calling MACRO2.
 
 am_create_testdir=empty
 . ./defs || exit 1

@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Test if a file can be mentioned in LTLIBOBJS and explicitly.
-# (Like libobj12.test, but for Libtool libraries.)
+# (Like libobj12.sh, but for Libtool libraries.)
 
 required='libtoolize'
 . ./defs || exit 1

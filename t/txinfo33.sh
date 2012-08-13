@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # DVIS, PDFS, PSS, HTMLS should not be cleaned upon 'mostlyclean'.
-# Similar to txinfo25.test.
+# Similar to txinfo25.sh.
 
 required='makeinfo tex texi2dvi dvips'
 . ./defs || exit 1

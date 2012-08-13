@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Check silent-rules mode for Fortran 77.
-# Keep this ins sync with the sister test silentf90.test.
+# Keep this ins sync with the sister test 'silentf90.sh'.
 
 required=fortran77
 . ./defs || exit 1

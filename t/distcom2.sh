@@ -51,7 +51,7 @@ for opt in '' --no-force; do
 
   for dir in . subdir; do
     # FIXME: the logic of this check and other similar ones in other
-    # FIXME: 'distcom*.test' files should be factored out in a common
+    # FIXME: 'distcom*.sh' files should be factored out in a common
     # FIXME: subroutine in 'defs'...
     sed -n -e "
       /^DIST_COMMON =.*\\\\$/ {

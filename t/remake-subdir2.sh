@@ -16,8 +16,8 @@
 
 # Check that remake rules works from subdirectories, even when makefiles
 # are not named "Makefile".
-# See also the other similar tests 'remake-subdir*.test', and the
-# related test 'aclocal5.test'.
+# See also the other similar tests 'remake-subdir*.sh', and the
+# related test 'aclocal5.sh'.
 
 . ./defs || exit 1
 

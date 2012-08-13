@@ -16,7 +16,7 @@
 
 # Check for bug in variable concatenation with '+=': an extra backslash
 # is erroneously retained in the final value.
-# See also sister test pluseq11b.test.
+# See also sister test 'pluseq11b.sh'.
 
 . ./defs || exit 1
 

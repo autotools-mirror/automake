@@ -16,7 +16,7 @@
 
 # Check silent-rules mode for C++.
 # This test requires the GNU C++ compiler; keep it in sync with sister
-# test 'silentcxx.test', which should work with generic compilers.
+# test 'silentcxx.sh', which should work with generic compilers.
 
 required=g++
 . ./defs || exit 1
@@ -68,7 +68,7 @@ $FGREP am_cv_CXX_dependencies_compiler_type configure
 
 # Force gcc ("fast") depmode.
 # This apparently useless "for" loop is here to simplify the syncing
-# with sister test 'silentcxx.test'.
+# with sister test 'silentcxx.sh'.
 for config_args in \
   am_cv_CXX_dependencies_compiler_type=gcc
 do

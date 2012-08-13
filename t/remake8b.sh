@@ -18,7 +18,7 @@
 # This testcase checks dependency of generated Makefile from Makefile.am,
 # configure.ac, acinclude.m4, aclocal.m4, and extra m4 files considered
 # by aclocal.
-# Keep this in sync with sister test 'remake8a.test', which performs the
+# Keep this in sync with sister test 'remake8a.sh', which performs the
 # same checks for a in-tree build.
 
 . ./defs || exit 1
@@ -45,7 +45,7 @@ $AUTOMAKE
 
 mkdir build
 cd build
-srcdir='..' # To make syncing with remake8a.test easier.
+srcdir='..' # To make syncing with remake8a.sh easier.
 
 $srcdir/configure
 

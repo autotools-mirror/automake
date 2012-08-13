@@ -16,7 +16,7 @@
 
 # Test to make sure dependencies for Lex and C/C++ does not break
 # in obvious ways.  See PR automake/6, and related semantic tests
-# 'lex-depend.test' and 'lex-depend-cxx.test'.
+# 'lex-depend.sh' and 'lex-depend-cxx.sh'.
 
 . ./defs || exit 1
 

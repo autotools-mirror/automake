@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Basic semantic checks on Yacc support (without yacc-generated headers).
-# Keep in sync with sister test 'yacc-cxx.test'.
+# Keep in sync with sister test 'yacc-cxx.sh'.
 
 required='cc yacc'
 . ./defs || exit 1

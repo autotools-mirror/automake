@@ -16,7 +16,7 @@
 
 # parallel-tests:
 #  - non-existent scripts listed in TESTS get diagnosed
-# See also related test 'test-missing2.test'.
+# See also related test 'test-missing2.sh'.
 
 . ./defs || exit 1
 

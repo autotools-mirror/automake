@@ -19,7 +19,7 @@
 # inlined, below.
 
 # FIXME: this test is a good candidate for a conversion to TAP,
-# FIXME: and could be merged with 'txinfo27.test'.
+# FIXME: and could be merged with 'txinfo27.sh'.
 
 required=makeinfo
 . ./defs || exit 1

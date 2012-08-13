@@ -18,7 +18,7 @@
 # for '.m4' files shouldn't prevent "make" from diagnosing a missing
 # required '.m4' file from a distribution tarball.
 # See discussion about automake bug#9768.
-# See also sister test 'dist-missing-included-m4.test'.
+# See also sister test 'dist-missing-included-m4.sh'.
 
 . ./defs || exit 1
 

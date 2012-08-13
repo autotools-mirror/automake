@@ -16,8 +16,8 @@
 
 # Check that $(LFLAGS) takes precedence over both $(AM_LFLAGS) and
 # $(foo_LFLAGS).
-# Please keep this in sync with the sister tests lflags.test, yflags.test
-# and yflags2.test.
+# Please keep this in sync with the sister tests lflags.sh, yflags.sh
+# and yflags2.sh.
 
 . ./defs || exit 1
 

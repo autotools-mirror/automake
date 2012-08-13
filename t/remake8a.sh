@@ -18,7 +18,7 @@
 # This testcase checks dependency of generated Makefile from Makefile.am,
 # configure.ac, acinclude.m4, aclocal.m4, and extra m4 files considered
 # by aclocal.
-# Keep this in sync with sister test 'remake8b.test', which performs the
+# Keep this in sync with sister test 'remake8b.sh', which performs the
 # same checks for a VPATH build.
 
 . ./defs || exit 1
@@ -43,7 +43,7 @@ $ACLOCAL
 $AUTOCONF
 $AUTOMAKE
 
-srcdir='.' # To make syncing with remake8b.test easier.
+srcdir='.' # To make syncing with remake8b.sh easier.
 
 $srcdir/configure
 

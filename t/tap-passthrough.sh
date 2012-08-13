@@ -18,7 +18,7 @@
 #  - all input (valid TAP lines, invalid TAP lines, non-TAP lines)
 #    are passed through in the log file
 #  - TAP errors are reported in the log file too
-# See also related test 'tap-passthrough-exit.test'.
+# See also related test 'tap-passthrough-exit.sh'.
 
 . ./defs || exit 1
 

@@ -17,7 +17,7 @@
 # Check that automake yacc support ensures that yacc-generated C
 # files use correct "#line" directives.  Try also with the
 # 'subdir-object' option enabled.
-# See also sister test 'lex-line.test'.
+# See also sister test 'lex-line.sh'.
 
 required='cc yacc'
 . ./defs || exit 1

@@ -18,8 +18,8 @@
 # AM_TESTS_FD_REDIRECT, for tests which are binary executables
 # We use some tricks to ensure that all code paths in 'lib/am/check2.am'
 # are covered, even on platforms where $(EXEEXT) would be naturally empty.
-# See also the more generic test 'check-fd-redirect.test', and
-# sister test 'parallel-tests-fd-redirect.test'.
+# See also the more generic test 'check-fd-redirect.sh', and
+# sister test 'parallel-tests-fd-redirect.sh'.
 
 required='cc native'
 . ./defs || exit 1

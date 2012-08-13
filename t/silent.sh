@@ -16,7 +16,7 @@
 
 # Check silent-rules mode, without libtool, standard depmode case.
 
-# Please keep this file in sync with silent2.test.
+# Please keep this file in sync with 'silent2.sh'.
 
 required=cc
 . ./defs || exit 1

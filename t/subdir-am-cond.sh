@@ -16,7 +16,7 @@
 
 # The for conditional SUBDIRS.
 # SUBDIRS + AM_CONDITIONAL setup from the manual.
-# Lots of lines here are duplicated in subdir-ac-subst.test.
+# Lots of lines here are duplicated in 'subdir-ac-subst.sh'.
 
 . ./defs || exit 1
 

@@ -16,7 +16,7 @@
 
 # Check silent-rules mode for C++.
 # This test should work with generic C++ compilers; keep it in sync with
-# sister test 'silentcxx-gcc.test', which requires the GNU C++ compiler
+# sister test 'silentcxx-gcc.sh', which requires the GNU C++ compiler
 # and forces the use of gcc depmode.
 
 required=c++

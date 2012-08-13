@@ -17,7 +17,7 @@
 # Test to make sure AC_CONFIG_AUX_DIR works correctly.
 # This test calls AC_CONFIG_AUX_DIR with a '.' argument, thus explicitly
 # making the top-level directory the config auxdir.
-# Keep this in sync with sister tests auxdir6.test and auxdir8.test.
+# Keep this in sync with sister tests 'auxdir6.sh' and 'auxdir8.sh'.
 
 . ./defs || exit 1
 

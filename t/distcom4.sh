@@ -16,7 +16,7 @@
 
 # Test to make sure config files are distributed, and only once.
 # This tries to distribute a file from a subdirectory, without
-# Makefile in that directory.  distcom5.test performs the same
+# Makefile in that directory.  'distcom5.sh' performs the same
 # test with a Makefile in the directory.
 
 . ./defs || exit 1

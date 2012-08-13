@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Test if a file can be mentioned in LIBOBJS and explicitly.
-# (See libobj13.test for the LTLIBRARIES check.)
+# (See libobj13.sh for the LTLIBRARIES check.)
 
 . ./defs || exit 1
 

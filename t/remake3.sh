@@ -16,7 +16,7 @@
 
 # Weak "grepping" test trying to ensure that remake rules work for files
 # in a subdirectory even when there is no Makefile for that subdirectory.
-# See also sister functional test 'remake3a.test'.
+# See also sister functional test 'remake3a.sh'.
 
 . ./defs || exit 1
 

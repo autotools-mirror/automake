@@ -16,7 +16,7 @@
 
 # Test for regressions in computation of names of .Po files for
 # automatic dependency tracking.
-# Keep this in sync with sister test 'depcomp8b.test', which checks the
+# Keep this in sync with sister test 'depcomp8b.sh', which checks the
 # same thing for libtool objects.
 
 required=cc

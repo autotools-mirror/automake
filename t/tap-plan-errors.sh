@@ -19,9 +19,9 @@
 #  - multiple test plans
 #  - missing test plan
 #  - misplaced test plan (tests run after a late plan)
-# Checks about unplanned tests are performed in 'tap-unplanned.test'
-# and 'tap-skip-whole-badcount.test'.  More checks about corner-cases
-# in TAP plans are performed in 'tap-plan-corner.test'.
+# Checks about unplanned tests are performed in 'tap-unplanned.sh'
+# and 'tap-skip-whole-badcount.sh'.  More checks about corner-cases
+# in TAP plans are performed in 'tap-plan-corner.sh'.
 
 . ./defs || exit 1
 

@@ -15,9 +15,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Checks for .c and .h files derived from non-distributed yacc sources.
-# The test 'yacc-pr204.test' does similar check with AM_MAINTAINER_MODE
+# The test 'yacc-pr204.sh' does similar check with AM_MAINTAINER_MODE
 # enabled.
-# The tests 'lex-nodist.test' and 'lex-pr204.test' does similar checks
+# The tests 'lex-nodist.sh' and 'lex-pr204.sh' does similar checks
 # for lex-generated .c files.
 
 required='cc yacc'

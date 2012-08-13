@@ -16,8 +16,8 @@
 
 # For PR 204.
 # C sources derived from nodist_ yacc sources should not be distributed.
-# See also related test 'yacc-nodist.test'.
-# The tests 'lex-nodist.test' and 'lex-pr204.test' does similar checks
+# See also related test 'yacc-nodist.sh'.
+# The tests 'lex-nodist.sh' and 'lex-pr204.sh' does similar checks
 # for lex-generated C files.
 
 required='cc yacc'

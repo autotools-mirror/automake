@@ -17,7 +17,7 @@
 # Check that vers*.texi files are automatically created and distributed
 # if @included into a texi source.  Also check that they correctly contain
 # the @values definitions they are advertised to.
-# See also the related test 'vtexi4.test', which does similar checks, but
+# See also the related test 'vtexi4.sh', which does similar checks, but
 # for version.texi only, and requires makeinfo, tex and texi2dvi.
 
 . ./defs || exit 1

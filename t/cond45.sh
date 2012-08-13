@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Check that redefinitions of AC_SUBST'ed AM_SUBST_NOTMAKE'd variables
-# are not diagnosed.  See cond24.test.
+# are not diagnosed.  See 'cond24.sh'.
 
 . ./defs || exit 1
 

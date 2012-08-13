@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Test to make sure name canonicalization happens for static libraries.
-# Keep this in sync with sister test 'canon6.test'.
+# Keep this in sync with sister test 'canon6.sh'.
 
 . ./defs || exit 1
 

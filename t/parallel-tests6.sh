@@ -17,7 +17,7 @@
 # Check parallel-tests features:
 # - empty TESTS
 # BSD make will expand '$(TESTS:=.log)' to '.log' unless overridden.
-# See parallel-tests10.test for a similar issue.
+# See 'parallel-tests10.sh' for a similar issue.
 
 . ./defs || exit 1
 cat >> configure.ac << 'END'

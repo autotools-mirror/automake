@@ -17,7 +17,7 @@
 # Check parallel-tests features:
 # - per-extension "test runners" a.k.a. "log compilers" (xxx_LOG_COMPILER
 #   and xxx_LOG_FLAGS), when some tests are PROGRAMS.
-# See also related test 'parallel-tests-log-compiler-1.test'.
+# See also related test 'parallel-tests-log-compiler-1.sh'.
 
 required='cc native'
 . ./defs || exit 1

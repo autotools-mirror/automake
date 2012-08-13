@@ -17,7 +17,7 @@
 # Check that .c files derived from non-distributed .l sources
 # are cleaned by "make clean", while .c files derived from
 # distributed .l sources are cleaned by "make maintainer-clean".
-# See also sister test 'lex-clean-cxx.test'.
+# See also sister test 'lex-clean-cxx.sh'.
 
 required='cc lex'
 . ./defs || exit 1

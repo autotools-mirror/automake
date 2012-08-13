@@ -15,8 +15,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Make sure nobase_* works for libtool libraries and programs as well.
-# This is just the libtool equivalent of nobase.test, split
-# up for greater exposure of nobase.test.
+# This is just the libtool equivalent of 'nobase.sh', split up to allow
+# greater exposure of that test.
 
 required='cc libtoolize'
 . ./defs || exit 1

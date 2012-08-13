@@ -15,11 +15,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Check silent-rules mode, with many languages at once.
-# This test partly overlaps with other silent*.test, but it serves as
+# This test partly overlaps with other 'silent*.sh', but it serves as
 # a stress test by using many different languages at once -- so don't
 # remove this test script.
 # This test should work with generic compilers; keep it in sync with
-# sister test 'silent-many-gcc.test', which requires the GNU compilers
+# sister test 'silent-many-gcc.sh', which requires the GNU compilers
 # and forces the use of gcc depmode.
 
 required='cc c++ fortran fortran77 lex yacc'

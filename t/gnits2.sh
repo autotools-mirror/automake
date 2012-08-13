@@ -91,7 +91,7 @@ chmod +x sub/scriptnok.sh
 : > THANKS
 
 # The following file should not be distributed.
-# (alpha.test checks the case where it must be distributed.)
+# (alpha.sh checks the case where it must be distributed.)
 : > README-alpha
 
 $ACLOCAL
