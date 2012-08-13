@@ -38,29 +38,30 @@ installcheck-local:
 	fi
 END
 
-cat > main.texi << 'END'
-\input texinfo
-@setfilename main.info
-@settitle main
-
-@c Explicit calls to @dircategory and @direntry required to ensure that
-@c a 'dir' file will be created also by older versions of 'install-info'
-@c (e.g., the one coming with Texinfo 4.8).
-
-@dircategory Software development
-@direntry
-* Automake: (automake).  Making GNU standards-compliant Makefiles
-@end direntry
-
-@dircategory Individual utilities
-@direntry
-* aclocal-invocation: (automake)aclocal Invocation.   Generating aclocal.m4
-* automake-invocation: (automake)automake Invocation. Generating Makefile.in
-@end direntry
-
-@node Top
-Hello walls.
-@bye
+# Protect with leading " # " to avoid spurious maintainer-check failures.
+sed 's/^ #//' > main.texi << 'END'
+ # \input texinfo
+ # @setfilename main.info
+ # @settitle main
+ #
+ # @c Explicit calls to @dircategory and @direntry required to ensure that
+ # @c a 'dir' file will be created also by older versions of 'install-info'
+ # @c (e.g., the one coming with Texinfo 4.8).
+ #
+ # @dircategory Software development
+ # @direntry
+ # * Automake: (automake).  Making GNU standards-compliant Makefiles
+ # @end direntry
+ #
+ # @dircategory Individual utilities
+ # @direntry
+ # * aclocal-invocation: (automake)aclocal Invocation.   Generating aclocal.m4
+ # * automake-invocation: (automake)automake Invocation. Generating Makefile.in
+ # @end direntry
+ #
+ # @node Top
+ # Hello walls.
+ # @bye
 END
 
 $ACLOCAL
