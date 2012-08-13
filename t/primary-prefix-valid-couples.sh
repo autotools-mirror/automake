@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Test for valid prefix/primary combinations.
-# See also test 'primary-prefix-invalid-couples.test'.
+# See also test 'primary-prefix-invalid-couples.sh'.
 
 . ./defs || exit 1
 

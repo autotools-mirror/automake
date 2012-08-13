@@ -35,7 +35,7 @@ grep 'check-DEJAGNU' Makefile.in && exit 1
 sed -n '/^\.PHONY:/,/^$/p' Makefile.in | $EGREP '(^| )check-TESTS($| )'
 
 # 'check' should depend directly on 'check-am' (similar tests are
-# in check2.test and check3.test).
+# in check2.sh and check3.sh).
 $EGREP '^check:.* check-am( |$)' Makefile.in
 
 :

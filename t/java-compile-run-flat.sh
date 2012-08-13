@@ -19,7 +19,7 @@
 # "UNIX-style" use case.
 # This test uses a "flat" setup for the source tree (i.e., everything in
 # the top-level directory), and forces the use of the old, non-parallel
-# testsuite driver.  The sister test 'java-compile-run-nested.test' do
+# testsuite driver.  The sister test 'java-compile-run-nested.sh' do
 # similar checks with a more usual, "nested" setup, and using the newer
 # 'parallel-tests' driver.
 

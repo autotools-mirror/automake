@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Test detection of missing Python.
-# Same as python5.test, but with the user forcing the python to use.
+# Same as 'python5.sh', but with the user forcing the python to use.
 
 required=python
 . ./defs || exit 1

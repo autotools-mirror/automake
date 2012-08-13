@@ -18,8 +18,8 @@
 # that allow multiple testcases in a single test script.  In particular,
 # check that this still works when we override $(TESTS) and $(TEST_LOGS)
 # at make runtime.
-# See also related tests 'test-driver-custom-multitest-recheck.test' and
-# 'parallel-tests-recheck-override.test'.
+# See also related tests 'test-driver-custom-multitest-recheck.sh' and
+# 'parallel-tests-recheck-override.sh'.
 
 . ./defs || exit 1
 

@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Test error reporting for AC_CONFIG_LIBOBJ_DIR.
-# See also sister tests 'libobj20b.test' and 'libobj20c.test' .
+# See also sister tests 'libobj20b.sh' and 'libobj20c.sh'.
 
 . ./defs || exit 1
 

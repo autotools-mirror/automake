@@ -16,7 +16,7 @@
 
 # Make sure proper suffix rules for C compilation are produced,
 # and only once, even for libtool libraries.
-# See also related test 'suffix.test'.
+# See also related test 'suffix.sh'.
 required=libtoolize
 
 . ./defs || exit 1

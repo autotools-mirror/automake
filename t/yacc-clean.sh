@@ -17,7 +17,7 @@
 # Check that .c and .h files derived from non-distributed .y sources
 # are cleaned by "make clean", while .c and .h files derived from
 # distributed .y sources are cleaned by "make maintainer-clean".
-# See also sister test 'yacc-cxx-clean.test'.
+# See also sister test 'yacc-cxx-clean.sh'.
 
 required='cc yacc'
 . ./defs || exit 1

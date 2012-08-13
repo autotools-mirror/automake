@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Check support for AC_CONFIG_LIBOBJ_DIR vs ALLOCA.
-# (pr401.test and pr401b.test do the same for LIBOBJS and LTLIBOBJS)
+# (pr401.sh and pr401b.sh do the same for LIBOBJS and LTLIBOBJS)
 
 required=cc
 . ./defs || exit 1

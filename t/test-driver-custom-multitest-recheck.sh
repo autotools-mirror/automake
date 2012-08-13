@@ -18,9 +18,9 @@
 # that allow multiple testcases in a single test script.  This test not
 # only checks implementation details in Automake's custom test drivers
 # support, but also serves as a "usability test" for our APIs.
-# See also related tests 'test-driver-custom-multitest-recheck2.test'
-# and 'parallel-tests-recheck-override.test'.
-# Keep in sync with 'tap-recheck.test'.
+# See also related tests 'test-driver-custom-multitest-recheck2.sh'
+# and 'parallel-tests-recheck-override.sh'.
+# Keep in sync with 'tap-recheck.sh'.
 
 . ./defs || exit 1
 

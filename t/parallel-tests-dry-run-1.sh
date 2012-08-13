@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Check parallel-tests interactions with "make -n".
-# See also sister test 'parallel-tests-dry-run-2.test'.
+# See also sister test 'parallel-tests-dry-run-2.sh'.
 
 . ./defs || exit 1
 

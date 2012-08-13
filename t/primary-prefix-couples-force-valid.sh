@@ -54,7 +54,7 @@ test:
 	test -f '$(bindir)/libquux.a'
 	ls -l '$(libexecdir)/bar.h'
 	test -f '$(libexecdir)/bar.h'
-## If this test is run as root, "test -x" could suceed also for
+## If this test is run as root, "test -x" could succeed also for
 ## non-executable files, so we need to protect the next check.
 ## See automake bug#12041.
 	if test -x Makefile; then echo SKIP THIS; else \

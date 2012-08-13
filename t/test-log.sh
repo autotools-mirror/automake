@@ -20,7 +20,7 @@
 #  - stdout and stderr of a test script go in its log file
 #  - TEST_SUITE_LOG redefinition, at either automake or make time
 #  - VERBOSE environment variable support
-# Keep in sync with 'tap-log.test'.
+# Keep in sync with 'tap-log.sh'.
 
 . ./defs || exit 1
 

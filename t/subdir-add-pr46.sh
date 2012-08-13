@@ -15,8 +15,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Test to make sure that adding a new directory works.
-# This test runs 'make' from the top-level directory, the sister test
-# 'subdir8.test' do it from a subdirectory.
+# This test runs 'make' from the top-level directory, the sister
+# test 'subdir-add2-pr46.sh' do it from a subdirectory.
 # PR automake/46
 
 . ./defs || exit 1
@@ -36,9 +36,10 @@ $MAKE
 # Now add new directories.
 
 # First we add a new directory by modifying configure.ac directly.
-# We update configure.ac *before* updating sub/Makefile.am; subdir8.test
-# does it in the other way: it updates confiles.m4 (which is m4_included
-# by configure.ac there) after Makefile.am.
+# We update configure.ac *before* updating sub/Makefile.am; the sister
+# test 'subdir-add2-pr46.sh' does it in the other way: it updates
+# confiles.m4 (which is m4_included by configure.ac there) after
+# Makefile.am.
 
 # Modified configure dependencies must be newer than config.status.
 $sleep

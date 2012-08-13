@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Test to make sure several config headers are allowed.
-# See also sister "semantic" test 'confh8.test'.
+# See also sister "semantic" test 'confh8.sh'.
 
 . ./defs || exit 1
 

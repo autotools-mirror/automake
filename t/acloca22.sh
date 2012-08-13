@@ -15,8 +15,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Make sure the "deleted header file" issue is fixed w.r.t. aclocal.m4
-# dependencies.  See also related the tests 'remake-deleted-m4-file.test'
-# and 'remake-renamed-m4-macro-and-file.test'.
+# dependencies.  See also related the tests 'remake-deleted-m4-file.sh'
+# and 'remake-renamed-m4-macro-and-file.sh'.
 
 . ./defs || exit 1
 

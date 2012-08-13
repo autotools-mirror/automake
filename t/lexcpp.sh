@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Test to make sure Lex + C++ is supported.
-# Please keep this is sync with sister test yaccpp.test.
+# Please keep this is sync with sister test 'yaccpp.sh'.
 
 . ./defs || exit 1
 

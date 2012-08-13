@@ -17,7 +17,7 @@
 # Check that C++ source files derived from non-distributed Lex sources
 # are cleaned by "make clean", while C++ source files derived from
 # distributed Lex sources are cleaned by "make maintainer-clean".
-# See also sister test 'lex-clean.test'.
+# See also sister test 'lex-clean.sh'.
 
 required='c++ lex'
 . ./defs || exit 1

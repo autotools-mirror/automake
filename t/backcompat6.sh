@@ -17,7 +17,7 @@
 # Backward-compatibility test: try to build and distribute a package
 # using obsoleted forms of AC_INIT, AM_INIT_AUTOMAKE and AC_OUTPUT.
 # This script can also serve as mild stress-testing for Automake.
-# See also the similar test 'backcompat5.test'.
+# See also the similar test 'backcompat5.sh'.
 
 required=cc
 am_create_testdir=empty

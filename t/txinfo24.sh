@@ -15,8 +15,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Check that info files are built in builddir when needed.
-# (Similar to txinfo16.test, plus CLEANFILES).
-# (See also txinfo23.test and txinfo25.test).
+# (Similar to txinfo16.sh, plus CLEANFILES).
+# (See also txinfo23.sh and txinfo25.sh).
 
 required='makeinfo tex texi2dvi-o'
 . ./defs || exit 1

@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Test ACTION-IF-TRUE in AM_PATH_PYTHON.
-# Similar to python8.test, but requiring a version.
+# Similar to 'python8.sh', but requiring a version.
 
 required=python
 . ./defs || exit 1

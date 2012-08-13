@@ -16,7 +16,7 @@
 
 # Test remake rules for m4 files included (also recursively) by
 # configure.ac.
-# Keep in sync with sister tests 'remake10b.test' and 'remake10c.test'.
+# Keep in sync with sister tests 'remake10b.sh' and 'remake10c.sh'.
 
 . ./defs || exit 1
 

@@ -16,7 +16,7 @@
 
 # Check parallel-tests features:
 # - suffix rules
-# See also sister test 'parallel-tests-suffix-prog.test'.
+# See also sister test 'parallel-tests-suffix-prog.sh'.
 
 . ./defs || exit 1
 

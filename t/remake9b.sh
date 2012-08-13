@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Test remake rules when Makefile.am or its prerequisites change.
-# Keep in sync with the other sister tests 'remake9*.test'.
+# Keep in sync with the other sister tests 'remake9*.sh'.
 
 . ./defs || exit 1
 

@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Make sure programs with only Fortran 90 source are handled properly.
-# (copied from fonly.test) Mike Nolta <mrnolta@princeton.edu>
+# (copied from 'fonly.sh') Mike Nolta <mrnolta@princeton.edu>
 
 . ./defs || exit 1
 

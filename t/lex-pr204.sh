@@ -16,8 +16,8 @@
 
 # Related to PR 204.
 # C sources derived from nodist_ lex sources should not be distributed.
-# See also related test 'lex-nodist.test'.
-# The tests 'yacc-nodist.test' and 'yacc-pr204.test' does similar checks
+# See also related test 'lex-nodist.sh'.
+# The tests 'yacc-nodist.sh' and 'yacc-pr204.sh' does similar checks
 # for yacc-generated .c and .h files.
 
 required='cc lex'
@@ -27,7 +27,7 @@ cat >> configure.ac <<'EOF'
 AM_MAINTAINER_MODE
 AC_PROG_CC
 dnl We use AC_PROG_LEX deliberately.
-dnl Sister 'lex-nodist.test' should use 'AM_PROG_LEX' instead.
+dnl Sister 'lex-nodist.sh' should use 'AM_PROG_LEX' instead.
 AC_PROG_LEX
 AC_OUTPUT
 EOF

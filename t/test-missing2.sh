@@ -17,7 +17,7 @@
 # parallel-tests:
 #  - non-existent scripts listed in TESTS get diagnosed, even when
 #    all the $(TEST_LOGS) have a dummy dependency.
-# See also related test 'test-missing.test'.
+# See also related test 'test-missing.sh'.
 
 . ./defs || exit 1
 

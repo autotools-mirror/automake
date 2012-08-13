@@ -18,7 +18,7 @@
 # This test calls AC_CONFIG_AUX_DIR with an explicit literal argument,
 # thus explicitly making the directory named by that argument the
 # config auxdir.
-# Keep this in sync with sister tests auxdir7.test and auxdir8.test.
+# Keep this in sync with sister tests 'auxdir7.sh' and 'auxdir8.sh'.
 
 . ./defs || exit 1
 

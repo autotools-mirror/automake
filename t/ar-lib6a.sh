@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Test AM_PROG_AR ordering requirements
-# Keep this test in sync with sister test 'ar-lib6b.test'.
+# Keep this test in sync with sister test 'ar-lib6b.sh'.
 
 required=libtoolize
 . ./defs || exit 1

@@ -83,7 +83,7 @@ set -x # Reset shell xtraces.
 
 # The prove(1) utility doesn't bail out on these, so our driver
 # shouldn't either.
-# See comments in 'tap-bailout-leading-space.test' for an explanation
+# See comments in 'tap-bailout-leading-space.sh' for an explanation
 # of why we don't have a whitespace-prepended "Bail out!" line here.
 cat >> all.test <<'END'
 bailout

@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Test detection of missing Python.
-# Same as python4.test, but using a custom ACTION-IF-NOT-FOUND.
+# Same as 'python4.sh', but using a custom ACTION-IF-NOT-FOUND.
 
 # Python is not required for this test.
 . ./defs || exit 1

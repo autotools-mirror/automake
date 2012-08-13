@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Test detection of missing Python.
-# Same as python6.test, but requiring a version.
+# Same as 'python6.sh', but requiring a version.
 
 # Python is not required for this test.
 . ./defs || exit 1

@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Same as lisp4.test, but using the now-recommended way to install
+# Same as 'lisp4.sh', but using the now-recommended way to install
 # non-bytecompiled *.el files.
 
 required=emacs

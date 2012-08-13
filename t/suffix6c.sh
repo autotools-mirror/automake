@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Test to make sure that '.o' and '.obj' are handled like '.$(OBJEXT)'.
-# See also related "grepping" test suffix6.test.
+# See also related "grepping" test 'suffix6.sh'.
 
 . ./defs || exit 1
 

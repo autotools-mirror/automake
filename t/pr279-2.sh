@@ -16,7 +16,7 @@
 
 # Another test related to PR 279.
 # Multiple DEPENDENCIES on conditionals.
-# Please keep this in sync with sister test pr279.test.
+# Please keep this in sync with sister test 'pr279.sh'.
 #
 # == Report ==
 # When defining xxx_LDADD and xxx_DEPENDENCIES variables where the

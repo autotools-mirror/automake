@@ -23,8 +23,8 @@
 # (even if the file 'foo.mk' exists). The error disappear by collapsing
 # the repeated slash '/' characters into a single one.
 #
-# See also sister "grepping" test 'subobj11b.test', and related test
-# 'subobj11c.test'.
+# See also sister "grepping" test 'subobj11b.sh', and related test
+# 'subobj11c.sh'.
 
 required=cc
 . ./defs || exit 1

@@ -14,8 +14,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Test of basic preprocessed assembly functionality with extension .sx.
-# Keep this in sync with sister tests asm.test and asm2.test.
+# Test of basic preprocessed assembly functionality with extension '.sx'.
+# Keep this in sync with sister tests 'asm.sh' and 'asm2.sh'.
 
 . ./defs || exit 1
 

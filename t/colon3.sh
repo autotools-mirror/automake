@@ -16,7 +16,7 @@
 
 # Make sure ":" works with files automake generates.
 # This test is for multiple ":"s.
-# See also sister test 'colon2.test'.
+# See also sister test 'colon2.sh'.
 
 . ./defs || exit 1
 

@@ -17,7 +17,7 @@
 # Test to make sure that texinfo.tex is not required by --cygnus.
 # Also check that TEXINFOS + cygnus work without requiring the
 # '-Wno-override' option.
-# See also sister test txinfo5b.test.
+# See also sister test txinfo5b.sh.
 # Report from Ian Taylor.
 
 . ./defs || exit 1

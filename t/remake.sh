@@ -16,7 +16,7 @@
 
 # Weak "grepping" test trying to ensure that remaking rules in a subdir
 # are correctly generated.
-# See also sister functional test 'remake1a.test'.
+# See also sister functional test 'remake1a.sh'.
 
 . ./defs || exit 1
 

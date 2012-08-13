@@ -19,7 +19,7 @@
 # FIXME: this test tries to check that the above also hold for the
 # FIXME: "installdirs" target, but that doesn't currently work :-(
 # FIXME: So this test is still xfailing.
-# See sister test 'instdir-cond.test' for the succeeding part.
+# See sister test 'instdir-cond.sh' for the succeeding part.
 
 . ./defs || exit 1
 

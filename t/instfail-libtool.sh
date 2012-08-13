@@ -15,9 +15,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # The install rule should honor failures of the install program.
-# Some of these are already caught by instmany.test.
+# Some of these are already caught by 'instmany.sh'.
 
-# This is the libtool sister test of instfail.test
+# This is the libtool sister test of 'instfail.sh'.
 
 required='cc libtool libtoolize'
 . ./defs || exit 1

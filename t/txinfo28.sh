@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Check that info files are built in builddir when needed.
-# Similar to txinfo24.test, but obfuscating filenames with variable
+# Similar to txinfo24.sh, but obfuscating filenames with variable
 # references.
 # Report from Ralf Corsepius.
 

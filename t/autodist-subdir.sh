@@ -22,7 +22,7 @@
 # discussion of automake bug#7819:
 #  <http://debbugs.gnu.org/cgi/bugreport.cgi?bug=7819>
 #
-# Keep this test in sync with sister test 'autodist.test'.
+# Keep this test in sync with sister test 'autodist.sh'.
 
 . ./defs || exit 1
 

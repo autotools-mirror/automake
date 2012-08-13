@@ -16,7 +16,7 @@
 
 # Installing many files should not exceed the command line length limit.
 
-# This is the mans sister test of instmany.test, see there for details.
+# This is the mans sister test of 'instmany.sh', see there for details.
 
 . ./defs || exit 1
 

@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Test to make sure Yacc + C++ is not obviously broken.
-# See also related tests 'yacc-cxx.test' and 'yacc-d-cxx.test',
+# See also related tests 'yacc-cxx.sh' and 'yacc-d-cxx.sh',
 # which does much more in-depth checks (but requires an actual
 # Yacc program and a working C++ compiler).
 

@@ -16,8 +16,8 @@
 
 # Check that info files are built in builddir when needed.
 # Test with subdir Texinfo.
-# (Similar to txinfo13.test, plus DISTCLEANFILES).
-# (See also txinfo24.test and txinfo25.test).
+# (Similar to txinfo13.sh, plus DISTCLEANFILES).
+# (See also txinfo24.sh and txinfo25.sh).
 
 required='makeinfo tex texi2dvi-o'
 . ./defs || exit 1

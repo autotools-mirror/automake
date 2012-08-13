@@ -20,7 +20,7 @@
 #  - stdout and stderr of a script go in its log file
 #  - TEST_SUITE_LOG redefinition, at either automake or make time
 #  - VERBOSE environment variable support
-# Keep in sync with 'test-log.test'.
+# Keep in sync with 'test-log.sh'.
 
 . ./defs || exit 1
 

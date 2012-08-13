@@ -29,7 +29,7 @@ PYTHON=python
 # Note that the value of the 'pythondir' and 'pyexecdir' variables can
 # vary among different python installations, so we need more relaxed
 # and ad-hoc checks for them.  Also, more proper "functional" checks
-# on them should be done in the 'python-virtualenv.test' test.
+# on them should be done in the 'python-virtualenv.sh' test.
 PYTHON_VERSION=$($PYTHON -c 'import sys; print(sys.version[:3])') || exit 1
 PYTHON_PLATFORM=$($PYTHON -c 'import sys; print(sys.platform)') || exit 1
 PYTHON_EXEC_PREFIX='${exec_prefix}'

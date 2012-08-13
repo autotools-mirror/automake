@@ -18,7 +18,7 @@
 # progress output on console.  We keep all of these checks here in a single
 # script so that a potential cosmetic change in the output format won't
 # force us to tweak dozens of other tests (hopefully).
-# See also related test 'tap-todo-skip-whitespace.test'.
+# See also related test 'tap-todo-skip-whitespace.sh'.
 
 . ./defs || exit 1
 

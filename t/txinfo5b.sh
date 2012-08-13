@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Test to make sure that texinfo.tex is not required by --cygnus.
-# See also sister test txinfo5.test.
+# See also sister test txinfo5.sh.
 # Report from Ian Taylor.
 
 . ./defs || exit 1

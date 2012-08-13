@@ -33,7 +33,7 @@ $ACLOCAL
 $AUTOCONF
 $AUTOMAKE --add-missing
 
-# See missing.test for explanations about this.
+# See the test 'missing.sh' for explanations about this.
 MYAUTOCONF="./missing --run $AUTOCONF"
 unset AUTOCONF
 

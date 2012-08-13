@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Make sure ":" works with files automake generates.
-# See also sister test 'colon3.test'.
+# See also sister test 'colon3.sh'.
 
 . ./defs || exit 1
 

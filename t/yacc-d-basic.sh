@@ -16,7 +16,7 @@
 
 # Tests Yacc support with yacc-generated headers
 # (i.e., '-d' in *YFLAGS).
-# Keep in sync with sister test 'yacc-d-cxx.test'.
+# Keep in sync with sister test 'yacc-d-cxx.sh'.
 
 required='cc yacc'
 . ./defs || exit 1
