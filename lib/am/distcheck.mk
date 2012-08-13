@@ -16,6 +16,9 @@
 #  Building various distribution flavors.  #
 # ---------------------------------------- #
 
+# ----------------------------------------------------------------------
+# FIXME: how and where are these old comments still relevant?
+# ----------------------------------------------------------------------
 # Note that we don't use GNU tar's '-z' option.  One reason (but
 # not the only reason) is that some versions of tar (e.g., OSF1)
 # interpret '-z' differently.
@@ -26,51 +29,91 @@
 # with tar 1.11.2).  We do not do anything specific w.r.t. this
 # incompatibility since packages where empty directories need to be
 # present in the archive are really unusual.
+# ----------------------------------------------------------------------
 
-am.dist.ext.gzip  = tar.gz
+# TODO: this definition-oriented interface is almost god enough to offer
+# as a public API allowing the user to define and use new archive formats.
+# However, we must think carefully about possible problems before setting
+# the API in stone.  So, for the moment, we keep this internal and
+# private; there will be time to make it public, once (and if) there's
+# any request from the user base.
+
+am.dist.all-formats =
+
+am.dist.all-formats += gzip
+am.dist.ext.gzip = tar.gz
+am.dist.compress-cmd.gzip = GZIP=$(GZIP_ENV) gzip -c
+am.dist.uncompress-cmd.gzip = GZIP=$(GZIP_ENV) gzip -dc
+
+am.dist.all-formats += bzip2
 am.dist.ext.bzip2 = tar.bz2
-am.dist.ext.xz    = tar.xz
-am.dist.ext.lzip  = tar.lz
-am.dist.ext.zip   = zip
+am.dist.compress-cmd.bzip2 = BZIP2=$${BZIP2--9} bzip2 -c
+am.dist.uncompress-cmd.bzip2 = bzip2 -dc
 
-DIST_TARGETS  = $(foreach x,$(am.dist.formats),dist-$x)
-DIST_ARCHIVES = $(foreach x,$(am.dist.formats),$(distdir).$(am.dist.ext.$x))
-.PHONY: $(foreach x,$(am.dist.formats),dist-$x)
+am.dist.all-formats += lzip
+am.dist.ext.lzip = tar.lz
+am.dist.compress-cmd.lzip = lzip -c $${LZIP_OPT--9}
+am.dist.uncompress-cmd.lzip = lzip -dc
 
+am.dist.all-formats += xz
+am.dist.ext.xz = tar.xz
+am.dist.compress-cmd.xz = XZ_OPT=$${XZ_OPT--e} xz -c
+am.dist.uncompress-cmd.xz = xz -dc
+
+am.dist.all-formats += zip
+am.dist.ext.zip = zip
+am.dist.create-cmd.zip = \
+  rm -f $(distdir).zip && zip -rq $(distdir).zip $(distdir)
+am.dist.extract-cmd.zip = \
+  unzip $(distdir).zip
+
+# This is namespace-safe, so it's OK to accept values from
+# the environment.
+AM_DIST_FORMATS ?= gzip
+
+am.dist.bad-targets := \
+  $(filter-out $(am.dist.all-formats),$(AM_DIST_FORMATS))
+ifdef am.dist.bad-targets
+  $(call am.fatal,Invalid distribution formats: $(am.dist.bad-targets))
+endif
+
+am.dist.all-targets = $(patsubst %,.am/dist-%,$(am.dist.all-formats))
+am.dist.default-targets = $(patsubst %,.am/dist-%,$(AM_DIST_FORMATS))
+
+am.dist.default-archives = \
+  $(foreach x,$(AM_DIST_FORMATS),$(distdir).$(am.dist.ext.$x))
+
+define am.dist.create-archive-for-format.aux
+$(or $(am.dist.create-cmd.$1), \
+  tardir=$(distdir) && $(am__tar) \
+    | $(am.dist.compress-cmd.$1) >$(distdir).$(am.dist.ext.$1))
+endef
+am.dist.create-archive-for-format = $(call $0.aux,$(strip $1))
+
+define am.dist.extract-archive-for-format.aux
+$(or $(am.dist.extract-cmd.$1), \
+  $(am.dist.uncompress-cmd.$1) $(distdir).$(am.dist.ext.$1) \
+    | $(am__untar))
+endef
+am.dist.extract-archive-for-format = $(call $0.aux,$(strip $1))
+
+# The use of this option to pass arguments to the 'gzip' invocation is
+# not only documented in the manual and useful for better compatibility
+# with mainline Automake, but also actively employed by some important
+# makefile fragments (e.g., Gnulib's 'top/maint.mk', at least up to
+# commit v0.0-7569-gec58403).  So keep it.
 GZIP_ENV = --best
-dist-gzip: distdir
-	tardir=$(distdir) && $(am__tar) | GZIP=$(GZIP_ENV) gzip -c >$(distdir).tar.gz
-	$(am.dist.post-remove-distdir)
 
-dist-bzip2: distdir
-	tardir=$(distdir) && $(am__tar) | BZIP2=$${BZIP2--9} bzip2 -c >$(distdir).tar.bz2
-	$(am.dist.post-remove-distdir)
+.PHONY: $(am.dist.all-targets)
+$(am.dist.all-targets): .am/dist-%: distdir
+	$(call am.dist.create-archive-for-format,$*)
 
-dist-lzip: distdir
-	tardir=$(distdir) && $(am__tar) | lzip -c $${LZIP_OPT--9} >$(distdir).tar.lz
-	$(am.dist.post-remove-distdir)
-
-dist-xz: distdir
-	tardir=$(distdir) && $(am__tar) | XZ_OPT=$${XZ_OPT--e} xz -c >$(distdir).tar.xz
-	$(am.dist.post-remove-distdir)
-
-dist-zip: distdir
-	rm -f $(distdir).zip
-	zip -rq $(distdir).zip $(distdir)
-	$(am.dist.post-remove-distdir)
-
-
-# -------------------------------------------------- #
-#  Building all the requested distribution flavors.  #
-# -------------------------------------------------- #
-
-ifdef
+ifdef SUBDIRS
 AM_RECURSIVE_TARGETS += dist dist-all
 endif
 
 .PHONY: dist dist-all
-dist dist-all:
-	$(MAKE) $(DIST_TARGETS) am.dist.post-remove-distdir='@:'
+dist dist-all: $(am.dist.default-targets)
 	$(am.dist.post-remove-distdir)
 
 
@@ -87,18 +130,8 @@ endif
 # tarfile.
 .PHONY: distcheck
 distcheck: dist
-	case '$(DIST_ARCHIVES)' in \
-	*.tar.gz*) \
-	  GZIP=$(GZIP_ENV) gzip -dc $(distdir).tar.gz | $(am__untar) ;;\
-	*.tar.bz2*) \
-	  bzip2 -dc $(distdir).tar.bz2 | $(am__untar) ;;\
-	*.tar.lz*) \
-	  lzip -dc $(distdir).tar.lz | $(am__untar) ;;\
-	*.tar.xz*) \
-	  xz -dc $(distdir).tar.xz | $(am__untar) ;;\
-	*.zip*) \
-	  unzip $(distdir).zip ;;\
-	esac
+	$(call am.dist.extract-archive-for-format, \
+	  $(firstword $(AM_DIST_FORMATS)))
 ## Make the new source tree read-only.  Distributions ought to work in
 ## this case.  However, make the top-level directory writable so we
 ## can make our new subdirs.
@@ -160,12 +193,13 @@ distcheck: dist
 	  && rm -rf "$$dc_destdir" \
 	  && $(MAKE) dist \
 ## Make sure to remove the dists we created in the test build directory.
-	  && rm -rf $(DIST_ARCHIVES) \
+	  && rm -f $(am.dist.default-archives) \
 	  && $(MAKE) distcleancheck
 	$(am.dist.post-remove-distdir)
 	@(echo "$(distdir) archives ready for distribution: "; \
-	  list='$(DIST_ARCHIVES)'; for i in $$list; do echo $$i; done) | \
-	  sed -e 1h -e 1s/./=/g -e 1p -e 1x -e '$$p' -e '$$x'
+	  list='$(am.dist.default-archives)'; \
+	  for i in $$list; do echo $$i; done; \
+	 ) | sed -e 1h -e 1s/./=/g -e 1p -e 1x -e '$$p' -e '$$x'
 
 # Define distuninstallcheck_listfiles and distuninstallcheck separately
 # from distcheck, so that they can be overridden by the user.
@@ -175,7 +209,7 @@ distuninstallcheck_listfiles = find . -type f -print
 # uninstall, so we must be prepared to account for it.  The following
 # check is not 100% strict, but is definitely good enough, and even
 # accounts for overridden $(infodir).
-am__distuninstallcheck_listfiles = $(distuninstallcheck_listfiles) \
+am.dist.uninstallcheck-listfiles = $(distuninstallcheck_listfiles) \
   | sed 's|^\./|$(prefix)/|' | grep -v '$(infodir)/dir$$'
 distuninstallcheck:
 	@test -n '$(distuninstallcheck_dir)' || { \
@@ -187,7 +221,7 @@ distuninstallcheck:
 	  echo 'ERROR: cannot chdir into $(distuninstallcheck_dir)' >&2; \
 	  exit 1; \
 	}; \
-	test `$(am__distuninstallcheck_listfiles) | wc -l` -eq 0 \
+	test `$(am.dist.uninstallcheck-listfiles) | wc -l` -eq 0 \
 	   || { echo "ERROR: files left after uninstall:" ; \
 	        if test -n "$(DESTDIR)"; then \
 	          echo "  (check DESTDIR support)"; \

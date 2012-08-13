@@ -14,28 +14,31 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Obsolete archive formats.
+# Obsolete 'dist-*' and 'no-dist-gzip' options.
 
 . ./defs || exit 1
 
 $ACLOCAL
 
-for fmt in lzma shar; do
+for fmt in gzip bzip2 xz lzip zip tarZ lzma shar; do
   echo AUTOMAKE_OPTIONS = dist-$fmt > Makefile.am
   AUTOMAKE_fails -Wnone -Wno-error
-  grep "^Makefile\\.am:1:.*support for $fmt.*removed" stderr
+  grep "^Makefile\\.am:1:.* 'dist-$fmt' option.* no more supported" stderr
+  grep "^Makefile\\.am:1:.* use AM_DIST_FORMATS .*instead" stderr
 done
 
 rm -rf autom4te*.cache
 
 cat > configure.ac << 'END'
-AC_INIT([lzma], [1.0])
-AM_INIT_AUTOMAKE([dist-tarZ])
+AC_INIT([foo], [1.0])
+AM_INIT_AUTOMAKE([no-dist-gzip dist-xz])
 AC_CONFIG_FILES([Makefile])
 END
 : > Makefile.am
 $ACLOCAL
 AUTOMAKE_fails -Wnone -Wno-error
-grep "^configure\\.ac:2:.*legacy 'compress' program.* no more supported" stderr
+grep "^configure\\.ac:2:.* 'no-dist-gzip' option.* no more supported" stderr
+grep "^configure\\.ac:2:.* 'dist-xz' option.* no more supported" stderr
+grep "^configure\\.ac:2:.*use AM_DIST_FORMATS .*instead" stderr
 
 :

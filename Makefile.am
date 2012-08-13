@@ -27,6 +27,9 @@ EXTRA_DIST =
 ##  Top level.  ##
 ## ------------ ##
 
+# Distribution formats.
+AM_DIST_FORMATS = gzip xz
+
 # We want a handful of substitutions to be fully-expanded by make;
 # then use config.status to substitute the remainder where a single
 # expansion is sufficient.  We use a funny notation here to avoid

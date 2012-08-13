@@ -159,11 +159,7 @@ install-html-am: .am/install-html
 	@$(NORMAL_INSTALL)
 	$(call am.texi.create-installdir,$(infodir))
 	@list='$(and $(infodir),$^)'; test -n "$$list" || exit 0; \
-	for file in $$list; do \
-	  for ifile in $$file $$file-[0-9] $$file-[0-9][0-9]; do \
-	    test ! -f $$ifile || echo "$$ifile"; \
-	  done; \
-	done | $(am__base_list) | \
+	for p in $$list; do echo "$$p"; done | $(am__base_list) | \
 	while read files; do \
 	  echo " $(INSTALL_DATA) $$files '$(DESTDIR)$(infodir)'"; \
 	  $(INSTALL_DATA) $$files "$(DESTDIR)$(infodir)" || exit $$?; \
@@ -267,15 +263,13 @@ uninstall-info-am:
 	  done; \
 	else :; fi
 	@$(NORMAL_UNINSTALL)
-	$(call am.uninst.cmd,$(infodir),\
-	  $(foreach i,$(notdir $(INFO_DEPS)),$i $i-[0-9] $i-[0-9][0-9]))
+	$(call am.uninst.cmd,$(infodir),$(notdir $(INFO_DEPS)))
 
 
 .PHONY: dist-info
 dist-info: $(INFO_DEPS)
-	@$(foreach f,$(foreach x,$^,$(wildcard $x $x-[0-9] $x-[0-9][0-9])), \
-	  cp -p $f $(distdir)/$(patsubst $(srcdir)/%,%,$f);)
+	@$(foreach f,$^,cp -p $f $(distdir)/$(patsubst $(srcdir)/%,%,$f);)
 
-am.clean.maint.f += $(foreach f,$(INFO_DEPS),$f $f-[0-9] $f-[0-9][0-9])
+am.clean.maint.f += $(INFO_DEPS)
 
 endif # !info_TEXINFOS

@@ -45,6 +45,11 @@ define am.error
 $(warning $1)$(eval am.error.seen := yes)
 endef
 
+# Declare an error, and immediately terminate execution.
+define am.fatal
+$(if $1,$(call am.error,$1))$(error Some Automake-NG error occurred)
+endef
+
 #
 # Sometimes, in our makefiles, we want to assign a default value to a
 # variable that might not have been assigned yet.  One might think that

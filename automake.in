@@ -3196,27 +3196,6 @@ sub handle_dist ()
   # The remaining definitions are only required when a dist target is used.
   return if option 'no-dist';
 
-  # The list of tarball formats we must support.
-  my @archive_formats;
-  if ($relative_dir eq '.')
-    {
-      # We order @archive_formats by expected duration of the
-      # compressors, slowest first, for better parallelism in
-      # "make dist".
-      unshift @archive_formats, 'gzip' unless option 'no-dist-gzip';
-      foreach my $fmt (qw/zip bzip2 lzip xz/)
-        {
-          unshift @archive_formats, $fmt if option "dist-$fmt";
-        }
-      # At least one of the archive formats must be enabled.
-      if (@archive_formats == 0)
-        {
-          error (option 'no-dist-gzip',
-                 "no-dist-gzip specified but no dist-* specified,\n"
-                 . "at least one archive format must be enabled");
-        }
-    }
-
   # Look for common files that should be included in distribution.
   # If the aux dir is set, and it does not have a Makefile.am, then
   # we check for these files there as well.
@@ -3276,7 +3255,6 @@ sub handle_dist ()
                    rule ('distcheck-hook') ? 'yes' : '');
   define_variable ('am.dist.handle-gettext', INTERNAL,
                    $seen_gettext && !$seen_gettext_external ? 'yes' : '');
-  define_variable ('am.dist.formats', INTERNAL, @archive_formats);
 
   my $flm = option 'filename-length-max';
   define_variable ('am.dist.filename-filter', INTERNAL,
@@ -6765,8 +6743,7 @@ sub generate_makefile ($$)
   # relevant diagnostic should have already been reported by any
   # call to the function '$(am.error)', so we just print a generic
   # "errors seen, stopping" message.
-  $output_checks .= '$(if $(am.error.seen),' .
-                    '$(error Some Automake-NG error occurred))' .
+  $output_checks .= '$(if $(am.error.seen),$(call am.fatal))' .
                     "\n";
 
   if ($exit_code != 0)
