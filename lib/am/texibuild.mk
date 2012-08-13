@@ -43,37 +43,11 @@ endef
 
 define am.texi.build.info
 	$(if $1,,$(AM_V_at)$(am.cmd.ensure-target-dir-exists))
-## Back up the info files before running makeinfo. This is the cheapest
-## way to ensure that
-## 1) If the texinfo file shrinks (or if you start using --no-split),
-##    you'll not be left with some dead info files lying around -- dead
-##    files which would end up in the distribution.
-## 2) If the texinfo file has some minor mistakes which cause makeinfo
-##    to fail, the info files are not removed.  (They are needed by the
-##    developer while he writes documentation.)
-	$(AM_V_MAKEINFO)restore=: && backupdir=.am$$$$ && \
-	$(if $1,cd $(srcdir) &&) \
-	rm -rf $$backupdir && mkdir $$backupdir && \
-## If makeinfo is not installed we must not backup the files so
-## 'missing' can do its job and touch $@ if it exists.
-	if ($(MAKEINFO) --version) >/dev/null 2>&1; then \
-	  for f in $@ $@-[0-9] $@-[0-9][0-9]; do \
-	    if test -f $$f; then mv $$f $$backupdir; restore=mv; else :; fi; \
-	  done; \
-	else :; fi && \
-	$(if $(am.texi.info-in-srcdir),cd '$(CURDIR)' &&) \
-	if $(MAKEINFO) $(AM_MAKEINFOFLAGS) $(MAKEINFOFLAGS) \
-	               -I $(@D) -I $(srcdir)/$(@D) -o $@ $<; \
-	then \
-	  rc=0; \
-	  $(if $(am.texi.info-in-srcdir),cd $(srcdir) || exit 1;) \
-	else \
-	  rc=$$?; \
-## Beware that backup info files might come from a subdirectory.
-	  $(if $(am.texi.info-in-srcdir),cd $(srcdir) &&) \
-	  $$restore $$backupdir/* $(@D) || exit 1; \
-	fi; \
-	rm -rf $$backupdir; exit $$rc
+## If the texinfo file has some minor mistakes which cause makeinfo
+## to fail, the info files are not removed.
+	$(AM_V_MAKEINFO)$(MAKEINFO) $(AM_MAKEINFOFLAGS) $(MAKEINFOFLAGS) \
+	                --no-split -I $(@D) -I $(srcdir)/$(@D) -o $@-t $<
+	$(AM_V_at)mv -f $@-t $@
 endef
 
 define am.texi.build.html
