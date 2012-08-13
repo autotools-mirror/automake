@@ -14,40 +14,40 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Test detection of missing Python.
-# Same as 'python5.sh', but with the user forcing the python to use.
+# Test ACTION-IF-TRUE in AM_PATH_PYTHON.
 
+am_create_testdir=empty
 required=python
 . ./defs || exit 1
 
-cat >>configure.ac << 'END'
-# Hopefully the Python team will never release such a version.
-AM_PATH_PYTHON([9999.9])
+cat > configure.ac <<END
+AC_INIT([$me], [1.0])
+m4_include([mypy.m4])
 AC_OUTPUT
 END
 
-mkdir bin
-cat > bin/my-python << 'END'
-#! /bin/sh
-exec python ${1+"$@"}
+# $PYTHON is supposed to be properly set in ACTION-IF-TRUE.
+cat > mypy.m4 << 'END'
+AM_PATH_PYTHON(, [$PYTHON -V >py-version 2>&1])
 END
-chmod a+x bin/my-python
-PATH=$(pwd)/bin$PATH_SEPARATOR$PATH
-
-: > Makefile.am
 
 $ACLOCAL
 $AUTOCONF
-$AUTOMAKE --add-missing
+./configure
+grep '^Python [0-9]\.[0-9][0-9]*\.[0-9]' py-version
 
-./configure PYTHON=my-python >stdout 2>stderr && {
-  cat stdout
-  cat stderr >&2
-  exit 1
-}
-cat stdout
-cat stderr >&2
-grep 'whether my-python version is >= 9999\.9\.\.\. no *$' stdout
-grep '[Pp]ython interpreter is too old' stderr
+# The same, but requiring a version.
+
+rm -rf autom4te*.cache
+
+# $PYTHON is supposed to be properly set in ACTION-IF-TRUE.
+cat > mypy.m4 << 'END'
+AM_PATH_PYTHON([0.0], [$PYTHON -c 'print("%u:%u" % (1-1, 2**0))' > py.out])
+END
+
+$ACLOCAL
+$AUTOCONF
+./configure
+test x"$(cat py.out)" = x0:1
 
 :
