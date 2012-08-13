@@ -16,7 +16,7 @@
 
 # Check silent-rules mode, with libtool, nodep case.
 
-# Please keep this file in sync with silent3.test and silent4.test.
+# Please keep this file in sync with 'silent3.sh' and 'silent4.sh'.
 
 required='cc libtoolize'
 . ./defs || exit 1

@@ -20,7 +20,7 @@
 # 'make' and 'make distdir' and check whether the version of 'parse.c'
 # to be distributed is up to date.
 
-# Please keep this in sync with sister test 'yacc-d-vpath.test'.
+# Please keep this in sync with sister test 'yacc-d-vpath.sh'.
 
 required='cc yacc'
 . ./defs || exit 1

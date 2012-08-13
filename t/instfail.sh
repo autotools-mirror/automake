@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # The install rule should honor failures of the install program.
-# Some of these are already caught by instmany.test.
+# Some of these are already caught by 'instmany.sh'.
 
 # This test has a few sister tests, for java, info, libtool.
 

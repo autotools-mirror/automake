@@ -14,9 +14,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Check that automake yacc support ensures that yacc-generated C
-# files use correct "#line" directives.
-# See also sister test 'lex-line.test'.
+# Check that automake yacc support ensures that yacc-generated
+# C files use correct "#line" directives.
+# See also sister test 'lex-line.sh'.
 
 required='cc yacc'
 . ./defs || exit 1

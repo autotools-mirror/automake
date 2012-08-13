@@ -16,7 +16,7 @@
 
 # Basic semantic checks on Yacc + C++ support (when yacc-generated
 # headers are not involved).
-# Keep in sync with sister test 'yacc-basic.test'.
+# Keep in sync with sister test 'yacc-basic.sh'.
 
 required='c++ yacc'
 . ./defs || exit 1

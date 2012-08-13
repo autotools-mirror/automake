@@ -17,7 +17,7 @@
 # Check silent-rules mode, with libtool, non-fastdep case
 # (so that, with GCC, we also cover the other code paths in depend2).
 
-# Please keep this file in sync with silent3.test and silent9.test.
+# Please keep this file in sync with 'silent3.sh' and 'silent9.sh'.
 
 required="libtoolize gcc"
 . ./defs || exit 1

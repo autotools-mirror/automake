@@ -16,7 +16,7 @@
 
 # Test to make sure rules to invoke all compilers are selected with
 # mixed source objects.
-# (copied from compile_f_c_cxx.test) Mike Nolta <mrnolta@princeton.edu>
+# (copied from compile_f_c_cxx.sh) Mike Nolta <mrnolta@princeton.edu>
 
 . ./defs || exit 1
 

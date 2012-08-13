@@ -17,7 +17,7 @@
 # Check parallel-tests features:
 # - per-extension "test runners" a.k.a. "log compilers" (xxx_LOG_COMPILER
 #   and xxx_LOG_FLAGS), also with AC_SUBST'd stuff.
-# See also related test 'parallel-tests-log-compiler-2.test'.
+# See also related test 'parallel-tests-log-compiler-2.sh'.
 
 . ./defs || exit 1
 

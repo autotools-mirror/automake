@@ -16,7 +16,7 @@
 
 # Make sure xxx_LINK is defined for each target that requires specific
 # flags.
-# Quite similar to libtool7.test, using AM_LDFLAGS in addition to
+# Quite similar to 'libtool7.sh', using AM_LDFLAGS in addition to
 # xxx_LDFLAGS.
 
 required='cc libtoolize'

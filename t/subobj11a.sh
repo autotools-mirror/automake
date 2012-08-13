@@ -29,7 +29,6 @@
 #
 # GNU make shouldn't suffer from that Solaris make bug, but we check
 # the problematic setup anyway -- better safe than sorry.
-#
 
 required=cc
 . ./defs || exit 1

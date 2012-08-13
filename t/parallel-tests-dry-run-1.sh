@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Check interactions between the parallel test harness and "make -n".
-# See also sister test 'parallel-tests-dry-run-2.test'.
+# See also sister test 'parallel-tests-dry-run-2.sh'.
 
 . ./defs || exit 1
 

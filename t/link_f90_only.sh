@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Test to make sure the Fortran 90 linker is used when appropriate.
-# (copied from link_f_only.test) Mike Nolta <mrnolta@princeton.edu>
+# (copied from 'link_f_only.sh') Mike Nolta <mrnolta@princeton.edu>
 
 . ./defs || exit 1
 

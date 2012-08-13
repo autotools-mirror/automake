@@ -15,8 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Checks for .c and .h files derived from non-distributed yacc sources.
-# The test 'lex-nodist.test' does similar checks for lex-generated .c
-# files.
+# The test 'lex-sh.test' does similar checks for lex-generated '.c'
 
 required='cc yacc'
 . ./defs || exit 1

@@ -16,7 +16,7 @@
 
 # Test more basic functionalities of the 'py-compile' script,
 # with "believable" python sources.  See also related test
-# 'py-compile-basic2.test'.
+# 'py-compile-basic2.sh'.
 
 required=python
 . ./defs || exit 1

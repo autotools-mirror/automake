@@ -16,7 +16,7 @@
 
 # Test more basic functionalities of the 'py-compile' script, with
 # dummy python sources, but more complex directory layouts.  See also
-# related test 'py-compile-basic.test'.
+# related test 'py-compile-basic.sh'.
 
 required=python
 . ./defs || exit 1

@@ -17,8 +17,8 @@
 # Check that info files are built in builddir and in srcdir can safely
 # co-exist.  This setup is obtained by having two info files, only one
 # of which being cleaned.
-# (Similar to txinfo16.test, plus CLEANFILES).
-# (See also txinfo23.test and txinfo24.test).
+# (Similar to txinfo16.sh, plus CLEANFILES).
+# (See also txinfo23.sh and txinfo24.sh).
 
 required='makeinfo tex texi2dvi'
 . ./defs || exit 1

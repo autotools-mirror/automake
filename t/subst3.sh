@@ -14,7 +14,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Test installation with substitutions.  This test is based on nobase.test.
+# Test installation with substitutions.  This test is based on
+# 'nobase.sh'.
 
 required=cc
 . ./defs || exit 1

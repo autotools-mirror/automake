@@ -16,7 +16,7 @@
 
 # Installing many files should not exceed the command line length limit.
 
-# This is the python sister test of instmany.test, see there for details.
+# This is the python sister test of 'instmany.sh', see there for details.
 
 required='python'
 . ./defs || exit 1

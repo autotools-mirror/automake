@@ -16,7 +16,7 @@
 
 # Check parallel-tests features:
 # - empty TESTS
-# See parallel-tests10.test for a similar issue.
+# See 'parallel-tests10.sh' for a similar issue.
 
 . ./defs || exit 1
 

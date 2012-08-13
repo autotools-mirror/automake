@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Check @substituted@ TESTS, some of which are also PROGRAMS.
-# See also sister test 'check-subst.test'.
+# See also sister test 'check-subst.sh'.
 
 # For gen-testsuite-part: ==> try-with-serial-tests <==
 required='cc native'

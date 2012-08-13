@@ -17,7 +17,7 @@
 # Test that AC_FC_SRCEXT(f9x) works as intended:
 # - $(FCFLAGS_f) will be used
 
-# Cf. fort1.test and link_f90_only.test.
+# Cf. 'fort1.sh' and 'link_f90_only.sh'.
 
 required=gfortran # Required only in order to run ./configure.
 . ./defs || exit 1

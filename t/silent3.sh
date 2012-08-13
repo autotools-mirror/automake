@@ -16,7 +16,7 @@
 
 # Check silent-rules mode, with libtool, standard depmode case.
 
-# Please keep this file in sync with silent4.test and silent9.test.
+# Please keep this file in sync with 'silent4.sh' and 'silent9.sh'.
 
 required='cc libtoolize'
 . ./defs || exit 1

@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Test of basic preprocessed assembly functionality.
-# Keep this in sync with sister tests asm.test and asm3.test.
+# Keep this in sync with sister tests 'asm.sh' and 'asm3.sh'.
 
 . ./defs || exit 1
 

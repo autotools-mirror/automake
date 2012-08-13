@@ -17,8 +17,8 @@
 # Check that remake rules works from subdirectories, even using
 # 'GNUmakefile' as makefiles name.  This obviously requires GNU
 # make.
-# See also the other similar tests 'remake-subdir*.test', and the
-# related test 'aclocal5.test'
+# See also the other similar tests 'remake-subdir*.sh', and the
+# related test 'aclocal5.sh'
 
 . ./defs || exit 1
 

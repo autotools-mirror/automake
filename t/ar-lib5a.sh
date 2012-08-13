@@ -16,7 +16,7 @@
 
 # Test if AM_PROG_AR triggers the use of the ar-lib script.
 # This test requires Microsoft lib.
-# Keep this test in sync with sister test 'ar-lib5b.test'.
+# Keep this test in sync with sister test 'ar-lib5b.sh'.
 
 required=lib
 . ./defs || exit 1

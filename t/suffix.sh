@@ -16,7 +16,7 @@
 
 # Make sure proper pattern rules for C compilation are produced, and
 # only once.
-# See also related test 'suffix2.test'.
+# See also related test 'suffix2.sh'.
 
 . ./defs || exit 1
 

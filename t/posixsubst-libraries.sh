@@ -16,7 +16,7 @@
 
 # Test that POSIX variable expansion '$(var:str=rpl)' works when used
 # with the LIBRARIES primary in a "simple" way.
-# Keep this in sync with sister test 'posixsubst-ltlibraries.test'.
+# Keep this in sync with sister test 'posixsubst-ltlibraries.sh'.
 
 required=cc
 . ./defs || exit 1

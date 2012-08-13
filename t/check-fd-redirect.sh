@@ -16,7 +16,7 @@
 
 # Simple Tests support: redirection of file descriptors with
 # AM_TESTS_FD_REDIRECT.
-# See also related test 'parallel-tests-fd-redirect.test'.
+# See also related test 'parallel-tests-fd-redirect.sh'.
 
 # For gen-testsuite-part: ==> try-with-serial-tests <==
 . ./defs || exit 1

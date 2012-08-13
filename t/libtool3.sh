@@ -67,7 +67,7 @@ a (void)
 END
 
 # Use --copy to workaround a bug in Cygwin's 'cp -p' during distcheck.
-# (This bug is already exhibited by subobj9.test.)  In brief: Cygwin's
+# (This bug is already exhibited by subobj9.sh.)  In brief: Cygwin's
 # 'cp -p' tries to preserve group and owner of the source and fails
 # to do so under normal accounts.  With --copy we ensure we own all files.
 

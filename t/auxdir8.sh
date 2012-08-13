@@ -19,7 +19,7 @@
 # the config auxdir should be implicitly defined to '.' since
 # the install-sh, py-compile, etc., scripts are in the top-level
 # directory.
-# Keep this in sync with sister tests auxdir6.test and auxdir7.test.
+# Keep this in sync with sister tests 'auxdir6.sh' and 'auxdir7.sh'.
 
 . ./defs || exit 1
 

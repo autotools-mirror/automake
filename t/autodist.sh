@@ -17,7 +17,7 @@
 # Check that automake really automatically distributes all the files
 # it advertises to do.
 # Related to automake bug#7819.
-# Keep this test in sync with sister test 'autodist-subdir.test'.
+# Keep this test in sync with sister test 'autodist-subdir.sh'.
 
 am_create_testdir=empty
 . ./defs || exit 1

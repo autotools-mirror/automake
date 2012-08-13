@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Checks for .c files derived from non-distributed .l sources.
-# The test 'yacc-nodist.test' does similar checks for yacc-generated
+# The test 'yacc-nodist.sh' does similar checks for yacc-generated
 # .c and .h files.
 
 required='cc lex'
@@ -23,7 +23,7 @@ required='cc lex'
 
 cat >> configure.ac << 'END'
 AC_PROG_CC
-dnl Sister test 'lex-pr204.test' should use 'AC_PROG_LEX' instead.
+dnl Sister test 'lex-pr204.sh' should use 'AC_PROG_LEX' instead.
 AM_PROG_LEX
 AC_OUTPUT
 END

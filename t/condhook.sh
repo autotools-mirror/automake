@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Test install when a conditional install-*-hook is not defined.
-# Keep this in sync with sister test condhook2.test.
+# Keep this in sync with sister test 'condhook2.sh'.
 # Report by Nik A. Melchior (PR/428).
 
 . ./defs || exit 1

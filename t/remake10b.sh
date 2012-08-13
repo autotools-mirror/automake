@@ -16,7 +16,7 @@
 
 # Test remake rules for am files included (also recursively) by
 # Makefile.am.
-# Keep in sync with sister tests 'remake10a.test' and 'remake10c.test'.
+# Keep in sync with sister tests 'remake10a.sh' and 'remake10c.sh'.
 
 . ./defs || exit 1
 
