@@ -39,7 +39,7 @@ installcheck-local:
 END
 
 # Protect with leading " # " to avoid spurious maintainer-check failures.
-sed 's/^ #//' > main.texi << 'END'
+sed 's/^ *# *//' > main.texi << 'END'
  # \input texinfo
  # @setfilename main.info
  # @settitle main
