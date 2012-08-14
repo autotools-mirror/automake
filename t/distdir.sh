@@ -16,7 +16,7 @@
 
 # Test to make sure subdirs in EXTRA_DIST work.
 # Also tests to make sure *srcdir is properly handled.
-# Also test the situation when the list of distributed files contains
+# Also test the situation where the list of distributed files contains
 # a directory and a file in it, and repeated directories.
 
 . ./defs || exit 1
@@ -30,7 +30,6 @@ include_HEADERS = some/file another/sub/subsub/file2 yet/another/file3
 EXTRA_DIST = foo/bar joe $(top_srcdir)/woo/doo $(srcdir)/dada \
 	     some another/sub yet \
 	     some another/sub yet
-
 
 all-local:
 	$(MKDIR_P) another/sub/subsub
