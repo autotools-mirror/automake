@@ -37,7 +37,6 @@ $MAKE
 
 cat >Makefile.am <<END
 AUTOMAKE_OPTIONS = -Werror
-INCLUDES = -Ifoo
 foo_SOURCES = unused
 END
 

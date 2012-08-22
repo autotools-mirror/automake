@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 1999-2012 Free Software Foundation, Inc.
+# Copyright (C) 2012 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,35 +14,19 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Test for another '+=' problem.  Report from Brian Jones.
+# Support for $(INCLUDES) has been removed.
 
 . test-init.sh
 
-cat >> configure.ac << 'END'
-AM_CONDITIONAL([CHECK], [true])
-END
+echo AC_PROG_CC >> configure.ac
 
 cat > Makefile.am << 'END'
-if CHECK
-AM_CPPFLAGS = abc
-endif
-AM_CPPFLAGS += def
+bin_PROGRAMS = foo
+INCLUDES = -DFOO
 END
 
 $ACLOCAL
-AUTOMAKE_fails
-
-# We expect the following diagnostic:
-#
-# Makefile.am:4: cannot apply '+=' because 'AM_CPPFLAGS' is not defined in
-# Makefile.am:4: the following conditions:
-# Makefile.am:4:   !CHECK
-# Makefile.am:4: either define 'AM_CPPFLAGS' in these conditions, or use
-# Makefile.am:4: '+=' in the same conditions as the definitions.
-
-# Is !CHECK mentioned?
-grep ':.*!CHECK$' stderr
-# Is there only one missing condition?
-test $(grep -c ':  ' stderr) -eq 1
+AUTOMAKE_fails -Wnone -Wno-error
+grep "^Makefile\\.am:2:.* 'INCLUDES'.* obsolete.* 'AM_CPPFLAGS'" stderr
 
 :

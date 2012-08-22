@@ -20,6 +20,7 @@
 
 cat >>configure.ac <<END
 AC_CONFIG_FILES([sub/Makefile])
+AM_CONDITIONAL([COND_FALSE], [false])
 AC_OUTPUT
 END
 
@@ -28,38 +29,37 @@ mkdir sub
 # These two Makefile contain the same errors, but have different
 # warnings disabled.
 
-cat >Makefile.am <<END
-AUTOMAKE_OPTIONS = -Wno-obsolete
-INCLUDES = -Ifoo
+cat > Makefile.am << 'END'
+AUTOMAKE_OPTIONS = -Wno-unsupported
+if COND_FALSE
+AUTOMAKE_OPTIONS += no-dependencies
+endif
 foo_SOURCES = unused
 SUBDIRS = sub
 END
 
-cat >sub/Makefile.am <<END
+cat > sub/Makefile.am << 'END'
 AUTOMAKE_OPTIONS = -Wno-syntax
-INCLUDES = -Ifoo
+if COND_FALSE
+AUTOMAKE_OPTIONS += no-dependencies
+endif
 foo_SOURCES = unused
 END
 
 $ACLOCAL
 AUTOMAKE_fails
 # The expected diagnostic is
-#   Makefile.am:3: warning: variable 'foo_SOURCES' is defined but no program or
-#                           library has 'foo' as canonical name (possible typo)
-#   sub/Makefile.am:2: warning: 'INCLUDES' is the old name for 'AM_CPPFLAGS'
+#   automake: warnings are treated as errors
+#   Makefile.am:5: warning: variable 'foo_SOURCES' is defined but no program or
+#   Makefile.am:5: library has 'foo' as canonical name (possible typo)
+#   sub/Makefile.am:1: warning: 'AUTOMAKE_OPTIONS' cannot have conditional contents
 grep '^Makefile.am:.*foo_SOURCES' stderr
-grep '^sub/Makefile.am:.*INCLUDES' stderr
-grep '^sub/Makefile.am:.*foo_SOURCES' stderr && exit 1
-grep '^Makefile.am:.*INCLUDES' stderr && exit 1
+grep '^sub/Makefile.am:.*AUTOMAKE_OPTIONS' stderr
+grep '^sub/Makefile.am:.*foo_SOURCES' stderr && Exit 1
+grep '^Makefile.am:.*AUTOMAKE_OPTIONS' stderr && Exit 1
 # Only three lines of warnings.
-test $(grep -v 'warnings are treated as errors' stderr | wc -l) -eq 3
+test $(grep -v 'warnings are treated as errors' stderr | wc -l) = 3
 
-# On fast machines the autom4te.cache created during the above run of
-# $AUTOMAKE is likely to have the same time stamp as the configure.ac
-# created below; thus causing traces for the old configure.ac to be
-# used.  We could do '$sleep', but it's faster to erase the
-# directory.  (Erase autom4te*.cache, not autom4te.cache, because some
-# bogus installations of Autoconf use a versioned cache).
 rm -rf autom4te*.cache
 
 # If we add a global -Wnone, all warnings should disappear.
