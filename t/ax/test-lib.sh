@@ -51,9 +51,11 @@ if test -n "${ZSH_VERSION+set}" && (emulate sh) >/dev/null 2>&1; then
   }
 else
   argv0=$0
-  # Avoid command substitution failure, for it might cause problems with
-  # "set -e" on some shells.
-  case `(set -o) 2>/dev/null || :` in *posix*) set -o posix;; esac
+  # Ignore command substitution failure, for it might cause problems
+  # with "set -e" on some shells.
+  am_shell_opts=$(set -o) || :
+  case $am_shell_opts in *posix*) set -o posix;; esac
+  unset am_shell_opts
 fi
 
 # A single whitespace character.

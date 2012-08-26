@@ -45,8 +45,10 @@ cat > mypy.m4 << 'END'
 AM_PATH_PYTHON([0.0], [$PYTHON -c 'print("%u:%u" % (1-1, 2**0))' > py.out])
 END
 
-$ACLOCAL
-$AUTOCONF
+# The "--force" option here is truly needed to avoid potential timestamp
+# races.  See automake bug#12210.
+$ACLOCAL --force
+$AUTOCONF --force
 ./configure
 test x"$(cat py.out)" = x0:1
 
