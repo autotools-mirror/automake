@@ -58,8 +58,10 @@ rm -rf autom4te*.cache # Will have to re-run aclocal.
 
 # Hopefully the Python team will never release such a version :-)
 echo 'AM_PATH_PYTHON([9999.9], [])' > mypy.m4
-$ACLOCAL
-$AUTOCONF
+# The "--force" options (here and below) are truly needed to avoid
+# potential timestamp races.  See automake bug#12210.
+$ACLOCAL --force
+$AUTOCONF --force
 ./configure >stdout 2>stderr && {
   cat stdout
   cat stderr >&2
