@@ -55,7 +55,7 @@ test ! -e foo.elc
 # stuff in the srcdir.
 echo "(provide" > ../foo.el  # Break it.
 echo "defun)" > ../bar.el    # Likewise.
-$MAKE && Exit 1
+$MAKE && exit 1
 $sleep
 echo "(provide 'foo)" > foo.el
 echo "(provide 'bar)" > bar.el
