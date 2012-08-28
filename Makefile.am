@@ -500,8 +500,8 @@ perf_TESTS = $(wildcard $(srcdir)/t/perf/*.sh) \
              $(wildcard $(srcdir)/t/perf/*.tap)
 .PHONY: perf
 perf: all
-	$(MAKE) $(AM_MAKEFLAGS) TEST_SUITE_LOG='$(PERF_TEST_SUITE_LOG)'	\
-	                        TESTS='$(perf_TESTS)' check
+	$(MAKE) TEST_SUITE_LOG='$(PERF_TEST_SUITE_LOG)'	\
+	        TESTS='$(perf_TESTS)' check
 PERF_TEST_SUITE_LOG = t/perf/test-suite.log
 CLEANFILES += $(PERF_TEST_SUITE_LOG)
 EXTRA_DIST += $(perf_TESTS)

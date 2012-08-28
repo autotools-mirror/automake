@@ -35,7 +35,7 @@ $AUTOMAKE --add-missing
 ./configure EMACS='echo >$@' --with-lispdir="$(pwd)/unused"
 
 : > foo.el
-ELCFLAGS='__usr_elcflags__' $MAKE -e
+$MAKE ELCFLAGS=__usr_elcflags__
 grep '__am_elcflags__.*__usr_elcflags__' foo.elc
 
 :
