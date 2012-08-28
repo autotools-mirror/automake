@@ -562,6 +562,7 @@ t/lex5.sh \
 t/lexcpp.sh \
 t/lexvpath.sh \
 t/lex-subobj-nodep.sh \
+t/lex-header.sh \
 t/lex-lib.sh \
 t/lex-lib-external.sh \
 t/lex-libobj.sh \
