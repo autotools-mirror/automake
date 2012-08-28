@@ -34,7 +34,7 @@ BUILT_SOURCES = mylex.h
 # Recover from removal of header.
 mylex.h: foo-lexer.c
 	test -f $@ || rm -f foo-lexer.c
-	test -f $@ || $(MAKE) $(AM_MAKEFLAGS) foo-lexer.c
+	test -f $@ || $(MAKE) foo-lexer.c
 END
 
 cat > lexer.l << 'END'
@@ -81,6 +81,6 @@ $MAKE
 test -f mylex.h
 
 # Sanity check on distribution.
-yl_distcheck
+$MAKE distcheck
 
 :
