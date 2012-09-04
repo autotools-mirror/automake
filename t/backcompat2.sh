@@ -23,9 +23,9 @@ am_create_testdir=empty
 
 # A trick to make the test run muuuch faster, by avoiding repeated
 # runs of aclocal (one order of magnitude improvement in speed!).
-echo 'AC_INIT(x,0) AM_INIT_AUTOMAKE' > configure.in
+echo 'AC_INIT(x,0) AM_INIT_AUTOMAKE' > configure.ac
 $ACLOCAL
-rm -rf configure.in autom4te.*
+rm -rf configure.ac autom4te.*
 
 touch install-sh missing
 
@@ -35,13 +35,13 @@ cat > config.h.in <<'END'
 END
 
 for am_arg3 in ':' 'false' '#' ' '; do
-  unindent > configure.in <<END
+  unindent > configure.ac <<END
     AC_INIT
     AC_CONFIG_HEADERS([config.h])
     AM_INIT_AUTOMAKE([pkgname], [pkgversion], [$am_arg3])
     AC_OUTPUT
 END
-  cat configure.in # For debugging.
+  cat configure.ac # For debugging.
   $AUTOCONF
   ./configure
   cat config.h # For debugging.
@@ -56,13 +56,13 @@ END
 done
 
 for am_extra_args in '' ',' ', []'; do
-  unindent > configure.in <<END
+  unindent > configure.ac <<END
     AC_INIT
     AC_CONFIG_HEADERS([config.h])
     AM_INIT_AUTOMAKE([pkgname], [pkgversion]$am_extra_args)
     AC_OUTPUT
 END
-  cat configure.in # For debugging.
+  cat configure.ac # For debugging.
   $AUTOCONF
   ./configure
   cat config.h # For debugging.

@@ -46,13 +46,13 @@ END
 for ac_init in 'AC_INIT' 'AC_INIT([Makefile.am])'; do
   for am_extra_args in '' ', []' ', [:]' ', [false]'; do
     rm -rf autom4te*.cache config* Makefile.in Makefile
-    unindent > configure.in <<END
+    unindent > configure.ac <<END
       $ac_init
       AM_INIT_AUTOMAKE([FooBar], [0.7.1]$am_extra_args)
       AC_CONFIG_FILES([Makefile])
       AC_OUTPUT
 END
-    cat configure.in # For debugging.
+    cat configure.ac # For debugging.
     $ACLOCAL
     $AUTOCONF
     $AUTOMAKE -Wno-obsolete

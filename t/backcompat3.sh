@@ -42,14 +42,14 @@ END
 
 ### Run 1 ###
 
-cat > configure.in <<END
+cat > configure.ac <<END
 AC_INIT([ac_name], [ac_version])
 AM_INIT_AUTOMAKE([am_name], [am_version])
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT
 END
 
-cat configure.in
+cat configure.ac
 
 $ACLOCAL
 $AUTOCONF
@@ -75,7 +75,7 @@ diff exp got
 
 ### Run 2 ###
 
-cat > configure.in <<'END'
+cat > configure.ac <<'END'
 dnl: 'AC_INIT' in Autoconf <= 2.63 doesn't have an URL argument.
 dnl: Luckily, 'AC_AUTOCONF_VERSION' and 'm4_version_prereq' are
 dnl: both present in autoconf 2.62, which we require; so that we
@@ -90,7 +90,7 @@ AC_CONFIG_FILES([Makefile])
 AC_OUTPUT
 END
 
-cat configure.in
+cat configure.ac
 
 $ACLOCAL
 $AUTOCONF
@@ -116,14 +116,14 @@ diff exp got
 
 ### Run 3 ###
 
-cat > configure.in <<END
+cat > configure.ac <<END
 AC_INIT([ac_name], [ac_version])
 AM_INIT_AUTOMAKE([am_name], [am_version], [am_foo_quux])
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT
 END
 
-cat configure.in
+cat configure.ac
 
 $ACLOCAL
 $AUTOCONF

@@ -29,7 +29,7 @@ $ACLOCAL
 
 # We want complete control automake flags, while honouring the
 # user overrides for $AUTOMAKE.
-AUTOMAKE=$am_original_AUTOMAKE
+AUTOMAKE="$am_original_AUTOMAKE -Wno-obsolete"
 
 # Sanity check: gnu mode must complain about missing files and
 # portability problems.
