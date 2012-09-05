@@ -1229,6 +1229,7 @@ t/vtexi.sh \
 t/vtexi2.sh \
 t/vtexi3.sh \
 t/vtexi4.sh \
+t/warnings-obsolete-default.sh \
 t/warnings-override.sh \
 t/warnings-precedence.sh \
 t/warnings-strictness-interactions.sh \
