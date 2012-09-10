@@ -48,8 +48,6 @@ check-am: $(am.test-suite.check-targets)
 $(am.test-suite.check-targets): all-am $(am.test-suite.deps)
 
 check: $(if $(SUBDIRS),check-recursive,check-am)
-## You should have received a copy of the GNU General Public License
-## along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 ## ----------------------------------------- ##
 ## installdirs -- Creating the installdirs.  ##
