@@ -159,8 +159,16 @@ ifeq ($(am.make.dry-run),true)
 # completely accurate.
 all check install: | $(am.built-early)
 else
+# Also, with this implementation, a recursive make call in the recipe
+# of any $(BUILT_SOURCES) (or any of its prerequisites) could cause an
+# infinite recursion (complete with fork bomb, yuck), if we are not
+# careful.  The following hack takes care of the problem.
+$(am.built-early): am.hack.making-built-sources = yes
+export am.hack.making-built-sources
+ifndef am.hack.making-built-sources
 $(foreach x,$(am.built-early),$(eval -include .am/built-sources/$(x)))
 .am/built-sources/%: | %
 	@$(am.cmd.ensure-target-dir-exists)
 	@touch $@
+endif
 endif
