@@ -22,6 +22,7 @@ required='cc etags'
 
 cat >> configure.ac <<'END'
 AC_PROG_CC
+AC_CONFIG_FILES([sub/Makefile])
 AC_OUTPUT
 END
 
@@ -35,10 +36,25 @@ all-local: tags
 LINK = $(CCLD) $(CFLAGS) $(LDFLAGS) -o $@
 noinst_PROGRAMS = foo
 foo_SOURCES = foo-main.pc barbar.c
+SUBDIRS = sub
+END
+
+mkdir sub
+cat > sub/Makefile.am <<'END'
+all-local: tags
+.pc.o:
+	sed -e 's/@/a/g' $(srcdir)/$*.pc >$*.c
+	$(CC) $(DEFS) $(CPPFLAGS) $(CFLAGS) -c $*.c
+	rm -f $*.c
+
+LINK = $(CCLD) $(CFLAGS) $(LDFLAGS) -o $@
+noinst_PROGRAMS = zap
+zap_SOURCES = zardoz.pc
 END
 
 echo 'int main(void) [ return bar(1); ]' > foo-main.pc
 echo 'int bar(int x) { return !x; }' > barbar.c
+echo 'int m@in(void) { return 0; }' > sub/zardoz.pc
 
 $ACLOCAL
 $AUTOCONF
@@ -48,8 +64,10 @@ $AUTOMAKE
 
 $MAKE
 cat TAGS
+cat sub/TAGS
 $FGREP foo-main.pc TAGS
 $FGREP barbar.c TAGS
+$FGREP zardoz.pc sub/TAGS
 
 $MAKE distcheck
 
