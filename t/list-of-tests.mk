@@ -41,7 +41,6 @@ t/pr8365-remake-timing.sh \
 t/lex-subobj-nodep.sh \
 t/remake-am-pr10111.sh \
 t/remake-m4-pr10111.sh \
-t/tags-pr12372.sh \
 t/txinfo5.sh \
 $(perl_fake_XFAIL_TESTS)
 
