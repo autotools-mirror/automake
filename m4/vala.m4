@@ -10,12 +10,12 @@
 # variable VALAC is set. Optionally a minimum release number of the
 # compiler can be requested.
 #
-# AM_PROG_VALAC([MINIMUM-VERSION])
+# AM_PROG_VALAC([MINIMUM-VERSION], [ACTION-IF-FOUND], [ACTION-IF-NOT-FOUND])
 # --------------------------------
 AC_DEFUN([AM_PROG_VALAC],
 [AC_PATH_PROG([VALAC], [valac], [])
  AS_IF([test -z "$VALAC"],
-   [AC_MSG_WARN([No Vala compiler found.  You will not be able to compile .vala source files.])],
+   [m4_default([$3], [AC_MSG_WARN([No Vala compiler found.  You will not be able to compile .vala source files.])])],
    [AS_IF([test -n "$1"],
       [AC_MSG_CHECKING([$VALAC is at least version $1])
        am__vala_version=`$VALAC --version | sed 's/Vala  *//'`
@@ -23,5 +23,9 @@ AC_DEFUN([AM_PROG_VALAC],
          [AC_MSG_RESULT([yes])],
          [AC_MSG_RESULT([yes])],
          [AC_MSG_RESULT([no])
-          AC_MSG_ERROR([Vala $1 not found.], [77])])])])
-])
+          VALAC=:])])
+    if test "$VALAC" = :; then
+      m4_default([$3], [AC_MSG_ERROR([Vala $1 not found.], [77])])
+    else
+      m4_default([$2], [:])
+    fi])])

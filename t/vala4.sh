@@ -58,4 +58,15 @@ $AUTOCONF --force
 # See comments above for why "|| exit 1" is needed.
 ./configure "VALAC=$cwd/valac" || exit 1
 
+sed 's/AM_PROG_VALAC.*/AM_PROG_VALAC([9999.9], , [:])/' < configure.ac >t
+mv -f t configure.ac
+$AUTOCONF --force
+./configure "VALAC=$cwd/valac" || exit 1
+
+sed 's/AM_PROG_VALAC.*/AM_PROG_VALAC([1.2.3], [exit 77])/' < configure.ac >t
+mv -f t configure.ac
+$AUTOCONF --force
+st=0; ./configure "VALAC=$cwd/valac" || st=$?
+test $st -eq 77 || exit 1
+
 :
