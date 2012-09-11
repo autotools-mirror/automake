@@ -41,6 +41,7 @@ t/pr8365-remake-timing.sh \
 t/lex-subobj-nodep.sh \
 t/remake-am-pr10111.sh \
 t/remake-m4-pr10111.sh \
+t/tags-pr12372.sh \
 t/txinfo5.sh \
 $(perl_fake_XFAIL_TESTS)
 
@@ -1155,6 +1156,7 @@ t/tap-summary-color.sh \
 t/tags.sh \
 t/tags2.sh \
 t/tagsub.sh \
+t/tags-pr12372.sh \
 t/tar.sh \
 t/tar2.sh \
 t/tar3.sh \
