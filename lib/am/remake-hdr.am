@@ -15,10 +15,11 @@
 ## along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 %CONFIG_H%: %STAMP%
-## Recover from removal of config headers.  Break up in two invocations
-## so that "make -n" is properly honored.
-	@test -f $@ || rm -f %STAMP%
-	@test -f $@ || $(MAKE) %STAMP%
+## Recover from removal of config headers.  This is duplicated with the
+## '%STAMP%' rule below, but allow us to avoid a (potentially costly)
+## make recursion.
+	$(if $(wildcard $@),,@rm -f %STAMP%)
+	$(if $(wildcard $@),,cd $(top_builddir) && $(SHELL) ./config.status %CONFIG_H_PATH%)
 
 %STAMP%: %CONFIG_H_DEPS% $(top_builddir)/config.status
 	@rm -f %STAMP%
