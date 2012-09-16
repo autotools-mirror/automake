@@ -28,7 +28,7 @@ END
 
 cat > Makefile.am <<'END'
 all-local: tags
-.pc.o:
+%.o: %.pc
 	sed -e 's/\[/{/' -e 's/\]/}/' $(srcdir)/$*.pc >$*.c
 	$(CC) $(DEFS) $(CPPFLAGS) $(CFLAGS) -c $*.c
 	rm -f $*.c
@@ -42,7 +42,7 @@ END
 mkdir sub
 cat > sub/Makefile.am <<'END'
 all-local: tags
-.pc.o:
+%.o: %.pc
 	sed -e 's/@/a/g' $(srcdir)/$*.pc >$*.c
 	$(CC) $(DEFS) $(CPPFLAGS) $(CFLAGS) -c $*.c
 	rm -f $*.c
