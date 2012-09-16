@@ -31,7 +31,7 @@
 # present in the archive are really unusual.
 # ----------------------------------------------------------------------
 
-# TODO: this definition-oriented interface is almost god enough to offer
+# TODO: this definition-oriented interface is almost good enough to offer
 # as a public API allowing the user to define and use new archive formats.
 # However, we must think carefully about possible problems before setting
 # the API in stone.  So, for the moment, we keep this internal and
