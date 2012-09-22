@@ -46,6 +46,7 @@ echo 'AC_DEFUN([ANOTHER_MACRO])' >defs/f.m4
 
 cat >>Makefile.am<<\EOF
 ACLOCAL_AMFLAGS = -I defs
+AUTOMAKE_OPTIONS = -Wno-obsolete
 testdist1: distdir
 	test -f $(distdir)/acinclude.m4
 	test -f $(distdir)/a.m4

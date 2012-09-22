@@ -26,6 +26,7 @@ required=cc
 . test-init.sh
 
 cat >> configure.ac <<'END'
+AC_CONFIG_MACRO_DIR([.])
 AC_CONFIG_HEADERS([config.h])
 AC_PROG_CC
 MY_MACROS
@@ -33,7 +34,6 @@ AC_OUTPUT
 END
 
 cat > Makefile.am <<'END'
-ACLOCAL_AMFLAGS = -I .
 noinst_PROGRAMS = foo
 foo_SOURCES = foo.c
 BUILT_SOURCES = $(STDIO_H)
@@ -79,7 +79,7 @@ FILE *f;
 int main () { return 0; }
 END
 
-$ACLOCAL -I .
+$ACLOCAL
 $AUTOHEADER
 $AUTOMAKE
 $AUTOCONF

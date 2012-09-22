@@ -15,8 +15,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Check that the obsolescent idiom of setting $(ACLOCAL_AMFLAGS) in
-# Makefile.am still works.  Remove this test once support for this
-# obsolescent idiom is removed.
+# Makefile.am is warned against, but still works.  Remove this test
+# once support for this obsolescent idiom is removed.
 
 . test-init.sh
 
@@ -45,7 +45,16 @@ $ACLOCAL -I m4_1 >output 2>&1 || { cat output; exit 1; }
 cat output
 grep 'found macro' output && exit 1 # Sanity check.
 $AUTOCONF
-$AUTOMAKE
+
+for opts in '' '-Wnone -Wobsolete'; do
+  AUTOMAKE_fails $opts
+  grep "Makefile\.am:.*'ACLOCAL_AMFLAGS' is deprecated" stderr
+  grep "Makefile\.am:.*'AC_CONFIG_MACRO_DIRS'.*configure\.ac.*instead" stderr
+done
+
+echo AUTOMAKE_OPTIONS = -Wall -Wno-obsolete >> Makefile.am
+cat Makefile.am # For debugging.
+$AUTOMAKE -Werror
 
 ./configure
 test -f foo

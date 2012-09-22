@@ -21,12 +21,12 @@
 . test-init.sh
 
 cat >> configure.ac <<'END'
+AC_CONFIG_MACRO_DIR([m4])
 MY_MACRO
 AC_OUTPUT
 END
 
 cat > Makefile.am <<'END'
-ACLOCAL_AMFLAGS = -I m4
 .PHONY: test
 test:
 	test '$(the_answer)' -eq 42
@@ -42,7 +42,7 @@ cat > m4/foo.m4 <<'END'
 AC_DEFUN([FOO_MACRO], [the_answer=42; AC_SUBST([the_answer])])
 END
 
-$ACLOCAL -I m4
+$ACLOCAL
 $AUTOCONF
 $AUTOMAKE
 
