@@ -41,6 +41,7 @@ t/remake-timing-bug-pr8365.sh \
 t/lex-subobj-nodep.sh \
 t/remake-am-pr10111.sh \
 t/remake-m4-pr10111.sh \
+t/subdir-keep-going-pr12554.sh \
 $(perl_fake_XFAIL_TESTS)
 
 perl_TESTS = \
@@ -1015,6 +1016,7 @@ t/subdir-order.sh \
 t/subdir-with-slash.sh \
 t/subdir-subsub.sh \
 t/subdir-distclean.sh \
+t/subdir-keep-going-pr12554.sh \
 t/subobj.sh \
 t/subobj2.sh \
 t/subobj4.sh \
