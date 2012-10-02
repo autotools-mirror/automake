@@ -18,23 +18,26 @@
 
 . ./defs || exit 1
 
-plan_ 14
-
-mkdir sub
+plan_ 32
 
 echo AC_OUTPUT >> configure.ac
 
 cat > Makefile.am <<'END'
 all:
-	: Dummy, nothing to do.
-foo:
-	$(MAKE) all
-notdry:
-	@echo ":: $$MAKEFLAGS ::" # For debugging.
+	@echo "Target '$@' should never run" >&2; exit 1;
+notdry-plain:
+	@echo ":: $$MAKEFLAGS ::"       # For debugging.
+	@$(warning << $(MAKEFLAGS) >>)   # Likewise.
 	$(am.make.dry-run) && exit 1; exit 0
-dry:
-	+@echo ":: $$MAKEFLAGS ::" # For debugging.
+notdry-recursive:
+	$(MAKE) notdry-plain
+dry-plain:
+	+@echo ":: $$MAKEFLAGS ::"      # For debugging.
+	+@$(warning << $(MAKEFLAGS) >>)  # Likewise.
 	+$(am.make.dry-run) || exit 1; echo ok > from-dry-mode
+dry-recursive:
+	$(MAKE) dry-plain
+foo = $(error foo should not be expanded)
 END
 
 $ACLOCAL    || fatal_ "aclocal failed"
@@ -46,7 +49,9 @@ $AUTOMAKE   || fatal_ "automake failed"
 
 check_no_dryrun ()
 {
-  command_ok_ "dry-run ($cnt)" $MAKE notdry ${1+"$@"}
+  for kind in plain recursive; do
+    command_ok_ "wet-run, $kind ($cnt)" $MAKE notdry-$kind ${1+"$@"}
+  done
   cnt=$(($cnt + 1))
 }
 cnt=1
@@ -61,16 +66,23 @@ check_no_dryrun TESTS="n1 n2"
 check_no_dryrun TESTS="n1 n2"
 check_no_dryrun FOOFLAGS="-n -n -knf2 n --none -n"
 check_no_dryrun MYFLAGS="-n --dryrun -n --dry-run -n"
+mkdir n ./--dry-run
+check_no_dryrun -I n
+check_no_dryrun -I --dry-run
+check_no_dryrun -I n -I --dry-run
+rmdir n ./--dry-run
 
 # ----------------------------------------------------------------------
 
 check_dryrun ()
 {
-  r=ok
-  $MAKE dry ${1+"$@"}   || r='not ok'
-  test -f from-dry-mode || r='not ok'
-  rm -f from-dry-mode   || fatal_ "cleaning up"
-  result_ "$r" "not dry-run ($cnt)"
+  for kind in plain recursive; do
+    r=ok
+    $MAKE dry-$kind ${1+"$@"} || r='not ok'
+    test -f from-dry-mode || r='not ok'
+    rm -f from-dry-mode || fatal_ "cleaning up"
+    result_ "$r" "dry-run, $kind ($cnt)"
+  done
   cnt=$(($cnt + 1))
 }
 cnt=1
@@ -84,15 +96,10 @@ check_dryrun --dry-run -k
 
 check_metachars ()
 {
-  r=ok
-  $MAKE notdry ${1+"$@"} || r='not ok'
-  if test -f bad; then
-    r='not ok'
-  else
-    rm -f bad || fatal_ "cleaning up"
-  fi
-  result_ "$r" "dry-run, with shell metachars ($cnt)"
-  unset r
+  for kind in plain recursive; do
+    command_ok_ "wet-run, $kind, with shell metachars ($cnt)" \
+                $MAKE notdry-$kind ${1+"$@"}
+  done
   cnt=$(($cnt + 1))
 }
 cnt=1
@@ -102,7 +109,6 @@ check_metachars MYFLAGS='-knf2\ n\ \\n'
 check_metachars MYFLAGS="(&) | ; \" \` '"
 check_metachars MYFLAGS=" ' # ' "
 check_metachars MYFLAGS='$(foo)'
-check_metachars MYFLAGS='`touch bad`'
 
 # ----------------------------------------------------------------------
 
