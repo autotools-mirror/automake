@@ -161,6 +161,7 @@ t/autodist-stamp-vti.sh \
 t/autohdr.sh \
 t/autohdr3.sh \
 t/autohdr4.sh \
+t/autohdr-subdir-pr12495.sh \
 t/autohdrdry.sh \
 t/automake-cmdline.tap \
 t/auxdir.sh \
