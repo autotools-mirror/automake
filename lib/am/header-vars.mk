@@ -160,19 +160,12 @@ DESTDIR ?=
 
 # Tell whether make is running in "dry mode".  It is either 'true' or
 # 'false', so that it can be easily used in shell code as well as in
-# GNU make conditionals.
-# If we run "make TESTS='snooze nap'", GNU make will export MAKEFLAGS to
-# "TESTS=foo\ nap", so that the builtins operating on word-split lists
-# would see a "make flag" equal to "nap" when analyzing $(MAKEFLAGS), and
-# would wrongly misinterpret that as and indication that make is running
-# in dry mode.  This has already happened in practice.  So we need the
-# hack with $(subst \ , ...).
+# GNU make conditionals.  Use $(MFLAGS), not $(MAKEFLAGS), since the
+# former doesn't containing the command line variable definitions, and
+# it always begins with a hyphen unless it is empty, assumptions that
+# allow a simpler implementation.
 am.make.dry-run := \
-  $(strip $(if $(strip \
-    $(foreach v, $(subst \ ,,$(strip $(MAKEFLAGS))), \
-      $(if $(or $(findstring =,$v),$(filter --%,$v)),, \
-        $(findstring n,$v)))), \
-    true, false))
+  $(if $(findstring n,$(filter-out --%,$(MFLAGS))),true,false)
 
 am.util.strip-first-word = $(wordlist 2,$(words $(1)),$(1))
 am.util.strip-last-word  = $(wordlist 2,$(words $(1)),dummy $(1))

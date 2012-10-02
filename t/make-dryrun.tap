@@ -18,7 +18,7 @@
 
 . ./defs || exit 1
 
-plan_ 32
+plan_ 14
 
 echo AC_OUTPUT >> configure.ac
 
@@ -26,18 +26,13 @@ cat > Makefile.am <<'END'
 all:
 	@echo "Target '$@' should never run" >&2; exit 1;
 notdry-plain:
-	@echo ":: $$MAKEFLAGS ::"       # For debugging.
-	@$(warning << $(MAKEFLAGS) >>)   # Likewise.
 	$(am.make.dry-run) && exit 1; exit 0
 notdry-recursive:
 	$(MAKE) notdry-plain
 dry-plain:
-	+@echo ":: $$MAKEFLAGS ::"      # For debugging.
-	+@$(warning << $(MAKEFLAGS) >>)  # Likewise.
 	+$(am.make.dry-run) || exit 1; echo ok > from-dry-mode
 dry-recursive:
 	$(MAKE) dry-plain
-foo = $(error foo should not be expanded)
 END
 
 $ACLOCAL    || fatal_ "aclocal failed"
@@ -57,15 +52,11 @@ check_no_dryrun ()
 cnt=1
 
 check_no_dryrun
+check_no_dryrun -k
 
 # Test against a known regression.  This was especially heinous, since
 # make running in normal mode was sometimes mistaken for make running
 # in dry mode.
-check_no_dryrun TESTS="n1.test n2.test"
-check_no_dryrun TESTS="n1 n2"
-check_no_dryrun TESTS="n1 n2"
-check_no_dryrun FOOFLAGS="-n -n -knf2 n --none -n"
-check_no_dryrun MYFLAGS="-n --dryrun -n --dry-run -n"
 mkdir n ./--dry-run
 check_no_dryrun -I n
 check_no_dryrun -I --dry-run
@@ -89,26 +80,6 @@ cnt=1
 
 check_dryrun -n
 check_dryrun --dry-run -k
-
-# ----------------------------------------------------------------------
-
-# Test for when shell metacharacters or backslashes are in $(MAKEFLAGS).
-
-check_metachars ()
-{
-  for kind in plain recursive; do
-    command_ok_ "wet-run, $kind, with shell metachars ($cnt)" \
-                $MAKE notdry-$kind ${1+"$@"}
-  done
-  cnt=$(($cnt + 1))
-}
-cnt=1
-
-check_metachars MYFLAGS="-n \"n\" '-n' --none -n"
-check_metachars MYFLAGS='-knf2\ n\ \\n'
-check_metachars MYFLAGS="(&) | ; \" \` '"
-check_metachars MYFLAGS=" ' # ' "
-check_metachars MYFLAGS='$(foo)'
 
 # ----------------------------------------------------------------------
 
