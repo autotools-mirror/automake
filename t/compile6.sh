@@ -47,6 +47,8 @@ for sp in '' ' '; do
   mkdir lib
   : > lib/bar.lib
   : > lib/bar.dll.lib
+  : > lib/libbar.a
+  : > lib/libbaz.a
 
   # Check if compile library search correctly
   opts=$(./compile ./cl foo.c -o foo -L${sp}lib -l${sp}bar -l${sp}foo)
@@ -58,6 +60,7 @@ for sp in '' ' '; do
 
   : > syslib/bar.lib
   : > syslib/bar.dll.lib
+  : > syslib/libbar.a
 
   # Check if compile finds bar.dll.lib in syslib
   opts=$(./compile ./cl foo.c -o foo -l${sp}bar -l${sp}foo)
@@ -66,6 +69,11 @@ for sp in '' ' '; do
   # Check if compile prefers -L over $LIB
   opts=$(./compile ./cl foo.c -o foo -L${sp}lib -l${sp}bar -l${sp}foo)
   test x"$opts" = x"foo.c -Fefoo lib/bar.dll.lib $syslib/foo.lib -link -LIBPATH:lib"
+
+  # Check if compile falls back to finding classic libname.a style libraries
+  # when name.lib or name.dll.lib isn't available.
+  opts=$(./compile ./cl foo.c -o foo -L${sp}lib -l${sp}baz)
+  test x"$opts" = x"foo.c -Fefoo lib/libbaz.a -link -LIBPATH:lib"
 
   mkdir lib2
   : > lib2/bar.dll.lib
@@ -93,7 +101,7 @@ for sp in '' ' '; do
   syslib2="$(pwd)/sys  lib2"
   LIB="$syslib2;$LIB"
 
-  # Check if compile handles spaces in $LIB and that it prefers the order
+  # Check if compile handles spaces in $LIB and that it obeys the order
   # in a multi-component $LIB.
   opts=$(./compile ./cl foo.c -o foo -l${sp}foo)
   test x"$opts" = x"foo.c -Fefoo $syslib2/foo.dll.lib"
