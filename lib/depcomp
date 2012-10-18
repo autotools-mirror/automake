@@ -56,6 +56,22 @@ EOF
     ;;
 esac
 
+# Get the directory component of the given path, and save it in the
+# global variables '$dir'.  Note that this directory component will
+# be either empty or ending with a '/' character.  This is deliberate.
+set_dir_from ()
+{
+  dir=`echo "$1" | sed -e 's|/[^/]*$|/|'`
+  test "x$dir" = "x$1" && dir=
+}
+
+# Get the suffix-stripped basename of the given path, and save it the
+# global variable '$base'.
+set_base_from ()
+{
+  base=`echo "$1" | sed -e 's|^.*/||' -e 's/\.[^.]*$//'`
+}
+
 # A tabulation character.
 tab='	'
 # A newline character.
@@ -256,9 +272,8 @@ aix)
   # current directory.  Also, the AIX compiler puts '$object:' at the
   # start of each line; $object doesn't have directory information.
   # Version 6 uses the directory in both cases.
-  dir=`echo "$object" | sed -e 's|/[^/]*$|/|'`
-  test "x$dir" = "x$object" && dir=
-  base=`echo "$object" | sed -e 's|^.*/||' -e 's/\.o$//' -e 's/\.lo$//'`
+  set_dir_from "$object"
+  set_base_from "$object"
   if test "$libtool" = yes; then
     tmpdepfile1=$dir$base.u
     tmpdepfile2=$base.u
@@ -357,11 +372,10 @@ pgcc)
   #    foo.o: sub/foo.c ... \
   #     sub/foo.h ... \
   #     ...
-  dir=`echo "$object" | sed -e 's|/[^/]*$|/|'`
-  test "x$dir" = "x$object" && dir=
+  set_dir_from "$object"
   # Use the source, not the object, to determine the base name, since
   # that's sadly what pgcc will do too.
-  base=`echo "$source" | sed -e 's|^.*/||' -e "s/\.[-_$alnum]*$//"`
+  set_base_from "$source"
   tmpdepfile=$base.d
 
   # For projects that build the same source file twice into different object
@@ -426,9 +440,8 @@ hp2)
   # 'foo.d', which lands next to the object file, wherever that
   # happens to be.
   # Much of this is similar to the tru64 case; see comments there.
-  dir=`echo "$object" | sed -e 's|/[^/]*$|/|'`
-  test "x$dir" = "x$object" && dir=
-  base=`echo "$object" | sed -e 's|^.*/||' -e 's/\.o$//' -e 's/\.lo$//'`
+  set_dir_from  "$object"
+  set_base_from "$object"
   if test "$libtool" = yes; then
     tmpdepfile1=$dir$base.d
     tmpdepfile2=$dir.libs/$base.d
@@ -469,9 +482,8 @@ tru64)
    # At least on Alpha/Redhat 6.1, Compaq CCC V6.2-504 seems to put
    # dependencies in 'foo.d' instead, so we check for that too.
    # Subdirectories are respected.
-   dir=`echo "$object" | sed -e 's|/[^/]*$|/|'`
-   test "x$dir" = "x$object" && dir=
-   base=`echo "$object" | sed -e 's|^.*/||' -e 's/\.o$//' -e 's/\.lo$//'`
+   set_dir_from  "$object"
+   set_base_from "$object"
 
    if test "$libtool" = yes; then
       # With Tru64 cc, shared objects can also be used to make a
