@@ -37,12 +37,15 @@ mkdir sub
 cat > foo.c << 'END'
 int main (void)
 {
-  extern int bar;
-  return bar;
+  extern int bar (void);
+  return bar ();
 }
 END
 cat > sub/bar.c << 'END'
-extern int bar = 0;
+int bar (void)
+{
+  return 0;
+}
 END
 
 $ACLOCAL
