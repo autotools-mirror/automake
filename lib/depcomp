@@ -74,6 +74,30 @@ set_base_from ()
   base=`echo "$1" | sed -e 's|^.*/||' -e 's/\.[^.]*$//'`
 }
 
+# Factor out some common post-processing of the generated depfile.
+# Requires the auxiliary global variable '$tmpdepfile' to be set.
+aix_post_process_depfile ()
+{
+  # If the compiler actually managed to produce a dependency file,
+  # post-process it.
+  if test -f "$tmpdepfile"; then
+    # Each line is of the form 'foo.o: dependency.h'.
+    # Do two passes, one to just change these to
+    #   $object: dependency.h
+    # and one to simply output
+    #   dependency.h:
+    # which is needed to avoid the deleted-header problem.
+    { sed -e "s,^.*\.[$lower]*:,$object:," < "$tmpdepfile"
+      sed -e "s,^.*\.[$lower]*:[$tab ]*,," -e 's,$,:,' < "$tmpdepfile"
+    } > "$depfile"
+    rm -f "$tmpdepfile"
+  else
+    # No dependency file was actually created by the compiler invocation.
+    # No real dependency information will be available.
+    echo "#dummy" > "$depfile"
+  fi
+}
+
 # A tabulation character.
 tab='	'
 # A newline character.
@@ -298,19 +322,7 @@ aix)
   do
     test -f "$tmpdepfile" && break
   done
-  if test -f "$tmpdepfile"; then
-    # Each line is of the form 'foo.o: dependent.h'.
-    # Do two passes, one to just change these to
-    # '$object: dependent.h' and one to simply 'dependent.h:'.
-    sed -e "s,^.*\.[$lower]*:,$object:," < "$tmpdepfile" > "$depfile"
-    sed -e "s,^.*\.[$lower]*:[$tab ]*,," -e 's,$,:,' < "$tmpdepfile" >> "$depfile"
-  else
-    # The sourcefile does not contain any dependencies, so just
-    # store a dummy comment line, to avoid errors with the Makefile
-    # "include basename.Plo" scheme.
-    echo "#dummy" > "$depfile"
-  fi
-  rm -f "$tmpdepfile"
+  aix_post_process_depfile
   ;;
 
 icc)
@@ -524,13 +536,8 @@ tru64)
    do
      test -f "$tmpdepfile" && break
    done
-   if test -f "$tmpdepfile"; then
-      sed -e "s,^.*\.[$lower]*:,$object:," < "$tmpdepfile" > "$depfile"
-      sed -e "s,^.*\.[$lower]*:[$tab ]*,," -e 's,$,:,' < "$tmpdepfile" >> "$depfile"
-   else
-      echo "#dummy" > "$depfile"
-   fi
-   rm -f "$tmpdepfile"
+   # Same post-processing that is required for AIX mode.
+   aix_post_process_depfile
    ;;
 
 msvc7)
