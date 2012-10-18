@@ -61,6 +61,13 @@ tab='	'
 # A newline character.
 nl='
 '
+# Character ranges might be problematic outside the C locale.
+# These definitions help.
+upper=ABCDEFGHIJKLMNOPQRSTUVWXYZ
+lower=abcdefghijklmnopqrstuvwxyz
+digits=0123456789
+alpha=${upper}${lower}
+alnum=${alpha}${digits}
 
 if test -z "$depmode" || test -z "$source" || test -z "$object"; then
   echo "depcomp: Variables source, object and depmode must be set" 1>&2
@@ -168,7 +175,6 @@ gcc)
   fi
   rm -f "$depfile"
   echo "$object : \\" > "$depfile"
-  alpha=ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz
 ## The second -e expression handles DOS-style file names with drive letters.
   sed -e 's/^[^:]*: / /' \
       -e 's/^['$alpha']:\/[^:]*: / /' < "$tmpdepfile" >> "$depfile"
@@ -279,8 +285,8 @@ aix)
     # Each line is of the form 'foo.o: dependent.h'.
     # Do two passes, one to just change these to
     # '$object: dependent.h' and one to simply 'dependent.h:'.
-    sed -e "s,^.*\.[a-z]*:,$object:," < "$tmpdepfile" > "$depfile"
-    sed -e 's,^.*\.[a-z]*:['"$tab"' ]*,,' -e 's,$,:,' < "$tmpdepfile" >> "$depfile"
+    sed -e "s,^.*\.[$lower]*:,$object:," < "$tmpdepfile" > "$depfile"
+    sed -e "s,^.*\.[$lower]*:[$tab ]*,," -e 's,$,:,' < "$tmpdepfile" >> "$depfile"
   else
     # The sourcefile does not contain any dependencies, so just
     # store a dummy comment line, to avoid errors with the Makefile
@@ -355,7 +361,7 @@ pgcc)
   test "x$dir" = "x$object" && dir=
   # Use the source, not the object, to determine the base name, since
   # that's sadly what pgcc will do too.
-  base=`echo "$source" | sed -e 's|^.*/||' -e 's/\.[-_a-zA-Z0-9]*$//'`
+  base=`echo "$source" | sed -e 's|^.*/||' -e "s/\.[-_$alnum]*$//"`
   tmpdepfile=$base.d
 
   # For projects that build the same source file twice into different object
@@ -443,7 +449,7 @@ hp2)
     test -f "$tmpdepfile" && break
   done
   if test -f "$tmpdepfile"; then
-    sed -e "s,^.*\.[a-z]*:,$object:," "$tmpdepfile" > "$depfile"
+    sed -e "s,^.*\.[$lower]*:,$object:," "$tmpdepfile" > "$depfile"
     # Add 'dependent.h:' lines.
     sed -ne '2,${
 	       s/^ *//
@@ -505,8 +511,8 @@ tru64)
      test -f "$tmpdepfile" && break
    done
    if test -f "$tmpdepfile"; then
-      sed -e "s,^.*\.[a-z]*:,$object:," < "$tmpdepfile" > "$depfile"
-      sed -e 's,^.*\.[a-z]*:['"$tab"' ]*,,' -e 's,$,:,' < "$tmpdepfile" >> "$depfile"
+      sed -e "s,^.*\.[$lower]*:,$object:," < "$tmpdepfile" > "$depfile"
+      sed -e "s,^.*\.[$lower]*:[$tab ]*,," -e 's,$,:,' < "$tmpdepfile" >> "$depfile"
    else
       echo "#dummy" > "$depfile"
    fi
