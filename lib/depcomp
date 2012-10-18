@@ -74,6 +74,14 @@ set_base_from ()
   base=`echo "$1" | sed -e 's|^.*/||' -e 's/\.[^.]*$//'`
 }
 
+# If no dependency file was actually created by the compiler invocation,
+# we still have to create a dummy depfile, to avoid errors with the
+# Makefile "include basename.Plo" scheme.
+make_dummy_depfile ()
+{
+  echo "#dummy" > "$depfile"
+}
+
 # Factor out some common post-processing of the generated depfile.
 # Requires the auxiliary global variable '$tmpdepfile' to be set.
 aix_post_process_depfile ()
@@ -92,9 +100,7 @@ aix_post_process_depfile ()
     } > "$depfile"
     rm -f "$tmpdepfile"
   else
-    # No dependency file was actually created by the compiler invocation.
-    # No real dependency information will be available.
-    echo "#dummy" > "$depfile"
+    make_dummy_depfile
   fi
 }
 
@@ -277,10 +283,7 @@ sgi)
    | sed -e 's/^.*\.o://' -e 's/#.*$//' -e '/^$/ d' -e 's/$/:/' \
    >> "$depfile"
   else
-    # The sourcefile does not contain any dependencies, so just
-    # store a dummy comment line, to avoid errors with the Makefile
-    # "include basename.Plo" scheme.
-    echo "#dummy" > "$depfile"
+    make_dummy_depfile
   fi
   rm -f "$tmpdepfile"
   ;;
@@ -485,7 +488,7 @@ hp2)
 	       p
 	     }' "$tmpdepfile" >> "$depfile"
   else
-    echo "#dummy" > "$depfile"
+    make_dummy_depfile
   fi
   rm -f "$tmpdepfile" "$tmpdepfile2"
   ;;
