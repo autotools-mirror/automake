@@ -223,7 +223,8 @@ gcc)
   fi
   rm -f "$depfile"
   echo "$object : \\" > "$depfile"
-## The second -e expression handles DOS-style file names with drive letters.
+  # The second -e expression handles DOS-style file names with drive
+  # letters.
   sed -e 's/^[^:]*: / /' \
       -e 's/^['$alpha']:\/[^:]*: / /' < "$tmpdepfile" >> "$depfile"
 ## This next piece of magic avoids the "deleted header file" problem.
@@ -232,15 +233,15 @@ gcc)
 ## typically no way to rebuild the header).  We avoid this by adding
 ## dummy dependencies for each header file.  Too bad gcc doesn't do
 ## this for us directly.
-  tr ' ' "$nl" < "$tmpdepfile" |
 ## Some versions of gcc put a space before the ':'.  On the theory
 ## that the space means something, we add a space to the output as
 ## well.  hp depmode also adds that space, but also prefixes the VPATH
 ## to the object.  Take care to not repeat it in the output.
 ## Some versions of the HPUX 10.20 sed can't process this invocation
 ## correctly.  Breaking it into two sed invocations is a workaround.
-    sed -e 's/^\\$//' -e '/^$/d' -e "s|.*$object$||" -e '/:$/d' \
-      | sed -e 's/$/ :/' >> "$depfile"
+  tr ' ' "$nl" < "$tmpdepfile" \
+    | sed -e 's/^\\$//' -e '/^$/d' -e "s|.*$object$||" -e '/:$/d' \
+    | sed -e 's/$/ :/' >> "$depfile"
   rm -f "$tmpdepfile"
   ;;
 
@@ -266,7 +267,6 @@ sgi)
 
   if test -f "$tmpdepfile"; then  # yes, the sourcefile depend on other files
     echo "$object : \\" > "$depfile"
-
     # Clip off the initial element (the dependent).  Don't try to be
     # clever and replace this with sed code, as IRIX sed won't handle
     # lines with more than a fixed number of characters (4096 in
@@ -274,10 +274,9 @@ sgi)
     # the IRIX cc adds comments like '#:fec' to the end of the
     # dependency line.
     tr ' ' "$nl" < "$tmpdepfile" \
-    | sed -e 's/^.*\.o://' -e 's/#.*$//' -e '/^$/ d' | \
-    tr "$nl" ' ' >> "$depfile"
+      | sed -e 's/^.*\.o://' -e 's/#.*$//' -e '/^$/ d' \
+      | tr "$nl" ' ' >> "$depfile"
     echo >> "$depfile"
-
     # The second pass generates a dummy entry for each header file.
     tr ' ' "$nl" < "$tmpdepfile" \
    | sed -e 's/^.*\.o://' -e 's/#.*$//' -e '/^$/ d' -e 's/$/:/' \
@@ -315,7 +314,6 @@ aix)
     "$@" -M
   fi
   stat=$?
-
   if test $stat -ne 0; then
     rm -f "$tmpdepfile1" "$tmpdepfile2" "$tmpdepfile3"
     exit $stat
@@ -417,8 +415,8 @@ pgcc)
       rmdir "$lockdir"
       break
     else
-      ## If the lock is being held by a different process, wait
-      ## until the winning process is done or we timeout.
+      # If the lock is being held by a different process, wait
+      # until the winning process is done or we timeout.
       while test -d "$lockdir" && test $i -gt 0; do
         sleep 1
         i=`expr $i - 1`
@@ -445,8 +443,8 @@ pgcc)
   sed "s,^[^:]*:,$object :," < "$tmpdepfile" > "$depfile"
   # Some versions of the HPUX 10.20 sed can't process this invocation
   # correctly.  Breaking it into two sed invocations is a workaround.
-  sed 's,^[^:]*: \(.*\)$,\1,;s/^\\$//;/^$/d;/:$/d' < "$tmpdepfile" |
-    sed -e 's/$/ :/' >> "$depfile"
+  sed 's,^[^:]*: \(.*\)$,\1,;s/^\\$//;/^$/d;/:$/d' < "$tmpdepfile" \
+    | sed -e 's/$/ :/' >> "$depfile"
   rm -f "$tmpdepfile"
   ;;
 
@@ -632,10 +630,11 @@ dashmstdout)
     sed 's:^['"$tab"' ]*[^:'"$tab"' ][^:][^:]*\:['"$tab"' ]*:'"$object"'\: :' > "$tmpdepfile"
   rm -f "$depfile"
   cat < "$tmpdepfile" > "$depfile"
-  tr ' ' "$nl" < "$tmpdepfile" | \
-## Some versions of the HPUX 10.20 sed can't process this invocation
-## correctly.  Breaking it into two sed invocations is a workaround.
-    sed -e 's/^\\$//' -e '/^$/d' -e '/:$/d' | sed -e 's/$/ :/' >> "$depfile"
+  # Some versions of the HPUX 10.20 sed can't process this sed invocation
+  # correctly.  Breaking it into two sed invocations is a workaround.
+  tr ' ' "$nl" < "$tmpdepfile" \
+    | sed -e 's/^\\$//' -e '/^$/d' -e '/:$/d' \
+    | sed -e 's/$/ :/' >> "$depfile"
   rm -f "$tmpdepfile"
   ;;
 
@@ -688,10 +687,12 @@ makedepend)
   # makedepend may prepend the VPATH from the source file name to the object.
   # No need to regex-escape $object, excess matching of '.' is harmless.
   sed "s|^.*\($object *:\)|\1|" "$tmpdepfile" > "$depfile"
-  sed '1,2d' "$tmpdepfile" | tr ' ' "$nl" | \
-## Some versions of the HPUX 10.20 sed can't process this invocation
-## correctly.  Breaking it into two sed invocations is a workaround.
-    sed -e 's/^\\$//' -e '/^$/d' -e '/:$/d' | sed -e 's/$/ :/' >> "$depfile"
+  # Some versions of the HPUX 10.20 sed can't process the last invocation
+  # correctly.  Breaking it into two sed invocations is a workaround.
+  sed '1,2d' "$tmpdepfile" \
+    | tr ' ' "$nl" \
+    | sed -e 's/^\\$//' -e '/^$/d' -e '/:$/d' \
+    | sed -e 's/$/ :/' >> "$depfile"
   rm -f "$tmpdepfile" "$tmpdepfile".bak
   ;;
 
@@ -727,10 +728,10 @@ cpp)
     esac
   done
 
-  "$@" -E |
-    sed -n -e '/^# [0-9][0-9]* "\([^"]*\)".*/ s:: \1 \\:p' \
-       -e '/^#line [0-9][0-9]* "\([^"]*\)".*/ s:: \1 \\:p' |
-    sed '$ s: \\$::' > "$tmpdepfile"
+  "$@" -E \
+    | sed -n -e '/^# [0-9][0-9]* "\([^"]*\)".*/ s:: \1 \\:p' \
+             -e '/^#line [0-9][0-9]* "\([^"]*\)".*/ s:: \1 \\:p' \
+    | sed '$ s: \\$::' > "$tmpdepfile"
   rm -f "$depfile"
   echo "$object : \\" > "$depfile"
   cat < "$tmpdepfile" >> "$depfile"
