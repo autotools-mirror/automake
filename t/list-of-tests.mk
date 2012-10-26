@@ -683,7 +683,6 @@ t/missing3.sh \
 t/am-missing-prog.sh \
 t/missing-auxfile-stops-makefiles-creation.sh \
 t/mkdir_p.sh \
-t/mkdirp-deprecation.sh \
 t/mkinstall.sh \
 t/mkinst2.sh \
 t/mkinst3.sh \
