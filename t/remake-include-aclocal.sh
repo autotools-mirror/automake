@@ -14,50 +14,44 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Test remake rules when configure.ac or its prerequisites change.
-# Keep in sync with the other sister tests 'remake9*.sh'.
+# Test remake rules for m4 files included (also recursively) by
+# aclocal.m4.  Keep in sync with sister tests:
+#   - remake-include-configure.sh
+#   - remake-include-makefile.sh
 
 . ./defs || exit 1
 
 magic1=::MagicStringOne::
 magic2=__MagicStringTwo__
+magic3=%%MagicStringThree%%
 
 if using_gmake; then
-  remake_() { $MAKE nil; }
+  remake="$MAKE nil"
 else
-  remake_() { $MAKE Makefile && $MAKE foo.sh; }
+  remake="$MAKE Makefile"
 fi
 
 cat >> configure.ac <<END
-FINGERPRINT=BadBadBad
+FINGERPRINT='my_fingerprint'
 AC_SUBST([FINGERPRINT])
-AC_CONFIG_FILES([foo.sh:foo.in], [chmod a+x foo.sh])
 AC_OUTPUT
 END
 
 cat > Makefile.am <<'END'
-nil:
+ACLOCAL_AMFLAGS = -I m4
 .PHONY: nil
-
-$(srcdir)/configure.ac: $(srcdir)/tweak-configure-in
-	$(SHELL) $(srcdir)/tweak-configure-in <$@ >$@-t
-	mv -f $@-t $@
-EXTRA_DIST = $(srcdir)/tweak-configure-in
-
-# Used by "make distcheck" later.
+nil:
+## Used by "make distcheck" later.
 check-local:
+	test -f $(top_srcdir)/m4/foo.m4
+	test ! -r $(top_srcdir)/m4/bar.m4
 	test x'$(FINGERPRINT)' = x'DummyValue'
-	test x"`./foo.sh`" = x"DummyValue"
 END
 
-cat > foo.in <<END
-#!/bin/sh
-echo '@FINGERPRINT@'
-END
+mkdir m4
+echo 'AC_DEFUN([my_fingerprint], [BadBadBad])' > m4/foo.m4
 
-echo cat > tweak-configure-in # It is a no-op by default.
-
-$ACLOCAL
+$ACLOCAL -I m4
 $AUTOCONF
 $AUTOMAKE
 
@@ -66,43 +60,55 @@ for vpath in : false; do
   if $vpath; then
     mkdir build
     cd build
-    srcdir=..
+    top_srcdir=..
   else
-    srcdir=.
+    top_srcdir=.
   fi
 
-  $srcdir/configure
+  $top_srcdir/configure
   $MAKE # Should be a no-op.
 
   $sleep
-  sed "s/^\\(FINGERPRINT\\)=.*/\\1=$magic1/" $srcdir/configure.ac >t
-  mv -f t $srcdir/configure.ac
-  remake_
+  echo "AC_DEFUN([my_fingerprint], [$magic1])" > $top_srcdir/m4/foo.m4
+  $remake
   $FGREP FINGERPRINT Makefile # For debugging.
   $FGREP $magic1 Makefile
-  test x"$(./foo.sh)" = x"$magic1"
 
   $sleep
-  echo 'sed "s/^\\(FINGERPRINT\\)=.*/\\1='$magic2'/"' \
-    > $srcdir/tweak-configure-in
-  remake_
+  echo "AC_DEFUN([my_fingerprint], [$magic2])" > $top_srcdir/m4/foo.m4
+  $remake
   $FGREP FINGERPRINT Makefile # For debugging.
   $FGREP $magic1 Makefile && exit 1
   $FGREP $magic2 Makefile
-  test x"$(./foo.sh)" = x"$magic2"
 
   $sleep
-  echo cat > $srcdir/tweak-configure-in # Make it a no-op again.
-  sed "s/^\\(FINGERPRINT\\)=.*/\\1=DummyValue/" $srcdir/configure.ac >t
-  mv -f t $srcdir/configure.ac
-  using_gmake || remake_
+  echo "m4_include([m4/bar.m4])" > $top_srcdir/m4/foo.m4
+  echo "AC_DEFUN([my_fingerprint], [$magic3])" > $top_srcdir/m4/bar.m4
+  $remake
+  $FGREP FINGERPRINT Makefile # For debugging.
+  $FGREP $magic1 Makefile && exit 1
+  $FGREP $magic2 Makefile && exit 1
+  $FGREP $magic3 Makefile
+
+  $sleep
+  echo "AC_DEFUN([my_fingerprint], [$magic1])" > $top_srcdir/m4/bar.m4
+  $remake
+  $FGREP $magic2 Makefile && exit 1
+  $FGREP $magic3 Makefile && exit 1
+  $FGREP $magic1 Makefile
+
+  $sleep
+  echo "AC_DEFUN([my_fingerprint], [DummyValue])" > $top_srcdir/m4/foo.m4
+  echo "AC_DEFUN([AM_UNUSED], [NoSuchMacro])" > $top_srcdir/m4/bar.m4
+  using_gmake || $remake
   $MAKE distcheck
   $FGREP $magic1 Makefile && exit 1 # Sanity check.
   $FGREP $magic2 Makefile && exit 1 # Likewise.
+  $FGREP $magic3 Makefile && exit 1 # Likewise.
 
   $MAKE distclean
 
-  cd $srcdir
+  cd $top_srcdir
 
 done
 
