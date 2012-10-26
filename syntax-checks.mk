@@ -43,7 +43,6 @@ ams := $(shell find $(srcdir) -name '*.dir' -prune -o -name '*.am' -print)
 # guaranteed to work on my machine.
 syntax_check_rules = \
 $(sc_tests_plain_check_rules) \
-sc_test_names \
 sc_diff_automake_in_automake \
 sc_diff_aclocal_in_automake \
 sc_perl_syntax \
@@ -79,69 +78,6 @@ sc_perl_at_substs \
 sc_unquoted_DESTDIR \
 sc_tabs_in_texi \
 sc_at_in_texi
-
-## Look for test whose names can cause spurious failures when used as
-## first argument to AC_INIT (chiefly because they might contain an
-## m4/m4sugar builtin or macro name).
-m4_builtins = \
-  __gnu__ \
-  __unix__ \
-  bpatsubst \
-  bregexp \
-  builtin \
-  changecom \
-  changequote \
-  changeword \
-  debugfile \
-  debugmode \
-  decr \
-  define \
-  defn \
-  divert \
-  divnum \
-  dnl \
-  dumpdef \
-  errprint \
-  esyscmd \
-  eval \
-  format \
-  ifdef \
-  ifelse \
-  include \
-  incr \
-  index \
-  indir \
-  len \
-  m4exit \
-  m4wrap \
-  maketemp \
-  mkstemp \
-  patsubst \
-  popdef \
-  pushdef \
-  regexp \
-  shift \
-  sinclude \
-  substr \
-  symbols \
-  syscmd \
-  sysval \
-  traceoff \
-  traceon \
-  translit \
-  undefine \
-  undivert
-sc_test_names:
-	@m4_builtin_rx=`echo $(m4_builtins) | sed 's/ /|/g'`; \
-	 m4_macro_rx="\\<($$m4_builtin_rx)\\>|\\<_?(A[CUMHS]|m4)_"; \
-	 if { \
-	   for t in $(xtests); do echo $$t; done \
-	     | LC_ALL=C grep -E "$$m4_macro_rx"; \
-	 }; then \
-	   echo "the names of the tests above can be problematic" 1>&2; \
-	   echo "Avoid test names that contain names of m4 macros" 1>&2; \
-	   exit 1; \
-	 fi
 
 ## These check avoids accidental configure substitutions in the source.
 ## There are exactly 9 lines that should be modified from automake.in to
