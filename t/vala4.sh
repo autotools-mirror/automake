@@ -20,53 +20,85 @@
 
 cat >> configure.ac << 'END'
 AC_PROG_CC
-AM_PROG_VALAC([0.0.1])
+AM_PROG_VALAC([1.2.3])
 AC_OUTPUT
 END
 
-: > Makefile.am
+cat > Makefile.am << 'END'
+has-valac:
+	case '$(VALAC)' in *valac) exit 0;; *) exit 1;; esac
+no-valac:
+	test x'$(VALAC)' = x':'
+END
 
-cat > valac << 'END'
+mkdir bin
+cat > bin/valac << 'END'
 #! /bin/sh
 if test "x$1" = x--version; then
-  echo 1.2.3
+  echo "${vala_version-1.2.3}"
 fi
 exit 0
 END
-chmod +x valac
+chmod +x bin/valac
 
-cwd=$(pwd) || fatal_ "getting current working directory"
+cat > bin/valac.old << 'END'
+#! /bin/sh
+if test "x$1" = x--version; then
+  echo 0.1
+fi
+exit 0
+END
+chmod +x bin/valac.old
+
+PATH=$(pwd)/bin$PATH_SEPARATOR$PATH; export PATH
+
+# Avoid interferences from the environment.
+VALAC= vala_version=; unset VALAC vala_version
 
 $ACLOCAL
 $AUTOMAKE -a
 $AUTOCONF
 
-# The "|| exit 1" is required here even if 'set -e' is active,
+# The "|| exit 1" are required here even if 'set -e' is active,
 # because ./configure might exit with status 77, and in that case
 # we want to FAIL, not to SKIP.
-./configure "VALAC=$cwd/valac" || exit 1
+./configure || exit 1
+$MAKE has-valac
+vala_version=99.9 ./configure || exit 1
+$MAKE has-valac
 
-sed 's/AM_PROG_VALAC.*/AM_PROG_VALAC([9999.9])/' < configure.ac >t
-mv -f t configure.ac
-$AUTOCONF --force
-st=0; ./configure "VALAC=$cwd/valac" || st=$?
+st=0; vala_version=0.1.2 ./configure 2>stderr || st=$?
+cat stderr >&2
 test $st -eq 77 || exit 1
+#$MAKE no-valac
 
-sed 's/AM_PROG_VALAC.*/AM_PROG_VALAC([1.2.3])/' < configure.ac >t
-mv -f t configure.ac
-$AUTOCONF --force
-# See comments above for why "|| exit 1" is needed.
-./configure "VALAC=$cwd/valac" || exit 1
-
-sed 's/AM_PROG_VALAC.*/AM_PROG_VALAC([9999.9], , [:])/' < configure.ac >t
-mv -f t configure.ac
-$AUTOCONF --force
-./configure "VALAC=$cwd/valac" || exit 1
-
-sed 's/AM_PROG_VALAC.*/AM_PROG_VALAC([1.2.3], [exit 77])/' < configure.ac >t
-mv -f t configure.ac
-$AUTOCONF --force
-st=0; ./configure "VALAC=$cwd/valac" || st=$?
+st=0; ./configure VALAC="$(pwd)/bin/valac.old" 2>stderr || st=$?
+cat stderr >&2
 test $st -eq 77 || exit 1
+#$MAKE no-valac
+
+sed 's/^\(AM_PROG_VALAC\).*/\1([1], [: > ok], [: > ko])/' <configure.ac >t
+mv -f t configure.ac
+rm -rf autom4te*.cache
+$ACLOCAL
+$AUTOCONF
+
+./configure
+test -f ok
+test ! -e ko
+$MAKE has-valac
+rm -f ok ko
+
+vala_version=0.1.2 ./configure
+test ! -e ok
+test -f ko
+$MAKE no-valac
+rm -f ok ko
+
+./configure VALAC="$(pwd)/bin/valac.old"
+test ! -e ok
+test -f ko
+$MAKE no-valac
+rm -f ok ko
 
 :
