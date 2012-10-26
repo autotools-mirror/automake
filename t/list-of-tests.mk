@@ -903,7 +903,6 @@ t/python-pr10995.sh \
 t/recurs.sh \
 t/recurs2.sh \
 t/relativize.tap \
-t/remake3.sh \
 t/remake3a.sh \
 t/remake4.sh \
 t/remake5.sh \
