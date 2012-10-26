@@ -13,21 +13,19 @@
 # AM_PROG_VALAC([MINIMUM-VERSION], [ACTION-IF-FOUND], [ACTION-IF-NOT-FOUND])
 # --------------------------------------------------------------------------
 AC_DEFUN([AM_PROG_VALAC],
-[AC_PATH_PROG([VALAC], [valac], [])
- AS_IF([test -z "$VALAC"],
-   [m4_default([$3],
-     [AC_MSG_WARN([no vala compiler found])
-      AC_MSG_WARN([you will not be able to compile vala source files])])],
-   [AS_IF([test -n "$1"],
+  [AC_PATH_PROG([VALAC], [valac], [valac])
+   AS_IF([test "$VALAC" != valac && test -n "$1"],
       [AC_MSG_CHECKING([whether $VALAC is at least version $1])
        am__vala_version=`$VALAC --version | sed 's/Vala  *//'`
        AS_VERSION_COMPARE([$1], ["$am__vala_version"],
          [AC_MSG_RESULT([yes])],
          [AC_MSG_RESULT([yes])],
          [AC_MSG_RESULT([no])
-          VALAC=:])])
-    if test x"$VALAC" = x":"; then
-      m4_default([$3], [AC_MSG_WARN([no proper vala compiler found])])
+          VALAC=valac])])
+    if test "$VALAC" = valac; then
+      m4_default([$3],
+        [AC_MSG_WARN([no proper vala compiler found])
+         AC_MSG_WARN([you will not be able to compile vala source files])])
     else
       m4_default([$2], [:])
-    fi])])
+    fi])

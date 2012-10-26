@@ -26,9 +26,9 @@ END
 
 cat > Makefile.am << 'END'
 has-valac:
-	case '$(VALAC)' in */valac) exit 0;; *) exit 1;; esac
+	case '$(VALAC)' in */bin/valac) exit 0;; *) exit 1;; esac
 no-valac:
-	test x'$(VALAC)' = x':'
+	test x'$(VALAC)' = x'valac'
 END
 
 mkdir bin
