@@ -27,7 +27,7 @@ AC_DEFUN([AM_PROG_VALAC],
          [AC_MSG_RESULT([no])
           VALAC=:])])
     if test x"$VALAC" = x":"; then
-      m4_default([$3], [AC_MSG_ERROR([no proper vala compiler found], [77])])
+      m4_default([$3], [AC_MSG_WARN([no proper vala compiler found])])
     else
       m4_default([$2], [:])
     fi])])
