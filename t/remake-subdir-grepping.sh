@@ -34,5 +34,6 @@ $ACLOCAL
 $AUTOMAKE
 
 grep '^Makefile' sub/Makefile.in
+grep '\$(AUTOMAKE).* sub/Makefile' sub/Makefile.in
 
 :
