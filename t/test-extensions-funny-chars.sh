@@ -17,7 +17,7 @@
 # Make sure that Automake can handle "funny chars" in TEST_EXTENSIONS,
 # as long as they can be used in GNU make variable names.
 
-. ./defs || exit 1
+. test-init.sh
 
 fetch_tap_driver
 

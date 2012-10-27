@@ -20,7 +20,7 @@
 # to it should get overridden as well.
 # See also "spy" test 'spy-var-append.sh'.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AM_CONDITIONAL([COND_NO], [false])

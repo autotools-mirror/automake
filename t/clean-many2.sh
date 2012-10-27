@@ -20,7 +20,7 @@
 # The sister test 'clean-many.sh' try to hit the real command line length
 # limit of the system, by declaring a huge number of files to be cleaned.
 
-. ./defs || exit 1
+. test-init.sh
 
 echo AC_OUTPUT >> configure.ac
 

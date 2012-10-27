@@ -18,7 +18,7 @@
 # to an exceeded command line length when there are many tests.
 # For automake bug#7868.
 
-. ./defs || exit 1
+. test-init.sh
 
 expensive_
 

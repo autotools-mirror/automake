@@ -17,7 +17,7 @@
 # The $(host), $(build), $(target) variables, and their '*_alias'
 # and 'am.conf.*-triplet' counterparts.
 
-. ./defs || exit 1
+. test-init.sh
 
 : > config.guess
 : > config.sub

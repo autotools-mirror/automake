@@ -17,7 +17,7 @@
 # Check that dynamic content for $(TESTS) is supported, both when set from
 # inside the Makefile.am and when overridden from the command line.
 
-. ./defs || exit 1
+. test-init.sh
 
 echo AC_OUTPUT >> configure.ac
 

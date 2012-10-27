@@ -19,7 +19,7 @@
 #  - $(am.all-libs).
 #  - $(am.all-ltlibs).
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_SUBST([CC], [who-cares])

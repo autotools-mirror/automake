@@ -17,7 +17,7 @@
 # Test Automake-provided internal macro 'am.cmd.ensure-dir-exists'.
 
 am_create_testdir=empty
-. ./defs || exit 1
+. test-init.sh
 
 # Filter out Automake comments.
 grep -v '^##' "$am_amdir"/header-vars.mk > defn.mk \

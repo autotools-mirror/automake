@@ -17,7 +17,7 @@
 # We use EXTRA_DIST to distribute stuff *explicitly* from the srcdir.
 
 am_create_testdir=empty
-. ./defs || exit 1
+. test-init.sh
 
 ocwd=$(pwd) || fatal_ "cannot get current working directory"
 

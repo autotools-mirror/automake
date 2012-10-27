@@ -19,7 +19,7 @@
 # too.  Yes, this test is hacky ... as is the behaviour it tests
 # after all ;-)
 
-. ./defs || exit 1
+. test-init.sh
 
 echo AC_OUTPUT >> configure.ac
 

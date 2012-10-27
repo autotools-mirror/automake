@@ -18,7 +18,7 @@
 # François Pinard, and later by Akim Demaille.
 
 required=${ETAGS:=etags}
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_SUBST([CC], [false])

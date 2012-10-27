@@ -18,7 +18,7 @@
 # *_DEPENDENCIES when we should, and do not warn about them
 # when we should not.
 
-. ./defs || exit 1
+. test-init.sh
 
 subdirs='ok1 ok2 ko1 ko2'
 mkdir $subdirs

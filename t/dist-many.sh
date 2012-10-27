@@ -19,7 +19,7 @@
 # sister test 'dist-many2.sh', which fakes an artificially low
 # command line length limit for 'mkdir' and the shell.
 
-. ./defs || exit 1
+. test-init.sh
 
 expensive_
 

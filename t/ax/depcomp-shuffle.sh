@@ -19,7 +19,7 @@
 # set the variables '$xdir' and '$vpath' appropriately.
 
 required=cc
-. ./defs || exit 1
+. test-init.sh
 
 test x${xdir+"set"} = x"set" || fatal_ "\$xdir is unset"
 test x${vpath+"set"} = x"set" || fatal_ "\$vpath is unset"

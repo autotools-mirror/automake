@@ -18,7 +18,7 @@
 # Keep in sync with sister test 'subobj-c.sh'.
 
 required=c++
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_PROG_CXX

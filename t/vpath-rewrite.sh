@@ -16,7 +16,7 @@
 
 # Test Automake-provided internal make macros to deal with VPATH rewrites.
 
-. ./defs || exit 1
+. test-init.sh
 
 echo AC_OUTPUT >> configure.ac
 

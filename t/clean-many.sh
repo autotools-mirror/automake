@@ -19,7 +19,7 @@
 # test 'clean-many2.sh', which fakes an artificially low command line
 # length limit for 'rm'.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_SUBST([safe_include], [include])

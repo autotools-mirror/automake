@@ -26,7 +26,7 @@
 # support.
 
 am_create_testdir=empty
-. ./defs || exit 1
+. test-init.sh
 
 cat > Makefile <<'END'
 default:

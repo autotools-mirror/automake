@@ -21,7 +21,7 @@
 # automatic variables of GNU make.
 
 am_create_testdir=empty
-. ./defs || exit 1
+. test-init.sh
 
 cat > Makefile <<'END'
 foo:

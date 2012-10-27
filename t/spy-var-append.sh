@@ -19,7 +19,7 @@
 # any '+=' appending to it gets overridden as well.
 
 am_create_testdir=empty
-. ./defs || exit 1
+. test-init.sh
 
 cat > Makefile << 'END'
 var0 += foo

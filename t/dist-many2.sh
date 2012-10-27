@@ -21,7 +21,7 @@
 # The sister test 'dist-many.sh' try to hit the real command line length
 # limit of the system, by declaring a huge number of files to be cleaned.
 
-. ./defs || exit 1
+. test-init.sh
 
 mkdir bin
 

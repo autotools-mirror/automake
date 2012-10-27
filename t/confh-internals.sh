@@ -16,7 +16,7 @@
 
 # Check internal make variable populated from AC_CONFIG_HEADERS calls.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >>configure.ac <<'EOF'
 AC_SUBST([BOT], [bot])

@@ -26,7 +26,7 @@
 #  * cleaning rules and "make distcheck" interaction.
 #
 
-. ./defs || exit 1
+. test-init.sh
 
 d=.am
 

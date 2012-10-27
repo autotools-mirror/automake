@@ -19,7 +19,7 @@
 # seen in input Makefile.am, but also that GNU make support of double-colon
 # rules is as reliable and well-working as we expect and need.
 
-. ./defs || exit 1
+. test-init.sh
 
 echo AC_OUTPUT >> configure.ac
 

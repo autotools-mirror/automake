@@ -18,7 +18,7 @@
 # and VPATH builds, and both top-level and subdir input.
 
 required='makeinfo tex texi2dvi'
-. ./defs || exit 1
+. test-init.sh
 
 echo AC_OUTPUT >> configure.ac
 

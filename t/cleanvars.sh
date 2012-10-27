@@ -22,7 +22,7 @@
 # Especially checks that it is possible to extend them also from a
 # "wrapper" makefile never processed nor seen by Automake.
 
-. ./defs || exit 1
+. test-init.sh
 
 echo AC_OUTPUT >> configure.ac
 

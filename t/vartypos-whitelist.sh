@@ -19,7 +19,7 @@
 # build system.
 
 required=cc
-. ./defs || exit 1
+. test-init.sh
 
 edit ()
 {

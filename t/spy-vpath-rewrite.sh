@@ -18,7 +18,7 @@
 # We use that assumption in some of our rules, so it better explicitly
 # check that it truly holds.
 
-. ./defs || exit 1
+. test-init.sh
 
 ocwd=$(pwd) || fatal_ "couldn't get current working directory"
 
