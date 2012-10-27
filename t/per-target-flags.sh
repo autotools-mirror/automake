@@ -19,10 +19,12 @@
 
 . ./defs || exit 1
 
+makefiles='Makefile libMakefile Makefile2 libMakefile2'
+
 cat > configure.ac << END
 AC_INIT([$me], [1.0])
 AM_INIT_AUTOMAKE([-Wno-extra-portability])
-AC_CONFIG_FILES([Makefile libMakefile Makefile2 libMakefile2])
+AC_CONFIG_FILES([$makefiles])
 AC_PROG_CC
 AM_PROG_CC_C_O
 AC_PROG_CXX
@@ -31,8 +33,6 @@ AC_OUTPUT
 END
 
 $ACLOCAL
-
-makefiles='Makefile libMakefile Makefile2 libMakefile2'
 
 cat > Makefile.am << 'END'
 bin_PROGRAMS = foo
@@ -61,8 +61,13 @@ for m in $makefiles; do
   $EGREP " required file.* '(compile|\./compile)'" stderr
 done
 
+makefiles=$(for mkf in $makefiles; do echo $mkf.in; done)
+
 : > compile
 $AUTOMAKE
+
+# Sanity check.
+for mkf in $makefiles; do test -f $mkf || exit 99; done
 
 # Regression test for missing space.
 $FGREP ')-c' $makefiles && exit 1
@@ -78,8 +83,7 @@ $EGREP '[^-](foo|bar)\.[o$]' $makefiles && exit 1
 
 # All our programs and libraries have per-target flags, so all
 # the compilers invocations must use an explicit '-c' option.
-grep 'COMPILE. [^-]' $makefiles && exit 1
-grep 'COMPILE. .[^c]' $makefiles && exit 1
+grep '\$.COMPILE' $makefiles | grep -v ' -c' && exit 1
 
 $FGREP 'foo-foo.$(OBJEXT)' Makefile.in
 $FGREP 'foo-foo.$(OBJEXT)' Makefile2.in
