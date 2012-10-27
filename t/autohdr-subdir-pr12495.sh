@@ -70,9 +70,7 @@ for x in b c; do
   $MAKE $x.h.in 2>stderr && { cat stderr >&2; exit 1; }
   cat stderr >&2
   test ! -f $x.h.in
-  if using_gmake; then
-    grep "No rule to make target [\`\"']$x\.h\.in[\`\"']" stderr
-  fi
+  grep "No rule to make target [\`\"']$x\.h\.in[\`\"']" stderr
   : > $x.h.in
   cd "$ocwd" || fatal_ "cannot chdir back"
 done
