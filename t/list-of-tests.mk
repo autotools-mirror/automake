@@ -127,6 +127,7 @@ t/amopt.sh \
 t/amopts-location.sh \
 t/amopts-variable-expansion.sh \
 t/amsubst.sh \
+t/am-default-source-ext.sh \
 t/ansi2knr-no-more.sh \
 t/ar-lib.sh \
 t/ar-lib2.sh \
@@ -184,7 +185,8 @@ t/badline.sh \
 t/badopt.sh \
 t/badprog.sh \
 t/block.sh \
-t/bsource.sh \
+t/built-sources-check.sh \
+t/built-sources-subdir.sh \
 t/candist.sh \
 t/canon.sh \
 t/canon2.sh \
@@ -200,7 +202,6 @@ t/ccnoco2.sh \
 t/ccnoco3.sh \
 t/check.sh \
 t/check2.sh \
-t/check3.sh \
 t/check4.sh \
 t/check5.sh \
 t/check6.sh \
@@ -697,6 +698,7 @@ t/mmodely.sh \
 t/multlib.sh \
 t/no-extra-makefile-code.sh \
 t/no-outdir-option.sh \
+t/no-spurious-install-recursive.sh \
 t/nobase.sh \
 t/nobase-libtool.sh \
 t/nobase-python.sh \
@@ -992,7 +994,6 @@ t/specflg6.sh \
 t/specflg7.sh \
 t/specflg8.sh \
 t/specflg9.sh \
-t/specflg10.sh \
 t/specflg-dummy.sh \
 t/spell.sh \
 t/spell2.sh \
@@ -1016,12 +1017,11 @@ t/subdir-add2-pr46.sh \
 t/subdir-am-cond.sh \
 t/subdir-cond-err.sh \
 t/subdir-cond-gettext.sh \
+t/subdir-env-interference.sh \
 t/subdir-order.sh \
 t/subdir-with-slash.sh \
 t/subdir-subsub.sh \
-t/subdir10.sh \
 t/subdir-distclean.sh \
-t/subdirbuiltsources.sh \
 t/subobj.sh \
 t/subobj2.sh \
 t/subobj4.sh \
@@ -1063,9 +1063,9 @@ t/suffix8.tap \
 t/suffix9.sh \
 t/suffix10.tap \
 t/suffix11.tap \
-t/suffix12.sh \
-t/suffix13.sh \
 t/suffix-chain.tap \
+t/suffix-custom-subobj.sh \
+t/suffix-custom-subobj-and-specflg.sh \
 t/symlink.sh \
 t/symlink2.sh \
 t/syntax.sh \
@@ -1247,9 +1247,6 @@ t/werror4.sh \
 t/whoami.sh \
 t/xsource.sh \
 t/yacc4.sh \
-t/yacc5.sh \
-t/yacc7.sh \
-t/yacc8.sh \
 t/yaccdry.sh \
 t/yaccpp.sh \
 t/yaccvpath.sh \
@@ -1269,10 +1266,13 @@ t/yacc-depend2.sh \
 t/yacc-dist-nobuild-subdir.sh \
 t/yacc-dist-nobuild.sh \
 t/yacc-grepping.sh \
+t/yacc-grepping2.sh \
+t/yacc-headers-and-dist-pr47.sh \
 t/yacc-line.sh \
 t/yacc-mix-c-cxx.sh \
 t/yacc-nodist.sh \
 t/yacc-pr204.sh \
+t/yacc-subdir.sh \
 t/yacc-weirdnames.sh \
 t/yflags.sh \
 t/yflags2.sh \
