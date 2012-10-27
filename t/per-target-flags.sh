@@ -83,7 +83,16 @@ $EGREP '[^-](foo|bar)\.[o$]' $makefiles && exit 1
 
 # All our programs and libraries have per-target flags, so all
 # the compilers invocations must use an explicit '-c' option.
-grep '\$.COMPILE' $makefiles | grep -v ' -c' && exit 1
+# We must be careful to take line continuations into account.
+grep . $makefiles | $PERL -ne '
+  use warnings FATAL => "all";
+  /\$.COMPILE/ or next;
+  $_ .= <STDIN> while (/\\$/);
+  s/\n/[cont]/g;
+  print;
+' > output
+cat output # For debugging.
+grep -v ' -c' output && exit 1
 
 $FGREP 'foo-foo.$(OBJEXT)' Makefile.in
 $FGREP 'foo-foo.$(OBJEXT)' Makefile2.in
