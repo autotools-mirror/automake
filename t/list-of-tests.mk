@@ -1246,8 +1246,6 @@ t/werror3.sh \
 t/werror4.sh \
 t/whoami.sh \
 t/xsource.sh \
-t/yacc.sh \
-t/yacc2.sh \
 t/yacc4.sh \
 t/yacc5.sh \
 t/yacc7.sh \
@@ -1270,6 +1268,7 @@ t/yacc-depend.sh \
 t/yacc-depend2.sh \
 t/yacc-dist-nobuild-subdir.sh \
 t/yacc-dist-nobuild.sh \
+t/yacc-grepping.sh \
 t/yacc-line.sh \
 t/yacc-mix-c-cxx.sh \
 t/yacc-nodist.sh \

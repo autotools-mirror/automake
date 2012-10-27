@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 1999-2012 Free Software Foundation, Inc.
+# Copyright (C) 1996-2012 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,9 +14,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Test to make sure intermediate .h file is not generated nor removed
-# if (AM_)?YFLAGS do not contain -d.  Requested by Jim Meyering.
-# See also the related semantic test 'yacc-d-basic.sh'.
+# Some grep-based checks on yacc support:
+#
+#  - Make sure intermediate .c file is built from yacc source.
+#    Report from Thomas Morgan.
+#
+#  - Make sure intermediate .h file is not generated nor removed
+#    if (AM_)?YFLAGS do not contain '-d'.
+#    Requested by Jim Meyering.
 
 . ./defs || exit 1
 
@@ -38,18 +43,21 @@ END
 cp Makefile.am Makefile.src
 
 $AUTOMAKE -a
+$FGREP 'zardoz.c' Makefile.in
 # If zardoz.h IS mentioned, fail.
 $FGREP 'zardoz.h' Makefile.in && exit 1
 
 cp Makefile.src Makefile.am
 echo 'AM_YFLAGS = -d' >> Makefile.am
 $AUTOMAKE
+$FGREP 'zardoz.c' Makefile.in
 # If zardoz.h is NOT mentioned, fail.
 $FGREP 'zardoz.h' Makefile.in
 
 cp Makefile.src Makefile.am
 echo 'AM_YFLAGS = ' >> Makefile.am
 $AUTOMAKE
+$FGREP 'zardoz.c' Makefile.in
 # If zardoz.h IS mentioned, fail.
 $FGREP 'zardoz.h' Makefile.in && exit 1
 
