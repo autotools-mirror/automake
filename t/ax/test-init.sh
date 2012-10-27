@@ -14,9 +14,12 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-#
-# This file is here for backward-compatibility with the existing
-# tests still unconverted to the use of 'test-init.sh'.  It should
-# eventually be removed, once all the tests have been converted.
 
-. test-init.sh
+set -e
+
+# Source the actual code for test initialization and setup.
+. test-lib.sh
+. am-test-lib.sh
+
+# Run that setup, and return control to the test script sourcing us.
+am_test_setup
