@@ -34,8 +34,7 @@ xtests := $(shell \
 xdefs = \
   $(srcdir)/t/ax/am-test-lib.sh \
   $(srcdir)/t/ax/test-lib.sh \
-  $(srcdir)/t/ax/test-defs.in \
-  $(srcdir)/defs
+  $(srcdir)/t/ax/test-defs.in
 
 ams := $(shell find $(srcdir) -name '*.dir' -prune -o -name '*.am' -print)
 
