@@ -34,8 +34,7 @@ xtests := $(shell \
 xdefs = \
   $(srcdir)/t/ax/am-test-lib.sh \
   $(srcdir)/t/ax/test-lib.sh \
-  $(srcdir)/t/ax/test-defs.in \
-  $(srcdir)/defs
+  $(srcdir)/t/ax/test-defs.in
 
 ams := $(shell find $(srcdir) -name '*.dir' -prune -o -name '?*.am' -a -print)
 pms := $(dist_perllib_DATA)
@@ -73,10 +72,11 @@ sc_tests_no_make_e \
 sc_docs_no_make_e \
 sc_make_simple_include \
 sc_tests_make_simple_include \
+sc_tests_no_source_defs \
 sc_tests_obsolete_variables \
 sc_tests_here_document_format \
 sc_tests_command_subst \
-sc_tests_Exit_not_exit \
+sc_tests_exit_not_Exit \
 sc_tests_automake_fails \
 sc_tests_required_after_defs \
 sc_tests_plain_sleep \
@@ -490,12 +490,20 @@ sc_tests_command_subst:
 	  exit 1; \
 	fi
 
-## Tests should no more call 'Exit', just 'exit'.  That's because we
+## Tests should no longer call 'Exit', just 'exit'.  That's because we
 ## now have in place a better workaround to ensure the exit status is
 ## transported correctly across the exit trap.
-sc_tests_Exit_not_exit:
+sc_tests_exit_not_Exit:
 	@if grep 'Exit' $(xtests) $(xdefs) | grep -Ev '^[^:]+: *#' | grep .; then \
 	  echo "Use 'exit', not 'Exit'; it's obsolete now." 1>&2; \
+	  exit 1; \
+	fi
+
+## Guard against obsolescent uses of ./defs in tests.  Now,
+## 'test-init.sh' should be used instead.
+sc_tests_no_source_defs:
+	@if grep -E '\. .*defs($$| )' $(xtests); then \
+	  echo "Source 'test-init.sh', not './defs'." 1>&2; \
 	  exit 1; \
 	fi
 
