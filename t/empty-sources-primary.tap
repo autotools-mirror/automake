@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 1996-2012 Free Software Foundation, Inc.
+# Copyright (C) 1999-2012 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,24 +14,36 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Test to make sure intermediate .c file is built from yacc source.
-# Bug from Thomas Morgan.
+# A test for missing _SOURCES variable.  Also test to make sure empty
+# _SOURCES suppresses assumption about default name.
 
 . ./defs || exit 1
 
+plan_ 5
+
 cat >> configure.ac << 'END'
 AC_PROG_CC
-AC_PROG_YACC
+AC_SUBST([zoo_obj])
 END
 
-cat > Makefile.am <<'END'
-bin_PROGRAMS = zardoz
-zardoz_SOURCES = zardoz.y
+cat > Makefile.am << 'END'
+sbin_PROGRAMS = pavel
+
+bin_PROGRAMS = pavel2
+pavel2_SOURCES =
+
+noinst_PROGRAMS = zoo
+zoo_SOURCES =
+EXTRA_zoo_SOURCES = bar.c foo.c
+zoo_DEPENDENCIES = $(zoo_obj)
+zoo_LDADD = $(zoo_DEPENDENCIES)
 END
 
-$ACLOCAL
-$AUTOMAKE -a
+command_ok_ "aclocal" $ACLOCAL
+command_ok_ "automake" $AUTOMAKE
 
-$FGREP 'zardoz.c' Makefile.in
+command_ok_ "default _SOURCES" $FGREP ' pavel.c' Makefile.in
+command_ok_ "empty _SOURCES (basic)" not $FGREP 'pavel2.' Makefile.in
+command_ok_ "empty _SOURCES (elaborate)" not $FGREP 'zoo.' Makefile.in
 
 :

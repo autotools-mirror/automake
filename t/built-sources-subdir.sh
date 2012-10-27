@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 1999-2012 Free Software Foundation, Inc.
+# Copyright (C) 2001-2012 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,25 +14,49 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Test to make sure empty _SOURCES works.
-# From Paul Berrevoets.
+# Make sure when using SUBDIRS that all BUILT_SOURCES are built.
+# A bug occurred where subdirs do not have all-recursive or
+# all-recursive-am which depended on BUILT_SOURCES.
 
+required=cc
 . ./defs || exit 1
 
+mkdir lib
+
 cat >> configure.ac << 'END'
+AC_CONFIG_FILES([lib/Makefile])
+AC_PROG_RANLIB
 AC_PROG_CC
-AC_SUBST(ZOO_OBJ)
+AM_PROG_AR
+AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
-noinst_PROGRAMS = zoo
-zoo_SOURCES =
-EXTRA_zoo_SOURCES = bar.c foo.c
-zoo_DEPENDENCIES = $(ZOO_OBJ)
-zoo_LDADD = $(zoo_DEPENDENCIES)
+SUBDIRS = lib
 END
 
+cat > lib/Makefile.am << 'END'
+pkgdata_DATA =
+noinst_LIBRARIES = libfoo.a
+libfoo_a_SOURCES = foo.c
+BUILT_SOURCES = foo.h
+foo.h:
+	echo \#define FOO_DEFINE 1 >$@
+CLEANFILES = $(BUILT_SOURCES)
+END
+
+cat > lib/foo.c << 'END'
+#include <foo.h>
+int foo (void) { return !FOO_DEFINE; }
+END
+
+
 $ACLOCAL
-$AUTOMAKE
-$FGREP zoo. Makefile.in && exit 1
-exit 0
+$AUTOCONF
+$AUTOMAKE --copy --add-missing
+
+./configure
+$MAKE
+$MAKE distcheck
+
+:
