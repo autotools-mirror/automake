@@ -14,8 +14,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Test remake rules when Makefile.am or its prerequisites change.
-# Keep in sync with the other sister tests 'remake9*.sh'.
+# Test remake rules when configure.ac or its prerequisites change.
+# Keep in sync with the other sister tests 'remake-after-*.sh'.
 
 . ./defs || exit 1
 
@@ -23,27 +23,20 @@ magic1=::MagicStringOne::
 magic2=__MagicStringTwo__
 
 cat >> configure.ac <<END
+FINGERPRINT=BadBadBad
+AC_SUBST([FINGERPRINT])
+AC_CONFIG_FILES([foo.sh:foo.in], [chmod a+x foo.sh])
 AC_OUTPUT
 END
 
 cat > Makefile.am <<'END'
-FINGERPRINT = BadBadBad
-
-all-local: nil
-nil: foo.sh
+nil:
 .PHONY: nil
 
-$(srcdir)/Makefile.am: $(srcdir)/tweak-makefile-am
-	$(SHELL) $(srcdir)/tweak-makefile-am <$@ >$@-t
+$(srcdir)/configure.ac: $(srcdir)/tweak-configure-in
+	$(SHELL) $(srcdir)/tweak-configure-in <$@ >$@-t
 	mv -f $@-t $@
-EXTRA_DIST = $(srcdir)/tweak-makefile-am
-
-foo.sh: Makefile
-	rm -f $@ $@-t
-	echo '#!/bin/sh' > $@-t
-	echo "echo '$(FINGERPRINT)'" >> $@-t
-	chmod a+x $@-t && mv -f $@-t $@
-CLEANFILES = foo.sh
+EXTRA_DIST = $(srcdir)/tweak-configure-in
 
 # Used by "make distcheck" later.
 check-local:
@@ -51,7 +44,12 @@ check-local:
 	test x"`./foo.sh`" = x"DummyValue"
 END
 
-echo cat > tweak-makefile-am # It is a no-op by default.
+cat > foo.in <<END
+#!/bin/sh
+echo '@FINGERPRINT@'
+END
+
+echo cat > tweak-configure-in # It is a no-op by default.
 
 $ACLOCAL
 $AUTOCONF
@@ -71,16 +69,16 @@ for vpath in : false; do
   $MAKE # Should be a no-op.
 
   $sleep
-  sed "s/^\\(FINGERPRINT\\) *=.*/\\1 = $magic1/" $srcdir/Makefile.am >t
-  mv -f t $srcdir/Makefile.am
+  sed "s/^\\(FINGERPRINT\\)=.*/\\1=$magic1/" $srcdir/configure.ac >t
+  mv -f t $srcdir/configure.ac
   $MAKE nil
   $FGREP FINGERPRINT Makefile # For debugging.
   $FGREP $magic1 Makefile
   test x"$(./foo.sh)" = x"$magic1"
 
   $sleep
-  echo 'sed "s/^\\(FINGERPRINT\\) *=.*/\\1 = '$magic2'/"' \
-    > $srcdir/tweak-makefile-am
+  echo 'sed "s/^\\(FINGERPRINT\\)=.*/\\1='$magic2'/"' \
+    > $srcdir/tweak-configure-in
   $MAKE nil
   $FGREP FINGERPRINT Makefile # For debugging.
   $FGREP $magic1 Makefile && exit 1
@@ -88,9 +86,9 @@ for vpath in : false; do
   test x"$(./foo.sh)" = x"$magic2"
 
   $sleep
-  echo cat > $srcdir/tweak-makefile-am # Make it a no-op again.
-  sed "s/^\\(FINGERPRINT\\) *=.*/\\1 = DummyValue/" $srcdir/Makefile.am >t
-  mv -f t $srcdir/Makefile.am
+  echo cat > $srcdir/tweak-configure-in # Make it a no-op again.
+  sed "s/^\\(FINGERPRINT\\)=.*/\\1=DummyValue/" $srcdir/configure.ac >t
+  mv -f t $srcdir/configure.ac
   $MAKE distcheck
   $FGREP $magic1 Makefile && exit 1 # Sanity check.
   $FGREP $magic2 Makefile && exit 1 # Likewise.

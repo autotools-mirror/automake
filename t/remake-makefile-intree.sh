@@ -14,12 +14,12 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Test basic remake rules for Makefiles, for a *VPATH build*.
+# Test basic remake rules for Makefiles, for an *in-tree build*.
 # This testcase checks dependency of generated Makefile from Makefile.am,
 # configure.ac, acinclude.m4, aclocal.m4, and extra m4 files considered
 # by aclocal.
-# Keep this in sync with sister test 'remake8a.sh', which performs the
-# same checks for a in-tree build.
+# Keep this in sync with sister test 'remake-makefile-vpath.sh', which
+# performs the same checks for a VPATH build.
 
 . ./defs || exit 1
 
@@ -43,9 +43,7 @@ $ACLOCAL
 $AUTOCONF
 $AUTOMAKE
 
-mkdir build
-cd build
-srcdir='..' # To make syncing with remake8a.sh easier.
+srcdir='.' # To make syncing with remake-makefile-vpath.sh easier.
 
 $srcdir/configure
 

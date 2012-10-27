@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2011-2012 Free Software Foundation, Inc.
+# Copyright (C) 2009-2012 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -53,10 +53,15 @@ $ACLOCAL
 $AUTOCONF
 $AUTOMAKE -a
 
-no_test_has_run ()
+no_test_run ()
 {
-  ls -1 *.log | grep -v '^test-suite\.log$' | grep . && exit 1
-  grep '^# TOTAL: *0$' test-suite.log
+  $MAKE check ${1+"$@"} >stdout || { cat stdout; exit 1; }
+  cat stdout
+  ls *.log | grep -v '^test-suite\.log$' | grep . && exit 1
+  grep '^# TOTAL: *0$' test-suite.log || exit 1
+  for x in TOTAL PASS FAIL XPASS FAIL SKIP ERROR; do
+    grep "^# $x: *0$" stdout || exit 1
+  done
   :
 }
 
@@ -70,15 +75,15 @@ for vpath in : false; do
   fi
   $srcdir/configure
   cd sub1
-  $MAKE check VERBOSE=yes
-  no_test_has_run
+  no_test_run
+  no_test_run VERBOSE=yes
   cd ../sub2
-  $MAKE check VERBOSE=yes TESTS=''
-  no_test_has_run
+  no_test_run TESTS=
+  no_test_run VERBOSE=yes TESTS=' '
   cd ..
+  # Sanity check.
   $MAKE check
   cat sub2/foo.log
-  $MAKE distclean
   cd $srcdir
 done
 

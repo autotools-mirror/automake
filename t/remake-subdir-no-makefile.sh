@@ -16,7 +16,6 @@
 
 # Ensure that remake rules work for files in a subdirectory even when
 # there is no Makefile for that subdirectory.
-# See also sister "grepping" test 'remake3.sh'.
 
 . ./defs || exit 1
 

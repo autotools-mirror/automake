@@ -15,8 +15,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Test remake rules for m4 files included (also recursively) by
-# aclocal.m4.
-# Keep in sync with sister tests 'remake10a.sh' and 'remake10b.sh'.
+# configure.ac.  Keep in sync with sister tests:
+#   - remake-include-aclocal.sh
+#   - remake-include-makefile.sh
 
 . ./defs || exit 1
 
@@ -27,9 +28,8 @@ magic3=%%MagicStringThree%%
 remake="$MAKE nil"
 
 cat >> configure.ac <<END
-AC_CONFIG_MACRO_DIR([m4])
-FINGERPRINT='my_fingerprint'
-AC_SUBST([FINGERPRINT])
+m4_include([foo.m4])
+AC_SUBST([FINGERPRINT], [my_fingerprint])
 AC_OUTPUT
 END
 
@@ -38,13 +38,12 @@ cat > Makefile.am <<'END'
 nil:
 ## Used by "make distcheck" later.
 check-local:
-	test -f $(top_srcdir)/m4/foo.m4
-	test ! -r $(top_srcdir)/m4/bar.m4
+	test -f $(top_srcdir)/foo.m4
+	test ! -r $(top_srcdir)/bar.m4
 	test x'$(FINGERPRINT)' = x'DummyValue'
 END
 
-mkdir m4
-echo 'AC_DEFUN([my_fingerprint], [BadBadBad])' > m4/foo.m4
+echo 'm4_define([my_fingerprint], [BadBadBad])' > foo.m4
 
 $ACLOCAL
 $AUTOCONF
@@ -64,21 +63,21 @@ for vpath in : false; do
   $MAKE # Should be a no-op.
 
   $sleep
-  echo "AC_DEFUN([my_fingerprint], [$magic1])" > $top_srcdir/m4/foo.m4
+  echo "m4_define([my_fingerprint], [$magic1])" > $top_srcdir/foo.m4
   $remake
   $FGREP FINGERPRINT Makefile # For debugging.
   $FGREP $magic1 Makefile
 
   $sleep
-  echo "AC_DEFUN([my_fingerprint], [$magic2])" > $top_srcdir/m4/foo.m4
+  echo "m4_define([my_fingerprint], [$magic2])" > $top_srcdir/foo.m4
   $remake
   $FGREP FINGERPRINT Makefile # For debugging.
   $FGREP $magic1 Makefile && exit 1
   $FGREP $magic2 Makefile
 
   $sleep
-  echo "m4_include([m4/bar.m4])" > $top_srcdir/m4/foo.m4
-  echo "AC_DEFUN([my_fingerprint], [$magic3])" > $top_srcdir/m4/bar.m4
+  echo "m4_include([bar.m4])" > $top_srcdir/foo.m4
+  echo "m4_define([my_fingerprint], [$magic3])" > $top_srcdir/bar.m4
   $remake
   $FGREP FINGERPRINT Makefile # For debugging.
   $FGREP $magic1 Makefile && exit 1
@@ -86,15 +85,14 @@ for vpath in : false; do
   $FGREP $magic3 Makefile
 
   $sleep
-  echo "AC_DEFUN([my_fingerprint], [$magic1])" > $top_srcdir/m4/bar.m4
+  echo "m4_define([my_fingerprint], [$magic1])" > $top_srcdir/bar.m4
   $remake
   $FGREP $magic2 Makefile && exit 1
   $FGREP $magic3 Makefile && exit 1
   $FGREP $magic1 Makefile
 
   $sleep
-  echo "AC_DEFUN([my_fingerprint], [DummyValue])" > $top_srcdir/m4/foo.m4
-  echo "AC_DEFUN([AM_UNUSED], [NoSuchMacro])" > $top_srcdir/m4/bar.m4
+  echo "m4_define([my_fingerprint], [DummyValue])" > $top_srcdir/foo.m4
   $MAKE distcheck
   $FGREP $magic1 Makefile && exit 1 # Sanity check.
   $FGREP $magic2 Makefile && exit 1 # Likewise.
