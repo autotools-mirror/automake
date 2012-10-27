@@ -60,6 +60,7 @@ sc_perl_local \
 sc_AMDEP_TRUE_in_automake_in \
 sc_tests_make_without_am_makeflags \
 $(sc_obsolete_requirements_rules) \
+sc_tests_no_source_defs \
 sc_tests_obsolete_variables \
 sc_tests_here_document_format \
 sc_tests_command_subst \
@@ -331,6 +332,14 @@ sc_tests_command_subst:
 sc_tests_Exit_not_exit:
 	@if grep 'Exit' $(xtests) $(xdefs) | grep -Ev '^[^:]+: *#' | grep .; then \
 	  echo "Use 'exit', not 'Exit'; it's obsolete now." 1>&2; \
+	  exit 1; \
+	fi
+
+## Guard against obsolescent uses of ./defs in tests.  Now,
+## 'test-init.sh' should be used instead.
+sc_tests_no_source_defs:
+	@if grep -E '\. .*defs($$| )' $(xtests); then \
+	  echo "Source 'test-init.sh', not './defs'." 1>&2; \
 	  exit 1; \
 	fi
 
