@@ -70,14 +70,6 @@ $MAKE
 
 ./compile cl $CPPFLAGS $CFLAGS -c -o "$absmainobj" "$absmainc"
 
-# cl expects archives to be named foo.lib, not libfoo.a so
-# make a simple copy here if needed. This is a severe case
-# of badness, but ignore that since this is not what is
-# being tested here...
-if test -f sub/libfoo.a; then
-  cp sub/libfoo.a sub/foo.lib
-fi
-
 # POSIX mandates that the compiler accepts a space between the -I,
 # -l and -L options and their respective arguments.  Traditionally,
 # this should work also without a space.  Try both usages.
