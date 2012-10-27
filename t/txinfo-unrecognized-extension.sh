@@ -17,7 +17,7 @@
 # Test that automake complains properly when the files with unrecognized
 # extensions are passed to the TEXINFOS primary.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat > Makefile.am << 'END'
 info_TEXINFOS = foobar.foo bazquux.tex zardoz.c

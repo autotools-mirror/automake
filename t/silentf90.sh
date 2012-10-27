@@ -18,7 +18,7 @@
 # Keep this ins sync with the sister test 'silentf77.sh'.
 
 required=fortran
-. ./defs || exit 1
+. test-init.sh
 
 mkdir sub
 

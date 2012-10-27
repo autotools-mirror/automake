@@ -16,7 +16,7 @@
 
 # Make sure the install-exec-hook example we give in the manual works.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >>configure.ac <<'EOF'
 AC_PROG_LN_S

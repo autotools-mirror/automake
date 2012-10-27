@@ -17,7 +17,7 @@
 # Make sure that invalid entries in TEST_EXTENSIONS are diagnosed at
 # make runtime.  See automake bug#9400.
 
-. ./defs || exit 1
+. test-init.sh
 
 echo AC_OUTPUT >> configure.ac
 

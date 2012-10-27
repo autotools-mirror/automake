@@ -17,7 +17,7 @@
 # If $(pythondir) is the empty string, then nothing should be installed there.
 
 required=python
-. ./defs || exit 1
+. test-init.sh
 
 cat >>configure.ac <<'END'
 AM_PATH_PYTHON

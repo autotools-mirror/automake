@@ -19,7 +19,7 @@
 #   - remake-include-aclocal.sh
 #   - remake-include-makefile.sh
 
-. ./defs || exit 1
+. test-init.sh
 
 magic1=::MagicStringOne::
 magic2=__MagicStringTwo__

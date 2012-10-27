@@ -17,7 +17,7 @@
 # Test on some aclocal options.  Report from Alexandre Oliva.
 
 am_create_testdir=empty
-. ./defs || exit 1
+. test-init.sh
 
 echo "AC_INIT([$me], [0]) AM_INIT_AUTOMAKE" > configure.ac
 

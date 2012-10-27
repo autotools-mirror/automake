@@ -17,7 +17,7 @@
 # Test "install-sh -d" with spaces in directory names.
 
 am_create_testdir=empty
-. ./defs || exit 1
+. test-init.sh
 
 cwd=$(pwd) || fatal_ "getting current working directory"
 

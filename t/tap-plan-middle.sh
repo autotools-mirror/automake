@@ -17,7 +17,7 @@
 # TAP support:
 #  - test plan preceding and/or following non-result TAP lines
 
-. ./defs || exit 1
+. test-init.sh
 
 . tap-setup.sh
 

@@ -18,7 +18,7 @@
 #  - interactions between "TAP plan with SKIP" and logging of earlier or
 #    later TAP or non-TAP text
 
-. ./defs || exit 1
+. test-init.sh
 
 . tap-setup.sh
 

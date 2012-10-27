@@ -16,7 +16,7 @@
 
 # Remake rules and user-defined recursive rules.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 m4_include([extra-targets.m4])

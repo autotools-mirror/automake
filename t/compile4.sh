@@ -18,7 +18,7 @@
 # with respect to absolute paths.
 
 required='cl'
-. ./defs || exit 1
+. test-init.sh
 
 get_shell_script compile
 

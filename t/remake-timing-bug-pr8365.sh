@@ -22,7 +22,7 @@
 # make by hand.  Thus, fixing it would not be worth the hassle, but
 # we prefer to keep it exposed anyway.
 
-. ./defs || exit 1
+. test-init.sh
 
 # We'll use calls to stat to get debugging information.
 if stat /dev/null; then stat=stat; else stat=:; fi

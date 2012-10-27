@@ -17,7 +17,7 @@
 # Ensure that remake rules work for files in a subdirectory even when
 # there is no Makefile for that subdirectory.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_CONFIG_FILES([sub/foo])

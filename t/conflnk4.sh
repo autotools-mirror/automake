@@ -17,7 +17,7 @@
 # Test to make sure links to _identical files_ created by AC_CONFIG_LINKS get
 # removed with 'make distclean' only if doing a VPATH build.
 
-. ./defs || exit 1
+. test-init.sh
 
 mkdir nonmk-subdir sdir sdir/mk-subdir
 : > src

@@ -21,7 +21,7 @@
 # FIXME: So this test is still xfailing.
 # See sister test 'instdir-cond.sh' for the succeeding part.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AM_CONDITIONAL([ENABLE_FOO], [false])

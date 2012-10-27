@@ -17,7 +17,7 @@
 # Test to make sure dependency tracking doesn't interfere with Fortran.
 # For PR 75.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_CONFIG_SRCDIR([foo.f])

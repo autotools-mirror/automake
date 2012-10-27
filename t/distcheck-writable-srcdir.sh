@@ -21,7 +21,7 @@
 # case too (since it doesn't cost us anything but this test).
 # See automake bug#10878.
 
-. ./defs || exit 1
+. test-init.sh
 
 echo AC_OUTPUT >> configure.ac
 

@@ -17,7 +17,7 @@
 # Test to make sure AC_REPLACE_FUNCS works across lines.  Report from
 # Jim Meyering.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat > Makefile.am << 'END'
 bin_PROGRAMS = joe

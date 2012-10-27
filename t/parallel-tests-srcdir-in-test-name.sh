@@ -16,7 +16,7 @@
 
 # Check parallel-tests features: listing $(srcdir)/ in TESTS works.
 
-. ./defs || exit 1
+. test-init.sh
 
 echo AC_OUTPUT >> configure.ac
 

@@ -17,7 +17,7 @@
 # If $(javadir) is the empty string, then nothing should be installed there.
 
 required=javac
-. ./defs || exit 1
+. test-init.sh
 
 cat >>configure.ac <<'END'
 AC_OUTPUT

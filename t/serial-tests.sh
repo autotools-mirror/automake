@@ -16,7 +16,7 @@
 
 # Option 'serial-tests'.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat > Makefile.am << 'END'
 AUTOMAKE_OPTIONS = serial-tests

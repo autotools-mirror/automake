@@ -18,7 +18,7 @@
 # build directory.  Related to automake bug#11146.
 
 required='makeinfo tex texi2dvi dvips'
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac <<'END'
 AC_CONFIG_FILES([sub/Makefile])

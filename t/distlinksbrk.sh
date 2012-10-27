@@ -17,7 +17,7 @@
 # Check that distributed broken symlinks cause 'make dist' to fail, and
 # to do so with (mostly) meaningful diagnostic.
 
-. ./defs || exit 1
+. test-init.sh
 
 # We need, for our broken symlinks, names that make it hard to get false
 # positives when grepping make output to look for them.

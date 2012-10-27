@@ -17,7 +17,7 @@
 # Use of these variables is deprecated:
 # LISP, HEADERS, DATA, SCRIPTS, LTLIBRARIES, LIBRARIES, PROGRAMS, MANS.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >Makefile.am <<\EOF
 DATA =

@@ -16,7 +16,7 @@
 
 # Check parallel-tests features: empty TESTS
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_CONFIG_FILES([sub1/Makefile sub2/Makefile])

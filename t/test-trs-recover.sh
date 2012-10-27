@@ -19,7 +19,7 @@
 # This test is complex and tricky, but that's acceptable since we are
 # testing semantics that are potentially complex and tricky.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac <<END
 AC_OUTPUT

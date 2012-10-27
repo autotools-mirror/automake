@@ -17,7 +17,7 @@
 # Make sure we don't mistake a macro definition for an invocation.
 # From Jim Meyering.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 dnl if buggy this will require getloadavg.c

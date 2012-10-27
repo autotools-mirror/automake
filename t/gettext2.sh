@@ -18,7 +18,7 @@
 # PR/338, reported by Charles Wilson.
 
 required='gettext'
-. ./defs || exit 1
+. test-init.sh
 
 cat >>configure.ac <<END
 AM_GNU_GETTEXT([external])

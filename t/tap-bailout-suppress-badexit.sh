@@ -18,7 +18,7 @@
 #  - A "Bail out!" directive causes the driver to ignore the exit
 #    status of the test script.
 
-. ./defs || exit 1
+. test-init.sh
 
 tests='exit.test exit127.test sighup.test sigterm.test'
 

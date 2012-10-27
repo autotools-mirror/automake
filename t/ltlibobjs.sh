@@ -17,7 +17,7 @@
 # Test to make sure LTLIBOBJS alone works ok.
 # Report from Vadim Zeitlin.
 required=libtool
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_SUBST([LTLIBOBJS])

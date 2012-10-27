@@ -17,7 +17,7 @@
 # PR 507: Check the filename-length-max=99 option
 # in conjunction with AC_CONFIG_SUBDIRS.
 
-. ./defs || exit 1
+. test-init.sh
 
 # The name is so that 99 is exactly hit (including final \0).
 subdirname='cnfsubdir'

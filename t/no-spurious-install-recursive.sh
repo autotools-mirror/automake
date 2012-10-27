@@ -17,7 +17,7 @@
 # Regression test for install-recursive appearing in a non recursive Makefile.
 # Report from Bruno Haible.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat > Makefile.am << 'END'
 noinst_SCRIPTS = hostname

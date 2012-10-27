@@ -21,7 +21,7 @@
 unset stderr_fileno_ || :
 
 am_create_testdir=empty
-. ./defs || exit 1
+. test-init.sh
 
 set +e
 

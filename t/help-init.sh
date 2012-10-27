@@ -17,7 +17,7 @@
 # Make sure that our grand macro 'AM_INIT_AUTOMAKE' add proper text
 # to the configure help screen.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat > configure.ac <<END
 AC_INIT([$me], [1.0])

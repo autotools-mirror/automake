@@ -18,7 +18,7 @@
 # PR/319.
 
 am_create_testdir=empty
-. ./defs || exit 1
+. test-init.sh
 
 # Start macros with AM_ because that causes aclocal to complain if it
 # cannot find them.

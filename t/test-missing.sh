@@ -16,7 +16,7 @@
 
 # parallel-tests: non-existent scripts listed in TESTS get diagnosed.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_OUTPUT

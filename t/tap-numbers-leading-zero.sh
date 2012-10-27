@@ -17,7 +17,7 @@
 # TAP support:
 #  - how does TAP result numbers with leading zero fares?
 
-. ./defs || exit 1
+. test-init.sh
 
 . tap-setup.sh
 

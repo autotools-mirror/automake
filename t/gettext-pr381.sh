@@ -18,7 +18,7 @@
 # 'SUBDIRS = po intl' must not be required if 'po/' doesn't exist.
 
 required='gettext'
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AM_GNU_GETTEXT

@@ -17,7 +17,7 @@
 # Test that POSIX variable expansion '$(var:str=rpl)' works when used
 # with the SCRIPTS primary.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_OUTPUT

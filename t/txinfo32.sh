@@ -17,7 +17,7 @@
 # Make sure the documentation targets work as required with BSD make,
 # even in the presence of subdirs (requires presence of default *-am rules).
 
-. ./defs || exit 1
+. test-init.sh
 
 mkdir sub
 cat >>configure.ac <<'END'

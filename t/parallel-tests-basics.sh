@@ -22,7 +22,7 @@
 #  - TESTS redefinition at runtime (with and without test suffixes)
 #  - AM_LAZY_CHECK
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_OUTPUT

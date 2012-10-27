@@ -17,7 +17,7 @@
 # Make sure .PHONY can be given dependencies several times.
 # From Ralf Corsepius.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >Makefile.am << 'EOF'
 .PHONY: foo

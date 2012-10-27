@@ -16,7 +16,7 @@
 
 # TAP support: AM_LAZY_CHECK
 
-. ./defs || exit 1
+. test-init.sh
 
 cat > Makefile.am << 'END'
 TEST_LOG_COMPILER = cat

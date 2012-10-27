@@ -17,7 +17,7 @@
 # Test remake rules when the name of an m4 macro change.  Try both with
 # and without indirection.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac <<'END'
 MY_MACRO

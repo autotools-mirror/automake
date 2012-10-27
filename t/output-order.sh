@@ -17,7 +17,7 @@
 # Test that 'automake -a' output order is stable.
 # From report by Bruno Haible.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >>configure.ac <<'END'
 AC_OUTPUT

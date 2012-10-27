@@ -20,7 +20,7 @@
 # and yflags2.sh.
 
 required=cc
-. ./defs || exit 1
+. test-init.sh
 
 cat >fake-lex <<'END'
 #!/bin/sh

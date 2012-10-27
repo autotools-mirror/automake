@@ -17,7 +17,7 @@
 # TAP support:
 #  - literal string "0" as a TODO or SKIP message
 
-. ./defs || exit 1
+. test-init.sh
 
 . tap-setup.sh
 

@@ -18,7 +18,7 @@
 #  - a test result numbered as 0 is to be considered out-of-order
 # This is consistent with the behaviour of the 'prove' utility.
 
-. ./defs || exit 1
+. test-init.sh
 
 if test $am_tap_implementation = perl; then
   $PERL -MTAP::Parser -e 1 \

@@ -17,7 +17,7 @@
 # Colorized output from the testsuite report shouldn't end up in log files.
 
 required='grep-nonprint'
-. ./defs || exit 1
+. test-init.sh
 
 TERM=ansi; export TERM
 

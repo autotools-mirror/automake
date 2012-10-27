@@ -17,7 +17,7 @@
 # Test to make sure that line number and file name in error message
 # referring to variable is always correct.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat > configure.ac << END
 AC_INIT([$me], [1.0])

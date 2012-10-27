@@ -16,7 +16,7 @@
 
 # Another '+=' test.  From Paul Berrevoets.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat > Makefile.am << 'END'
 VAR = \

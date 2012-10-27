@@ -21,7 +21,7 @@
 # directory.
 # Keep this in sync with sister tests 'auxdir6.sh' and 'auxdir7.sh'.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_CONFIG_FILES([subdir/Makefile])

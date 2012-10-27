@@ -17,7 +17,7 @@
 # TAP support:
 #  - some corner cases for TAP plan
 
-. ./defs || exit 1
+. test-init.sh
 
 . tap-setup.sh
 

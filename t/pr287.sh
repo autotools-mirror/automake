@@ -16,7 +16,7 @@
 
 # Test for PR 287: empty SUBDIRS.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_OUTPUT

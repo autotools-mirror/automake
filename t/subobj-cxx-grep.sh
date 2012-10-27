@@ -17,7 +17,7 @@
 # Grepping checks on the use of subdir objects with C++.
 # See relate test 't/subobj-cxx-grep.sh' for semantic checks.
 
-. ./defs || exit 1
+. test-init.sh
 
 echo AC_PROG_CXX >> configure.ac
 

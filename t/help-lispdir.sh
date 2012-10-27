@@ -17,7 +17,7 @@
 # Make sure that our macro 'AM_PATH_LISPDIR' adds proper text to
 # the configure help screen.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat > configure.ac <<END
 AC_INIT([$me], [1.0])

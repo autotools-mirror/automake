@@ -20,7 +20,7 @@
 
 am_create_testdir=empty
 # An actual python is *not* required in this test.
-. ./defs || exit 1
+. test-init.sh
 
 PYTHON=; unset PYTHON
 

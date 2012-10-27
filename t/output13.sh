@@ -17,7 +17,7 @@
 # Make sure an AC_CONFIG_FILES, AC_CONFIG_LINKS, and AC_CONFIG_COMMANDS
 # are not prerequisites of 'all'.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << \END
 AC_SUBST([FOO], [foo])

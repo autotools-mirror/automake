@@ -17,7 +17,7 @@
 # Test that overriding 'html' target causes only one "html:" rule to
 # be output.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat > Makefile.am << 'END'
 html:

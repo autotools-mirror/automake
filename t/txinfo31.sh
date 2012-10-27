@@ -17,7 +17,7 @@
 # Make sure file extensions are matched correctly.
 # Report from Eric Dorland.
 
-. ./defs || exit 1
+. test-init.sh
 
 echo info_TEXINFOS = bar.texi >Makefile.am
 cat >bar.texi <<EOF

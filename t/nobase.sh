@@ -17,7 +17,7 @@
 # Make sure nobase_* works.
 
 required=cc
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac <<'EOF'
 AC_PROG_CC

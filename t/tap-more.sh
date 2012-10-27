@@ -24,7 +24,7 @@
 #    correct test script(s)
 #  - "make distcheck" works
 
-. ./defs || exit 1
+. test-init.sh
 
 fetch_tap_driver
 

@@ -17,7 +17,7 @@
 # Make sure Automake ignores in-line comments when using variables,
 # but preserve them in the output.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac <<'END'
 AC_OUTPUT

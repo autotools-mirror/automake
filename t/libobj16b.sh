@@ -18,7 +18,7 @@
 # Please keep this in sync with sister test 'libobj16a.sh'.
 
 required=cc
-. ./defs || exit 1
+. test-init.sh
 
 mv configure.ac configure.proto
 cat >> configure.proto << 'END'

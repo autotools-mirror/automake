@@ -16,7 +16,7 @@
 
 # -Werror and local -Werror settings should be flagged for the user.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >>configure.ac <<\END
 AC_CONFIG_FILES([sub/Makefile])

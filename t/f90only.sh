@@ -17,7 +17,7 @@
 # Make sure programs with only Fortran 90 source are handled properly.
 # (copied from 'fonly.sh') Mike Nolta <mrnolta@princeton.edu>
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_PROG_FC

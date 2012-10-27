@@ -17,7 +17,7 @@
 # parallel-tests:
 #  - LOG_DRIVER variables can be AC_SUBST'd
 
-. ./defs || exit 1
+. test-init.sh
 
 mkdir test-drivers
 

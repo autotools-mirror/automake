@@ -17,7 +17,7 @@
 # Test to make sure ylwrap is put in right location.
 # Report from Tim Van Holder.
 
-. ./defs || exit 1
+. test-init.sh
 
 mkdir aux1 sub
 

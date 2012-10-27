@@ -16,7 +16,7 @@
 
 # Test for an odd conditional bug.  Report from Pavel Roskin.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 compat=yes

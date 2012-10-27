@@ -18,7 +18,7 @@
 # idea is that if config.h is in a subdir, and there is no Makefile in
 # that subdir, then we want to build config.h as the top level.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_CONFIG_HEADERS([subdir/config.h])

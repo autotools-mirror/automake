@@ -20,7 +20,7 @@
 # different test scripts don't end up sharing the same log file.
 # (Automake itself is such a project, BTW ;-)
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac <<END
 AC_OUTPUT

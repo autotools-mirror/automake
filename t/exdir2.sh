@@ -16,7 +16,7 @@
 
 # Test to make sure undefined directories are invalid.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat > Makefile.am << 'EOF'
 quuz_DATA = zot.html

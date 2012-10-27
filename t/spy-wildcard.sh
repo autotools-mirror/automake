@@ -17,7 +17,7 @@
 # Check that the behaviour of the $(wildcard) builtin in corner cases
 # matches the assumptions done in our recipes.
 
-. ./defs || exit 1
+. test-init.sh
 
 mkdir dir
 echo dummy > file

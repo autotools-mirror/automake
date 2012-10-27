@@ -18,7 +18,7 @@
 # This test ensures this also if $(foo_PRIMARY) is nonempty, see
 # 'instdir.sh'.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >>configure.ac <<'END'
 AC_SUBST([foodir], ['${datadir}'/foo])

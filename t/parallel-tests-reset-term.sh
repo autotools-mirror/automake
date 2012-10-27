@@ -18,7 +18,7 @@
 # TERM variable by either TESTS_ENVIRONMENT and AM_TESTS_ENVIRONMENT.
 
 required='grep-nonprint'
-. ./defs || exit 1
+. test-init.sh
 
 TERM=ansi; export TERM
 

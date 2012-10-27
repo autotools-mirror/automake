@@ -16,7 +16,7 @@
 
 # TAP result lines whose description is a number.
 
-. ./defs || exit 1
+. test-init.sh
 
 . tap-setup.sh
 

@@ -17,7 +17,7 @@
 # Check that distributed symlinks in the source tree will be expanded
 # as regular files in $(distdir).
 
-. ./defs || exit 1
+. test-init.sh
 
 echo text > file
 

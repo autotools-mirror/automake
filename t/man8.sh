@@ -16,7 +16,7 @@
 
 # Check for a bug in distcheck w.r.t. generated manpages.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat > Makefile.am << 'END'
 dist_man_MANS = foo.1

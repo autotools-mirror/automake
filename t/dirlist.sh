@@ -16,7 +16,7 @@
 
 # Check dirlist support.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat > configure.ac <<EOF
 AC_INIT([$me], [1.0])
@@ -50,8 +50,7 @@ grep m4_include aclocal.m4 && exit 1
 grep 'GUILE-VERSION' configure
 
 # This bug can occur only when we do a VPATH build of Automake
-# (because of the '-I' passed to aclocal in tests/defs/aclocal.in) but
-# it's OK because VPATH builds are done by 'make distcheck'.
+# but it's OK because VPATH builds are done by 'make distcheck'.
 grep 'I should not be included' configure && exit 1
 
 :

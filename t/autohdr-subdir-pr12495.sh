@@ -18,7 +18,7 @@
 # remake rules for AC_CONFIG_HEADERS arguments after the first one,
 # not even when subdirs are involved.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_CONFIG_HEADERS([a.h b.h sub/c.h])

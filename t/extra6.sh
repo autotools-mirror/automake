@@ -17,7 +17,7 @@
 # Check to make sure EXTRA_DIST can contain a directory or
 # a subdirectory, in $(builddir) or $(srcdir).
 
-. ./defs || exit 1
+. test-init.sh
 
 echo AC_OUTPUT >> configure.ac
 

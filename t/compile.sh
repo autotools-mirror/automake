@@ -17,7 +17,7 @@
 # Make sure 'compile' preserves spaces in its arguments.
 
 am_create_testdir=empty
-. ./defs || exit 1
+. test-init.sh
 
 get_shell_script compile
 

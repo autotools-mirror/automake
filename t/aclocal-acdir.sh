@@ -18,7 +18,7 @@
 # check that stuff in the automake acdir takes precedence over stuff in
 # the system acdir.
 
-. ./defs || exit 1
+. test-init.sh
 
 mkdir am sys
 

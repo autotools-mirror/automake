@@ -17,7 +17,7 @@
 # Test remake rules when Makefile.am or its prerequisites change.
 # Keep in sync with the other sister tests 'remake-after-*.sh'.
 
-. ./defs || exit 1
+. test-init.sh
 
 magic1=::MagicStringOne::
 magic2=__MagicStringTwo__

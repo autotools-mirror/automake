@@ -16,7 +16,7 @@
 
 # Backward-compatibility: AC_OUTPUT with arguments.
 
-. ./defs || exit 1
+. test-init.sh
 
 mkdir sub
 : > Makefile.am

@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Make sure stamp-h* files are created where we expect
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << END
 AC_CONFIG_HEADERS([1.h

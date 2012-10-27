@@ -16,7 +16,7 @@
 
 # Test remake rules when m4 files get renamed.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac <<'END'
 MY_MACRO

@@ -16,7 +16,7 @@
 
 # Check that the "all" target triggers rebuilt of outdated Makefiles.
 
-. ./defs || exit 1
+. test-init.sh
 
 mkfile=Makefile
 

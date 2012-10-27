@@ -18,7 +18,7 @@
 # program.  Functional test.  See automake bug#10894.
 
 required='valac cc c++'
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac <<'END'
 AC_PROG_CC

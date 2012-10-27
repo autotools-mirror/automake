@@ -17,7 +17,7 @@
 # Check conditional local rules.
 # Report from Simon Josefsson.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >>configure.ac <<'EOF'
 AM_CONDITIONAL([CASE_A], [test -n "$case_A"])

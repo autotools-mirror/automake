@@ -17,7 +17,7 @@
 # Basic TAP test protocol support:
 #  - special plan format to skip all the tests in a script
 
-. ./defs || exit 1
+. test-init.sh
 
 . tap-setup.sh
 

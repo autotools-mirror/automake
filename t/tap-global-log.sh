@@ -17,7 +17,7 @@
 # TAP support:
 #  - which log files get copied in the global log?
 
-. ./defs || exit 1
+. test-init.sh
 
 . tap-setup.sh
 

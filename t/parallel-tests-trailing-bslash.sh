@@ -19,7 +19,7 @@
 # older bash versions (e.g., bash 2.05b).
 # See automake bug#10436.
 
-. ./defs || exit 1
+. test-init.sh
 
 echo AC_OUTPUT >> configure.ac
 

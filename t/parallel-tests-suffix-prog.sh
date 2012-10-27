@@ -19,7 +19,7 @@
 # See also sister test 'parallel-tests-suffix.sh'.
 
 required='cc native'
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_PROG_CC

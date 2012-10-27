@@ -18,7 +18,7 @@
 # This test also works as a mild stress-test on the python support.
 
 required='cc python virtualenv'
-. ./defs || exit 1
+. test-init.sh
 
 # In case the user's config.site defines pythondir or pyexecdir.
 CONFIG_SITE=/dev/null; export CONFIG_SITE

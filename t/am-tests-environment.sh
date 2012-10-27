@@ -17,7 +17,7 @@
 # parallel-tests: check AM_TESTS_ENVIRONMENT support, and its
 # interactions with TESTS_ENVIRONMENT.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_PROG_MKDIR_P

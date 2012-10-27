@@ -17,7 +17,7 @@
 # TAP and $(XFAIL_TESTS): test results without directives are turned from
 # PASS to XPASS and from FAIL to XFAIL; other results are unchanged.
 
-. ./defs || exit 1
+. test-init.sh
 
 . tap-setup.sh
 

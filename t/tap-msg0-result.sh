@@ -17,7 +17,7 @@
 # TAP support:
 #  - the string "0" as a test description
 
-. ./defs || exit 1
+. test-init.sh
 
 . tap-setup.sh
 

@@ -17,7 +17,7 @@
 # Check all notrans_, dist_, nodist_ prefix combinations for MANS
 # primary and install-man dependencies.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >>configure.ac <<'END'
 AC_OUTPUT

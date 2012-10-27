@@ -19,7 +19,7 @@
 # Makefile in that directory.  'distcom5.sh' performs the same
 # test with a Makefile in the directory.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
    AC_CONFIG_FILES([tests/autoconf:tests/wrapper.in],

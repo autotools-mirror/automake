@@ -19,7 +19,7 @@
 # This is the python sister test of 'instmany.sh', see there for details.
 
 required='python'
-. ./defs || exit 1
+. test-init.sh
 
 limit=2500
 subdir=long_subdir_name_with_many_characters

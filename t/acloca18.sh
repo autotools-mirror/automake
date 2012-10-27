@@ -17,7 +17,7 @@
 # Test for --install with #serial numbers.
 
 am_create_testdir=empty
-. ./defs || exit 1
+. test-init.sh
 
 cat > configure.ac << 'END'
 AC_INIT

@@ -20,7 +20,7 @@
 # Cf. 'fort1.sh' and 'link_f90_only.sh'.
 
 required=gfortran # Required only in order to run ./configure.
-. ./defs || exit 1
+. test-init.sh
 
 mkdir sub
 

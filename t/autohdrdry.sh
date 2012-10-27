@@ -17,7 +17,7 @@
 # Removal recovery rules for AC_CONFIG_HEADERS should not remove files
 # with 'make -n'.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >>configure.ac <<'EOF'
 AC_CONFIG_HEADERS([config.h])

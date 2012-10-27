@@ -17,7 +17,7 @@
 # Check against automake bug#9579: distcheck does not always detect
 # incomplete uninstall as advertised.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_OUTPUT

@@ -16,7 +16,7 @@
 
 # Make sure an AC_CONFIG_FILES ignore filenames with shell variables.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << \END
 AC_SUBST([FOO], [foo])

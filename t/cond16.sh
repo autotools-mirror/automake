@@ -18,7 +18,7 @@
 # references.
 # Report from Richard Boulton.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AM_CONDITIONAL([COND1], [true])

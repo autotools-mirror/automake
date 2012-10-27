@@ -17,7 +17,7 @@
 # Check that conditional redefinitions of AC_SUBST'ed variables are detected.
 # Report from Patrik Weiskircher.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >>configure.ac <<EOF
 AM_CONDITIONAL([COND], [true])

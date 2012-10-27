@@ -19,7 +19,7 @@
 # greater exposure of that test.
 
 required='cc libtoolize'
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac <<'EOF'
 AC_PROG_CC

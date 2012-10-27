@@ -18,7 +18,7 @@
 # Keep this in sync with sister test 'silent-yacc-gcc.sh'.
 
 required='cc yacc'
-. ./defs || exit 1
+. test-init.sh
 
 cat >>configure.ac <<'EOF'
 AM_PROG_CC_C_O

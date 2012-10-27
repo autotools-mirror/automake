@@ -18,7 +18,7 @@
 # stuff (in particular, pgklibdir, pkgdatadir and pkglibexecdir).
 
 required=cc
-. ./defs || exit 1
+. test-init.sh
 
 cat > configure.ac <<'END'
 AC_INIT([foo], [1.0])

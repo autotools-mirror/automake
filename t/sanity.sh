@@ -16,7 +16,7 @@
 
 # Unsafe absolute directory names should be diagnosed.
 
-. ./defs || exit 1
+. test-init.sh
 
 mkdir 'unsafe$'
 cd 'unsafe$'

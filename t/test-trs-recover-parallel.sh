@@ -17,7 +17,7 @@
 # Check parallel harness features:
 #  - recovery from deleted '.log' and '.trs' files, with parallel make
 
-. ./defs || exit 1
+. test-init.sh
 
 all= log= trs=
 for i in 1 2 3 4 5 6 7 8 9 10 11 12; do

@@ -17,7 +17,7 @@
 # Long lines should be wrapped.
 # Report from Albert Chin.
 
-. ./defs || exit 1
+. test-init.sh
 
 n=1 files= match=
 while test $n -le 100

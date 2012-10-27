@@ -18,7 +18,7 @@
 #  - we shouldn't spuriously recognize as TAP result numbers what it
 #    not, even if it seems pretty close
 
-. ./defs || exit 1
+. test-init.sh
 
 . tap-setup.sh
 

@@ -17,7 +17,7 @@
 # Check that "make check" fails, when a DejaGnu test fails.
 
 required=runtest
-. ./defs || exit 1
+. test-init.sh
 
 cat > faildeja << 'END'
 #! /bin/sh

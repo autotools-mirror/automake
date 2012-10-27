@@ -17,7 +17,7 @@
 # Check that user recursion works even for targets that don't exist
 # in the top-level Makefile.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac <<'END'
 AC_CONFIG_FILES([sub/Makefile])

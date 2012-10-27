@@ -16,7 +16,7 @@
 
 # Test the optional argument of AM_PROG_AR.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AM_PROG_AR([

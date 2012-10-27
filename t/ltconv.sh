@@ -18,7 +18,7 @@
 # This example is taken from the manual.
 
 required='cc native libtoolize'
-. ./defs || exit 1
+. test-init.sh
 
 cat >>configure.ac <<'END'
 AC_PROG_CC

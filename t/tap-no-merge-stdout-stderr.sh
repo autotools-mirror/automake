@@ -18,7 +18,7 @@
 #  - By default, TAP input is only from the stdout (and not the stderr)
 #    of the test command.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat > Makefile.am << 'END'
 TEST_LOG_DRIVER_FLAGS = --comments

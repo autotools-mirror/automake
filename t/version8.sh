@@ -16,7 +16,7 @@
 
 # Calling AM_AUTOMAKE_VERSION by hand is a bug.
 
-. ./defs || exit 1
+. test-init.sh
 
 echo 'AM_AUTOMAKE_VERSION([1.9])' >>configure.ac
 $ACLOCAL 2>stderr && { cat stderr >&2; exit 0; }

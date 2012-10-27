@@ -17,7 +17,7 @@
 # Check conditional variable ordering.
 # Report from Ed Hartnett.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >>configure.ac <<'EOF'
 AM_CONDITIONAL([CASE_A], :)

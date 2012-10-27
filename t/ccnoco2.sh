@@ -17,7 +17,7 @@
 # Make sure Automake requires AM_PROG_CC_C_O when either per-targets
 # flags or subdir objects are used.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >>configure.ac <<EOF
 AC_CONFIG_FILES([src/Makefile])

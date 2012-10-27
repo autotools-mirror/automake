@@ -23,7 +23,7 @@
 # and forces the use of gcc depmode.
 
 required='cc c++ fortran fortran77 lex yacc'
-. ./defs || exit 1
+. test-init.sh
 
 # Avoids too much code duplication.
 do_and_check_silent_build ()

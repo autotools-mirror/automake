@@ -18,7 +18,7 @@
 # in obvious ways.  See PR automake/6, and related semantic tests
 # 'lex-depend.sh' and 'lex-depend-cxx.sh'.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_PROG_CC

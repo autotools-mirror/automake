@@ -17,7 +17,7 @@
 # Make sure 'AC_F77_LIBRARY_LDFLAGS' works properly.
 # Matthew D. Langston <langston@SLAC.Stanford.EDU>
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_PROG_F77

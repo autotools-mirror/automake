@@ -18,7 +18,7 @@
 # *.java files when there are none.
 # Report from Johannes Nicolai (PR/441).
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AM_CONDITIONAL([WHO_CARES], [false])

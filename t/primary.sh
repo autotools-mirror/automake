@@ -16,7 +16,7 @@
 
 # Test to make sure errors in am_install_var work.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat > Makefile.am << 'END'
 bin_PROGRAMS = @programs@

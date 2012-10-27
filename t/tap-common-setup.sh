@@ -16,7 +16,7 @@
 
 # Auxiliary test to set up common data used by many tests on TAP support.
 
-. ./defs || exit 1
+. test-init.sh
 
 echo AC_OUTPUT >> configure.ac
 

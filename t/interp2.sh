@@ -17,7 +17,7 @@
 # Test to make sure variable interpolation doesn't break other
 # features.  Report from Joel N. Weber, II.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_PROG_CC

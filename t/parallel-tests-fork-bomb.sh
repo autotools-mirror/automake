@@ -18,7 +18,7 @@
 #  - If $(TEST_SUITE_LOG) is in $(TEST_LOGS), we get a diagnosed
 #    error, not a make hang or a system freeze.
 
-. ./defs || exit 1
+. test-init.sh
 
 # We don't want localized error messages from make, since we'll have
 # to grep them.  See automake bug#11452.

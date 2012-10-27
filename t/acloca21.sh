@@ -20,7 +20,7 @@
 # an Autoconf macro.
 
 am_create_testdir=empty
-. ./defs || exit 1
+. test-init.sh
 
 cat >>configure.ac <<EOF
 dnl m4_include(__some_really_bogus_nonexistent_file__.m4)

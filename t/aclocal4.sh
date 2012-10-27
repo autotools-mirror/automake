@@ -18,7 +18,7 @@
 # Report from Jim Meyering.
 
 required=cc
-. ./defs || exit 1
+. test-init.sh
 
 cat >>configure.ac <<EOF
 AC_CONFIG_MACRO_DIR([m4])

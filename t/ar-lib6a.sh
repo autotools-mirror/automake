@@ -18,7 +18,7 @@
 # Keep this test in sync with sister test 'ar-lib6b.sh'.
 
 required=libtoolize
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_PROG_CC

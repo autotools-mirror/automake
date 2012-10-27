@@ -16,7 +16,7 @@
 
 # Check that dependencies are included when there are many header files.
 
-. ./defs || exit 1
+. test-init.sh
 
 echo AC_PROG_CC >> configure.ac
 

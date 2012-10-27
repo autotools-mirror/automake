@@ -17,7 +17,7 @@
 # Test to ensure 'distdir' fixes the mode of files and directories
 # copied into '$(distdir)', even with sub-packages.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >Makefile.am <<'END'
 SUBDIRS = subpkg

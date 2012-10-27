@@ -18,7 +18,7 @@
 # from config.site, and that this default can be overridden from
 # either the ./configure or make command line.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac <<'EOF'
 # This line will be edited later to force silent-rules default.

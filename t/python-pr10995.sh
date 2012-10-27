@@ -19,7 +19,7 @@
 # declaration.
 
 required=python
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac <<'EOF'
 AM_PATH_PYTHON

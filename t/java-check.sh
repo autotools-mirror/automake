@@ -19,7 +19,7 @@
 # See automake bug#8234.
 
 required=javac
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_OUTPUT

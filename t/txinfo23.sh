@@ -20,7 +20,7 @@
 # (See also txinfo24.sh and txinfo25.sh).
 
 required='makeinfo tex texi2dvi'
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_OUTPUT

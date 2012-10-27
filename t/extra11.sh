@@ -17,7 +17,7 @@
 # Check for more complex usage of wildcards in EXTRA_DIST.
 # Suggested by observations from Braden McDaniel.
 
-. ./defs || exit 1
+. test-init.sh
 
 echo AC_OUTPUT >> configure.ac
 

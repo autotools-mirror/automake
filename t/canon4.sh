@@ -17,7 +17,7 @@
 # Test to make sure name canonicalization happens for static libraries.
 # Keep this in sync with sister test 'canon6.sh'.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_PROG_CC

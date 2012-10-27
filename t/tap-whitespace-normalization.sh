@@ -20,7 +20,7 @@
 # force us to tweak dozens of other tests (hopefully).
 # See also related test 'tap-todo-skip-whitespace.sh'.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat > Makefile.am << 'END'
 TEST_LOG_COMPILER = cat

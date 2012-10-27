@@ -17,7 +17,7 @@
 # Check that automake warnings in the 'obsolete' category are enabled
 # by default.
 
-. ./defs || exit 1
+. test-init.sh
 
 # We want (almost) complete control over automake options.
 AUTOMAKE="$am_original_AUTOMAKE --foreign -Werror"

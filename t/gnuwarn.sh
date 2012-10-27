@@ -16,7 +16,7 @@
 
 # Check that Automake warns about user variables being overridden.
 
-. ./defs || exit 1
+. test-init.sh
 
 # We need (almost) complete control over automake options.
 AUTOMAKE="$am_original_AUTOMAKE -Werror"

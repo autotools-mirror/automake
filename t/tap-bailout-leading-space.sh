@@ -21,7 +21,7 @@
 # "more modern" behaviour in our awk TAP driver.
 
 am_tap_implementation=shell
-. ./defs || exit 1
+. test-init.sh
 
 . tap-setup.sh
 

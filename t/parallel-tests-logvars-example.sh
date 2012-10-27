@@ -18,7 +18,7 @@
 # LOG_COMPILER, LOG_FLAGS and LOG_DEPENDNECIES given in the manual.
 
 required=python
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac <<END
 AC_SUBST([PERL], ['$PERL'])

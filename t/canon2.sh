@@ -16,7 +16,7 @@
 
 # Test to make sure name canonicalization happens for texinfo.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat > Makefile.am << 'END'
 info_TEXINFOS = zar-doz.texi

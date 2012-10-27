@@ -18,7 +18,7 @@
 # involved (i.e., the '-d' option is in *YFLAGS).
 
 required='cc yacc'
-. ./defs || exit 1
+. test-init.sh
 
 mkdir sub
 

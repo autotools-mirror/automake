@@ -19,7 +19,7 @@
 # check that this still works when we override $(TESTS) at make runtime.
 # See also related tests 'test-driver-custom-multitest-recheck.sh'.
 
-. ./defs || exit 1
+. test-init.sh
 
 cp "$am_testauxdir"/trivial-test-driver . \
   || fatal_ "failed to fetch auxiliary script trivial-test-driver"

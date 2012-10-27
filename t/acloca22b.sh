@@ -19,7 +19,7 @@
 # NOTE: this test works by using the obsolete 'ACLOCAL_AMFLAGS' make
 # variable; see sister test 'acloca22.test' for a modern equivalent.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >>configure.ac <<EOF
 FOO

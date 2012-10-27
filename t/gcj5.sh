@@ -16,7 +16,7 @@
 
 # Make sure Automake suggests AM_PROG_GCJ when GCJ is needed.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 _AM_DEPENDENCIES(GCJ)

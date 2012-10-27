@@ -25,7 +25,7 @@
 
 required='java javac'
 am_serial_tests=yes
-. ./defs || exit 1
+. test-init.sh
 
 echo "AC_SUBST([PATH_SEPARATOR], ['$PATH_SEPARATOR'])" >> configure.ac
 

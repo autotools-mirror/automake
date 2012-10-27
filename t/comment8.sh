@@ -17,7 +17,7 @@
 # Make sure += does not append to a comment.
 # Report from Stepan Kasal.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac <<'EOF'
 AM_CONDITIONAL([COND1], [true])

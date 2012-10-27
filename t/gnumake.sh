@@ -17,7 +17,7 @@
 # Automake should not assume that make files are called Makefile.
 # Report from Braden McDaniel.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_CONFIG_FILES([sub/GNUmakefile])

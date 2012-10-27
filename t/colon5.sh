@@ -16,7 +16,7 @@
 
 # Another multi-":" test, this time from Doug Evans.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat > configure.ac <<END
 AC_INIT([$me], [1.0])

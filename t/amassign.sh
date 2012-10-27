@@ -17,7 +17,7 @@
 # Test to see if AM_ name can be assigned to in configure.ac.
 # Report from Steve Robbins.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AM_CFLAGS=foo

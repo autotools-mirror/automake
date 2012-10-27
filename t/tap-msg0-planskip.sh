@@ -18,7 +18,7 @@
 #  - literal strings "0" and "0.0" as the reason of the skip in a "TAP
 #    plan with skip" (i.e., "1..0 # SKIP ...").
 
-. ./defs || exit 1
+. test-init.sh
 
 . tap-setup.sh
 

@@ -17,7 +17,7 @@
 # Check subpackage handling.
 
 required=cc
-. ./defs || exit 1
+. test-init.sh
 
 mkdir m4
 

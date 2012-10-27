@@ -18,7 +18,7 @@
 # renamed objects and subdir objects.  Reported by Florian Briegel.
 
 required=cc
-. ./defs || exit 1
+. test-init.sh
 
 cat >>configure.ac <<EOF
 AC_PROG_CC

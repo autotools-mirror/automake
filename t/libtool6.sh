@@ -18,7 +18,7 @@
 # in different directories.  PR/285.
 
 required='libtoolize'
-. ./defs || exit 1
+. test-init.sh
 
 cat >>configure.ac <<'END'
 AM_CONDITIONAL([COND1], [true])

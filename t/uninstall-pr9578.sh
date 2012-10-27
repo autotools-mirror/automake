@@ -22,7 +22,7 @@
 # need sister tests for other primaries too?  E.g., PROGRAMS, LISP,
 # PYTHON, etc...
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_OUTPUT

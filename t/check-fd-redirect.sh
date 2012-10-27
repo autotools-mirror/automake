@@ -19,7 +19,7 @@
 # See also related test 'parallel-tests-fd-redirect.sh'.
 
 # For gen-testsuite-part: ==> try-with-serial-tests <==
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_OUTPUT

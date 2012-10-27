@@ -16,7 +16,7 @@
 
 # Interaction of BUILT_SOURCES with conditionals.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac <<'END'
 AM_CONDITIONAL([COND1], [test $cond1 = yes])

@@ -20,7 +20,7 @@
 # directory was set to '.' by AC_CONFIG_AUX_DIR.
 
 am_create_testdir=empty
-. ./defs || exit 1
+. test-init.sh
 
 i=0
 for auxdir in build-aux ''; do

@@ -18,7 +18,7 @@
 # Keep this in sync with sister test 'condhook2.sh'.
 # Report by Nik A. Melchior (PR/428).
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AM_CONDITIONAL([TEST], [false])

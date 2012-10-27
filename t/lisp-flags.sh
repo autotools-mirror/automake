@@ -16,7 +16,7 @@
 
 # Elisp byte-compilation honours AM_ELCFLAFS and ELCFLAGS.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat > Makefile.am << 'EOF'
 lisp_LISP = foo.el

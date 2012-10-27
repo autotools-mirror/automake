@@ -17,7 +17,7 @@
 # TAP support:
 #  - "SKIP" keyword in a TAP plan is case-insensitive
 
-. ./defs || exit 1
+. test-init.sh
 
 . tap-setup.sh
 

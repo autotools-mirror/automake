@@ -22,7 +22,7 @@
 # <http://lists.gnu.org/archive/html/help-smalltalk/2012-08/msg00027.html>
 # <http://lists.gnu.org/archive/html/automake-patches/2012-08/msg00052.html>
 
-. ./defs || exit 1
+. test-init.sh
 
 echo AC_OUTPUT >> configure.ac
 

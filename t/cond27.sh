@@ -17,7 +17,7 @@
 # Check that non-conditional primaries cannot use directories defined
 # in some conditions (but not others).
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >>configure.ac << 'EOF'
 AM_CONDITIONAL([USE_FOO], [true])

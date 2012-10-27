@@ -16,7 +16,7 @@
 
 # Make sure automake sees AC_PROG_CXXCPP.  From Garth Corral.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_PROG_CXXCPP

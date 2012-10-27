@@ -17,7 +17,7 @@
 # Check that AUTOMAKE_OPTIONS support variable expansion.
 
 am_create_testdir=empty
-. ./defs || exit 1
+. test-init.sh
 
 # We want complete control over automake options.
 AUTOMAKE=$am_original_AUTOMAKE

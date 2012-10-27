@@ -17,7 +17,7 @@
 # Test to make sure that we allow variable names starting in
 # non-letters.  Whatever that might mean.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_PROG_CC

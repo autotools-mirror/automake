@@ -17,7 +17,7 @@
 # Make sure ":" works with files automake generates.
 # See also sister test 'colon3.sh'.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat > configure.ac <<END
 AC_INIT([$me], [1.0])

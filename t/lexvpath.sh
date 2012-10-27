@@ -23,7 +23,7 @@
 # Please keep this in sync with sister test 'yaccvapth.sh'.
 
 required='cc lex'
-. ./defs || exit 1
+. test-init.sh
 
 cat > lexoutroot.in << 'END'
 LEX_OUTPUT_ROOT='@LEX_OUTPUT_ROOT@'

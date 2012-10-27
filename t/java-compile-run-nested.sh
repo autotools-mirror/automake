@@ -25,7 +25,7 @@
 # forcing the use of the older 'serial-tests' driver.
 
 required='java javac'
-. ./defs || exit 1
+. test-init.sh
 
 echo "AC_SUBST([PATH_SEPARATOR], ['$PATH_SEPARATOR'])" >> configure.ac
 

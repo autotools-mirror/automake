@@ -17,7 +17,7 @@
 # Test on automake options '--print-data-dir' and '--print-script-dir'.
 
 am_create_testdir=empty
-. ./defs || exit 1
+. test-init.sh
 
 libdir=$($AUTOMAKE --print-libdir) || exit 1
 case $libdir in /*);; *) exit 1;; esac

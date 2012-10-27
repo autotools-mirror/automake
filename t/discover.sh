@@ -16,7 +16,7 @@
 
 # Test to make sure LIBOBJS file cannot be mentioned explicitly.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_PROG_RANLIB

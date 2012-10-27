@@ -16,7 +16,7 @@
 
 # Recursive use of 'check-html'.  See Automake bug#11287.
 
-. ./defs || exit 1
+. test-init.sh
 
 # Try the variants that are tried in check-html.am.
 while :; do

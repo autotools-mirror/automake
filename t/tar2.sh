@@ -16,7 +16,7 @@
 
 # Check the tar-pax option.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat > configure.ac << 'END'
 AC_INIT([tar2], [1.0])

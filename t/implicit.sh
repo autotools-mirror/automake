@@ -17,7 +17,7 @@
 # Test to make sure implicit .o's are listed as appropriate.  Report
 # from Henrik Frystyk Nielsen.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_PROG_CC

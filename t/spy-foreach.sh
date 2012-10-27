@@ -19,7 +19,7 @@
 # set.
 
 am_create_testdir=empty
-. ./defs || exit 1
+. test-init.sh
 
 cat > Makefile <<'END'
 $(foreach x,1 2,$(warning foo-$(x))$(eval y:=$$(x)))

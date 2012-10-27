@@ -17,7 +17,7 @@
 # The parallel-tests harness do not cause the same test to be
 # uselessly run multiple times.
 
-. ./defs || exit 1
+. test-init.sh
 
 echo AC_OUTPUT >> configure.ac
 echo TESTS = foo.test > Makefile.am

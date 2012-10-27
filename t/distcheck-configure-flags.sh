@@ -16,7 +16,7 @@
 
 # Check support for DISTCHECK_CONFIGURE_FLAGS at "make distcheck" time.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_ARG_ENABLE([success], [], [success=$enableval], [success=no])

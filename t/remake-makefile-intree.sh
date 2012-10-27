@@ -21,7 +21,7 @@
 # Keep this in sync with sister test 'remake-makefile-vpath.sh', which
 # performs the same checks for a VPATH build.
 
-. ./defs || exit 1
+. test-init.sh
 
 mv -f configure.ac configure.stub
 

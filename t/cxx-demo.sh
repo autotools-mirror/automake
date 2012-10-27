@@ -18,7 +18,7 @@
 
 required=c++
 am_create_testdir=empty
-. ./defs || exit 1
+. test-init.sh
 
 cat > configure.ac << 'END'
 AC_INIT([GNU C++ Demo], [1.3], [bug-automake@gnu.org])

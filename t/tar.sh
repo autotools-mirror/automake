@@ -16,7 +16,7 @@
 
 # Check the tar-ustar option.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat > configure.ac << 'END'
 AC_INIT([tar], [1.0])

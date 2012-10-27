@@ -23,7 +23,7 @@
 # as well as tags.
 
 # For gen-testsuite-part: ==> try-with-serial-tests <==
-. ./defs || exit 1
+. test-init.sh
 
 mkdir sub sub2
 

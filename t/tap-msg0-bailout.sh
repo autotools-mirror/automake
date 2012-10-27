@@ -19,7 +19,7 @@
 #    of a "plan with skip" TAP plan
 # generally true!
 
-. ./defs || exit 1
+. test-init.sh
 
 . tap-setup.sh
 

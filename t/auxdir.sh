@@ -16,7 +16,7 @@
 
 # Test to make sure AC_CONFIG_AUX_DIR works correctly.
 
-. ./defs || exit 1
+. test-init.sh
 
 # The "./." is here so we don't have to mess with subdirs.
 cat > configure.ac <<END

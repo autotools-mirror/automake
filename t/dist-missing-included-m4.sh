@@ -20,7 +20,7 @@
 # See discussion about automake bug#9768.
 # See also sister test 'dist-missing-m4.sh'.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac <<'END'
 m4_include([foobar.m4])

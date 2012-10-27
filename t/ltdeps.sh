@@ -17,7 +17,7 @@
 # Test to make sure libtool library dependencies are correct.
 # Report from Lars J. Aas.
 required=libtool
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AM_PROG_AR

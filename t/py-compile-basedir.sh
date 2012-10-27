@@ -17,7 +17,7 @@
 # Test the '--basedir' option of the 'py-compile' script,
 
 required=python
-. ./defs || exit 1
+. test-init.sh
 
 # We'll need to create files in '..', so we need one more subdirectory
 # level in order not to clutter up the top-level tests directory.

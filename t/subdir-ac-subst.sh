@@ -18,7 +18,7 @@
 # SUBDIRS + AC_SUBST setup from the manual.
 # Lots of lines here are duplicated in 'subcond-am-cond.sh'.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >>configure.ac <<'END'
 if test "$want_opt" = yes; then

@@ -23,7 +23,7 @@
 #  in the HEADERS variable for *all* generated Makefile.ins in the
 #  project.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_SUBST([MY_HEADERS])

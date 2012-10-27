@@ -18,7 +18,7 @@
 # e.g., 'sub/foo.log'), the Automake test harness must ensure that
 # directory exists before calling any custom test driver.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_OUTPUT

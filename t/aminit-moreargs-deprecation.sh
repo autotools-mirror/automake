@@ -17,7 +17,7 @@
 # Check that automake warns against old-style usages of AM_INIT_AUTOMAKE
 # (i.e., calls with two or three arguments).
 
-. ./defs || exit 1
+. test-init.sh
 
 warn_rx='AM_INIT_AUTOMAKE.* two-.* three-arguments form.*deprecated'
 

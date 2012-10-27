@@ -16,7 +16,7 @@
 
 # Test for bug in conditionals.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 dnl Define a macro with the same name as the conditional to exhibit

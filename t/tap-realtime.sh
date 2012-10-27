@@ -22,7 +22,7 @@
 # children, and is pretty hacky and complex; is there a better way to
 # accomplish the checks done here?
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >expect-check <<'END'
 eval spawn $env(SHELL) -c ":"

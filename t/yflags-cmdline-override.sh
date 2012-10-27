@@ -18,7 +18,7 @@
 # at configure time and/or at make time.
 
 required='cc yacc'
-. ./defs || exit 1
+. test-init.sh
 
 unset YFLAGS || :
 

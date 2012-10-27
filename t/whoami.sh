@@ -18,7 +18,7 @@
 # from Johan Danielsson (and a very nice bug report, too, I might
 # add).
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 WHO_AM_I=17

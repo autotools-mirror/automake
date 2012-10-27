@@ -19,7 +19,7 @@
 # (related to PR/37)
 
 required='cc libtoolize yacc'
-. ./defs || exit 1
+. test-init.sh
 
 cat >>configure.ac <<EOF
 AC_PROG_CC

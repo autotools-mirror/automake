@@ -18,7 +18,7 @@
 # using yacc sources in a subdir option.  Exposes automake bug#8485.
 
 required='cc yacc'
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_PROG_CC

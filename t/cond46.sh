@@ -16,7 +16,7 @@
 
 # Ensure the right condition is listed after 'else' and 'endif'.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AM_CONDITIONAL([USE_A], [test x = y])

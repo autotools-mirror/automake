@@ -18,7 +18,7 @@
 
 # This is the mans sister test of 'instmany.sh', see there for details.
 
-. ./defs || exit 1
+. test-init.sh
 
 # In order to have a useful test on modern systems (which have a high
 # limit, if any), use a fake install program that errors out for more

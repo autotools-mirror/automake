@@ -24,7 +24,7 @@
 # fail with messages like:
 #       foo_DEPENDENCIES was already defined in condition TRUE, ...
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_PROG_CC

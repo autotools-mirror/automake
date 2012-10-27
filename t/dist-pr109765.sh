@@ -19,7 +19,7 @@
 # so that the latter ones fail.
 
 required=bzip2
-. ./defs || exit 1
+. test-init.sh
 
 echo AC_OUTPUT >> configure.ac
 : > Makefile.am

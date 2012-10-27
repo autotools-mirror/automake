@@ -16,7 +16,7 @@
 
 # Check support for $(JAVACFLAGS) and $(AM_JAVACFLAGS).
 
-. ./defs || exit 1
+. test-init.sh
 
 cat > fake-javac <<'END'
 #!/bin/sh

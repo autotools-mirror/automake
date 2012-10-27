@@ -16,7 +16,7 @@
 
 # Test to make sure things that cannot be dist_'ed are diagnosed.
 
-. ./defs || exit 1
+. test-init.sh
 
 echo AC_OUTPUT >>configure.ac
 

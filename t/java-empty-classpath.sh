@@ -18,7 +18,7 @@
 # compilation time.  See automake bug#9306.
 
 required=javac
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac <<'END'
 AC_CONFIG_SRCDIR([org/gnu/bug/Library.java])

@@ -18,7 +18,7 @@
 # Assar Westerlund <assar@sics.se>
 
 required=cc
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_PROG_CC

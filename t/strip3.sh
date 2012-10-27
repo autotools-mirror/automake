@@ -19,7 +19,7 @@
 # test 'strip2.sh'.
 
 required='cc libtoolize strip'
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_PROG_CC

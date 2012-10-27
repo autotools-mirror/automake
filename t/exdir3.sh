@@ -16,7 +16,7 @@
 
 # Test to make sure pkgdatadir can be overridden via AC_SUBST.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >>configure.ac <<'EOF'
 AC_SUBST([pkgdatadir], ["FOO"])

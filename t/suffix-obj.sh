@@ -16,7 +16,7 @@
 
 # Test to make sure that '.o' and '.obj' are handled like '.$(OBJEXT)'.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 # $(LINK) is not defined automatically by Automake, since the *_SOURCES

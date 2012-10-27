@@ -17,7 +17,7 @@
 # TAP support:
 #  - out-of-order test results
 
-. ./defs || exit 1
+. test-init.sh
 
 . tap-setup.sh
 

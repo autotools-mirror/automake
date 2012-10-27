@@ -17,7 +17,7 @@
 # Test support for AC_CONFIG_LIBOBJ_DIR.
 
 required=cc
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_CONFIG_LIBOBJ_DIR([libobj-dir])

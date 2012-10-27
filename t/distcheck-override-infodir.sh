@@ -18,7 +18,7 @@
 # working.  Related to automake bug#9579.
 
 required='makeinfo tex texi2dvi install-info'
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_OUTPUT

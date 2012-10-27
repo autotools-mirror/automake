@@ -16,7 +16,7 @@
 
 # Make sure changes to m4_included files also cause aclocal.m4 to change.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 m4_include([somefile.m4])

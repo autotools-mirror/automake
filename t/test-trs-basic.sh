@@ -18,7 +18,7 @@
 #  - creation and removal of '.trs' auxiliary files
 #  - check some internals regarding the use of '.trs' files.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac <<END
 AC_OUTPUT

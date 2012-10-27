@@ -19,7 +19,7 @@
 # succeed if make is run a second time immediately afterwards.
 # Report from Harlan Stenn.
 
-. ./defs || exit 1
+. test-init.sh
 
 echo AC_OUTPUT >> configure.ac
 

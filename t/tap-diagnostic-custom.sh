@@ -18,7 +18,7 @@
 #  - option '--diagnostic-string' to customize the string introducing
 #    TAP diagnostics
 
-. ./defs || exit 1
+. test-init.sh
 
 fetch_tap_driver
 

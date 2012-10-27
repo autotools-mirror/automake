@@ -18,7 +18,7 @@
 #   - Automake can correctly handle conditionals contents for the
 #     LOG_DRIVER variables.
 
-. ./defs || exit 1
+. test-init.sh
 
 cp "$am_testauxdir"/trivial-test-driver . \
   || fatal_ "failed to fetch auxiliary script trivial-test-driver"

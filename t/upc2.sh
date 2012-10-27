@@ -17,7 +17,7 @@
 # Test that Automake suggests using AM_PROG_UPC if Unified Parallel C
 # sources are used.
 
-. ./defs || exit 1
+. test-init.sh
 
 echo AC_PROG_CC >>configure.ac
 

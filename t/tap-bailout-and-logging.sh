@@ -18,7 +18,7 @@
 #  - even after a "Bail out!" directive, all input is still copied in
 #    the log file
 
-. ./defs || exit 1
+. test-init.sh
 
 . tap-setup.sh
 

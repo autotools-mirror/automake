@@ -22,7 +22,7 @@
 # 'subobj-clean-pr10697.sh', which deals with the non-libtool case.
 
 required='cc libtoolize'
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AM_PROG_AR

@@ -18,7 +18,7 @@
 # automake-generated Makefile.
 
 required=runtest
-. ./defs || exit 1
+. test-init.sh
 
 write_check_for ()
 {

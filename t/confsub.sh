@@ -17,7 +17,7 @@
 # Test to make sure config.h can be in subdir.
 # Also, make sure config.h is properly rebuilt.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_CONFIG_FILES([subdir/Makefile])

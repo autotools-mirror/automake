@@ -17,7 +17,7 @@
 # Test to make sure several config headers are allowed.
 # See also sister "minimalistic" test 'confh7.sh'.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_CONFIG_HEADERS([one.h two.h])

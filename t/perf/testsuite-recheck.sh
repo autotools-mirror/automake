@@ -19,7 +19,7 @@
 # FIXME: performance is too low, and FAIL accordingly; it just offers an
 # FIXME: easy way to verify how effective a performance optimization is.
 
-. ./defs || exit 1
+. test-init.sh
 
 count=5000
 

@@ -17,7 +17,7 @@
 # mdate-sh can work with weird file names, doesn't eval too much.
 
 am_create_testdir=empty
-. ./defs || exit 1
+. test-init.sh
 
 a=
 file='file  name $a'

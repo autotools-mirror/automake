@@ -16,7 +16,7 @@
 
 # Make sure Automake complains when there is no Makefile specified.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat > configure.ac << 'END'
 AC_INIT([foo], [bar], [baz])

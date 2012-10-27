@@ -16,7 +16,7 @@
 
 # Test to make sure depcomp isn't always required.
 
-. ./defs || exit 1
+. test-init.sh
 
 rm -f depcomp
 

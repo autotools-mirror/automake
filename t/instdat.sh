@@ -17,7 +17,7 @@
 # Test to see if defining INSTALL_DATA causes problems.  From EGCS
 # list.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac <<END
 AC_SUBST([INSTALL_DATA])

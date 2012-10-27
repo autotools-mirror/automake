@@ -17,7 +17,7 @@
 # Long lines of = and += should be wrapped.
 # Report from Simon Josefsson.
 
-. ./defs || exit 1
+. test-init.sh
 
 i=0
 while test $i -lt 30; do

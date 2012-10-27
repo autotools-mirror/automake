@@ -19,7 +19,7 @@
 # only checks implementation details in Automake's custom test drivers
 # support, but also serves as a "usability test" for our APIs.
 
-. ./defs || exit 1
+. test-init.sh
 
 cp "$am_testauxdir"/trivial-test-driver . \
   || fatal_ "failed to fetch auxiliary script trivial-test-driver"

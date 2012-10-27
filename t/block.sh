@@ -17,7 +17,7 @@
 # Make sure block comments are not double-spaced.
 # Report from François Pinard.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat > Makefile.am << 'END'
 #START

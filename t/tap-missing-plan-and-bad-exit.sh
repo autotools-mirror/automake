@@ -19,7 +19,7 @@
 #    plan, then the driver reports both "missing plan" and "exited with
 #    non-zero status" errors.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat > foo.test <<END
 #!/bin/sh

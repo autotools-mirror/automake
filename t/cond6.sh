@@ -16,7 +16,7 @@
 
 # Test for an odd conditional bug.  Report from Matt Leach.
 
-. ./defs || exit 1
+. test-init.sh
 
 echo 'AM_CONDITIONAL([FOO], [true])' >> configure.ac
 

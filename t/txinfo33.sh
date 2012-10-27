@@ -18,7 +18,7 @@
 # Similar to txinfo25.sh.
 
 required='makeinfo tex texi2dvi dvips'
-. ./defs || exit 1
+. test-init.sh
 
 mkdir sub
 

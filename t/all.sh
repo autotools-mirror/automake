@@ -16,7 +16,7 @@
 
 # Test to make sure several *-local's in a single rule work.
 
-. ./defs || exit 1
+. test-init.sh
 
 targets='all install-exec install-data uninstall'
 echo "$targets:" | sed -e 's/[ :]/-local&/g' > Makefile.am

@@ -18,7 +18,7 @@
 #  - an exit status != 0 of a test script causes an hard error, even if
 #    the last line of output is a "SKIP plan" (e.g., "1..0 # SKIP").
 
-. ./defs || exit 1
+. test-init.sh
 
 echo TESTS = one.test two.test > Makefile.am
 

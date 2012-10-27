@@ -17,7 +17,7 @@
 # Check Lex support with flex using the '%noyywrap' option.
 
 required='cc flex'
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_PROG_CC

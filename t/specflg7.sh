@@ -17,7 +17,7 @@
 # The true/false example from the manual, plus a check for _SHORTNAME.
 
 required='cc native'
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_PROG_CC

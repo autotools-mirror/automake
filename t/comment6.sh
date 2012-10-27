@@ -18,7 +18,7 @@
 # Automake 1.6.1 seems to have a problem parsing comments that use
 # '\' to span multiple lines.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac <<'EOF'
 AC_OUTPUT

@@ -16,7 +16,7 @@
 
 # Test to make sure line numbers are correct in some error reports.
 
-. ./defs || exit 1
+. test-init.sh
 
 echo 'AM_CONDITIONAL(FOO, true)' >> configure.ac
 

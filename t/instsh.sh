@@ -18,7 +18,7 @@
 # automake: Makefile.am: required file "../../install-sh" not found; installing
 # This also makes sure that install-sh is created in the correct directory.
 
-. ./defs || exit 1
+. test-init.sh
 
 : > Makefile.am
 rm -f install-sh

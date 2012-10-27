@@ -20,7 +20,7 @@
 # See also the other similar tests 'remake-subdir*.sh', and the
 # related test 'aclocal5.sh'
 
-. ./defs || exit 1
+. test-init.sh
 
 magic1='::MagicString::One::'
 magic2='__MagicString__Two__'

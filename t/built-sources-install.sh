@@ -17,7 +17,7 @@
 # Make sure 'install:' honors $(BUILT_SOURCES).
 # PR/359.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_CONFIG_FILES([dir/Makefile])

@@ -20,7 +20,7 @@
 # testsuite output, packages with and without bug-report addresses,
 # testsuites in subdirectories, ...)
 
-. ./defs || exit 1
+. test-init.sh
 
 case $use_colors in
   yes)

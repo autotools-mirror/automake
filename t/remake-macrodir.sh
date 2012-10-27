@@ -17,7 +17,7 @@
 # Check that the aclocal honouring of AC_CONFIG_MACRO_DIR interacts
 # nicely with automatic rebuild rules.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac <<'END'
 AC_CONFIG_MACRO_DIR([macro-dir])

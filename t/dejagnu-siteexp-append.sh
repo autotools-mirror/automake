@@ -17,7 +17,7 @@
 # Check that the files in $(EXTRA_DEJAGNU_SITE_CONFIG) get appended to
 # site.exp in the same order in which they're listed in that variable.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_OUTPUT

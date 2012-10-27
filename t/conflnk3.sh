@@ -17,7 +17,7 @@
 # Test to make sure that AC_CONFIG_LINKS using a variable source
 # is not broken.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat > Makefile.am << 'END'
 SUBDIRS = sdir

@@ -19,7 +19,7 @@
 # and forces the use of gcc depmode.
 
 required=c++
-. ./defs || exit 1
+. test-init.sh
 
 mkdir sub
 

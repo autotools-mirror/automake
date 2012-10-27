@@ -18,7 +18,7 @@
 # an m4 macro in it gets renamed.  Kudos to Bruno Haible for thinking
 # about this situation.  See also related test 'acloca22.sh'.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac <<'END'
 MY_MACRO

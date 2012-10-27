@@ -17,7 +17,7 @@
 # Test to make sure misspellings in _LDADD variable cause failure.
 
 required=cc
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_PROG_CC

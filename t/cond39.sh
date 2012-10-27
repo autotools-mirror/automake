@@ -17,7 +17,7 @@
 # Build either as CONFIG_FILE or as PROGRAM.
 
 required=cc
-. ./defs || exit 1
+. test-init.sh
 
 mkdir sub
 

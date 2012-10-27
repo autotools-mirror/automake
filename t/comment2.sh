@@ -17,7 +17,7 @@
 # Make sure comment recognition works in PROGRAMS.  Report from Mark
 # Galassi.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_PROG_CC

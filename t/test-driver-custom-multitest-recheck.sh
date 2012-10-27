@@ -22,7 +22,7 @@
 # and 'parallel-tests-recheck-override.sh'.
 # Keep in sync with 'tap-recheck.sh'.
 
-. ./defs || exit 1
+. test-init.sh
 
 cp "$am_testauxdir"/trivial-test-driver . \
   || fatal_ "failed to fetch auxiliary script trivial-test-driver"

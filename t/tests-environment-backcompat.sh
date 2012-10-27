@@ -20,7 +20,7 @@
 # for this).  The behaviour tested here is also documented in the manual.
 
 am_serial_tests=yes
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac <<END
 AC_SUBST([PERL], ['$PERL'])

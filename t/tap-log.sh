@@ -22,7 +22,7 @@
 #  - VERBOSE environment variable support
 # Keep in sync with 'test-log.sh'.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat > Makefile.am << 'END'
 TESTS = pass.test skip.test xfail.test fail.test xpass.test error.test

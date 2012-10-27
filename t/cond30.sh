@@ -17,7 +17,7 @@
 # For PR/352: make sure we support bin_PROGRAMS, lib_LIBRARIES and
 #             lib_LTLIBRARIES being defined conditionally.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >>configure.ac <<'EOF'
 m4_define([AM_PROG_AR], [:])

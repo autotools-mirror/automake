@@ -16,7 +16,7 @@
 
 # Check that autoheaders works, despite our AC_CONFIG_HEADERS hack.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >>configure.ac <<EOF
 AC_CONFIG_HEADERS([thisfile.h])

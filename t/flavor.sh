@@ -18,7 +18,7 @@
 # options like '--ignore-deps' and '--silent-rules' are preserved across
 # automake reruns.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_OUTPUT

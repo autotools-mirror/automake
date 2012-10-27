@@ -16,7 +16,7 @@
 
 # Make sure Automake does not emit a link rule for unknown languages.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat > Makefile.am << 'END'
 AUTOMAKE_OPTIONS = no-exeext

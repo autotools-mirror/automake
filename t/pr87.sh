@@ -18,7 +18,7 @@
 # "make distcheck" fails when two source dirs exist.
 
 required=cc
-. ./defs || exit 1
+. test-init.sh
 
 subdirs="foo bar"
 

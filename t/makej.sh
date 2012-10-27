@@ -21,7 +21,7 @@
 # depend on the time at which autoconf and automake update the cache
 # via autom4te.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >configure.ac <<END
 m4_include([version.m4])

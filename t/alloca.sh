@@ -16,7 +16,7 @@
 
 # Make sure we complain if @ALLOCA@ is used without being set in configure.ac
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac <<'END'
 AM_PROG_AR

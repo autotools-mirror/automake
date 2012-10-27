@@ -19,7 +19,7 @@
 # Also test the situation where the list of distributed files contains
 # a directory and a file in it, and repeated directories.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_OUTPUT

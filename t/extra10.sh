@@ -19,7 +19,7 @@
 # See also sister test 'extra11.sh', that checks a similar usage
 # with the involvement of the $(wildcard) GNU make builtin.
 
-. ./defs || exit 1
+. test-init.sh
 
 echo AC_OUTPUT >> configure.ac
 

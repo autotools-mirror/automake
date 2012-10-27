@@ -18,7 +18,7 @@
 # rebuild rules.
 # Test from Maciej W. Rozycki.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac <<END
 AC_CONFIG_FILES([zardoz:one:two:three])

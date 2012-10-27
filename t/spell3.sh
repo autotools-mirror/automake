@@ -17,7 +17,7 @@
 # Test to make sure some internal _DEPENDENCIES variables don't cause
 # errors.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat > Makefile.am << 'END'
 TAGS_DEPENDENCIES = joe

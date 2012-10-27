@@ -17,7 +17,7 @@
 # Check that there are no duplicates in the list of files automatically
 # distributed by automake.
 
-. ./defs || exit 1
+. test-init.sh
 
 re='Files .*automatically distributed.*if found'
 

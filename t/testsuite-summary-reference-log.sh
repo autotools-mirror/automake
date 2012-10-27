@@ -17,7 +17,7 @@
 # Check that the global testsuite log file referenced in the testsuite
 # summary and in the global testsuite log itself is correct.
 
-. ./defs || exit 1
+. test-init.sh
 
 mv configure.ac configure.stub
 

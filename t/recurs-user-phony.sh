@@ -17,7 +17,7 @@
 # Check that user-defined recursive targets and their associate
 # '-local', '-am' and '-recursive' targets are declared as phony.
 
-. ./defs || exit 1
+required=GNUmake
 
 cat >> configure.ac <<'END'
 AC_CONFIG_FILES([sub/Makefile])

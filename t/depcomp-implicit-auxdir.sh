@@ -17,7 +17,7 @@
 # Make sure a top-level depcomp file is found when
 # AC_CONFIG_AUX_DIR is not specified.
 
-. ./defs || exit 1
+. test-init.sh
 
 mkdir lib src
 

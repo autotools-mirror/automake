@@ -17,7 +17,7 @@
 # Check silent-rules mode for Lex.
 
 required='cc lex'
-. ./defs || exit 1
+. test-init.sh
 
 cat >>configure.ac <<'EOF'
 AM_PROG_CC_C_O

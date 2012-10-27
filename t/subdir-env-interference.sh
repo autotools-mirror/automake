@@ -16,7 +16,7 @@
 
 # SUDBIRS with $fail set in the environment.
 
-. ./defs || exit 1
+. test-init.sh
 
 mkdir sub
 

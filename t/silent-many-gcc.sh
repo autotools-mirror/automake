@@ -22,7 +22,7 @@
 # 'silent-many-generic.sh', which should work with generic compilers.
 
 required='gcc g++ gfortran lex yacc'
-. ./defs || exit 1
+. test-init.sh
 
 # Avoids too much code duplication.
 do_and_check_silent_build ()

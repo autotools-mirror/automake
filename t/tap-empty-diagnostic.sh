@@ -17,7 +17,7 @@
 # TAP support:
 #  - empty diagnostic messages are discarder
 
-. ./defs || exit 1
+. test-init.sh
 
 . tap-setup.sh
 

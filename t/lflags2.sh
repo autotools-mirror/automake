@@ -19,7 +19,7 @@
 # Please keep this in sync with the sister tests lflags.sh, yflags.sh
 # and yflags2.sh.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >fake-lex <<'END'
 #!/bin/sh

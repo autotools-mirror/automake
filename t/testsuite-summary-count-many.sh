@@ -19,7 +19,7 @@
 # Incidentally, this test also checks that the testsuite summary doesn't
 # give any bug-report address if it's not defined.
 
-. ./defs || exit 1
+. test-init.sh
 
 expensive_
 

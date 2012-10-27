@@ -17,7 +17,7 @@
 # Test to make sure links created by AC_CONFIG_LINKS get removed with
 # 'make distclean'
 
-. ./defs || exit 1
+. test-init.sh
 
 echo 'SUBDIRS = sdir' > Makefile.am
 : > src

@@ -19,7 +19,7 @@
 # Keep this test in sync with sister test 'ar-lib5b.sh'.
 
 required=lib
-. ./defs || exit 1
+. test-init.sh
 
 cat > configure.ac << END
 AC_INIT([$me], [1.0])

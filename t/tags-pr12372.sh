@@ -18,7 +18,7 @@
 # extensions.  See automake bug#12372.
 
 required='cc etags'
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac <<'END'
 AC_PROG_CC

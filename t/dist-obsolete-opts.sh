@@ -16,7 +16,7 @@
 
 # Obsolete 'dist-*' and 'no-dist-gzip' options.
 
-. ./defs || exit 1
+. test-init.sh
 
 $ACLOCAL
 

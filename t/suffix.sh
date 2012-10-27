@@ -18,7 +18,7 @@
 # only once.
 # See also related test 'suffix2.sh'.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_PROG_CC

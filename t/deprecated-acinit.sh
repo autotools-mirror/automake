@@ -17,7 +17,7 @@
 # Check that automake and autoconf complain about an old-style AC_INIT
 # call used with a new-style AM_AUTOMAKE_INIT call.
 
-. ./defs || exit 1
+. test-init.sh
 
 : > Makefile.am
 

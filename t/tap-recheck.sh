@@ -17,7 +17,7 @@
 # Test the 'recheck' target for TAP test protocol.
 # Keep in sync with 'test-driver-custom-multitest-recheck.sh'.
 
-. ./defs || exit 1
+. test-init.sh
 
 fetch_tap_driver
 

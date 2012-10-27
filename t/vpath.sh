@@ -17,7 +17,7 @@
 # Test to make sure VPATH can be overridden.
 # Report from Anthony Green.
 
-. ./defs || exit 1
+. test-init.sh
 
 echo AC_OUTPUT >> configure.ac
 

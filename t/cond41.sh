@@ -16,7 +16,7 @@
 
 # AM_COND_IF with an undefined condition should fail.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >>configure.ac <<'END'
 AM_COND_IF([BAD_COND], [AC_CONFIG_FILES([file1])])

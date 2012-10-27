@@ -16,7 +16,7 @@
 
 # Check to make sure new extended directory mechanism works.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat > Makefile.am << 'EOF'
 htmldir = $(prefix)/html

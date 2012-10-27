@@ -17,7 +17,7 @@
 # Check the recover rule of lisp_LISP with parallel make.
 
 required=emacs
-. ./defs || exit 1
+. test-init.sh
 
 cat > Makefile.am << 'EOF'
 dist_lisp_LISP = am-one.el am-two.el am-three.el

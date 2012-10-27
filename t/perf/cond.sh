@@ -17,7 +17,7 @@
 # Check that many conditions do not lead to combinatorial explosion.
 # (This is related to PR/352.)
 
-. ./defs || exit 1
+. test-init.sh
 
 echo AC_PROG_CC >>configure.ac
 

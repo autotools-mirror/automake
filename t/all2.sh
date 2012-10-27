@@ -16,7 +16,7 @@
 
 # Test to make sure all-local and other -local targets work correctly.
 
-. ./defs || exit 1
+. test-init.sh
 
 $ACLOCAL
 

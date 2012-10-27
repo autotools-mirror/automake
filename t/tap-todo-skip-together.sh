@@ -18,7 +18,7 @@
 #  - TODO and SKIP directives on the same line: the first one wins
 # See also related test 'tap-ambiguous-directive.sh'.
 
-. ./defs || exit 1
+. test-init.sh
 
 . tap-setup.sh
 

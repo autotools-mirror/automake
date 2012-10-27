@@ -17,7 +17,7 @@
 # Check that our concurrent test harness is not subject to spurious VPATH
 # rewrites.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_OUTPUT

@@ -16,7 +16,7 @@
 
 # Make sure the current version can be required.
 
-. ./defs || exit 1
+. test-init.sh
 
 amver=$($AUTOMAKE --version | sed -e 's/.* //;1q')
 

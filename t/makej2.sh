@@ -20,7 +20,7 @@
 # Problems like this shouldn't happen with GNU make, but we keep the
 # test anyway for the moment, for extra safety.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >>configure.ac <<'END'
 AC_OUTPUT

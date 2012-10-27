@@ -19,7 +19,7 @@
 # required '.am' file from a distribution tarball.
 # See discussion about automake bug#9768.
 
-. ./defs || exit 1
+. test-init.sh
 
 echo AC_OUTPUT >> configure.ac
 

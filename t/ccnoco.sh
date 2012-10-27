@@ -18,7 +18,7 @@
 # understand '-c -o'.
 
 required=gcc
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_PROG_CC
@@ -53,7 +53,8 @@ case " \$* " in
     ;;
 esac
 
-# Use '$CC', not 'gcc', to honour the compiler chosen by 't/defs'.
+# Use '$CC', not 'gcc', to honour the compiler chosen
+# by the testsuite setup.
 exec $CC "\$@"
 END
 

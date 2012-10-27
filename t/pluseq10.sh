@@ -17,7 +17,7 @@
 # Test for += and backslashes.
 # Reported by Ralf Corsepius.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >>configure.ac << 'END'
 AM_CONDITIONAL([A], [true])

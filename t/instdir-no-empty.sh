@@ -17,7 +17,7 @@
 # An empty "foo_PRIMARY" declaration should *not* cause "make install"
 # to create directory $(foodir).  See automake bug#10997 and bug#11030.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac <<'END'
 AC_SUBST([CC], [whatever])

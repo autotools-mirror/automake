@@ -18,7 +18,7 @@
 # dependencies.  See also related the tests 'remake-deleted-m4-file.sh'
 # and 'remake-renamed-m4-macro-and-file.sh'.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >>configure.ac <<EOF
 AC_CONFIG_MACRO_DIR([.])

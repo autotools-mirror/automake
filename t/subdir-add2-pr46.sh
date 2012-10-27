@@ -19,7 +19,7 @@
 # it works when make is run from the top-level directory.
 # PR automake/46
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_CONFIG_MACRO_DIR([m4])

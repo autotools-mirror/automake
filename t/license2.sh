@@ -16,7 +16,7 @@
 
 # Check that installing 'COPYING' outputs a warning.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat > Makefile.am << 'END'
 AUTOMAKE_OPTIONS = gnu

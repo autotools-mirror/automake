@@ -19,7 +19,7 @@
 # third argument is empty or non-existent.
 
 am_create_testdir=empty
-. ./defs || exit 1
+. test-init.sh
 
 # A trick to make the test run muuuch faster, by avoiding repeated
 # runs of aclocal (one order of magnitude improvement in speed!).

@@ -18,7 +18,7 @@
 # examples in the Automake manual do not cause obvious errors.
 # Please keep this test in sync with the automake manual.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac <<'END'
 AC_PROG_CC

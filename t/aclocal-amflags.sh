@@ -18,7 +18,7 @@
 # Makefile.am still works.  Remove this test once support for this
 # obsolescent idiom is removed.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac <<'END'
 MACRO_FOO || AS_EXIT([1])

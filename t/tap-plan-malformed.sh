@@ -17,7 +17,7 @@
 # TAP support: a malformed TAP plan is not recognized.  The checks in
 # here should be consistent with the behaviour of the 'prove' utility.
 
-. ./defs || exit 1
+. test-init.sh
 
 . tap-setup.sh
 

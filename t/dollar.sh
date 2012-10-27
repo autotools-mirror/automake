@@ -18,7 +18,7 @@
 # Java people need this.
 # PR/317, reported by Eric Siegerman and Philip Fong.
 
-. ./defs || exit 1
+. test-init.sh
 
 echo AC_OUTPUT >> configure.ac
 

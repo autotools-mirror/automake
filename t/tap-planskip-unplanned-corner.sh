@@ -18,7 +18,7 @@
 #  - test results seen in a TAP stream that has a "plan with SKIP" are
 #    flagged as errors, even if all of them are "SKIP" results.
 
-. ./defs || exit 1
+. test-init.sh
 
 . tap-setup.sh
 

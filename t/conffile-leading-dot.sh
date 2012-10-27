@@ -18,7 +18,7 @@
 # with a dot (like "./Makefile"), since the remake rules might be subtly
 # broken in that case.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat > configure.ac << END
 AC_INIT([$me], [1.0])

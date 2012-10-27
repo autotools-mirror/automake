@@ -17,7 +17,7 @@
 # Test to make sure compiling Vala code really works with recursive make.
 
 required="pkg-config valac gcc"
-. ./defs || exit 1
+. test-init.sh
 
 mkdir src
 

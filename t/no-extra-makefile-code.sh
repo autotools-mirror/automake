@@ -19,7 +19,7 @@
 # by a regression caused by removal of automatic de-ANSI-fication support:
 # <http://lists.gnu.org/archive/html/automake-patches/2011-08/msg00200.html>
 
-. ./defs || exit 1
+. test-init.sh
 
 echo AC_OUTPUT >> configure.ac
 
