@@ -53,7 +53,8 @@ case " \$* " in
     ;;
 esac
 
-# Use '$CC', not 'gcc', to honour the compiler chosen by 't/defs'.
+# Use '$CC', not 'gcc', to honour the compiler chosen
+# by the testsuite setup.
 exec $CC "\$@"
 END
 

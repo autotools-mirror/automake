@@ -50,7 +50,7 @@ test -f depcomp
 
 # FIXME: the logic of this check and other similar ones in other
 # FIXME: 'distcom*.sh' files should be factored out in a common
-# FIXME: subroutine in 'defs'...
+# FIXME: subroutine in 'am-test-lib.sh'...
 sed -n -e "
   /^DIST_COMMON =.*\\\\$/ {
     :loop

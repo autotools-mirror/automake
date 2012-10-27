@@ -67,7 +67,7 @@
 
 # -------------------------------------------------------------------------
 
-# This expects ./defs has already been included has already been included..
+# This code expects test-init.sh has already been included in advance.
 
 ocwd=$(pwd) || fatal_ "getting current working directory"
 longpath=this-is/a-path/which-has/quite-a/definitely/truly/long_long_name

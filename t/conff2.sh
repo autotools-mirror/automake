@@ -18,8 +18,8 @@
 
 . test-init.sh
 
-# We avoid using configure.ac stub initialized by ./defs, since we need
-# to keep track of line numbers (to grep for error messages).
+# We avoid using configure.ac stub initialized by our testsuite setup, as
+# we need to keep track of line numbers (to grep for error messages).
 cat > configure.ac << END
 AC_INIT([$me], [1.0])
 AM_INIT_AUTOMAKE
