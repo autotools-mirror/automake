@@ -51,8 +51,8 @@ $AUTOMAKE --add-missing
 mkdir build
 cd build
 ../configure
-$MAKE V=1 > output || { cat output; exit 1; }
-cat output
+$MAKE V=1 > stdout || { cat stdout; exit 1; }
+cat stdout
 grep '.*-I *\.' stdout && exit 1
 $MAKE clean
 # Shouldn't be picked up from builddir either.
@@ -62,8 +62,8 @@ cd ..
 
 # Test with $builddir = $srcdir
 ./configure
-$MAKE V=1 > output || { cat output; exit 1; }
-cat output
-grep '.*-I *\.' output && exit 1
+$MAKE V=1 > stdout || { cat stdout; exit 1; }
+cat stdout
+grep '.*-I *\.' stdout && exit 1
 
 :
