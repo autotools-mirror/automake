@@ -16,7 +16,7 @@
 
 # Test for bug reported by Jim Meyering.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_SUBST([OTHER_SCRIPTS])

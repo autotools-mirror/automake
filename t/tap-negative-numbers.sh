@@ -18,7 +18,7 @@
 #  - don't spuriously recognize negative TAP result numbers, but correctly
 #    interpret them as test descriptions instead
 
-. ./defs || exit 1
+. test-init.sh
 
 . tap-setup.sh
 

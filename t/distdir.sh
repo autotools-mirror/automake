@@ -21,7 +21,7 @@
 # Also test DISTFILES containing a directory and a file in it,
 # and repeated directories.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_OUTPUT

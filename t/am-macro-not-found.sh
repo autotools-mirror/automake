@@ -16,7 +16,7 @@
 
 # Test to see if aclocal correctly reports missing AM_ macro.
 
-. ./defs || exit 1
+. test-init.sh
 
 echo AM_ZARDOZ >> configure.ac
 

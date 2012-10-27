@@ -18,7 +18,7 @@
 # Likewise for the other install-* targets used for texinfo files.
 
 required='makeinfo tex texi2dvi'
-. ./defs || exit 1
+. test-init.sh
 
 dvips --help \
   || skip_ "dvips is missing"

@@ -19,7 +19,7 @@
 # Please keep this in sync with the sister tests yflags2.sh, lflags.sh
 # and lflags2.sh.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >fake-yacc <<'END'
 #!/bin/sh

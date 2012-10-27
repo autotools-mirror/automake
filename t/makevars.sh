@@ -17,7 +17,7 @@
 # Test to make sure that automake includes the needed variables,
 # but not too many.
 
-. ./defs || exit 1
+. test-init.sh
 
 # Find the macros wanted by Automake.
 $ACLOCAL

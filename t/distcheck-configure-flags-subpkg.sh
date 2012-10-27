@@ -20,7 +20,7 @@
 # passed down to the configure script of the subpackage.  This is
 # explicitly documented in the manual.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_CONFIG_SUBDIRS([subpkg])

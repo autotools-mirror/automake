@@ -16,7 +16,7 @@
 
 # Test that mdate-sh is required when Texinfo used and version.texi needed.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat > Makefile.am << 'END'
 info_TEXINFOS = textutils.texi

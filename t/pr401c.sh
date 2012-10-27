@@ -18,7 +18,7 @@
 # (pr401.sh and pr401b.sh do the same for LIBOBJS and LTLIBOBJS)
 
 required=cc
-. ./defs || exit 1
+. test-init.sh
 
 mkdir lib src
 

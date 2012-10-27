@@ -21,7 +21,7 @@
 # for lex-generated C files.
 
 required='cc yacc'
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac <<'EOF'
 AM_MAINTAINER_MODE

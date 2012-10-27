@@ -20,7 +20,7 @@
 # See also sister test 'lex-line.sh'.
 
 required='cc yacc'
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_CONFIG_FILES([sub/Makefile])

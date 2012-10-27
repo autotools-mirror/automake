@@ -16,7 +16,7 @@
 
 # Test to make sure RULE_PATTERN catches strange targets.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat > Makefile.am << 'END'
 $(srcdir)/Makefile.am:

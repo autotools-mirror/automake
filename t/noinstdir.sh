@@ -18,7 +18,7 @@
 # From Pavel Roskin.
 
 required=cc
-. ./defs || exit 1
+. test-init.sh
 
 cat > Makefile.am << 'END'
 noinst_SCRIPTS = foo.sh

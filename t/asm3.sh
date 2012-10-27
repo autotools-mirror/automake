@@ -17,7 +17,7 @@
 # Test of basic preprocessed assembly functionality with extension '.sx'.
 # Keep this in sync with sister tests 'asm.sh' and 'asm2.sh'.
 
-. ./defs || exit 1
+. test-init.sh
 
 mv configure.ac configure.stub
 

@@ -17,7 +17,7 @@
 # Make sure autoconf version checks in aclocal.m4 are robust.
 
 am_create_testdirs=empty
-. ./defs || exit 1
+. test-init.sh
 
 cat > configure.ac <<END
 m4_define([AC_AUTOCONF_VERSION], [9999a])

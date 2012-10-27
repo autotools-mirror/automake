@@ -18,7 +18,7 @@
 # Report from Kevin Dalley.
 
 required=libtool
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_LIBTOOL_DLOPEN

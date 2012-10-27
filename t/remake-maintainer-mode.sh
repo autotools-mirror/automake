@@ -18,7 +18,7 @@
 # but not all.
 # Report from Ralf Corsepius.
 
-. ./defs || exit 1
+. test-init.sh
 
 if using_gmake; then
   remake="$MAKE"

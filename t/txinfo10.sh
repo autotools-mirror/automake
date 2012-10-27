@@ -17,7 +17,7 @@
 # Make sure dvi target recurses into subdir.
 # Reported by Pavel Roskin.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat > Makefile.am << 'END'
 SUBDIRS = sub

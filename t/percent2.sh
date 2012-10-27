@@ -19,7 +19,7 @@
 # '${ARCH}/%.$(OBJEXT):'.
 # Report from Ralf Corsepius.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >>Makefile.am << 'EOF'
 ${ARCH}/%.$(OBJEXT): %.S

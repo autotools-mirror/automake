@@ -18,7 +18,7 @@
 # From Eric Magnien.
 
 required=cc
-. ./defs || exit 1
+. test-init.sh
 
 rm -f configure.ac
 

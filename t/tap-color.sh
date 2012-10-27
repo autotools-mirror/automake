@@ -18,7 +18,7 @@
 #  - colorization of TAP results and diagnostic messages
 
 required='grep-nonprint'
-. ./defs || exit 1
+. test-init.sh
 
 # Escape '[' for grep, below.
 red="$esc\[0;31m"

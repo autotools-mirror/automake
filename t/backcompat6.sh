@@ -22,7 +22,7 @@
 
 required=cc
 am_create_testdir=empty
-. ./defs || exit 1
+. test-init.sh
 
 # Anyone doing something like this in a real-life package probably
 # deserves to be killed.

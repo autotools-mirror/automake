@@ -18,7 +18,7 @@
 # This handle the case in which the makefiles are not called 'Makefile'.
 # See also sister test 'remake-all-1.sh'.
 
-. ./defs || exit 1
+. test-init.sh
 
 mkfile=foobar
 

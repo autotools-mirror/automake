@@ -17,7 +17,7 @@
 # Check that errors about AUTOMAKE_OPTIONS refers to correct
 # locations.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat > Makefile.am <<'END'
 # comment \

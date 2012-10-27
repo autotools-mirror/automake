@@ -20,7 +20,7 @@
 #  - test results without number get automatically numbered in the
 #    console progress output
 
-. ./defs || exit 1
+. test-init.sh
 
 . tap-setup.sh
 

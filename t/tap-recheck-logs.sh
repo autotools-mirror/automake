@@ -17,7 +17,7 @@
 # TAP support:
 # - RECHECK_LOGS
 
-. ./defs || exit 1
+. test-init.sh
 
 cat > Makefile.am << 'END'
 TEST_LOG_COMPILER = cat

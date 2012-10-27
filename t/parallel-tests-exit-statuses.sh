@@ -17,7 +17,7 @@
 # Check parallel-tests features: normal and special exit statuses
 # in the test scripts.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_OUTPUT

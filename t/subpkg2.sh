@@ -17,7 +17,7 @@
 # Try a DIST_SUBDIRS subpackage with no SUBDIRS.
 # Report from Gary V. Vaughan.
 
-. ./defs || exit 1
+. test-init.sh
 
 mkdir m4
 

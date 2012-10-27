@@ -18,7 +18,7 @@
 # it's in BUILT_SOURCES.  Reported by Erez Zadok.
 
 required=cc
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_PROG_CC

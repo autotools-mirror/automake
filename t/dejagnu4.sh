@@ -24,7 +24,7 @@
 #   previous tools, but at first glance "make check" has passed.
 
 required=runtest
-. ./defs || exit 1
+. test-init.sh
 
 cat > hammer << 'END'
 #! /bin/sh

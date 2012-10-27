@@ -25,7 +25,7 @@
 # as well as tags.
 
 # For gen-testsuite-part: ==> try-with-serial-tests <==
-. ./defs || exit 1
+. test-init.sh
 
 # Does $MAKE support the '.MAKE' special target?
 have_dotmake=false

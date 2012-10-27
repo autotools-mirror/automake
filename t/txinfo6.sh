@@ -16,7 +16,7 @@
 
 # Test to make sure '.txi' extension works.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat > Makefile.am << 'END'
 info_TEXINFOS = foo.txi

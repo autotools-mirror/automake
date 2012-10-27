@@ -17,7 +17,7 @@
 # Check that ':test-results:' directives in test scripts' output doesn't
 # originate spurious results in the testsuite summary.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_OUTPUT

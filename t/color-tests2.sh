@@ -19,7 +19,7 @@
 
 required='grep-nonprint'
 # For gen-testsuite-part: ==> try-with-serial-tests <==
-. ./defs || exit 1
+. test-init.sh
 
 # Escape '[' for grep, below.
 red="$esc\[0;31m"

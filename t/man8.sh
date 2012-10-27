@@ -16,7 +16,7 @@
 
 # Check for a bug in distcheck w.r.t. generated manpages.
 
-. ./defs || exit 1
+. test-init.sh
 
 # Avoid a spurious failure due to a known FreeBSD make incompatibility.
 useless_vpath_rebuild \

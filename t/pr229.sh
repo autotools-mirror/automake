@@ -18,7 +18,7 @@
 # Make sure AC_CYGWIN requires config.{sub,guess}.
 # Reported by James Youngman.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac <<EOF
 AC_CYGWIN

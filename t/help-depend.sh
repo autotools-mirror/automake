@@ -18,7 +18,7 @@
 # the configure help screen.
 # Keep this in sync with sister test 'help-depend2.sh'
 
-. ./defs || exit 1
+. test-init.sh
 
 cat > configure.ac <<END
 AC_INIT([$me], [1.0])

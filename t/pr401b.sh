@@ -18,7 +18,7 @@
 # (pr401.sh and pr401c.sh do the same for LIBOBJS and ALLOCA)
 
 required='cc libtoolize'
-. ./defs || exit 1
+. test-init.sh
 
 mkdir lib src
 

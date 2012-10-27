@@ -18,7 +18,7 @@
 
 am_create_testdir=empty
 required=xsi-lib-shell
-. ./defs || exit 1
+. test-init.sh
 
 get_shell_script compile
 

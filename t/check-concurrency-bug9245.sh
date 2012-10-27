@@ -18,7 +18,7 @@
 # even when the Automake-generated parallel testsuite harness failed.
 # See automake bug#9245.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_OUTPUT

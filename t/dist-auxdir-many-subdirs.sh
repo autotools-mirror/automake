@@ -19,7 +19,7 @@
 
 am_create_testdir=empty
 required=cc
-. ./defs || exit 1
+. test-init.sh
 
 count=0
 ocwd=$(pwd) || fatal_ "cannot get current working directory"

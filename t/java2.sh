@@ -18,7 +18,7 @@
 # no classes to compile.
 # Report from Braden McDaniel.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AM_CONDITIONAL(WITH_JDK, false)

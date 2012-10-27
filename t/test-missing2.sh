@@ -19,7 +19,7 @@
 #    all the $(TEST_LOGS) have a dummy dependency.
 # See also related test 'test-missing.sh'.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_OUTPUT

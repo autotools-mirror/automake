@@ -18,7 +18,7 @@
 #  - $(TEST_SUITE_LOG) and $(TESTS)
 #  - $(TEST_SUITE_LOG) and $(TEST_LOGS)
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac <<'END'
 AC_OUTPUT

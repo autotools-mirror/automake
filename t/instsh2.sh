@@ -17,7 +17,7 @@
 # Various install-sh checks.
 
 am_create_testdir=empty
-. ./defs || exit 1
+. test-init.sh
 
 get_shell_script install-sh
 

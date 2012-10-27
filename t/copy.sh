@@ -17,7 +17,7 @@
 # Test to make sure '-c' works.  Report from Andris Pavenis.
 # See also the much more in-depth test 'add-missing'.
 
-. ./defs || exit 1
+. test-init.sh
 
 # We'll have to cater to systems like MSYS/MinGW where there are no
 # true symlinks ('ln -s' behaves like 'cp -p'); see automake bug#10441.

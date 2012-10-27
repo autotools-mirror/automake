@@ -16,7 +16,7 @@
 
 # Targets and macros are two different name spaces.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat > Makefile.am << 'END'
 install = install

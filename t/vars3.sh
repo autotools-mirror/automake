@@ -17,7 +17,7 @@
 # Check that Automake warns about variables containing spaces
 # and other non-POSIX characters.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >Makefile.am <<'EOF'
 L01 = $(shell echo *)

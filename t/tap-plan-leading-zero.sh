@@ -19,7 +19,7 @@
 #  - TAP "SKIP" plans with multiple zeroes, as in "1..00 # SKIP"
 # This is consistent with the behaviour of the 'prove' utility.
 
-. ./defs || exit 1
+. test-init.sh
 
 . tap-setup.sh
 

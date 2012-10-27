@@ -17,7 +17,7 @@
 # Check parallel-tests features: runtime redefinition of $(TEST_SUITE_LOG)
 # for the recheck target.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac <<'END'
 AC_OUTPUT

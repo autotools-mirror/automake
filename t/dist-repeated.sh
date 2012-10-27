@@ -18,7 +18,7 @@
 # The distdir target should take care of not copying it more than one
 # time anyway.
 
-. ./defs || exit 1
+. test-init.sh
 
 echo AC_OUTPUT >> configure.ac
 

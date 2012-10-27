@@ -16,7 +16,7 @@
 
 # Test for error for bad syntax.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat > Makefile.am << 'END'
 foo = q \

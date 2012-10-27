@@ -18,7 +18,7 @@
 # pattern is null.
 # Report from Richard Boulton.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_SUBST([CC], [whocares])

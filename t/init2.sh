@@ -17,7 +17,7 @@
 # Make sure we give a sensible error message when AM_INIT_AUTOMAKE
 # contains junk.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >configure.ac <<END
 AC_INIT([init2], [1.0])

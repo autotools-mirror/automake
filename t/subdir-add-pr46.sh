@@ -19,7 +19,7 @@
 # test 'subdir-add2-pr46.sh' do it from a subdirectory.
 # PR automake/46
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_OUTPUT

@@ -19,7 +19,7 @@
 #  - tests without explicit number get automatically numbered in the
 #    testsuite progress output on console
 
-. ./defs || exit 1
+. test-init.sh
 
 . tap-setup.sh
 

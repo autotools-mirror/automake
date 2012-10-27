@@ -17,7 +17,7 @@
 # Make sure comments following trailing backslashes are diagnosed.
 # Report from Harald Dunkel.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat > Makefile.am << 'END'
 SUBDIRS = foo \

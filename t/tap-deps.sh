@@ -17,7 +17,7 @@
 # Basic TAP test protocol support:
 #  - dependencies between test scripts
 
-. ./defs || exit 1
+. test-init.sh
 
 cat > Makefile.am << 'END'
 # The tests are *deliberately* listed in inversed order here.

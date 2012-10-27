@@ -16,7 +16,7 @@
 
 # Test to make sure pure C++ sources don't include C-specific code.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_PROG_CXX

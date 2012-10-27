@@ -17,7 +17,7 @@
 # Check that the testsuite driver copes well with unreadable '.log'
 # and '.trs' files.
 
-. ./defs || exit 1
+. test-init.sh
 
 : > t
 chmod a-r t && test ! -r t || skip_ "you can still read unreadable files"

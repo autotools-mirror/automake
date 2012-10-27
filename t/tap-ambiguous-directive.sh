@@ -18,7 +18,7 @@
 #  - handling of "ambiguous" TODO and SKIP directives
 # See also related test 'tap-todo-skip-together.sh'.
 
-. ./defs || exit 1
+. test-init.sh
 
 . tap-setup.sh
 

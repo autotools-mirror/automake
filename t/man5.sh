@@ -16,7 +16,7 @@
 
 # Make sure to extract the correct mansection from files in man_MANS.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac <<'END'
 AC_OUTPUT

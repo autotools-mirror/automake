@@ -17,7 +17,7 @@
 # Check that "./configure && make && make distclean" is actually a
 # no-op, even when conditional SUBDIRS are involved.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_CONFIG_FILES([sub1/Makefile sub2/Makefile sub1/subsub/Makefile])

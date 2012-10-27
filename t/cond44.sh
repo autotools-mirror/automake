@@ -17,7 +17,7 @@
 # Check that redefinitions of AC_SUBST'ed AM_SUBST_NOTMAKE'd variables
 # are not diagnosed.  See 'cond23.sh'.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >>configure.ac <<EOF
 AM_CONDITIONAL([COND], [true])

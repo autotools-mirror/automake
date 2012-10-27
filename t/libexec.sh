@@ -16,7 +16,7 @@
 
 # PROGRAMS and LIBRARIES can be installed in (pkg)libexecdir.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat > Makefile.am << 'END'
 libexec_PROGRAMS = foo

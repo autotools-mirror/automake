@@ -16,7 +16,7 @@
 
 # Make sure aclocal picks up on all macro definitions.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat > acinclude.m4 << 'END'
 AC_DEFUN([AM_FUNC_THREE])

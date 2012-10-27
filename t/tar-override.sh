@@ -19,7 +19,7 @@
 # FIXME: currently this works only when the tar format used is 'v7'
 # FIXME: (which is the default one).
 
-. ./defs || exit 1
+. test-init.sh
 
 cwd=$(pwd) || fatal_ "getting current working directory"
 

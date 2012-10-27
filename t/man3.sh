@@ -16,7 +16,7 @@
 
 # PR 516: Prefer generated manpages to distributed ones.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat > Makefile.am << 'END'
 dist_man_MANS = foo.1

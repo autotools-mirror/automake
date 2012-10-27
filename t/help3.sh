@@ -16,7 +16,7 @@
 
 # Make sure --help and --version takes precedence over other options.
 
-. ./defs || exit 1
+. test-init.sh
 
 # We must have full control over the content of the current directory.
 mkdir cleandir

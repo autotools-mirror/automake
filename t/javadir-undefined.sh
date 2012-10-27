@@ -20,7 +20,7 @@
 # the *.class files).
 # See automake bug#8461.
 
-. ./defs || exit 1
+. test-init.sh
 
 $ACLOCAL
 

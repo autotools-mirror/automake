@@ -18,7 +18,7 @@
 #  - check-html
 #  - recheck-html
 
-. ./defs || exit 1
+. test-init.sh
 
 # Try the variants that are tried in check-html.am.
 while :; do

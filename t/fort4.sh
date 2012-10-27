@@ -19,7 +19,7 @@
 # For now, require the GNU compilers (to avoid some Libtool/Autoconf
 # issues).
 required='g77 gfortran'
-. ./defs || exit 1
+. test-init.sh
 
 mkdir sub
 

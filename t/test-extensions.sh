@@ -18,7 +18,7 @@
 # and do not diagnose valid (albeit more unusual) ones.
 # See automake bug#9400.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac <<'END'
 AC_OUTPUT

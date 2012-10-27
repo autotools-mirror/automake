@@ -16,7 +16,7 @@
 
 # Test to make sure 'dist' prefix works with man pages.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat > Makefile.am << 'END'
 dist_man_MANS = foo.1

@@ -26,7 +26,7 @@
 # and the following CC:ed thread on bug-autoconf list:
 #   <http://lists.gnu.org/archive/html/bug-autoconf/2011-06/msg00002.html>
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_OUTPUT

@@ -17,7 +17,7 @@
 # Test for conditional _LISP.
 
 required=emacs
-. ./defs || exit 1
+. test-init.sh
 
 cat > Makefile.am << 'EOF'
 dist_lisp_LISP = am-one.el

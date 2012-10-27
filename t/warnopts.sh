@@ -16,7 +16,7 @@
 
 # Make sure that we can enable or disable warnings on a per-file basis.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >>configure.ac <<END
 AC_CONFIG_FILES([sub/Makefile])

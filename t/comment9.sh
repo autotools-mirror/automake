@@ -17,7 +17,7 @@
 # Make sure ##-comments are ignored in variable definitions.
 # Report from Julien Sopena.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat > Makefile.am << 'EOF'
 TESTS = \

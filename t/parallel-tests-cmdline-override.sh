@@ -17,7 +17,7 @@
 # Check that we can use indirections when overriding TESTS and
 # TEST_LOGS from the command line.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_OUTPUT

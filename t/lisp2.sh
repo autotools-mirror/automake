@@ -16,7 +16,7 @@
 
 # Make sure that Automake suggest using AM_PATH_LISPDIR to define lispdir.
 
-. ./defs || exit 1
+. test-init.sh
 
 
 : TRY 1 -- We lack both EMACS and lispdir.

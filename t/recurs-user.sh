@@ -18,7 +18,7 @@
 # Check that user recursion respect $(SUBDIRS) order,
 # and proceeds in a depth-first fashion.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac <<'END'
 AM_EXTRA_RECURSIVE_TARGETS([foo])

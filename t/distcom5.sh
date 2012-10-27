@@ -19,7 +19,7 @@
 # a Makefile in that directory.  'distcom4.sh' performs the same
 # test without Makefile in the directory.
 
-. ./defs || exit 1
+. test-init.sh
 
 extract_distcommon ()
 {

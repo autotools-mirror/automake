@@ -17,7 +17,7 @@
 # Test to make sure that non-existing common files are distributed
 # if they are buildable.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat > Makefile.am << 'END'
 README:

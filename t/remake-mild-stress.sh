@@ -17,7 +17,7 @@
 # Test basic remake rules for Makefiles with non-default names
 # and/or with multiple sources.
 
-. ./defs || exit 1
+. test-init.sh
 
 magic1=::MagicStringOne::
 magic2=__MagicStringTwo__

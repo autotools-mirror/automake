@@ -17,7 +17,7 @@
 # Make sure that, if AC_CONFIG_AUX_DIR is not specified, Automake tries
 # to use '.', '..' and '../..', in precisely that order.
 
-. ./defs || exit 1
+. test-init.sh
 
 nil=__no_such_program
 

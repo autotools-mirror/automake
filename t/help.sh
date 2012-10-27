@@ -17,7 +17,7 @@
 # Make sure --help and --version work, even when no configure.ac nor
 # configure.in is in the current directory.
 
-. ./defs || exit 1
+. test-init.sh
 
 # Ensure we run in an empty directory.
 mkdir emptydir

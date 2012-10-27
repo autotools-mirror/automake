@@ -17,7 +17,7 @@
 # Make sure that INFO_DEPS can be overridden.
 # Report from Bruce Korb.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat > Makefile.am << 'END'
 INFO_DEPS = foo.info

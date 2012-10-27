@@ -18,7 +18,7 @@
 #  - which global test result derives from different test results
 #    mixed in a single script?
 
-. ./defs || exit 1
+. test-init.sh
 
 . tap-setup.sh
 

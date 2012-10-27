@@ -17,7 +17,7 @@
 # Make sure Automake diagnoses conflicting installations.
 
 required='libtoolize'
-. ./defs || exit 1
+. test-init.sh
 
 cat >>configure.ac <<'END'
 AM_CONDITIONAL([COND1], [true])

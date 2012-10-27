@@ -19,7 +19,7 @@
 # Incidentally, this test also checks that the testsuite summary doesn't
 # give any bug-report address if it's not defined.
 
-. ./defs || exit 1
+. test-init.sh
 
 for s in trivial-test-driver extract-testsuite-summary.pl; do
   cp "$am_testauxdir/$s" . || fatal_ "failed to fetch auxiliary script $s"

@@ -18,7 +18,7 @@
 #  - diagnostic messages (TAP lines with leading "#")
 #  - flags '--comments' and '--no-comments' of the TAP test driver
 
-. ./defs || exit 1
+. test-init.sh
 
 . tap-setup.sh
 

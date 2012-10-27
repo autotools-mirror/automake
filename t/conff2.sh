@@ -16,7 +16,7 @@
 
 # Make sure empty calls to AC_CONFIG_FILES or AC_CONFIG_HEADERS are diagnosed.
 
-. ./defs || exit 1
+. test-init.sh
 
 # We avoid using configure.ac stub initialized by ./defs, since we need
 # to keep track of line numbers (to grep for error messages).

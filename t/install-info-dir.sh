@@ -22,7 +22,7 @@
 # FIXME: and could be merged with 'txinfo27.sh'.
 
 required=makeinfo
-. ./defs || exit 1
+. test-init.sh
 
 cwd=$(pwd) || fatal_ "cannot get current working directory"
 

@@ -18,7 +18,7 @@
 #  - a "not ok # SKIP" line should count as a failure, for consistency
 #    with the prove(1) utility.
 
-. ./defs || exit 1
+. test-init.sh
 
 . tap-setup.sh
 

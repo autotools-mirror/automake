@@ -17,7 +17,7 @@
 # Automake should stop the creation of Makefile.in files at the first
 # encountered error due to a required auxiliary file not found.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac <<END
 AM_PATH_PYTHON

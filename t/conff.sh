@@ -17,7 +17,7 @@
 # Make sure rebuild rules work even when AC_CONFIG_FILES uses colons.
 # Report from Alexander Turbov.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_CONFIG_FILES([bar/Makefile:bar/Makefile.in:Makefile.bot])

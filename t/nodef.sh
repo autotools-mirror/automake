@@ -16,7 +16,7 @@
 
 # Make sure that PACKAGE and VERSION are AC_DEFINEd when requested.
 
-. ./defs || exit 1
+. test-init.sh
 
 # -------------------------------------------------------------------
 # Do not upgrade this file to use the modern AC_INIT/AM_INIT_AUTOMAKE

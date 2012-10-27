@@ -20,7 +20,7 @@
 # If you cause some parts of this test to fail, chances are that you've
 # improved the Automake parser ;-)
 
-. ./defs || exit 1
+. test-init.sh
 
 cat > Makefile.am <<END
 .PHONY: test

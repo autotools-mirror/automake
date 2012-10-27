@@ -16,7 +16,7 @@
 
 # Test for bug in conditionals.  From Raja R Harinath.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AM_CONDITIONAL([WRONG], [test x = y])

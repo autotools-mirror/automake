@@ -16,7 +16,7 @@
 
 # Test to make sure misspellings in _SOURCES variables cause failure.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat > Makefile.am << 'END'
 bin_PROGRAMS = zardoz foo

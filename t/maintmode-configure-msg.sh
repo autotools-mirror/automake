@@ -19,7 +19,7 @@
 # related to the enabling/disabling of maintainer mode are correct (see
 # automake bug#9890).
 
-. ./defs || exit 1
+. test-init.sh
 
 set_maintmode ()
 {

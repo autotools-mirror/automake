@@ -17,7 +17,7 @@
 # Test to make sure nodist_noinst_HEADERS work.
 # For PR 249.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac <<'EOF'
 AC_OUTPUT

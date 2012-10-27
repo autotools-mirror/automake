@@ -18,7 +18,7 @@
 # From Robert Collins.
 
 required=cc
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AM_PROG_CC_C_O

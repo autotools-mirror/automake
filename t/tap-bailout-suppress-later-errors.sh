@@ -18,7 +18,7 @@
 #  - A "Bail out!" directive causes the driver to ignore any TAP
 #    result or error in the rest of the following TAP stream.
 
-. ./defs || exit 1
+. test-init.sh
 
 . tap-setup.sh
 

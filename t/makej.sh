@@ -22,7 +22,7 @@
 # via autom4te.
 
 required=GNUmake
-. ./defs || exit 1
+. test-init.sh
 
 cat >configure.ac <<END
 m4_include([version.m4])

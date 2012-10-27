@@ -17,7 +17,7 @@
 # Check use of absolute paths in dirlist.
 
 am_create_testdir=empty
-. ./defs || exit 1
+. test-init.sh
 
 mkdir acdir-more sub sub/acdir
 echo "$(pwd)/acdir-more" > sub/acdir/dirlist

@@ -16,7 +16,7 @@
 
 # Test that '+=' works with standard header-vars.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_SUBST([ZZZ])

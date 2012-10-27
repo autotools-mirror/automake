@@ -17,7 +17,7 @@
 # Test to make sure that -Wportability turns on portability-recursive,
 # likewise for -Wno-...
 
-. ./defs || exit 1
+. test-init.sh
 
 #
 # First, try a setup where we have a 'portability-recursive' warning,

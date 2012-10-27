@@ -20,7 +20,7 @@
 #  - .test if $(TEST_EXTENSIONS) is not defined
 #  - stuff in $(TEST_EXTENSIONS) otherwise
 
-. ./defs || exit 1
+. test-init.sh
 
 : > Makefile.am
 

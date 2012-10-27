@@ -19,7 +19,7 @@
 # erroring out when a still-required file is missing.
 # See also discussion about automake bug#9768.
 
-. ./defs || exit 1
+. test-init.sh
 
 echo AC_OUTPUT >> configure.ac
 

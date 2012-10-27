@@ -17,7 +17,7 @@
 # Make sure Automake uses the _first_ @setfilname it sees.
 # Report from Karl Berry.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat > Makefile.am << 'END'
 info_TEXINFOS = texinfo.texi

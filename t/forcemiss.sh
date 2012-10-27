@@ -16,7 +16,7 @@
 
 # Test to make sure that 'automake --force-missing' works.
 
-. ./defs || exit 1
+. test-init.sh
 
 rm -f install-sh
 

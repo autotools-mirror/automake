@@ -19,7 +19,7 @@
 # an early exit due to some command exiting unexpectedly with status 77.
 
 am_create_testdir=no
-. ./defs || exit 1
+. test-init.sh
 
 set +e
 
@@ -31,7 +31,7 @@ run_dummy_test ()
 {
   env $2 $AM_TEST_RUNNER_SHELL -c "
     am_create_testdir=no
-    . ./defs
+   . test-init.sh
     $1
   " dummy.sh
 }

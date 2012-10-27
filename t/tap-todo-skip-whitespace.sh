@@ -18,7 +18,7 @@
 #  - normalization of whitespace in console testsuite progress associated
 #    with TODO and SKIP directives
 
-. ./defs || exit 1
+. test-init.sh
 
 . tap-setup.sh
 

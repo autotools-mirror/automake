@@ -16,7 +16,7 @@
 
 # Test for failing check for unused macros.  From Johan Danielsson.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 MACRO_1

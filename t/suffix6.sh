@@ -19,7 +19,7 @@
 # '.$(OBJEXT)'.  See also related "semantic" tests 'suffix6b.sh'
 # and 'suffix6c.sh'.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat > Makefile.am << 'END'
 SUFFIXES = a b .$(OBJEXT) c .o .obj

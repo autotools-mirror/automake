@@ -16,7 +16,7 @@
 
 # Check to make sure EXTRA_DATA not required.
 
-. ./defs || exit 1
+. test-init.sh
 
 echo 'AC_SUBST(CODICIL)' >> configure.ac
 

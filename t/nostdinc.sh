@@ -21,7 +21,7 @@
 # just skip the rest of the test if configure fails to find a working C
 # compiler.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_PROG_CC

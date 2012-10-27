@@ -18,7 +18,7 @@
 #  - don't spuriously recognize lines that are "almost" TAP lines as
 #    real TAP lines
 
-. ./defs || exit 1
+. test-init.sh
 
 . tap-setup.sh
 

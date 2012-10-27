@@ -17,7 +17,7 @@
 # Make sure remaking rules in subdir are correctly generated.
 # See also sister "grepping" test 'remake-subdir-grepping.sh'.
 
-. ./defs || exit 1
+. test-init.sh
 
 fingerprint='=/FiNgErPrInT/='
 

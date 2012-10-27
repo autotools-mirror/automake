@@ -19,7 +19,7 @@
 # from Vincent Lefevre).
 
 required='makeinfo tex texi2dvi'
-. ./defs || exit 1
+. test-init.sh
 
 echo AC_OUTPUT >> configure.ac
 

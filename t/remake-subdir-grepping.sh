@@ -18,7 +18,7 @@
 # are correctly generated.
 # See also sister functional test 'remake-subdir-only.sh'.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat > configure.ac <<END
 AC_INIT([$me], [1.0])

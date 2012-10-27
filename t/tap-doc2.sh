@@ -19,7 +19,7 @@
 # with the Automake test harness".
 
 am_create_testdir=empty
-. ./defs || exit 1
+. test-init.sh
 
 cat > Makefile.am <<'END'
 TEST_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \

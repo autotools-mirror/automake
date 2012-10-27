@@ -18,7 +18,7 @@
 # (to detect TCL errors) on a file with TCL errors.
 
 required=runtest
-. ./defs || exit 1
+. test-init.sh
 
 runtest --help | grep '.*--status' \
   || skip_ "dejagnu lacks support for '--status'"

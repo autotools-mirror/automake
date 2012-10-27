@@ -17,7 +17,7 @@
 # Test that some Java-related variables and rules are not repeatedly
 # defined.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat > Makefile.am << 'END'
 javadir = $(datadir)/java

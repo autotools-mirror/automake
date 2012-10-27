@@ -17,7 +17,7 @@
 # Test missing python.
 
 # Python is not required for this test.
-. ./defs || exit 1
+. test-init.sh
 
 cat >>configure.ac <<'EOF'
 m4_define([_AM_PYTHON_INTERPRETER_LIST], [IShouldNotExist1 IShouldNotExist2])

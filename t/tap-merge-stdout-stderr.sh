@@ -18,7 +18,7 @@
 #  - The Automake TAP driver has an option that instruct it to read TAP
 #    input also from the stderr of the test command, not only its stdout.
 
-. ./defs || exit 1
+. test-init.sh
 
 fetch_tap_driver
 

@@ -16,7 +16,7 @@
 
 # Check for false positives in automake recognition of '-d' in YFLAGS.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac <<'END'
 AC_PROG_CC

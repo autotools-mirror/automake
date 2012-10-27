@@ -17,7 +17,7 @@
 # Make sure the MKDIR_P invocation is correct in install-man
 # target.  Bug reported by Gordon Irlam <gordoni@cygnus.com>.
 
-. ./defs || exit 1
+. test-init.sh
 
 echo AC_OUTPUT >> configure.ac
 

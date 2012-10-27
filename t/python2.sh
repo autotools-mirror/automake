@@ -16,7 +16,7 @@
 
 # Make sure that Automake suggests using AM_PATH_PYTHON.
 
-. ./defs || exit 1
+. test-init.sh
 
 $ACLOCAL
 

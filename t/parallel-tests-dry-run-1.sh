@@ -17,7 +17,7 @@
 # Check interactions between the parallel test harness and "make -n".
 # See also sister test 'parallel-tests-dry-run-2.sh'.
 
-. ./defs || exit 1
+. test-init.sh
 
 echo AC_OUTPUT >> configure.ac
 

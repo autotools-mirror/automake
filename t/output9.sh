@@ -16,7 +16,7 @@
 
 # Make sure an AC_CONFIG_FILES can have an AC_CONFIG_FILES output as input.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << END
 AC_CONFIG_FILES([a/mid.in:a/input.in.in])

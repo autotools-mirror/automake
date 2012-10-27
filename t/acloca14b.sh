@@ -17,7 +17,7 @@
 # Make sure m4_included files are also scanned for definitions.
 # Report from Phil Edwards.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AM_PROG_LIBTOOL

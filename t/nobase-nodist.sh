@@ -16,7 +16,7 @@
 
 # Interaction of 'nobase_' and 'nodist_' prefixes.
 
-. ./defs || exit 1
+. test-init.sh
 
 # Simulate no emacs and no python (it shouldn't be needed in this test).
 EMACS="no" PYTHON=":"; export EMCAS PYTHON

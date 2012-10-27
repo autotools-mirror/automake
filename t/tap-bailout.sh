@@ -17,7 +17,7 @@
 # Basic TAP test protocol support:
 #  - "Bail out!" magic
 
-. ./defs || exit 1
+. test-init.sh
 
 . tap-setup.sh
 

@@ -23,7 +23,7 @@
 # and 'tap-skip-whole-badcount.sh'.  More checks about corner-cases
 # in TAP plans are performed in 'tap-plan-corner.sh'.
 
-. ./defs || exit 1
+. test-init.sh
 
 . tap-setup.sh
 

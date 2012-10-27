@@ -18,7 +18,7 @@
 # is erroneously retained in the final value.
 # See also sister test 'pluseq11b.sh'.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >>configure.ac <<'END'
 AC_OUTPUT

@@ -16,7 +16,7 @@
 
 # Simple checks on the 'AM_WITH_DMALLOC' macro.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_CONFIG_HEADERS([config.h])

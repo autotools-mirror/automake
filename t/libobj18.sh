@@ -16,7 +16,7 @@
 
 # Make sure AC_LIBSOURCE and AC_LIBSOURCES use arguments literally.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_PROG_CC

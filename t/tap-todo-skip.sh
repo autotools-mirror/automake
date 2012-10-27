@@ -23,7 +23,7 @@
 #  - the reasons for TODO and SKIP, if present, are nicely printed in
 #    the testsuite progress output
 
-. ./defs || exit 1
+. test-init.sh
 
 . tap-setup.sh
 

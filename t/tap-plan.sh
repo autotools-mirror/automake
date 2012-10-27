@@ -18,7 +18,7 @@
 #  - test scripts with the test plan at the beginning
 #  - test scripts with the test plan at the end
 
-. ./defs || exit 1
+. test-init.sh
 
 . tap-setup.sh
 

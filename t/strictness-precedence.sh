@@ -18,7 +18,7 @@
 # strictness specified later should take precedence over strictness
 # specified earlier.
 
-. ./defs || exit 1
+. test-init.sh
 
 # We want complete control over automake options.
 AUTOMAKE=$am_original_AUTOMAKE

@@ -20,7 +20,7 @@
 # check for tests that are binary executables.
 # See also the more generic test 'check-fd-redirect.sh'.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_OUTPUT

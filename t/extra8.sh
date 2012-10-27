@@ -18,7 +18,7 @@
 # and that referring to the same program with inconsistent addition
 # of $(EXEEXT) works, too.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >>configure.ac <<'END'
 AC_PROG_CC

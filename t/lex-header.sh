@@ -18,7 +18,7 @@
 # bugs #8844 and #9933).
 
 required='cc flex'
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_PROG_CC

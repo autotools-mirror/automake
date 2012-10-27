@@ -17,7 +17,7 @@
 # Check that the user can force automake to use *_YFLAGS variables
 # which have conditional content.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac <<'END'
 AC_SUBST([CC], [false])

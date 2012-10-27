@@ -19,7 +19,7 @@
 # From Derek R. Price.
 
 required=cc
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AM_MAINTAINER_MODE

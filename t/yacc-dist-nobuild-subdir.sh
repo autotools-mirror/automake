@@ -19,7 +19,7 @@
 # Exposes automake bug#8485.
 
 required='cc yacc'
-. ./defs || exit 1
+. test-init.sh
 
 # This test is bounded to fail for any implementation that
 # triggers automake bug#7884.

@@ -17,7 +17,7 @@
 # Check that yacc sources with many dots in their name are handled
 # correctly.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_PROG_CC

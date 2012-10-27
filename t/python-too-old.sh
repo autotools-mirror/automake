@@ -19,7 +19,7 @@
 
 am_create_testdir=empty
 required=python
-. ./defs || exit 1
+. test-init.sh
 
 py_too_old ()
 {

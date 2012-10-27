@@ -17,7 +17,7 @@
 # TAP support: more unusual forms for valid TAP input.
 # See also related test 'tap-fancy.sh'.
 
-. ./defs || exit 1
+. test-init.sh
 
 . tap-setup.sh
 

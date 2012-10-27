@@ -17,7 +17,7 @@
 # Another test for a failing ":" in AC_OUTPUT.
 # Report from Maciej Stachowiak.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat > configure.ac << 'END'
 AC_INIT([colon7], [1.0])

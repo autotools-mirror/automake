@@ -17,7 +17,7 @@
 # Make sure that AR, ARFLAGS, etc. works also when the macro AM_PROG_AR
 # is used.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_PROG_CC

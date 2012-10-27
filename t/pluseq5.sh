@@ -16,7 +16,7 @@
 
 # Test for another '+=' problem.  Report from Brian Jones.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AM_CONDITIONAL([CHECK], [true])

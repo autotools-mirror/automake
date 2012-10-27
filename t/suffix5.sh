@@ -19,7 +19,7 @@
 # Based on a report from Arkadiusz Miskiewicz <misiek@pld.ORG.PL>.
 
 required='cc libtool'
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_SUBST([LINK], [:])

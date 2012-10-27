@@ -19,7 +19,7 @@
 # by a process (e.g., that is its "current working directory").
 # See automake bug#10470.
 
-. ./defs || exit 1
+. test-init.sh
 
 mkdir foo.d
 sh -c "cd foo.d && sleep '4'" &

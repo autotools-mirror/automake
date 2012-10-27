@@ -16,7 +16,7 @@
 
 # Test for bug where mkinstalldirs variable can be set incorrectly.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat > Makefile.am << 'END'
 pkgdata_DATA =

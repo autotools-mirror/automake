@@ -16,7 +16,7 @@
 
 # Make sure different subpackages may share files and directories.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >Makefile.am <<'END'
 SUBDIRS = subpkg

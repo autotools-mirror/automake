@@ -17,7 +17,7 @@
 # We must skip the backslash, not complain about './\' not existing.
 # Reported by Rick Scott <rwscott@omnisig.com>
 
-. ./defs || exit 1
+. test-init.sh
 
 cat > Makefile.am << 'END'
 SUBDIRS = \

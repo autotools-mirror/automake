@@ -17,7 +17,7 @@
 # Check interactions between the 'portability-recursive' and
 # 'extra-portability' warning categories.
 
-. ./defs || exit 1
+. test-init.sh
 
 # We want (almost) complete control over automake options.
 AUTOMAKE="$am_original_AUTOMAKE --foreign -Werror"

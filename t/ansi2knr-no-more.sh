@@ -17,7 +17,7 @@
 # Check that any attempt to use the obsolete de-ANSI-fication support
 # is diagnosed.
 
-. ./defs || exit 1
+. test-init.sh
 
 warn_rx='automatic de-ANSI-fication.*removed'
 

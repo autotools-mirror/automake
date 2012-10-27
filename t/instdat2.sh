@@ -17,7 +17,7 @@
 # Test that installing under $exec_prefix is handled by install-exec.
 # Testing with headers for instance.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >Makefile.am << 'EOF'
 # User directories.

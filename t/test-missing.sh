@@ -18,7 +18,7 @@
 #  - non-existent scripts listed in TESTS get diagnosed
 # See also related test 'test-missing2.sh'.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_OUTPUT

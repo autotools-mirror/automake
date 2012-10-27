@@ -18,7 +18,7 @@
 # Based on a test case from Ralf Corsepius.
 
 required='gcc GNUmake'
-. ./defs || exit 1
+. test-init.sh
 
 mldir=$am_top_srcdir/contrib/multilib
 mkdir m4

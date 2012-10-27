@@ -18,7 +18,7 @@
 
 # This test only makes sense for the older serial testsuite driver.
 am_serial_tests=yes
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_OUTPUT

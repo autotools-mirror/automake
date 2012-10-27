@@ -16,7 +16,7 @@
 
 # Check basic support for distcheck-hook.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_OUTPUT

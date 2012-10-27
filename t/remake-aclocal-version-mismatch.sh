@@ -17,7 +17,7 @@
 # See how well the rebuild rule handles an aclocal.m4 that was
 # generated for another version of autoconf.
 
-. ./defs || exit 1
+. test-init.sh
 
 echo AC_OUTPUT >>configure.ac
 

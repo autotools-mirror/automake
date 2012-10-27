@@ -16,7 +16,7 @@
 
 # Make sure dependency tracking works for java.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 _AM_DEPENDENCIES([GCJ])

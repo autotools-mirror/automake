@@ -17,7 +17,7 @@
 # Test EXTRA_*_DEPENDENCIES.  See extradep2 for libtool variant.
 
 required=cc
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_PROG_CC

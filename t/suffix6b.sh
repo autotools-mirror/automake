@@ -18,7 +18,7 @@
 # extensions.  Se also related "grepping" test 'suffix6.sh'.
 
 required=GNUmake # Other makes might not grok dot-less suffix rules.
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 # $(LINK) is not defined automatically by Automake, since the *_SOURCES

@@ -16,7 +16,7 @@
 
 # Test for bug where check target doesn't depend on all.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat > Makefile.am << 'END'
 bin_SCRIPTS = derived

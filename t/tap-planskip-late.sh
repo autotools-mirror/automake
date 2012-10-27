@@ -18,7 +18,7 @@
 #  - the special "plan with SKIP" can also be used "late" in the TAP
 #    stream, i.e., preceded by non-TAP output or TAP diagnostic.
 
-. ./defs || exit 1
+. test-init.sh
 
 . tap-setup.sh
 

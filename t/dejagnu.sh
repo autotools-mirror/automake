@@ -17,7 +17,7 @@
 # Superficial test to check that dejagnu tests and automake-style
 # tests can coexist.  See also related deeper test 'check12.sh'.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat > Makefile.am << 'END'
 AUTOMAKE_OPTIONS = dejagnu

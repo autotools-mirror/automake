@@ -24,7 +24,7 @@
 # should be '$(top_builddir)/bar/.deps'.
 
 required=cc
-. ./defs || exit 1
+. test-init.sh
 
 mkdir foo
 

@@ -16,7 +16,7 @@
 
 # Make sure we don't override the user's site.exp rule.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac <<'END'
 AC_OUTPUT

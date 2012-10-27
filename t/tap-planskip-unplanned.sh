@@ -19,7 +19,7 @@
 #    been seen is an error
 #  - any test result following a "plan with skip" is an error.
 
-. ./defs || exit 1
+. test-init.sh
 
 . tap-setup.sh
 

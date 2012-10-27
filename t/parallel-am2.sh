@@ -21,7 +21,7 @@
 #    warnings should be omitted in the same way as without threads.
 
 required=perl-threads
-. ./defs || exit 1
+. test-init.sh
 
 mkdir sub
 

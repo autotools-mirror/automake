@@ -19,7 +19,7 @@
 # modifiers.  Also check that '.java' files are not distributed by
 # default.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_OUTPUT

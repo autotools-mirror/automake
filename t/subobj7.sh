@@ -17,7 +17,7 @@
 # Test to make sure AM_CFLAGS appears in subdir compilation rule.
 # Report from Steve M. Robbins.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_PROG_CC

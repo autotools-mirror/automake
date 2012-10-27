@@ -20,7 +20,7 @@
 # Keep this test in sync with sister test 'autodist-subdir.sh'.
 
 am_create_testdir=empty
-. ./defs || exit 1
+. test-init.sh
 
 cat > configure.ac <<END
 AC_INIT([$me], [1.0])

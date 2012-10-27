@@ -16,7 +16,7 @@
 
 # Test the += diagnostics.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >>configure.ac << 'END'
 AM_CONDITIONAL([COND1], [true])

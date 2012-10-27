@@ -16,7 +16,7 @@
 
 # Check support for no-dist-gzip with lzma.
 
-. ./defs || exit 1
+. test-init.sh
 
 errmsg='support for lzma.*removed'
 

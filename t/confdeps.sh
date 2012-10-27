@@ -16,7 +16,7 @@
 
 # Make sure that config* files are properly regenerated.
 
-. ./defs || exit 1
+. test-init.sh
 
 echo "FOO = foo" > Makefile.am
 

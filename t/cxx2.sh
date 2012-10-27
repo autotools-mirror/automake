@@ -16,7 +16,7 @@
 
 # Test that Automake suggests using AC_PROG_CXX if C++ sources are used.
 
-. ./defs || exit 1
+. test-init.sh
 
 echo AC_PROG_CC >>configure.ac
 

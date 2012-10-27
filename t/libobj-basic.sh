@@ -17,7 +17,7 @@
 # Make sure AC_LIBSOURCE and AC_LIBSOURCES work.
 
 required=cc
-. ./defs || exit 1
+. test-init.sh
 
 mv configure.ac configure.proto
 cat >> configure.proto << 'END'

@@ -17,7 +17,7 @@
 # Make sure automake -Woverride suggests using TARGET-local instead
 # of TARGET when possible.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat > Makefile.am << 'END'
 install:

@@ -20,7 +20,7 @@
 #  - TAP errors are reported in the log file too
 # See also related test 'tap-passthrough-exit.sh'.
 
-. ./defs || exit 1
+. test-init.sh
 
 weirdchars=\''"\$@!&()[]<>#;,:.^?*/'
 

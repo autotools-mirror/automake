@@ -17,7 +17,7 @@
 # Check that the AM_PROG_MKDIR_P macro is deprecated.  It will be
 # be removed in the next major Automake release.
 
-. ./defs || exit 1
+. test-init.sh
 
 echo AM_PROG_MKDIR_P >> configure.ac
 : > Makefile.am

@@ -17,7 +17,7 @@
 # Test missing when running a tool's --version.
 
 am_create_testdir=empty
-. ./defs || exit 1
+. test-init.sh
 
 get_shell_script missing
 

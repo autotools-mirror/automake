@@ -17,7 +17,7 @@
 # Check that the first among --help and --version to be specified on
 # the command line takes precedence over the following one.
 
-. ./defs || exit 1
+. test-init.sh
 
 # Ensure we run in an empty directory.
 mkdir emptydir

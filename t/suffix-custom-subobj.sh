@@ -18,7 +18,7 @@
 # Reported by John Ratliff.
 
 required=cc
-. ./defs || exit 1
+. test-init.sh
 
 cat >>configure.ac <<EOF
 AC_PROG_CC

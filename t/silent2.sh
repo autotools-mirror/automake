@@ -20,7 +20,7 @@
 # Please keep this file in sync with 'silent.sh'.
 
 required=gcc
-. ./defs || exit 1
+. test-init.sh
 
 mkdir sub
 

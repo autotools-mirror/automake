@@ -17,7 +17,7 @@
 # TAP support:
 #  - TAP errors following a "TAP plan with SKIP" are still diagnosed.
 
-. ./defs || exit 1
+. test-init.sh
 
 . tap-setup.sh
 

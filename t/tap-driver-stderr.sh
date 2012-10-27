@@ -19,7 +19,7 @@
 
 required=non-root
 am_create_testdir=empty
-. ./defs || exit 1
+. test-init.sh
 
 fetch_tap_driver
 

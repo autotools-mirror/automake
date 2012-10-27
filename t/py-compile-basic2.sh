@@ -19,7 +19,7 @@
 # related test 'py-compile-basic.sh'.
 
 required=python
-. ./defs || exit 1
+. test-init.sh
 
 ocwd=$(pwd) || fatal_ "getting current working directory"
 

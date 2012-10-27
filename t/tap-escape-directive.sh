@@ -17,7 +17,7 @@
 # TAP support:
 #  - "escape" TODO and SKIP directives (by escaping the "#" character)
 
-. ./defs || exit 1
+. test-init.sh
 
 . tap-setup.sh
 

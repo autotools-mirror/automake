@@ -17,7 +17,7 @@
 # Check for _DEPENDENCIES definition with conditional _LDADD.
 # Report from Elena A. Vengerova.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >>configure.ac <<'EOF'
 AM_CONDITIONAL([TWO], [test -n "$two"])

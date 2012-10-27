@@ -17,7 +17,7 @@
 # Check to make sure "make install" will build all in directory with
 # nothing to install.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat > Makefile.am << 'END'
 all-local:

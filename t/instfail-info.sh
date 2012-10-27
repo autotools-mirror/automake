@@ -20,7 +20,7 @@
 # This test has a few sister tests, for java, info, libtool.
 
 required='makeinfo'
-. ./defs || exit 1
+. test-init.sh
 
 cat >>configure.ac <<END
 AC_OUTPUT

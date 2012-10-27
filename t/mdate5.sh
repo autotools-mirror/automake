@@ -17,7 +17,7 @@
 # Test to make sure mdate-sh works correctly.
 
 am_create_testdir=empty
-. ./defs || exit 1
+. test-init.sh
 
 get_shell_script mdate-sh
 

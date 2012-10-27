@@ -20,7 +20,7 @@
 # Please keep this file in sync with 'silent3.sh' and 'silent9.sh'.
 
 required="libtoolize gcc"
-. ./defs || exit 1
+. test-init.sh
 
 mkdir sub
 

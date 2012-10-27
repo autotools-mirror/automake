@@ -19,7 +19,7 @@
 #   and xxx_LOG_FLAGS), also with AC_SUBST'd stuff.
 # See also related test 'parallel-tests-log-compiler-2.sh'.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_SUBST([acsubst_compiler], [t-compiler])

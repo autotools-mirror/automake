@@ -17,7 +17,7 @@
 # Sanity check on the function used by the automake testsuite to
 # analyze output of "configure --help".
 
-. ./defs || exit 1
+. test-init.sh
 
 # FIXME: this test is a good candidate for a conversion to TAP.
 

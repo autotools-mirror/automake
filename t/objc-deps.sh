@@ -17,7 +17,7 @@
 # Automatic dependency tracking for Objective C.
 # See also sister test 'objcxx-deps.sh'.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_PROG_OBJC

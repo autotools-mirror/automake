@@ -16,7 +16,7 @@
 
 # Test to make sure sub-sub-dirs work correctly.
 
-. ./defs || exit 1
+. test-init.sh
 
 mkdir one
 mkdir one/two

@@ -16,7 +16,7 @@
 
 # Make sure that PACKAGE and VERSION are AC_DEFINEd when requested.
 
-. ./defs || exit 1
+. test-init.sh
 
 # First, check that PACKAGE and VERSION are output by default.
 

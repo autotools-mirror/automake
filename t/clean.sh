@@ -16,7 +16,7 @@
 
 # Test to make sure a clean target depends on previous one.
 
-. ./defs || exit 1
+. test-init.sh
 
 : > Makefile.am
 

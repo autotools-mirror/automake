@@ -16,7 +16,7 @@
 
 # Make sure we only create texinfo-related targets once.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat > Makefile.am << 'END'
 info_TEXINFOS = maude.texi liver.txi heart.texinfo

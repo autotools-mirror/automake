@@ -18,7 +18,7 @@
 # Also test that Solaris make VPATH rewriting is honored
 
 # For gen-testsuite-part: ==> try-with-serial-tests <==
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_OUTPUT

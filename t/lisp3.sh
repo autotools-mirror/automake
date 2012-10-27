@@ -17,7 +17,7 @@
 # Test that compiling interdependent elisp files works.
 
 required=emacs
-. ./defs || exit 1
+. test-init.sh
 
 cat > Makefile.am << 'EOF'
 lisp_LISP = am-one.el am-two.el am-three.el

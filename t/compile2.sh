@@ -17,7 +17,7 @@
 # Make sure 'compile' deals correctly with Windows-style paths.
 
 am_create_testdir=empty
-. ./defs || exit 1
+. test-init.sh
 
 get_shell_script compile
 

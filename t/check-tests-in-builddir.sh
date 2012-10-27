@@ -18,7 +18,7 @@
 # well as in builddir, and that is prefers those in the builddir.
 
 # For gen-testsuite-part: ==> try-with-serial-tests <==
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_OUTPUT

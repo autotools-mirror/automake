@@ -17,7 +17,7 @@
 # Test for bug where when multiple scripts are installed,
 # the check for AC_PROG_INSTALL fails.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat > Makefile.am << 'END'
 bin_SCRIPTS = zardoz qbert brownie

@@ -17,7 +17,7 @@
 # Test for bug in variable substitution references, where
 # undefined variables break later substitutions.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_SUBST([CC], [whocares])

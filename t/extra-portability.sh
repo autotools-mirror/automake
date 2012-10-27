@@ -20,7 +20,7 @@
 #   2. '-Wno-portability' must imply '-Wno-extra-portability'.
 #   3. '-Wall' must imply '-Wextra-portability'.
 
-. ./defs || exit 1
+. test-init.sh
 
 # We want (almost) complete control over automake options.
 AUTOMAKE="$am_original_AUTOMAKE --foreign -Werror"

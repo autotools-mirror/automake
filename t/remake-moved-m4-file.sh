@@ -17,7 +17,7 @@
 # Test remake rules when m4 files get moved among different "include
 # dirs" (i.e. those passed to aclocal with '-I' option).
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac <<'END'
 MY_MACRO

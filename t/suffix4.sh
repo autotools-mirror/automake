@@ -20,7 +20,7 @@
 # Also make sure that .SUFFIXES is automatically adjusted with
 # extensions from implicit rules.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat > Makefile.am << 'END'
 .k.o:

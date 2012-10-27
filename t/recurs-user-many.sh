@@ -18,7 +18,7 @@
 # at once, and that calls to 'AM_EXTRA_RECURSIVE_TARGETS' are
 # cumulative.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac <<'END'
 AC_CONFIG_FILES([sub/Makefile])

@@ -19,7 +19,7 @@
 # rules don't break in obvious ways in a slightly "heavier than usual"
 # setup.
 
-. ./defs || exit 1
+. test-init.sh
 
 ocwd=$(pwd) || fatal_ "getting current working directory"
 

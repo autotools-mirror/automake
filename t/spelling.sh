@@ -16,7 +16,7 @@
 
 # Test to make sure that misspelled prefixes actually cause error.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat > Makefile.am << 'EOF'
 bni_PROGRAMS = zot

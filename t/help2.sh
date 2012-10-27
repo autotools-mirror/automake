@@ -16,7 +16,7 @@
 
 # Make sure --help and --version work, even when the current directory
 # contains a broken configure.ac and a broken acinclude.m4.
-. ./defs || exit 1
+. test-init.sh
 
 # Ensure we run in a new, clean directory.
 mkdir cleandir

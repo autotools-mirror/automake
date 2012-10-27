@@ -19,7 +19,7 @@
 # ACLOCAL_PATH variable, it is clear that this is the right thing
 # to do.  See also automake bug#8407.
 
-. ./defs || exit 1
+. test-init.sh
 
 mkdir loc sys
 

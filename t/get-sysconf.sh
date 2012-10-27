@@ -20,7 +20,7 @@
 # we won't have to ask him for more information to start analyzing the
 # failure (that had happened too many times in the past!).
 
-. ./defs || exit 1
+. test-init.sh
 
 st=0
 if test -d "$am_top_srcdir"/.git; then

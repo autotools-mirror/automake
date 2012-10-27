@@ -16,7 +16,7 @@
 
 # Test to make sure extensions are set correctly for various languages.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_PROG_F77

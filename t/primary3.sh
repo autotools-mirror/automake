@@ -17,7 +17,7 @@
 # Make sure we can build programs ending in '.la'
 
 required=cc
-. ./defs || exit 1
+. test-init.sh
 
 cat >>configure.ac <<EOF
 AC_PROG_CC

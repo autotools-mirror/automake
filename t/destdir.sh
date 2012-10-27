@@ -21,7 +21,7 @@
 # It will only work for non-root users.
 required='ro-dir'
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac <<'EOF'
 AC_OUTPUT

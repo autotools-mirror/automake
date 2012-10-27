@@ -20,7 +20,7 @@
 # Require GNU make, because some vendo makes (e.g., Solaris) doesn't
 # truly respect .PHONY.
 required=GNUmake
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac <<'END'
 AC_CONFIG_FILES([sub/Makefile])

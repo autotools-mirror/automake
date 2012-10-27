@@ -20,7 +20,7 @@
 # with the use of the reStructuredText field ':copy-in-global-log:' in
 # the associated '.trs' files.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_OUTPUT

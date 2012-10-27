@@ -17,7 +17,7 @@
 # Check that an example given in the documentation really works.
 # See section "Simple Tests" subsection "Script-based Testsuites".
 
-. ./defs || exit 1
+. test-init.sh
 
 fetch_tap_driver
 

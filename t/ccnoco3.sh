@@ -17,7 +17,7 @@
 # Test to make sure 'compile' doesn't call 'mv SRC SRC'.
 
 required=gcc
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_PROG_CC

@@ -18,7 +18,7 @@
 # installed or referenced when the 'serial-tests' option is used.
 
 am_serial_tests=yes
-. ./defs || exit 1
+. test-init.sh
 
 cat > Makefile.am <<'END'
 AUTOMAKE_OPTIONS = serial-tests

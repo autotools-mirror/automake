@@ -17,7 +17,7 @@
 # Test for bug with conditional library.
 # From Harlan Stenn.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_PROG_RANLIB

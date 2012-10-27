@@ -17,7 +17,7 @@
 # TAGS_DEPENDENCIES only make sense if other tag-worthy things (such as
 # sources) exist.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_PROG_CC

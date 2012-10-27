@@ -18,7 +18,7 @@
 # Report from Roman Fietze.
 
 required='cc lex yacc'
-. ./defs || exit 1
+. test-init.sh
 
 cat >>configure.ac <<'EOF'
 AM_CONDITIONAL([CASE_A], [test -z "$case_B"])

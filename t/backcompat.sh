@@ -17,7 +17,7 @@
 # Test usage of AM_INIT_AUTOMAKE with two or three arguments, for
 # backward-compatibility.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat > Makefile.am <<'END'
 .PHONY: test display

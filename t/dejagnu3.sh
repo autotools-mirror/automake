@@ -17,7 +17,7 @@
 # Check that the DejaGnu rules work for a simple program and test case.
 
 required=runtest
-. ./defs || exit 1
+. test-init.sh
 
 cat > hammer << 'END'
 #! /bin/sh

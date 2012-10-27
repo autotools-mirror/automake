@@ -18,7 +18,7 @@
 # -a when we're using AC_CONFIG_AUX_DIR.  Bug report by by Per
 # Cederqvist.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat > configure.ac << END
 AC_INIT([$me], [1.0])

@@ -17,7 +17,7 @@
 # Check silent-rules mode, on 'make' implementations that do not
 # support nested variables (Bug#9928, Bug#10237).
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >>configure.ac <<'EOF'
 AM_SILENT_RULES

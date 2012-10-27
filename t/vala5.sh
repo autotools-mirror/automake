@@ -17,7 +17,7 @@
 # Test per-target flags.
 
 required="pkg-config valac gcc GNUmake"
-. ./defs || exit 1
+. test-init.sh
 
 mkdir src
 

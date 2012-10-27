@@ -18,7 +18,7 @@
 #  - TAP result numbers terminated by a non-whitespace "word boundary"
 #    character are recognized
 
-. ./defs || exit 1
+. test-init.sh
 
 . tap-setup.sh
 

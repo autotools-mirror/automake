@@ -17,7 +17,7 @@
 # Check user extensibility of silent-rules mode.
 # Aslo check that silent rules are disabled by default.
 
-. ./defs || exit 1
+. test-init.sh
 
 echo AC_OUTPUT >> configure.ac
 

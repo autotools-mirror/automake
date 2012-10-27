@@ -17,7 +17,7 @@
 # Emacs lisp files in subdirectories.
 
 required=emacs
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AM_PATH_LISPDIR

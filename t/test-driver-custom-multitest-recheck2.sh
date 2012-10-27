@@ -21,7 +21,7 @@
 # See also related tests 'test-driver-custom-multitest-recheck.sh' and
 # 'parallel-tests-recheck-override.sh'.
 
-. ./defs || exit 1
+. test-init.sh
 
 cp "$am_testauxdir"/trivial-test-driver . \
   || fatal_ "failed to fetch auxiliary script trivial-test-driver"

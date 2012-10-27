@@ -17,7 +17,7 @@
 # TAP support:
 #  - plan line with trailing whitespace is recognized and handled correctly
 
-. ./defs || exit 1
+. test-init.sh
 
 . tap-setup.sh
 

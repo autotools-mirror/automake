@@ -16,7 +16,7 @@
 
 # Make sure remaking rules fail when they should.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_CONFIG_FILES([sub/Makefile])

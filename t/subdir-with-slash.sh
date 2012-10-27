@@ -16,7 +16,7 @@
 
 # Test SUDBIRS with '/' in them.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_CONFIG_FILES([src/subdir/Makefile src/subdir2/Makefile])

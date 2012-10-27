@@ -17,7 +17,7 @@
 # Test to make sure no-dependencies option does the right thing.
 # Bug report from Greg A. Woods.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat > Makefile.am << 'END'
 AUTOMAKE_OPTIONS = no-dependencies

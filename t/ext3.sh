@@ -20,7 +20,7 @@
 # In both cases, we don't try to create a rule; but we shouldn't
 # fail either, because magic might be happening behind our back.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 END

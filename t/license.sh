@@ -16,7 +16,7 @@
 
 # Make sure COPYING is not overwritten, even with -a -f.
 
-. ./defs || exit 1
+. test-init.sh
 
 echo AC_OUTPUT >>configure.ac
 

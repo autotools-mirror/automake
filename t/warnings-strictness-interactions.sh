@@ -18,7 +18,7 @@
 # in AUTOMAKE_OPTIONS take precedence over explicit warnings given in
 # AM_INIT_AUTOMAKE.
 
-. ./defs || exit 1
+. test-init.sh
 
 # We want (almost) complete control over automake options.
 AUTOMAKE="$am_original_AUTOMAKE -Werror"

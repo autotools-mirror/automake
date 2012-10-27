@@ -16,7 +16,7 @@
 
 # Test to see if 'm4_sinclude' and 'm4_include' works.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac <<'EOF'
 sinclude([doesntexist.m4])

@@ -21,7 +21,7 @@
 # These checks have been introduced in commit 'Release-1-9-254-g9d0eaef'
 # into the former test 'subst2.test'.
 
-. ./defs || exit 1
+. test-init.sh
 
 # These are deliberately quite long, so that the xxx_PROGRAMS definition
 # in Makefile.am below will be split on multiple lines, with the last

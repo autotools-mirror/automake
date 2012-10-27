@@ -19,7 +19,7 @@
 # Please keep this file in sync with 'silent3.sh' and 'silent4.sh'.
 
 required='cc libtoolize'
-. ./defs || exit 1
+. test-init.sh
 
 mkdir sub
 

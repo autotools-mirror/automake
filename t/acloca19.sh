@@ -18,7 +18,7 @@
 # more than just variable definitions.
 # Report from Peter Breitenlohner (PR/450).
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >configure.ac <<'END'
 AC_INIT([acloca19], [1.0])

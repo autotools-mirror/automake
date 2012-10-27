@@ -22,7 +22,7 @@
 # (like our dummy one in this test) might leave around a test log even
 # in case of internal failures.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac <<'END'
 AC_OUTPUT

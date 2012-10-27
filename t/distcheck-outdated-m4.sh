@@ -18,7 +18,7 @@
 # files in a dist tarball (interaction with '--install').
 # See automake bug#9037.
 
-. ./defs || exit 1
+. test-init.sh
 
 cwd=$(pwd) || fatal_ "cannot get current working directory"
 

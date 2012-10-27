@@ -16,7 +16,7 @@
 
 # Check for _AM_SUBST_NOTMAKE.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_SUBST([backslash], "\\")

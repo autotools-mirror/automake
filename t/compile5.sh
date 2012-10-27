@@ -17,7 +17,7 @@
 # Make sure the file name translation in the 'compile' script works
 # correctly
 
-. ./defs || exit 1
+. test-init.sh
 
 get_shell_script compile
 

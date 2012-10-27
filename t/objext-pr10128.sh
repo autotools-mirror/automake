@@ -17,7 +17,7 @@
 # Test for automake bug#10128: $(OBJEXT) redefinition causes
 # $(foo_OBJECTS) to be defined as empty.
 
-. ./defs || exit 1
+. test-init.sh
 
 echo AC_OUTPUT >> configure.ac
 

@@ -17,7 +17,7 @@
 # Test distribution of *_PYTHON files.
 
 # This test does not require python.
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AM_PATH_PYTHON([], [:], [:])

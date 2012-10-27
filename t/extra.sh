@@ -19,7 +19,7 @@
 # targets should always be generated.  However, they should not be
 # built by default.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_PROG_CC

@@ -18,7 +18,7 @@
 # by other makefiles.
 
 required=GNUmake
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AM_EXTRA_RECURSIVE_TARGETS([extra])

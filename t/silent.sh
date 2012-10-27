@@ -19,7 +19,7 @@
 # Please keep this file in sync with 'silent2.sh'.
 
 required=cc
-. ./defs || exit 1
+. test-init.sh
 
 mkdir sub
 

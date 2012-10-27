@@ -21,7 +21,7 @@
 # See automake bug#11089.
 
 required='cc c++'
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_PROG_CC

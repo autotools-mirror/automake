@@ -20,7 +20,7 @@
 # tests for other primaries too?  E.g., SCRIPTS, PROGRAMS, LISP, PYTHON,
 # etc...
 
-. ./defs || exit 1
+. test-init.sh
 
 mkdir d
 : > d/f

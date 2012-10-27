@@ -17,7 +17,7 @@
 # TAP support:
 #  - non-directive comments in TAP results are kept verbatim
 
-. ./defs || exit 1
+. test-init.sh
 
 . tap-setup.sh
 

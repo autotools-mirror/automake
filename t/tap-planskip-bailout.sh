@@ -18,7 +18,7 @@
 #  - a "Bail out!" directive causes an hard error, even if coming after
 #    a "SKIP plan" (e.g., "1..0 # SKIP").
 
-. ./defs || exit 1
+. test-init.sh
 
 . tap-setup.sh
 

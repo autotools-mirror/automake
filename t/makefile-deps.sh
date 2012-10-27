@@ -17,7 +17,7 @@
 # Make sure we don't emit a rule with empty target if list of
 # automatically-computed dependencies for Makefile.in is empty.
 
-. ./defs || exit 1
+. test-init.sh
 
 : > Makefile.am
 

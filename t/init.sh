@@ -17,7 +17,7 @@
 # Make sure we give a sensible error message when AC_INIT and
 # AM_INIT_AUTOMAKE are both given less than two arguments.
 
-. ./defs || exit 1
+. test-init.sh
 
 for ac_init_args in '' '([x])'; do
   for am_init_args in '' '([1.10])'; do

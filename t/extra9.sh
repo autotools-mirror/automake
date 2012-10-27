@@ -18,7 +18,7 @@
 # are missing; but only if the former is not AC_SUBSTed itself
 # (lib_LIBRARIES is in the same boat here).
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >>configure.ac <<'END'
 AC_PROG_CC

@@ -25,7 +25,7 @@
 #
 # Report from Akim Demaille.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >>configure.ac <<'EOF'
 # Rebuild rule are ok until make dist, but not afterwards.

@@ -16,7 +16,7 @@
 
 # Another test to make sure no-dependencies option does the right thing.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat > Makefile.am << 'END'
 bin_PROGRAMS = foo

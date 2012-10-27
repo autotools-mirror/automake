@@ -17,7 +17,7 @@
 # Test to make sure the Fortran 90 linker is used when appropriate.
 # (copied from 'link_f_only.sh') Mike Nolta <mrnolta@princeton.edu>
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_PROG_FC

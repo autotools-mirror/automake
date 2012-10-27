@@ -24,7 +24,7 @@
 # Backported to improve coverage of mainline Automake.
 
 required=GNUmake
-. ./defs || exit 1
+. test-init.sh
 
 echo AC_OUTPUT >> configure.ac
 

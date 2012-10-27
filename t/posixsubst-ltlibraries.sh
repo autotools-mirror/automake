@@ -19,7 +19,7 @@
 # Keep this in sync with sister test 'posixsubst-libraries.sh'.
 
 required='cc libtool libtoolize'
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_PROG_CC

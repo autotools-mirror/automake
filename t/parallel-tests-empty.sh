@@ -19,7 +19,7 @@
 # BSD make will expand '$(TESTS:=.log)' to '.log' unless overridden.
 # See 'parallel-tests-trailing-whitespace.sh' for a similar issue.
 
-. ./defs || exit 1
+. test-init.sh
 cat >> configure.ac << 'END'
 AC_OUTPUT
 END

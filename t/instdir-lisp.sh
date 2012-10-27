@@ -17,7 +17,7 @@
 # If $(lispdir) is the empty string, then nothing should be installed there.
 
 required=emacs
-. ./defs || exit 1
+. test-init.sh
 
 cat >>configure.ac <<'END'
 AM_PATH_LISPDIR

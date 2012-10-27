@@ -20,7 +20,7 @@
 #   - remake-include-configure.sh
 
 
-. ./defs || exit 1
+. test-init.sh
 
 magic1=::MagicStringOne::
 magic2=__MagicStringTwo__

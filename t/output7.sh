@@ -17,7 +17,7 @@
 # Check for support for colon separated input files in AC_CONFIG_FILES,
 # with sources in sub directories.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat > configure.ac << END
 AC_INIT([$me], [1.0])

@@ -19,7 +19,7 @@
 # test 'silentcxx.sh', which should work with generic compilers.
 
 required=g++
-. ./defs || exit 1
+. test-init.sh
 
 mkdir sub
 

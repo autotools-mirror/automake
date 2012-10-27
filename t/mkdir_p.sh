@@ -17,7 +17,7 @@
 # AM_INIT_AUTOMAKE should still define $(mkdir_p), for backward
 # compatibility.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_CONFIG_FILES([sub/Makefile])

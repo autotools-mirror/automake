@@ -17,7 +17,7 @@
 # Make Automake diagnose a conditional AUTOMAKE_OPTIONS.
 # Report from Bas Wijnen.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >>configure.ac <<END
 AM_CONDITIONAL([COND], [true])

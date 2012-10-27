@@ -17,7 +17,7 @@
 # PR 492: Test asm subdir-objects.
 
 required=gcc
-. ./defs || exit 1
+. test-init.sh
 
 cat > configure.ac << END
 AC_INIT([$me], [1.0])

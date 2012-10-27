@@ -17,7 +17,7 @@
 # Test to make sure that aclocal.m4's dependencies are honored in
 # sub-directories.  See also related tests 'remake-subdir*.sh'.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_CONFIG_MACRO_DIR([m4])

@@ -19,7 +19,7 @@
 # environment of the tests.  This is documented in the manual.
 
 # For gen-testsuite-part: ==> try-with-serial-tests <==
-. ./defs || exit 1
+. test-init.sh
 
 show_info ()
 {

@@ -18,7 +18,7 @@
 # If config.h is not used, @CONFIG_INCLUDE_SPEC@ should not appear
 # in Makefile.in.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_PROG_CC

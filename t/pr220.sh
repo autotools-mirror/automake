@@ -22,7 +22,7 @@
 # to debug the problem.
 # Note that this should be also in the documentation.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat > Makefile.am << 'EOF'
 if NEVER_TRUE

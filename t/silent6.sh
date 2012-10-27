@@ -16,7 +16,7 @@
 
 # Check user extensibility of silent-rules mode.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >>configure.ac <<'EOF'
 AC_CONFIG_FILES([sub/Makefile])

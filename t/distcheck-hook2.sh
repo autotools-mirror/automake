@@ -18,7 +18,7 @@
 # Automake, and that a used-defined 'distcheck-hook' is *not* honored
 # in a subpackage Makefile.am.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_CONFIG_SUBDIRS([subpkg])

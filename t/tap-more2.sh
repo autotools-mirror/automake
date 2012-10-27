@@ -20,7 +20,7 @@
 #  - interactions with 'check_*' variables
 
 required='cc native'
-. ./defs || exit 1
+. test-init.sh
 
 fetch_tap_driver
 

@@ -20,7 +20,7 @@
 # with the involvement of the $(wildcard) GNU make builtin.
 
 required=GNUmake
-. ./defs || exit 1
+. test-init.sh
 
 echo AC_OUTPUT >> configure.ac
 

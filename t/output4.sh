@@ -16,7 +16,7 @@
 
 # It's hard to believe there are so many AC_OUTPUT-related bugs.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat > configure.ac <<END
 AC_INIT([$me], [1.0])

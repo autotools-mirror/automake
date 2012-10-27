@@ -21,7 +21,7 @@
 # remove this test.
 # Related to automake bug#7819.
 
-. ./defs || exit 1
+. test-init.sh
 
 { echo 'm4_include([defs.m4])'
   cat configure.ac

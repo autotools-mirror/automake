@@ -17,7 +17,7 @@
 # Test that AC_SUBST($1) does something sensible.  From Ulrich
 # Drepper.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 dnl This test used to have the following lines, which cannot have

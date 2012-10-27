@@ -17,7 +17,7 @@
 # Check that recursion on user-defined targets can be made to work
 # with "deeply" nested uses of $(SUBDIRS).
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac <<'END'
 AC_CONFIG_FILES([

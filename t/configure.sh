@@ -18,7 +18,7 @@
 # Diagnose if both configure.in and configure.ac are present, prefer
 # configure.ac.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >configure.ac <<EOF
 AC_INIT([$me], [1.0])

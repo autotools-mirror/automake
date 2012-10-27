@@ -19,7 +19,7 @@
 # which does much more in-depth checks (but requires an actual
 # Yacc program and a working C++ compiler).
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_PROG_CXX

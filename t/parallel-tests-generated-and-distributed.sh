@@ -24,7 +24,7 @@
 #       manual for the ugliness in this area, when VPATH comes into
 #       play.  :-/
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_OUTPUT

@@ -20,7 +20,7 @@
 
 am_create_testdir=empty
 required=gcc
-. ./defs || exit 1
+. test-init.sh
 
 cp "$am_docdir"/amhello-1.0.tar.gz . \
   || fatal_ "cannot get amhello tarball"

@@ -19,7 +19,7 @@
 # shell, which in turn can't find '#' as a command.
 # Sigh.  Some vendors must be destroyed.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat > Makefile.am << 'END'
 install-data-local:

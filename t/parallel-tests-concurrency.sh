@@ -17,7 +17,7 @@
 # Check parallel-tests features:
 # - concurrent parallel execution
 
-. ./defs || exit 1
+. test-init.sh
 
 case $MAKE in
   *\ -j*) skip_ "\$MAKE contains '-j'";;

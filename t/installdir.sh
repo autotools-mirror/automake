@@ -22,7 +22,7 @@
 # installdirs is missing this.  Ideally this would be an automatic
 # feature of any exported target.
 
-. ./defs || exit 1
+. test-init.sh
 
 echo AC_OUTPUT >> configure.ac
 

@@ -17,7 +17,7 @@
 # PR 511: Make sure we warn about e.g. AC_CONFIG_FILES([./gmakefile]),
 # as not all make implementations treat 'file' and './file' equally.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat > configure.ac <<END
 AC_INIT([$me], [1.0])

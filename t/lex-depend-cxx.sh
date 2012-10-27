@@ -18,7 +18,7 @@
 # Test synthesized from PR automake/6.
 
 required='c++ lex'
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_PROG_CXX

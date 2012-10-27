@@ -17,7 +17,7 @@
 # Option 'serial-tests'.
 
 am_create_testdir=empty
-. ./defs || exit 1
+. test-init.sh
 
 hasnt_parallel_tests ()
 {

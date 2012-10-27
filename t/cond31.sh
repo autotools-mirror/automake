@@ -16,7 +16,7 @@
 
 # Make sure we define conditional _DEPENDENCIES correctly.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >>configure.ac <<'EOF'
 AC_SUBST([CC], [false])

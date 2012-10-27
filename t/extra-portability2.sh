@@ -17,7 +17,7 @@
 # Make sure that extra-portability warnings are not enabled by --gnits,
 # --gnu and --foreign.
 
-. ./defs || exit 1
+. test-init.sh
 
 # We want complete control over automake options.
 AUTOMAKE=$am_original_AUTOMAKE

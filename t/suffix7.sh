@@ -17,7 +17,7 @@
 # Test to make sure Automake supports implicit rules "confusing"
 # extensions.  Inspired by a mail from Alex Hornby.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat > Makefile.am << 'END'
 SUFFIXES = .idl S.cpp C.h

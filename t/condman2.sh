@@ -16,7 +16,7 @@
 
 # Make sure appropriate man install targets generated in all cases.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat > Makefile.am << 'END'
 man_MANS = foo.1 foo.2

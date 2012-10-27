@@ -19,7 +19,7 @@
 # See also the other similar tests 'remake-subdir*.sh', and the
 # related test 'aclocal5.sh'.
 
-. ./defs || exit 1
+. test-init.sh
 
 if using_gmake; then
   remake=$MAKE

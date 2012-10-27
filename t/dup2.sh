@@ -16,7 +16,7 @@
 
 # Make sure aclocal only warns about definitions overridden by acinclude.m4.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AM_FUNC_STRTOD

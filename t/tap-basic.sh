@@ -24,7 +24,7 @@
 # Note that some of the features checked here are checked in other
 # test cases too, usually in a more thorough and detailed way.
 
-. ./defs || exit 1
+. test-init.sh
 
 fetch_tap_driver
 

@@ -17,7 +17,7 @@
 # TAP support:
 #  - unplanned tests are properly reported as errors
 
-. ./defs || exit 1
+. test-init.sh
 
 . tap-setup.sh
 

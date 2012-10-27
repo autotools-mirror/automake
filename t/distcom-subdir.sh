@@ -17,7 +17,7 @@
 # Test to make sure that if an auxfile (here depcomp) is required
 # by a subdir Makefile.am, it is distributed by that Makefile.am.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_CONFIG_FILES([subdir/Makefile])

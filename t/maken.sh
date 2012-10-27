@@ -19,7 +19,7 @@
 # Also, ensure that 'make -n dist' and 'make -n distcheck' show what
 # would happen, at least when using GNU make.
 
-. ./defs || exit 1
+. test-init.sh
 
 mkdir sub
 

@@ -17,7 +17,7 @@
 # Test for bug reported by Harlan Stenn: the tags target doesn't work
 # when there are only headers in a directory.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat > Makefile.am << 'END'
 noinst_HEADERS = iguana.h

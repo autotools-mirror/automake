@@ -20,7 +20,7 @@
 # See also the related test 'vtexi4.sh', which does similar checks, but
 # for version.texi only, and requires makeinfo, tex and texi2dvi.
 
-. ./defs || exit 1
+. test-init.sh
 
 # We are going to override package version in AC_INIT, so we need
 # to redefine the name of the distdir as well.

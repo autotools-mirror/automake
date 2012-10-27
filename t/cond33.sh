@@ -18,7 +18,7 @@
 # correctly.
 # Report from Ralf Corsepius.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >>configure.ac <<'EOF'
 AM_CONDITIONAL([INC], [test -z "$two"])

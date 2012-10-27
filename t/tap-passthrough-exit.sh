@@ -19,7 +19,7 @@
 #    log file
 # See also related test 'tap-passthrough.sh'.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat > Makefile.am << 'END'
 TEST_LOG_COMPILER = $(SHELL)

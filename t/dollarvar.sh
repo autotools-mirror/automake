@@ -22,7 +22,7 @@
 # containing a '$' on the left hand side of an assignment are not
 # portable in practice, even though POSIX allows them.  :-/
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >Makefile.am <<'EOF'
 x = 1

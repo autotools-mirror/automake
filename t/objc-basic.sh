@@ -15,7 +15,7 @@
 # require an Objective-C compiler.
 # See also sister test 'objcxx-basic.sh'.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat > Makefile.am <<'END'
 bin_PROGRAMS = hello

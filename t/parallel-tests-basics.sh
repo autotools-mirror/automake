@@ -23,7 +23,7 @@
 #  - TEST_LOGS redefinition at runtime
 #  - RECHECK_LOGS redefinition at runtime
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_OUTPUT

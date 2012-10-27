@@ -17,7 +17,7 @@
 # Test to make sure listing a program twice is ok.
 # Report from Manu Rouat.
 
-. ./defs || exit 1
+. test-init.sh
 
 echo AC_PROG_CC >> configure.ac
 

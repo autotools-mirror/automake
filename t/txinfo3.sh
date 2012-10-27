@@ -17,7 +17,7 @@
 # Test to make sure .info-less @setfilename works.
 
 required='makeinfo tex texi2dvi'
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_OUTPUT

@@ -18,7 +18,7 @@
 # of the "deleted header problem".  This test checks that we can rename
 # an included .am file without confusing the remake rules.
 
-. ./defs || exit 1
+. test-init.sh
 
 echo AC_OUTPUT >> configure.ac
 

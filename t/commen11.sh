@@ -18,7 +18,7 @@
 # comments following a trailing backslash, even when the combination
 # follows a variable assignment that is preceded by a comment.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat > Makefile.am << 'END'
 # initial comment

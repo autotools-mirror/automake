@@ -17,7 +17,7 @@
 # Check that inclusion of '.am' fragments by automake does not suffer
 # of the "deleted header problem".  Basic checks are done here.
 
-. ./defs || exit 1
+. test-init.sh
 
 echo AC_OUTPUT >> configure.ac
 

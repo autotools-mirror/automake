@@ -18,7 +18,7 @@
 # AM_INIT_AUTOMAKE are both given two or more arguments.
 
 am_create_testdir=empty
-. ./defs || exit 1
+. test-init.sh
 
 empty=''
 

@@ -16,7 +16,7 @@
 
 # Make sure README-alpha is distributed when appropriate.  Report from
 # Jim Meyering.
-. ./defs || exit 1
+. test-init.sh
 
 cat > configure.ac << 'END'
 AC_INIT([alpha], [1.0a])

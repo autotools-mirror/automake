@@ -16,7 +16,7 @@
 
 # Check that user recursion works with "make -k".
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac <<'END'
 AM_EXTRA_RECURSIVE_TARGETS([foo])

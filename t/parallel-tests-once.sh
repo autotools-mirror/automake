@@ -18,7 +18,7 @@
 # clean directory.  An early implementation of the '.trs' intermediate
 # files incurred a similar problem.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_OUTPUT

@@ -16,7 +16,7 @@
 
 # Test if configure bails out if $AR does not work and AM_PROG_AR is used.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AM_PROG_AR

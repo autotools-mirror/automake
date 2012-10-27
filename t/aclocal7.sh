@@ -17,7 +17,7 @@
 # Make sure aclocal does not overwrite aclocal.m4 needlessly.
 # Also make sure automake --no-force does not overwrite Makefile.in needlessly.
 
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 SOME_DEFS

@@ -17,7 +17,7 @@
 # Custom test drivers: check that the test name passed to the test
 # driver has any VPATH prefix stripped.
 
-. ./defs || exit 1
+. test-init.sh
 
 ocwd=$(pwd) || fatal_ "cannot get current working directory"
 

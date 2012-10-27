@@ -17,7 +17,7 @@
 # Test of basic assembly functionality.
 # Keep this in sync with sister tests 'asm2.sh' and 'asm3.sh'.
 
-. ./defs || exit 1
+. test-init.sh
 
 mv configure.ac configure.stub
 

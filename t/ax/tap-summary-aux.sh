@@ -16,7 +16,7 @@
 
 # Auxiliary script for tests on TAP support: checking testsuite summary.
 
-. ./defs || exit 1
+. test-init.sh
 
 br='============================================================================'
 
