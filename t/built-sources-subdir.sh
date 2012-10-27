@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Make sure when using SUBDIR that all BUILT_SOURCES are built.
+# Make sure when using SUBDIRS that all BUILT_SOURCES are built.
 # A bug occurred where subdirs do not have all-recursive or
 # all-recursive-am which depended on BUILT_SOURCES.
 
@@ -31,14 +31,6 @@ AM_PROG_AR
 AC_OUTPUT
 END
 
-# Files required because we are using '--gnu'.
-: > INSTALL
-: > NEWS
-: > README
-: > COPYING
-: > AUTHORS
-: > ChangeLog
-
 cat > Makefile.am << 'END'
 SUBDIRS = lib
 END
@@ -47,25 +39,24 @@ cat > lib/Makefile.am << 'END'
 pkgdata_DATA =
 noinst_LIBRARIES = libfoo.a
 libfoo_a_SOURCES = foo.c
-BUILT_SOURCES=foo.h
+BUILT_SOURCES = foo.h
 foo.h:
 	echo \#define FOO_DEFINE 1 >$@
+CLEANFILES = $(BUILT_SOURCES)
 END
 
 cat > lib/foo.c << 'END'
 #include <foo.h>
-int foo () { return !FOO_DEFINE;}
+int foo (void) { return !FOO_DEFINE; }
 END
 
 
 $ACLOCAL
 $AUTOCONF
-$AUTOMAKE --include-deps --copy --force-missing --add-missing --gnu
+$AUTOMAKE --copy --add-missing
 
 ./configure
-
-# Remove the comment to get a successful test.
-# $MAKE -C lib foo.h
 $MAKE
+$MAKE distcheck
 
 :

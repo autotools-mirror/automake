@@ -14,10 +14,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Make sure 'check:' honors $(BUILT_SOURCES).
+# Make sure 'install:' honors $(BUILT_SOURCES).
 # PR/359.
 
-# For gen-testsuite-part: ==> try-with-serial-tests <==
 . ./defs || exit 1
 
 cat >> configure.ac << 'END'
@@ -28,41 +27,43 @@ END
 mkdir dir
 
 cat > Makefile.am << 'END'
-BUILT_SOURCES = command1.inc
+BUILT_SOURCES = built1
 SUBDIRS = dir
-TESTS = subrun.sh
-subrun.sh:
-	(echo '#! /bin/sh'; cat command1.inc) > $@
-	chmod +x $@
-command1.inc:
-	echo 'dir/echo.sh' > $@
-CLEANFILES = subrun.sh command1.inc
+built1:
+	echo ok > $@
+CLEANFILES = built1
+install-data-hook:
+	$(MKDIR_P) $(DESTDIR)$(prefix)/dir2
+	cp built1 $(DESTDIR)$(prefix)/built1
+	cp dir/built2 $(DESTDIR)$(prefix)/dir2/built3
+uninstall-hook:
+	rm -f $(DESTDIR)$(prefix)/built1
+	rm -f $(DESTDIR)$(prefix)/dir2/built3
+	rmdir $(DESTDIR)$(prefix)/dir2
+installcheck-local:
+	test -f $(prefix)/built1
+	test -f $(prefix)/dir2/built3
 END
 
 cat > dir/Makefile.am << 'END'
-BUILT_SOURCES = command2.inc
-check_SCRIPTS = echo.sh
-echo.sh:
+BUILT_SOURCES = built2
+built2:
 ## The next line ensures that command1.inc has been built before
 ## recurring into the subdir.
-	test -f ../command1.inc
-	(echo '#! /bin/sh'; cat command2.inc) > $@
-	chmod +x $@
-command2.inc:
-	echo 'echo Hello' > $@
-CLEANFILES = echo.sh command2.inc
+	cp ../built1 $@
+CLEANFILES = built2
 END
 
 $ACLOCAL
 $AUTOCONF
-$AUTOMAKE -a
+$AUTOMAKE
 ./configure --prefix "$(pwd)/inst"
 
-$MAKE check >stdout || { cat stdout; exit 1; }
-cat stdout
-grep '^PASS: subrun\.sh *$' stdout
-grep 'PASS.*echo\.sh' stdout && exit 1
-
+# Now make sure these two files are rebuilt during make install.
+$MAKE install
+test -f built1
+test -f dir/built2
+$MAKE installcheck
 $MAKE distcheck
 
 :

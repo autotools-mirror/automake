@@ -186,7 +186,11 @@ t/badopt.sh \
 t/badprog.sh \
 t/block.sh \
 t/built-sources-check.sh \
+t/built-sources-cond.sh \
+t/built-sources-fork-bomb.sh \
+t/built-sources-install.sh \
 t/built-sources-subdir.sh \
+t/built-sources.sh \
 t/candist.sh \
 t/canon.sh \
 t/canon2.sh \
