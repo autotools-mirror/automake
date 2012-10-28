@@ -789,7 +789,6 @@ t/parallel-tests-no-spurious-summary.sh \
 t/parallel-tests-exit-statuses.sh \
 t/parallel-tests-console-output.sh \
 t/parallel-tests-once.sh \
-t/parallel-tests-trailing-bslash.sh \
 t/tests-environment.sh \
 t/am-tests-environment.sh \
 t/tests-environment-backcompat.sh \
@@ -958,6 +957,7 @@ t/self-check-is_newest.tap \
 t/self-check-me.tap \
 t/self-check-report.sh \
 t/self-check-seq.tap \
+t/self-check-shell-no-trail-bslash.sh \
 t/self-check-is-blocked-signal.tap \
 t/self-check-unindent.tap \
 t/sanity.sh \
