@@ -17,7 +17,7 @@
 # Test executable-specific and library-specific flags, both with
 # and without dependency tracking.
 
-. ./defs || Exit 1
+. test-init.sh
 
 makefiles='Makefile libMakefile Makefile2 libMakefile2'
 
