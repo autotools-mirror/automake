@@ -18,7 +18,7 @@
 # See automake bug#8753.
 
 required="cc valac GNUmake"
-. ./defs || exit 1
+. test-init.sh
 
 cat >> configure.ac << 'END'
 AC_CONFIG_SRCDIR([hello.vala])

@@ -16,7 +16,7 @@
 
 # Basic "grepping" test on vala support.
 
-. ./defs || exit 1
+. test-init.sh
 
 # So that we won't require libtool macros.
 cat > acinclude.m4 <<'END'
