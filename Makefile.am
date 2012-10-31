@@ -423,6 +423,19 @@ EXTRA_DIST += t/ax/test-defs.in
 CLEANFILES += t/ax/test-defs.sh
 nodist_noinst_DATA = t/ax/test-defs.sh
 
+noinst_SCRIPTS = # Will be updated soon.
+
+t/ax/shell-no-trail-bslash: t/ax/shell-no-trail-bslash.in Makefile
+	$(AM_V_at)rm -f $@ $@-t
+	$(AM_V_GEN)in=t/ax/shell-no-trail-bslash.in \
+	  && $(MKDIR_P) t/ax \
+	  && $(do_subst) <$(srcdir)/$$in >$@-t \
+	  && chmod a+x $@-t
+	$(generated_file_finalize)
+EXTRA_DIST += t/ax/shell-no-trail-bslash.in
+CLEANFILES += t/ax/shell-no-trail-bslash
+noinst_SCRIPTS += t/ax/shell-no-trail-bslash
+
 runtest: runtest.in Makefile
 	$(AM_V_at)rm -f $@ $@-t
 	$(AM_V_GEN)in=runtest.in \
@@ -432,7 +445,7 @@ runtest: runtest.in Makefile
 	$(generated_file_finalize)
 EXTRA_DIST += runtest.in
 CLEANFILES += runtest
-noinst_SCRIPTS = runtest
+noinst_SCRIPTS += runtest
 
 # If two test scripts have the same basename, they will end up sharing
 # the same log file, leading to all sort of undefined and undesired
@@ -483,6 +496,17 @@ check-tests-syntax:
 	exit $$st
 check-local: check-tests-syntax
 .PHONY: check-tests-syntax
+
+# Recipes with a trailing backslash character (possibly followed by
+# blank characters only) can cause spurious syntax errors with at
+# least older bash versions (e.g., bash 2.05b), and can be potentially
+# be unportable to other weaker shells.  Run the testsuite in a way
+# that helps catching such problems in Automake-generated recipes.
+# See automake bug#10436.
+check-no-trailing-backslash-in-recipes:
+	$(AM_V_at)$(MAKE) $(AM_MAKEFLAGS) check \
+	  CONFIG_SHELL='$(abs_top_builddir)/t/ax/shell-no-trail-bslash'
+.PHONY: check-no-trailing-backslash-in-recipes
 
 ## Checking the list of tests.
 test_subdirs = t t/pm contrib/t
