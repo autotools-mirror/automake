@@ -20,7 +20,7 @@
 am_create_testdir=empty
 . test-init.sh
 
-plan_ 5
+plan_ 6
 
 ocwd=$(pwd) || fatal_ "getting current working directory"
 ACLOCAL_PATH=; unset ACLOCAL_PATH
@@ -172,5 +172,30 @@ not $ACLOCAL -Wnone 2>stderr \
 test_end
 
 #---------------------------------------------------------------------------
+
+test_begin "AC_CONFIG_MACRO_DIR interaction with AC_REQUIRE" TODO
+
+cat > configure.ac <<'END'
+AC_INIT([req], [1.0])
+AC_CONFIG_MACRO_DIR([macro-dir])
+AC_DEFUN([MY_FOO], [AC_REQUIRE([MY_BAR])])
+MY_FOO
+END
+
+mkdir macro-dir
+echo 'AC_DEFUN([MY_BAR], [//my//bar//])' > macro-dir/x.m4
+
+st=0; $ACLOCAL 2>stderr || st=$?
+cat stderr >&2
+
+test $st -eq 0 \
+  && test ! -s stderr \
+  && $FGREP 'm4_include([macro-dir/x.m4])' aclocal.m4 \
+  && $AUTOCONF \
+  && not $EGREP 'MY_(FOO|BAR)' configure \
+  && $FGREP '//my//bar//' configure \
+  || r='not ok'
+
+test_end
 
 :
