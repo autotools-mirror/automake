@@ -26,7 +26,7 @@ am_create_testdir=empty
 END
 } || skip_all_ "autoconf doesn't define the AC_CONFIG_MACRO_DIRS macro"
 
-plan_ 11
+plan_ 12
 
 ocwd=$(pwd) || fatal_ "getting current working directory"
 ACLOCAL_PATH=; unset ACLOCAL_PATH
@@ -99,18 +99,21 @@ test_end
 
 #---------------------------------------------------------------------------
 
-two_dirs_check ()
+three_dirs_check ()
 {
-  mkdir dir1 dir2
+  mkdir dir1 dir2 dir3
   echo 'AC_DEFUN([MY_FOO], [::my::foo::])' > dir1/foo.m4
   echo 'AC_DEFUN([MY_BAR], [!!my!!bar!!])' > dir2/zap.m4
+  echo 'AC_DEFUN([MY_BAZ], [==my==baz==])' > dir3/0.m4
   $ACLOCAL \
     && $FGREP 'm4_include([dir1/foo.m4])' aclocal.m4 \
     && $FGREP 'm4_include([dir2/zap.m4])' aclocal.m4 \
+    && $FGREP 'm4_include([dir3/0.m4])'   aclocal.m4 \
     && $AUTOCONF \
-    && not $EGREP 'MY_(FOO|BAR)' configure \
+    && not $EGREP 'MY_(FOO|BAR|BAZ)' configure \
     && $FGREP '::my::foo::' configure \
     && $FGREP '!!my!!bar!!' configure \
+    && $FGREP '==my==baz==' configure \
     || r='not ok'
 }
 
@@ -120,12 +123,13 @@ test_begin "AC_CONFIG_MACRO_DIRS: several arguments"
 
 cat > configure.ac <<'END'
 AC_INIT([more-args], [0.2])
-AC_CONFIG_MACRO_DIRS([dir1 dir2])
+AC_CONFIG_MACRO_DIRS([dir1 dir2 dir3])
 MY_FOO
 MY_BAR
+MY_BAZ
 END
 
-two_dirs_check
+three_dirs_check
 
 test_end
 
@@ -136,12 +140,35 @@ test_begin "AC_CONFIG_MACRO_DIRS: several calls"
 cat > configure.ac <<'END'
 AC_INIT([more-calls], [2.0])
 AC_CONFIG_MACRO_DIRS([dir1])
-AC_CONFIG_MACRO_DIRS([dir2])
+AC_CONFIG_MACRO_DIRS([dir2 dir3])
 MY_FOO
 MY_BAR
+MY_BAZ
 END
 
-two_dirs_check
+three_dirs_check
+
+test_end
+
+#---------------------------------------------------------------------------
+
+test_begin "AC_CONFIG_MACRO_DIRS: extra whitespace" TODO
+
+bslash=\\
+
+cat > configure.ac <<END
+AC_INIT([more-args], [0.2])
+AC_CONFIG_MACRO_DIRS([   dir1${bslash}
+${tab} dir2   ${tab}${tab}dir3
+${bslash}
+
+])
+MY_FOO
+MY_BAR
+MY_BAZ
+END
+
+three_dirs_check
 
 test_end
 
