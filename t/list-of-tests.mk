@@ -87,7 +87,6 @@ t/acloca14.sh \
 t/acloca14b.sh \
 t/acloca15.sh \
 t/acloca16.sh \
-t/acloca17.sh \
 t/acloca18.sh \
 t/acloca19.sh \
 t/acloca20.sh \
