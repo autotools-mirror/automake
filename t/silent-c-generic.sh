@@ -58,25 +58,35 @@ $ACLOCAL
 $AUTOMAKE --add-missing
 $AUTOCONF
 
-./configure --enable-silent-rules
-$MAKE >stdout || { cat stdout; exit 1; }
-cat stdout
-$EGREP ' (-c|-o)' stdout && exit 1
-grep 'mv ' stdout && exit 1
-grep 'CC    .*foo\.' stdout
-grep 'CC .*bar\.' stdout
-grep 'CC .*baz\.' stdout
-grep 'CC .*bla\.' stdout
-grep 'CCLD .*foo' stdout
-grep 'CCLD .*bar' stdout
-grep 'CCLD .*baz' stdout
-grep 'CCLD .*bla' stdout
+for config_args in \
+  '--enable-dependency-tracking' \
+  '--disable-dependency-tracking' \
+; do
 
-$MAKE clean
-$MAKE V=1 >stdout || { cat stdout; exit 1; }
-cat stdout
-grep ' -c' stdout
-grep ' -o foo' stdout
-$EGREP '(CC|LD) ' stdout && exit 1
+  ./configure --enable-silent-rules $config_args
+
+  $MAKE >stdout || { cat stdout; exit 1; }
+  cat stdout
+  $EGREP ' (-c|-o)' stdout && exit 1
+  grep 'mv ' stdout && exit 1
+  grep 'CC .*foo\.' stdout
+  grep 'CC .*bar\.' stdout
+  grep 'CC .*baz\.' stdout
+  grep 'CC .*bla\.' stdout
+  grep 'CCLD .*foo' stdout
+  grep 'CCLD .*bar' stdout
+  grep 'CCLD .*baz' stdout
+  grep 'CCLD .*bla' stdout
+
+  $MAKE clean
+  $MAKE V=1 >stdout || { cat stdout; exit 1; }
+  cat stdout
+  grep ' -c' stdout
+  grep ' -o foo' stdout
+  $EGREP '(CC|LD) ' stdout && exit 1
+
+  $MAKE distclean
+
+done
 
 :
