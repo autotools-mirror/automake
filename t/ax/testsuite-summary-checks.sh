@@ -82,7 +82,7 @@ do_check ()
   else
     test $st -eq 0 || exit 1
   fi
-  $PERL "$am_testauxdir"/extract-testsuite-summary.pl stdout >summary.got \
+  $PERL "$am_testaux_srcdir"/extract-testsuite-summary.pl stdout >summary.got \
    || fatal_ "cannot extract testsuite summary"
   cat summary.exp
   cat summary.got
