@@ -14,9 +14,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Check silent-rules mode, with libtool, nodep case.
+# Check silent-rules mode, with libtool, standard depmode case.
 
-# Please keep this file in sync with 'silent3.sh' and 'silent4.sh'.
+# Please keep this file in sync with 'silent-lt-gcc.sh'.
 
 required='cc libtoolize'
 . test-init.sh
@@ -49,26 +49,36 @@ $ACLOCAL
 $AUTOMAKE --add-missing
 $AUTOCONF
 
-./configure --disable-dependency-tracking --enable-silent-rules
-$MAKE >stdout || { cat stdout; exit 1; }
-cat stdout
-$EGREP ' (-c|-o)|(mv|mkdir) '             stdout && exit 1
-grep ' CC  *libfoo\.lo'                   stdout
-grep ' CC  *libbar_la-libbar\.lo'         stdout
-grep ' CC  *sub/libbaz\.lo'               stdout
-grep ' CC  *sub/sub_libbla_la-libbla\.lo' stdout
-grep ' CCLD  *libfoo\.la'                 stdout
-grep ' CCLD  *libbar\.la'                 stdout
-grep ' CCLD  *sub/libbaz\.la'             stdout
-grep ' CCLD  *sub/libbla\.la'             stdout
+for config_args in \
+  '--enable-dependency-tracking' \
+  '--disable-dependency-tracking' \
+; do
 
-$MAKE clean
-$MAKE V=1 >stdout || { cat stdout; exit 1; }
-cat stdout
-grep ' -c' stdout
-grep ' -o libfoo' stdout
-grep ' -o sub/libbaz' stdout
-# The libtool command line can contain e.g. a '--tag=CC' option.
-sed 's/--tag=[^ ]*/--tag=x/g' stdout | $EGREP '(CC|LD) ' && exit 1
+  ./configure --enable-silent-rules $config_args
+
+  $MAKE >stdout || { cat stdout; exit 1; }
+  cat stdout
+  $EGREP ' (-c|-o)|(mv|mkdir) '             stdout && exit 1
+  grep ' CC  *libfoo\.lo'                   stdout
+  grep ' CC  *libbar_la-libbar\.lo'         stdout
+  grep ' CC  *sub/libbaz\.lo'               stdout
+  grep ' CC  *sub/sub_libbla_la-libbla\.lo' stdout
+  grep ' CCLD  *libfoo\.la'                 stdout
+  grep ' CCLD  *libbar\.la'                 stdout
+  grep ' CCLD  *sub/libbaz\.la'             stdout
+  grep ' CCLD  *sub/libbla\.la'             stdout
+
+  $MAKE clean
+  $MAKE V=1 >stdout || { cat stdout; exit 1; }
+  cat stdout
+  grep ' -c' stdout
+  grep ' -o libfoo' stdout
+  grep ' -o sub/libbaz' stdout
+  # The libtool command line can contain e.g. a '--tag=CC' option.
+  sed 's/--tag=[^ ]*/--tag=x/g' stdout | $EGREP '(CC|LD) ' && exit 1
+
+  $MAKE distclean
+
+done
 
 :

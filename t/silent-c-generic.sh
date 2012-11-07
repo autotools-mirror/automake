@@ -14,12 +14,11 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Check silent-rules mode, without libtool, non-fastdep case
-# (so that, with GCC, we also cover the other code paths in depend2).
+# Check silent-rules mode, without libtool, standard depmode case.
 
-# Please keep this file in sync with 'silent.sh'.
+# Please keep this file in sync with 'silent-c-gcc.sh'.
 
-required=gcc
+required=cc
 . test-init.sh
 
 mkdir sub
@@ -46,7 +45,7 @@ $ACLOCAL
 $AUTOMAKE --add-missing
 $AUTOCONF
 
-./configure am_cv_CC_dependencies_compiler_type=gcc --enable-silent-rules
+./configure --enable-silent-rules
 $MAKE >stdout || { cat stdout; exit 1; }
 cat stdout
 $EGREP ' (-c|-o)|(mv|mkdir) '   stdout && exit 1
