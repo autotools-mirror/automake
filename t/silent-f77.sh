@@ -1,5 +1,5 @@
 #!/bin/sh
-# Copyright (C) 2009-2012 Free Software Foundation, Inc.
+# Copyright (C) 2010-2012 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,45 +14,44 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Check silent-rules mode, without libtool, standard depmode case.
+# Check silent-rules mode for Fortran 77.
+# Keep this ins sync with the sister test 'silent-f90.sh'.
 
-# Please keep this file in sync with 'silent2.sh'.
-
-required=cc
+required=fortran77
 . test-init.sh
 
 mkdir sub
 
 cat >>configure.ac <<'EOF'
+AC_PROG_F77
 AC_CONFIG_FILES([sub/Makefile])
-AC_PROG_CC
-AM_PROG_CC_C_O
 AC_OUTPUT
 EOF
 
 cat > Makefile.am <<'EOF'
 # Need generic and non-generic rules.
-bin_PROGRAMS = foo bar
-bar_CFLAGS = $(AM_CFLAGS)
+bin_PROGRAMS = foo1 foo2
+foo1_SOURCES = foo.f
+foo2_SOURCES = $(foo1_SOURCES)
+foo2_FFLAGS = $(AM_FFLAGS)
 SUBDIRS = sub
 EOF
 
 cat > sub/Makefile.am <<'EOF'
 AUTOMAKE_OPTIONS = subdir-objects
 # Need generic and non-generic rules.
-bin_PROGRAMS = baz bla
-bla_CFLAGS = $(AM_CFLAGS)
+bin_PROGRAMS = bar1 bar2
+bar1_SOURCES = bar.f
+bar2_SOURCES = $(bar1_SOURCES)
+bar2_FFLAGS = $(AM_FFLAGS)
 EOF
 
-cat > foo.c <<'EOF'
-int main ()
-{
-  return 0;
-}
+cat > foo.f <<'EOF'
+      program foo
+      stop
+      end
 EOF
-cp foo.c bar.c
-cp foo.c sub/baz.c
-cp foo.c sub/bla.c
+cp foo.f sub/bar.f
 
 $ACLOCAL
 $AUTOMAKE --add-missing
@@ -61,22 +60,32 @@ $AUTOCONF
 ./configure --enable-silent-rules
 $MAKE >stdout || { cat stdout; exit 1; }
 cat stdout
+# Avoid spurious failures with SunStudio Fortran compilers.
+sed '/^NOTICE:/d' stdout > t
+mv -f t stdout
+cat stdout
+
 $EGREP ' (-c|-o)' stdout && exit 1
 grep 'mv ' stdout && exit 1
-grep 'CC    .*foo\.' stdout
-grep 'CC .*bar\.' stdout
-grep 'CC .*baz\.' stdout
-grep 'CC .*bla\.' stdout
-grep 'CCLD .*foo' stdout
-grep 'CCLD .*bar' stdout
-grep 'CCLD .*baz' stdout
-grep 'CCLD .*bla' stdout
 
+grep 'F77 .*foo\.'  stdout
+grep 'F77 .*bar\.'  stdout
+grep 'F77LD .*foo1' stdout
+grep 'F77LD .*bar1' stdout
+grep 'F77LD .*foo2' stdout
+grep 'F77LD .*bar2' stdout
+
+$EGREP '(FC|FCLD) ' stdout && exit 1
+
+# Ensure a clean rebuild.
 $MAKE clean
+
 $MAKE V=1 >stdout || { cat stdout; exit 1; }
 cat stdout
-grep ' -c' stdout
-grep ' -o foo' stdout
-$EGREP '(CC|LD) ' stdout && exit 1
+
+grep ' -c ' stdout
+grep ' -o ' stdout
+
+$EGREP '(F77|FC|LD) ' stdout && exit 1
 
 :

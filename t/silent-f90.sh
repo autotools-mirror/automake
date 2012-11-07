@@ -14,16 +14,16 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Check silent-rules mode for Fortran 77.
-# Keep this ins sync with the sister test 'silentf90.sh'.
+# Check silent-rules mode for Fortran 90.
+# Keep this ins sync with the sister test 'silent-f77.sh'.
 
-required=fortran77
+required=fortran
 . test-init.sh
 
 mkdir sub
 
 cat >>configure.ac <<'EOF'
-AC_PROG_F77
+AC_PROG_FC
 AC_CONFIG_FILES([sub/Makefile])
 AC_OUTPUT
 EOF
@@ -31,9 +31,9 @@ EOF
 cat > Makefile.am <<'EOF'
 # Need generic and non-generic rules.
 bin_PROGRAMS = foo1 foo2
-foo1_SOURCES = foo.f
+foo1_SOURCES = foo.f90
 foo2_SOURCES = $(foo1_SOURCES)
-foo2_FFLAGS = $(AM_FFLAGS)
+foo2_FCFLAGS = $(AM_FCLAGS)
 SUBDIRS = sub
 EOF
 
@@ -41,17 +41,17 @@ cat > sub/Makefile.am <<'EOF'
 AUTOMAKE_OPTIONS = subdir-objects
 # Need generic and non-generic rules.
 bin_PROGRAMS = bar1 bar2
-bar1_SOURCES = bar.f
+bar1_SOURCES = bar.f90
 bar2_SOURCES = $(bar1_SOURCES)
-bar2_FFLAGS = $(AM_FFLAGS)
+bar2_FCFLAGS = $(AM_FCLAGS)
 EOF
 
-cat > foo.f <<'EOF'
+cat > foo.f90 <<'EOF'
       program foo
       stop
       end
 EOF
-cp foo.f sub/bar.f
+cp foo.f90 sub/bar.f90
 
 $ACLOCAL
 $AUTOMAKE --add-missing
@@ -68,14 +68,14 @@ cat stdout
 $EGREP ' (-c|-o)' stdout && exit 1
 grep 'mv ' stdout && exit 1
 
-grep 'F77 .*foo\.'  stdout
-grep 'F77 .*bar\.'  stdout
-grep 'F77LD .*foo1' stdout
-grep 'F77LD .*bar1' stdout
-grep 'F77LD .*foo2' stdout
-grep 'F77LD .*bar2' stdout
+grep 'FC .*foo\.'  stdout
+grep 'FC .*bar\.'  stdout
+grep 'FCLD .*foo1' stdout
+grep 'FCLD .*bar1' stdout
+grep 'FCLD .*foo2' stdout
+grep 'FCLD .*bar2' stdout
 
-$EGREP '(FC|FCLD) ' stdout && exit 1
+$EGREP '(F77|F77LD) ' stdout && exit 1
 
 # Ensure a clean rebuild.
 $MAKE clean

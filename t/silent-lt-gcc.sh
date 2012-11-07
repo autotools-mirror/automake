@@ -14,11 +14,12 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Check silent-rules mode, with libtool, standard depmode case.
+# Check silent-rules mode, with libtool, non-fastdep case
+# (so that, with GCC, we also cover the other code paths in depend2).
 
-# Please keep this file in sync with 'silent4.sh' and 'silent9.sh'.
+# Please keep this file in sync with 'silent-lt-generic.sh'.
 
-required='cc libtoolize'
+required="libtoolize gcc"
 . test-init.sh
 
 mkdir sub
@@ -61,37 +62,26 @@ $ACLOCAL
 $AUTOMAKE --add-missing
 $AUTOCONF
 
-for config_args in \
-  '--enable-dependency-tracking' \
-  '--disable-dependency-tracking' \
-; do
+./configure am_cv_CC_dependencies_compiler_type=gcc --enable-silent-rules
+$MAKE >stdout || { cat stdout; exit 1; }
+cat stdout
+$EGREP ' (-c|-o)' stdout && exit 1
+grep 'mv ' stdout && exit 1
+grep ' CC .*foo\.' stdout
+grep ' CC .*bar\.' stdout
+grep ' CC .*baz\.' stdout
+grep ' CC .*bla\.' stdout
+grep ' CCLD .*foo' stdout
+grep ' CCLD .*bar' stdout
+grep ' CCLD .*baz' stdout
+grep ' CCLD .*bla' stdout
 
-  ./configure --enable-silent-rules $config_args
-
-  $MAKE >stdout || { cat stdout; exit 1; }
-  cat stdout
-
-  $EGREP ' (-c|-o)' stdout && exit 1
-  grep 'mv ' stdout && exit 1
-  grep ' CC .*foo\.' stdout
-  grep ' CC .*bar\.' stdout
-  grep ' CC .*baz\.' stdout
-  grep ' CC .*bla\.' stdout
-  grep ' CCLD .*foo' stdout
-  grep ' CCLD .*bar' stdout
-  grep ' CCLD .*baz' stdout
-  grep ' CCLD .*bla' stdout
-
-  $MAKE clean
-  $MAKE V=1 >stdout || { cat stdout; exit 1; }
-  cat stdout
-  grep ' -c' stdout
-  grep ' -o libfoo' stdout
-  # The libtool command line can contain e.g. a '--tag=CC' option.
-  sed 's/--tag=[^ ]*/--tag=x/g' stdout | $EGREP '(CC|LD) ' && exit 1
-
-  $MAKE distclean
-
-done
+$MAKE clean
+$MAKE V=1 >stdout || { cat stdout; exit 1; }
+cat stdout
+grep ' -c' stdout
+grep ' -o libfoo' stdout
+# The libtool command line can contain e.g. a '--tag=CC' option.
+sed 's/--tag=[^ ]*/--tag=x/g' stdout | $EGREP '(CC|LD) ' && exit 1
 
 :

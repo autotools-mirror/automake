@@ -15,10 +15,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Check silent-rules mode for C++.
-# This test requires the GNU C++ compiler; keep it in sync with sister
-# test 'silentcxx.sh', which should work with generic compilers.
+# This test should work with generic C++ compilers; keep it in sync with
+# sister test 'silent-cxx-gcc.sh', which requires the GNU C++ compiler
+# and forces the use of gcc depmode.
 
-required=g++
+required=c++
 . test-init.sh
 
 mkdir sub
@@ -49,7 +50,7 @@ EOF
 
 cat > foo.cpp <<'EOF'
 using namespace std; /* C compilers fail on this. */
-int main() { return 0; }
+int main (void) { return 0; }
 EOF
 
 # Let's try out other extensions too.
@@ -66,11 +67,11 @@ $AUTOCONF
 # by configure.
 $FGREP am_cv_CXX_dependencies_compiler_type configure
 
-# Force gcc ("fast") depmode.
-# This apparently useless "for" loop is here to simplify the syncing
-# with sister test 'silentcxx.sh'.
+# Force dependency tracking explicitly, so that slow dependency
+# extractors are not rejected.  Try also with dependency tracking
+# explicitly disabled.
 for config_args in \
-  am_cv_CXX_dependencies_compiler_type=gcc
+  --enable-dependency-tracking --disable-dependency-tracking
 do
   ./configure $config_args --enable-silent-rules
   $MAKE >stdout || { cat stdout; exit 1; }
@@ -97,7 +98,7 @@ do
   grep ' -c ' stdout
   grep ' -o ' stdout
 
-  $EGREP '(CC|CXX|LD) ' stdout && exit 1
+  $EGREP '(CXX|LD) ' stdout && exit 1
 
   # Ensure a clean reconfiguration/rebuild.
   $MAKE clean
