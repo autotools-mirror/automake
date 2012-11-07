@@ -33,7 +33,7 @@ bad:
 	@echo $(am__backslash)
 END
 
-SHELL=$am_testaux_srcdir/shell-no-trail-bslash
+SHELL=$am_testaux_builddir/shell-no-trail-bslash
 $SHELL -c 'exit 0'
 test "$($SHELL -c 'echo is  o\k')" = "is ok"
 
