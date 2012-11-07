@@ -22,7 +22,7 @@
 
 cwd=$(pwd) || fatal_ "cannot get current working directory"
 
-cp "$am_testauxdir"/distcheck-hook-m4.am . \
+cp "$am_testaux_srcdir"/distcheck-hook-m4.am . \
   || fatal_ "cannot fetch makefile fragment 'distcheck-hook-m4.am'"
 
 cat > Makefile.am << 'END'

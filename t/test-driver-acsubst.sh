@@ -21,7 +21,7 @@
 
 mkdir test-drivers
 
-cp "$am_testauxdir"/trivial-test-driver test-drivers/triv \
+cp "$am_testaux_srcdir"/trivial-test-driver test-drivers/triv \
   || fatal_ "failed to fetch auxiliary script trivial-test-driver"
 cp "$am_scriptdir"/test-driver test-drivers/dflt \
   || fatal_ "failed to fetch auxiliary script test-driver"

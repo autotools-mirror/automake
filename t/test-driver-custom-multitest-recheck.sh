@@ -24,7 +24,7 @@
 
 . ./defs || exit 1
 
-cp "$am_testauxdir"/trivial-test-driver . \
+cp "$am_testaux_srcdir"/trivial-test-driver . \
   || fatal_ "failed to fetch auxiliary script trivial-test-driver"
 
 cat >> configure.ac << 'END'

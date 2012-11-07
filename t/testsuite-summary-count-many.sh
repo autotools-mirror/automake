@@ -22,7 +22,7 @@
 . ./defs || exit 1
 
 for s in trivial-test-driver extract-testsuite-summary.pl; do
-  cp "$am_testauxdir/$s" . || fatal_ "failed to fetch auxiliary script $s"
+  cp "$am_testaux_srcdir/$s" . || fatal_ "failed to fetch auxiliary script $s"
 done
 
 br='============================================================================'
