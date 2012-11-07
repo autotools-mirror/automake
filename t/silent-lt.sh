@@ -14,9 +14,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Check silent-rules mode, with libtool, standard depmode case.
-
-# Please keep this file in sync with 'silent-lt-gcc.sh'.
+# Check silent-rules mode for C, with libtool, both with and without
+# automatic dependency tracking.
 
 required='cc libtoolize'
 . test-init.sh
