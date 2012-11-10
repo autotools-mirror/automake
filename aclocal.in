@@ -738,8 +738,11 @@ sub trace_used_macros ()
 		     'AC_DEFUN_ONCE',
 		     'AU_DEFUN',
 		     '_AM_AUTOCONF_VERSION',
+		     # FIXME: We still need to trace AC_CONFIG_MACRO_DIR
+                     # for compatibility with older autoconf.  Remove this
+                     # when we can assume Autoconf 2.70 or later.
 		     'AC_CONFIG_MACRO_DIR',
-		     'AC_CONFIG_MACRO_DIRS')),
+		     'AC_CONFIG_MACRO_DIR_TRACE')),
 		   # Do not trace $1 for all other macros as we do
 		   # not need it and it might contains harmful
 		   # characters (like newlines).
@@ -769,17 +772,23 @@ sub trace_used_macros ()
         {
           $ac_version = $arg1;
         }
-      elsif ($macro eq 'AC_CONFIG_MACRO_DIR')
+      elsif ($macro eq 'AC_CONFIG_MACRO_DIR_TRACE')
+        {
+          push @ac_config_macro_dirs, $arg1;
+        }
+    # FIXME: We still need to trace AC_CONFIG_MACRO_DIR
+    # for compatibility with older autoconf.  Remove this
+    # when we can assume Autoconf 2.70 or later.
+    elsif ($macro eq 'AC_CONFIG_MACRO_DIR')
         {
           @ac_config_macro_dirs = ($arg1);
         }
-      elsif ($macro eq 'AC_CONFIG_MACRO_DIRS')
-        {
-          # Empty leading/trailing fields might be produced by split,
-          # hence the grep is really needed.
-          push @ac_config_macro_dirs, grep (/./, (split /\s+/, $arg1));
-        }
     }
+
+  # FIXME: in Autoconf >= 2.70, AC_CONFIG_MACRO_DIR calls
+  # AC_CONFIG_MACRO_DIR_TRACE behind the scenes, which could
+  # leave unwanted duplicates in @ac_config_macro_dirs.
+  @ac_config_macro_dirs = uniq @ac_config_macro_dirs;
 
   $tracefh->close;
 

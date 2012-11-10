@@ -26,7 +26,7 @@ am_create_testdir=empty
 END
 } || skip_all_ "autoconf doesn't define the AC_CONFIG_MACRO_DIRS macro"
 
-plan_ 13
+plan_ 14
 
 ocwd=$(pwd) || fatal_ "getting current working directory"
 ACLOCAL_PATH=; unset ACLOCAL_PATH
@@ -119,7 +119,7 @@ three_dirs_check ()
 
 #---------------------------------------------------------------------------
 
-test_begin "AC_CONFIG_MACRO_DIRS: several arguments"
+test_begin "AC_CONFIG_MACRO_DIRS several arguments"
 
 cat > configure.ac <<'END'
 AC_INIT([more-args], [0.2])
@@ -135,7 +135,7 @@ test_end
 
 #---------------------------------------------------------------------------
 
-test_begin "AC_CONFIG_MACRO_DIRS: several calls"
+test_begin "AC_CONFIG_MACRO_DIRS several calls"
 
 cat > configure.ac <<'END'
 AC_INIT([more-calls], [2.0])
@@ -152,7 +152,7 @@ test_end
 
 #---------------------------------------------------------------------------
 
-test_begin "AC_CONFIG_MACRO_DIRS: extra whitespace"
+test_begin "AC_CONFIG_MACRO_DIRS extra whitespace"
 
 bslash=\\
 
@@ -169,6 +169,43 @@ MY_BAZ
 END
 
 three_dirs_check
+
+test_end
+
+#---------------------------------------------------------------------------
+
+test_begin "AC_CONFIG_MACRO_DIRS precedence"
+
+cat > configure.ac <<'END'
+AC_INIT([more-calls], [2.0])
+AC_CONFIG_MACRO_DIRS([dir1])
+AC_CONFIG_MACRO_DIRS([dir2 dir3])
+MY_FOO
+MY_BAR
+MY_BAZ
+END
+
+mkdir dir1 dir2 dir3
+echo 'AC_DEFUN([MY_FOO], [OK-Foo])' > dir1/b.m4
+echo 'AC_DEFUN([MY_FOO], [KO-Foo])' > dir2/a.m4
+echo 'AC_DEFUN([MY_BAR], [OK-Bar])' > dir2/1.m4
+echo 'AC_DEFUN([MY_BAR], [KO-Bar])' > dir3/0.m4
+echo 'AC_DEFUN([MY_BAZ], [OK-Baz])' > dir3/x.m4
+
+$ACLOCAL \
+  && $FGREP 'm4_include([dir1/b.m4])' aclocal.m4 \
+  && $FGREP 'm4_include([dir2/1.m4])' aclocal.m4 \
+  && $FGREP 'm4_include([dir3/x.m4])' aclocal.m4 \
+  && test $($FGREP -c 'm4_include([dir1' aclocal.m4) -eq 1 \
+  && test $($FGREP -c 'm4_include([dir2' aclocal.m4) -eq 1 \
+  && test $($FGREP -c 'm4_include([dir3' aclocal.m4) -eq 1 \
+  && $AUTOCONF \
+  && not $EGREP 'MY_(FOO|BAR|BAZ)' configure \
+  && $FGREP 'OK-Foo' configure \
+  && $FGREP 'OK-Bar' configure \
+  && $FGREP 'OK-Baz' configure \
+  && not $FGREP 'KO-' configure \
+  || r='not ok'
 
 test_end
 
