@@ -25,7 +25,7 @@ CONFIG_SITE=/dev/null; export CONFIG_SITE
 
 # Skip the test if a proper virtualenv cannot be created.
 virtualenv --verbose virtenv && test -f virtenv/bin/activate \
-  || skip_ "coulnd't create python virtual environment"
+  || skip_ "couldn't create python virtual environment"
 
 # Activate the virtualenv.
 . ./virtenv/bin/activate
