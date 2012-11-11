@@ -661,8 +661,8 @@ require_tool ()
       ! cross_compiling || skip_all_ "doesn't work in cross-compile mode"
       ;;
     python)
-      # Python doesn't support --version, it has -V
       PYTHON=${PYTHON-python}
+      # Older python versions don't support --version, they have -V.
       echo "$me: running $PYTHON -V"
       $PYTHON -V || skip_all_ "python interpreter not available"
       ;;
