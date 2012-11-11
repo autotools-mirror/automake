@@ -662,8 +662,9 @@ require_tool ()
       ;;
     python)
       # Python doesn't support --version, it has -V
-      echo "$me: running python -V"
-      python -V || skip_all_ "python interpreter not available"
+      PYTHON=${PYTHON-python}
+      echo "$me: running $PYTHON -V"
+      $PYTHON -V || skip_all_ "python interpreter not available"
       ;;
     ro-dir)
       # Skip this test case if read-only directories aren't supported

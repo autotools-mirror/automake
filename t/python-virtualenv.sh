@@ -23,8 +23,10 @@ required='cc python virtualenv'
 # In case the user's config.site defines pythondir or pyexecdir.
 CONFIG_SITE=/dev/null; export CONFIG_SITE
 
+py_version_pre=$($PYTHON -V)
+
 # Skip the test if a proper virtualenv cannot be created.
-virtualenv --verbose virtenv && test -f virtenv/bin/activate \
+virtualenv -p"$PYTHON" --verbose virtenv && test -f virtenv/bin/activate \
   || skip_ "couldn't create python virtual environment"
 
 # Activate the virtualenv.
@@ -33,6 +35,11 @@ virtualenv --verbose virtenv && test -f virtenv/bin/activate \
 if test -z "$VIRTUAL_ENV"; then
   framework_failure_ "can't activate python virtual environment"
 fi
+
+py_version_post=$(python -V)
+
+# Sanity check.
+test "$py_version_pre" = "$py_version_post"
 
 cwd=$(pwd) || fatal_ "getting current working directory"
 py_version=$(python -c 'import sys; print("%u.%u" % tuple(sys.version_info[:2]))')
