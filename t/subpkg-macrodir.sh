@@ -19,12 +19,6 @@
 
 . test-init.sh
 
-{ $AUTOCONF -o /dev/null - <<END
-    AC_INIT([x], [0])
-    AC_CONFIG_MACRO_DIRS([.])
-END
-} || skip_ "autoconf doesn't define the AC_CONFIG_MACRO_DIRS macro"
-
 cat > configure.ac <<'END'
 AC_INIT([super], [1.0])
 AM_INIT_AUTOMAKE

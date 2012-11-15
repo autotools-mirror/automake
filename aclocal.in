@@ -45,6 +45,16 @@ use File::Path ();
 
 # Some globals.
 
+# Support AC_CONFIG_MACRO_DIRS also with older autoconf.
+# FIXME: To be removed in Automake 1.14, once we can assume autoconf
+#        2.70 or later.
+# FIXME: keep in sync with 'internal/ac-config-macro-dirs.m4'.
+my $ac_config_macro_dirs_fallback =
+  'm4_ifndef([AC_CONFIG_MACRO_DIRS], [' .
+    'm4_defun([_AM_CONFIG_MACRO_DIRS], [])' .
+    'm4_defun([AC_CONFIG_MACRO_DIRS], [_AM_CONFIG_MACRO_DIRS($@)])' .
+  '])';
+
 # We do not operate in threaded mode.
 $perl_threads = 0;
 
@@ -716,16 +726,27 @@ sub trace_used_macros ()
   my %files = map { $map{$_} => 1 } keys %macro_seen;
   %files = strip_redundant_includes %files;
 
-  my $traces = ($ENV{AUTOM4TE} || '@am_AUTOM4TE@');
-  $traces .= " --language Autoconf-without-aclocal-m4 ";
   # When AC_CONFIG_MACRO_DIRS is used, avoid possible spurious warnings
   # from autom4te about macros being "m4_require'd but not m4_defun'd";
   # for more background, see:
   # http://lists.gnu.org/archive/html/autoconf-patches/2012-11/msg00004.html
   # as well as autoconf commit 'v2.69-44-g1ed0548', "warn: allow aclocal
   # to silence m4_require warnings".
-  $traces = "echo 'm4_define([m4_require_silent_probe], [-])' | " .
-            "$traces - ";
+  my $early_m4_code .= "m4_define([m4_require_silent_probe], [-])";
+
+  my $traces = ($ENV{AUTOM4TE} || '@am_AUTOM4TE@');
+  $traces .= " --language Autoconf-without-aclocal-m4 ";
+  $traces = "echo '$early_m4_code' | $traces - ";
+
+  # Support AC_CONFIG_MACRO_DIRS also with older autoconf.
+  # Note that we can't use '$ac_config_macro_dirs_fallback' here, because
+  # a bug in option parsing code of autom4te 2.68 and earlier will cause
+  # it to read standard input last, even if the "-" argument is specified
+  # early.
+  # FIXME: To be removed in Automake 1.14, once we can assume autoconf
+  #        2.70 or later.
+  $traces .= "$automake_includes[0]/internal/ac-config-macro-dirs.m4 ";
+
   # All candidate files.
   $traces .= join (' ',
 		   (map { "'$_'" }
@@ -738,11 +759,13 @@ sub trace_used_macros ()
 		     'AC_DEFUN_ONCE',
 		     'AU_DEFUN',
 		     '_AM_AUTOCONF_VERSION',
-		     # FIXME: We still need to trace AC_CONFIG_MACRO_DIR
-                     # for compatibility with older autoconf.  Remove this
-                     # when we can assume Autoconf 2.70 or later.
+		     'AC_CONFIG_MACRO_DIR_TRACE',
+                     # FIXME: Tracing the next two macros is a hack for
+                     # compatibility with older autoconf.  Remove this in
+                     # Automake 1.14, when we can assume Autoconf 2.70 or
+                     # later.
 		     'AC_CONFIG_MACRO_DIR',
-		     'AC_CONFIG_MACRO_DIR_TRACE')),
+		     '_AM_CONFIG_MACRO_DIRS')),
 		   # Do not trace $1 for all other macros as we do
 		   # not need it and it might contains harmful
 		   # characters (like newlines).
@@ -776,18 +799,28 @@ sub trace_used_macros ()
         {
           push @ac_config_macro_dirs, $arg1;
         }
-    # FIXME: We still need to trace AC_CONFIG_MACRO_DIR
-    # for compatibility with older autoconf.  Remove this
-    # when we can assume Autoconf 2.70 or later.
-    elsif ($macro eq 'AC_CONFIG_MACRO_DIR')
+      # FIXME: We still need to trace AC_CONFIG_MACRO_DIR
+      # for compatibility with older autoconf.  Remove this
+      # once we can assume Autoconf 2.70 or later.
+      elsif ($macro eq 'AC_CONFIG_MACRO_DIR')
         {
           @ac_config_macro_dirs = ($arg1);
+        }
+      # FIXME:This is an hack for compatibility with older autoconf.
+      # Remove this once we can assume Autoconf 2.70 or later.
+      elsif ($macro eq '_AM_CONFIG_MACRO_DIRS')
+        {
+           # Empty leading/trailing fields might be produced by split,
+           # hence the grep is really needed.
+           push @ac_config_macro_dirs, grep (/./, (split /\s+/, $arg1));
         }
     }
 
   # FIXME: in Autoconf >= 2.70, AC_CONFIG_MACRO_DIR calls
   # AC_CONFIG_MACRO_DIR_TRACE behind the scenes, which could
   # leave unwanted duplicates in @ac_config_macro_dirs.
+  # Remove this in Automake 1.14, when we'll stop tracing
+  # AC_CONFIG_MACRO_DIR explicitly.
   @ac_config_macro_dirs = uniq @ac_config_macro_dirs;
 
   $tracefh->close;
@@ -915,6 +948,7 @@ $output";
 # even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 # PARTICULAR PURPOSE.
 
+$ac_config_macro_dirs_fallback
 $output";
 
   # We try not to update $output_file unless necessary, because
