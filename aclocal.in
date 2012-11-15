@@ -44,11 +44,21 @@ use File::Path ();
 
 # Some globals.
 
+# Support AC_CONFIG_MACRO_DIRS also with older autoconf.
+# FIXME: To be removed in Automake 1.14, once we can assume autoconf
+#        2.70 or later.
+# FIXME: keep in sync with 'internal/ac-config-macro-dirs.m4'.
+my $ac_config_macro_dirs_fallback =
+  'm4_ifndef([AC_CONFIG_MACRO_DIRS], [' .
+    'm4_defun([_AM_CONFIG_MACRO_DIRS], [])' .
+    'm4_defun([AC_CONFIG_MACRO_DIRS], [_AM_CONFIG_MACRO_DIRS($@)])' .
+  '])';
+
 # Include paths for searching macros.  We search macros in this order:
 # user-supplied directories first, then the directory containing the
 # automake macros, and finally the system-wide directories for
 # third-party macros.
-# @user_includes can be augmented with -I or AC_CONFIG_MACRO_DIR.
+# @user_includes can be augmented with -I or AC_CONFIG_MACRO_DIRS.
 # @automake_includes can be reset with the '--automake-acdir' option.
 # @system_includes can be augmented with the 'dirlist' file or the
 # ACLOCAL_PATH environment variable, and reset with the '--system-acdir'
@@ -143,10 +153,10 @@ my $serial_number_rx = '^\d+(?:\.\d+)*$';
 # Autoconf version.  This variable is set by 'trace_used_macros'.
 my $ac_version;
 
-# Primary user directory containing extra m4 files for macros
-# definition, as extracted from call to macro AC_CONFIG_MACRO_DIR.
-# This variable is set by 'trace_used_macros'.
-my $ac_config_macro_dir;
+# User directory containing extra m4 files for macros definition,
+# as extracted from calls to the macro AC_CONFIG_MACRO_DIRS.
+# This variable is updated by 'trace_used_macros'.
+my @ac_config_macro_dirs;
 
 # If set, names a temporary file that must be erased on abnormal exit.
 my $erase_me;
@@ -161,7 +171,7 @@ sub check_acinclude ();
 sub reset_maps ();
 sub install_file ($$);
 sub list_compare (\@\@);
-sub scan_m4_dirs ($@);
+sub scan_m4_dirs ($$@);
 sub scan_m4_files ();
 sub add_macro ($);
 sub scan_configure_dep ($);
@@ -341,28 +351,20 @@ sub list_compare (\@\@)
 
 ################################################################
 
-# scan_m4_dirs($TYPE, @DIRS)
-# --------------------------
+# scan_m4_dirs($TYPE, $ERR_ON_NONEXISTING, @DIRS)
+# -----------------------------------------------
 # Scan all M4 files installed in @DIRS for new macro definitions.
 # Register each file as of type $TYPE (one of the FT_* constants).
-my $first_user_m4dir = 1;
-sub scan_m4_dirs ($@)
+sub scan_m4_dirs ($$@)
 {
-  my ($type, @dirlist) = @_;
+  my ($type, $err_on_nonexisting, @dirlist) = @_;
 
   foreach my $m4dir (@dirlist)
     {
       if (! opendir (DIR, $m4dir))
 	{
-	  if ($install && $type == FT_USER && $first_user_m4dir)
-            {
-              # We will try to create this directory later, so don't
-              # complain if it doesn't exist.
-              # TODO: maybe we should avoid complaining only if errno
-              # is ENONENT?
-              $first_user_m4dir = 0;
-              next;
-            }
+	  # TODO: maybe avoid complaining only if errno == ENONENT?
+	  next unless $err_on_nonexisting;
 	  fatal "couldn't open directory '$m4dir': $!";
 	}
 
@@ -397,9 +399,16 @@ sub scan_m4_files ()
     }
 
   # Finally, scan all files in our search paths.
-  scan_m4_dirs (FT_USER, @user_includes);
-  scan_m4_dirs (FT_AUTOMAKE, @automake_includes);
-  scan_m4_dirs (FT_SYSTEM, @system_includes);
+
+  if (@user_includes)
+    {
+      # Don't complain if the first user directory doesn't exist, in case
+      # we need to create it later (can happen if '--install' was given).
+      scan_m4_dirs (FT_USER, !$install, $user_includes[0]);
+      scan_m4_dirs (FT_USER, 1, @user_includes[1..$#user_includes]);
+    }
+  scan_m4_dirs (FT_AUTOMAKE, 1, @automake_includes);
+  scan_m4_dirs (FT_SYSTEM,   1, @system_includes);
 
   # Construct a new function that does the searching.  We use a
   # function (instead of just evaluating $search in the loop) so that
@@ -714,8 +723,27 @@ sub trace_used_macros ()
   my %files = map { $map{$_} => 1 } keys %macro_seen;
   %files = strip_redundant_includes %files;
 
+  # When AC_CONFIG_MACRO_DIRS is used, avoid possible spurious warnings
+  # from autom4te about macros being "m4_require'd but not m4_defun'd";
+  # for more background, see:
+  # http://lists.gnu.org/archive/html/autoconf-patches/2012-11/msg00004.html
+  # as well as autoconf commit 'v2.69-44-g1ed0548', "warn: allow aclocal
+  # to silence m4_require warnings".
+  my $early_m4_code .= "m4_define([m4_require_silent_probe], [-])";
+
   my $traces = ($ENV{AUTOM4TE} || '@am_AUTOM4TE@');
   $traces .= " --language Autoconf-without-aclocal-m4 ";
+  $traces = "echo '$early_m4_code' | $traces - ";
+
+  # Support AC_CONFIG_MACRO_DIRS also with older autoconf.
+  # Note that we can't use '$ac_config_macro_dirs_fallback' here, because
+  # a bug in option parsing code of autom4te 2.68 and earlier will cause
+  # it to read standard input last, even if the "-" argument is specified
+  # early.
+  # FIXME: To be removed in Automake 1.14, once we can assume autoconf
+  #        2.70 or later.
+  $traces .= "$automake_includes[0]/internal/ac-config-macro-dirs.m4 ";
+
   # All candidate files.
   $traces .= join (' ',
 		   (map { "'$_'" }
@@ -723,12 +751,18 @@ sub trace_used_macros ()
 
   # All candidate macros.
   $traces .= join (' ',
-		   (map { "--trace='$_:\$f::\$n::\$1'" }
+		   (map { "--trace='$_:\$f::\$n::\${::}%'" }
 		    ('AC_DEFUN',
 		     'AC_DEFUN_ONCE',
 		     'AU_DEFUN',
 		     '_AM_AUTOCONF_VERSION',
-		     'AC_CONFIG_MACRO_DIR')),
+		     'AC_CONFIG_MACRO_DIR_TRACE',
+                     # FIXME: Tracing the next two macros is a hack for
+                     # compatibility with older autoconf.  Remove this in
+                     # Automake 1.14, when we can assume Autoconf 2.70 or
+                     # later.
+		     'AC_CONFIG_MACRO_DIR',
+		     '_AM_CONFIG_MACRO_DIRS')),
 		   # Do not trace $1 for all other macros as we do
 		   # not need it and it might contains harmful
 		   # characters (like newlines).
@@ -738,7 +772,7 @@ sub trace_used_macros ()
 
   my $tracefh = new Automake::XFile ("$traces $configure_ac |");
 
-  $ac_config_macro_dir = undef;
+  @ac_config_macro_dirs = ();
 
   my %traced = ();
 
@@ -758,11 +792,33 @@ sub trace_used_macros ()
         {
           $ac_version = $arg1;
         }
+      elsif ($macro eq 'AC_CONFIG_MACRO_DIR_TRACE')
+        {
+          push @ac_config_macro_dirs, $arg1;
+        }
+      # FIXME: We still need to trace AC_CONFIG_MACRO_DIR
+      # for compatibility with older autoconf.  Remove this
+      # once we can assume Autoconf 2.70 or later.
       elsif ($macro eq 'AC_CONFIG_MACRO_DIR')
         {
-          $ac_config_macro_dir = $arg1;
+          @ac_config_macro_dirs = ($arg1);
+        }
+      # FIXME:This is an hack for compatibility with older autoconf.
+      # Remove this once we can assume Autoconf 2.70 or later.
+      elsif ($macro eq '_AM_CONFIG_MACRO_DIRS')
+        {
+           # Empty leading/trailing fields might be produced by split,
+           # hence the grep is really needed.
+           push @ac_config_macro_dirs, grep (/./, (split /\s+/, $arg1));
         }
     }
+
+  # FIXME: in Autoconf >= 2.70, AC_CONFIG_MACRO_DIR calls
+  # AC_CONFIG_MACRO_DIR_TRACE behind the scenes, which could
+  # leave unwanted duplicates in @ac_config_macro_dirs.
+  # Remove this in Automake 1.14, when we'll stop tracing
+  # AC_CONFIG_MACRO_DIR explicitly.
+  @ac_config_macro_dirs = uniq @ac_config_macro_dirs;
 
   $tracefh->close;
 
@@ -889,6 +945,7 @@ $output";
 # even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 # PARTICULAR PURPOSE.
 
+$ac_config_macro_dirs_fallback
 $output";
 
   # We try not to update $output_file unless necessary, because
@@ -1092,13 +1149,12 @@ while (1)
     last if $exit_code;
     my %macro_traced = trace_used_macros;
 
-    if (!$rerun_due_to_macrodir && defined $ac_config_macro_dir)
+    if (!$rerun_due_to_macrodir && @ac_config_macro_dirs)
       {
-         # The directory specified by the AC_CONFIG_MACRO_DIR m4 macro
-         # (if any) must after the user includes specified explicitly
-         # with the '-I' option.
-         push @user_includes, $ac_config_macro_dir
-           if defined $ac_config_macro_dir;
+        # The directory specified in calls to the AC_CONFIG_MACRO_DIRS
+        # m4 macro (if any) must go after the user includes specified
+        # explicitly with the '-I' option.
+        push @user_includes, @ac_config_macro_dirs;
         # We might have to scan some new directory of .m4 files.
         $rerun_due_to_macrodir++;
         next;
@@ -1107,7 +1163,7 @@ while (1)
     if ($install && !@user_includes)
       {
         fatal "installation of third-party macros impossible without " .
-              "-I options nor AC_CONFIG_MACRO_DIR m4 macro";
+              "-I options nor AC_CONFIG_MACRO_DIR{,S} m4 macro(s)";
       }
 
     last if write_aclocal ($output_file, keys %macro_traced);

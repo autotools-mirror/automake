@@ -12,6 +12,5 @@
 # be traced by Automake, which will ensure that a proper definition of
 # user-defined recursive targets (and associated rules) is propagated
 # into all the generated Makefiles.
-AC_DEFUN([AM_EXTRA_RECURSIVE_TARGETS], [_$0(m4_flatten([$1]))])
 # TODO: We should really reject non-literal arguments here...
-m4_define([_AM_EXTRA_RECURSIVE_TARGETS], [])
+AC_DEFUN([AM_EXTRA_RECURSIVE_TARGETS], [])
