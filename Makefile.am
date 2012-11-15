@@ -255,8 +255,7 @@ dist_am_DATA = \
 ##  Automake-provided m4 macros.  ##
 ## ------------------------------ ##
 
-nobase_dist_automake_ac_DATA = \
-  m4/internal/ac-config-macro-dirs.m4 \
+dist_automake_ac_DATA = \
   m4/amversion.m4 \
   m4/ar-lib.m4 \
   m4/as.m4 \
@@ -289,6 +288,9 @@ nobase_dist_automake_ac_DATA = \
   m4/tar.m4 \
   m4/upc.m4 \
   m4/vala.m4
+
+automake_internal_acdir = $(automake_acdir)/internal
+dist_automake_internal_ac_DATA = m4/internal/ac-config-macro-dirs.m4
 
 dist_system_ac_DATA = m4/acdir/README
 
