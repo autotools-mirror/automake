@@ -48,12 +48,12 @@ use File::Path ();
 # Support AC_CONFIG_MACRO_DIRS also with older autoconf.
 # FIXME: To be removed in Automake 1.14, once we can assume autoconf
 #        2.70 or later.
-# NOTE: This variable deliberately contain no newlines.
+# FIXME: keep in sync with 'internal/ac-config-macro-dirs.m4'.
 my $ac_config_macro_dirs_fallback =
-  "m4_ifndef([AC_CONFIG_MACRO_DIRS], [" .
-    "m4_defun([_AM_CONFIG_MACRO_DIRS], [])" .
-    "m4_defun([AC_CONFIG_MACRO_DIRS], [_AM_CONFIG_MACRO_DIRS(\$@)])" .
-  "])";
+  'm4_ifndef([AC_CONFIG_MACRO_DIRS], [' .
+    'm4_defun([_AM_CONFIG_MACRO_DIRS], [])' .
+    'm4_defun([AC_CONFIG_MACRO_DIRS], [_AM_CONFIG_MACRO_DIRS($@)])' .
+  '])';
 
 # We do not operate in threaded mode.
 $perl_threads = 0;
@@ -726,22 +726,26 @@ sub trace_used_macros ()
   my %files = map { $map{$_} => 1 } keys %macro_seen;
   %files = strip_redundant_includes %files;
 
-  my $early_m4_code = "";
   # When AC_CONFIG_MACRO_DIRS is used, avoid possible spurious warnings
   # from autom4te about macros being "m4_require'd but not m4_defun'd";
   # for more background, see:
   # http://lists.gnu.org/archive/html/autoconf-patches/2012-11/msg00004.html
   # as well as autoconf commit 'v2.69-44-g1ed0548', "warn: allow aclocal
   # to silence m4_require warnings".
-  $early_m4_code .= "m4_define([m4_require_silent_probe], [-])";
-  # Support AC_CONFIG_MACRO_DIRS also with older autoconf.
-  # FIXME: To be removed in Automake 1.14, once we can assume autoconf
-  #        2.70 or later.
-  $early_m4_code .= $ac_config_macro_dirs_fallback;
+  my $early_m4_code .= "m4_define([m4_require_silent_probe], [-])";
 
   my $traces = ($ENV{AUTOM4TE} || '@am_AUTOM4TE@');
   $traces .= " --language Autoconf-without-aclocal-m4 ";
   $traces = "echo '$early_m4_code' | $traces - ";
+
+  # Support AC_CONFIG_MACRO_DIRS also with older autoconf.
+  # Note that we can't use '$ac_config_macro_dirs_fallback' here, because
+  # a bug in option parsing code of autom4te 2.68 and earlier will cause
+  # it to read standard input last, even if the "-" argument is specified
+  # early.
+  # FIXME: To be removed in Automake 1.14, once we can assume autoconf
+  #        2.70 or later.
+  $traces .= "$automake_includes[0]/internal/ac-config-macro-dirs.m4 ";
 
   # All candidate files.
   $traces .= join (' ',
