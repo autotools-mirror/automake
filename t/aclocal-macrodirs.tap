@@ -372,35 +372,45 @@ test_end
 
 #---------------------------------------------------------------------------
 
-test_begin "AC_CONFIG_MACRO_DIRS interaction with AC_REQUIRE"
+# Avoid spurious failures with pre-2.70 autoconf.
+# FIXME: remove this in automake 1.14, once we require Autoconf 2.70.
+if echo 'AC_INIT AC_CONFIG_MACRO_DIRS' | $AUTOCONF -o/dev/null -; then
 
-cat > configure.ac <<'END'
-AC_INIT([req], [1.0])
-AC_CONFIG_MACRO_DIRS([m1 m2])
-AC_DEFUN([MY_FOO], [
-  AC_REQUIRE([MY_BAR])
-  AC_REQUIRE([MY_BAZ])
-])
-MY_FOO
+  test_begin "AC_CONFIG_MACRO_DIRS interaction with AC_REQUIRE"
+
+  unindent > configure.ac <<'END'
+  AC_INIT([req], [1.0])
+  AC_CONFIG_MACRO_DIRS([m1 m2])
+  AC_DEFUN([MY_FOO], [
+    AC_REQUIRE([MY_BAR])
+    AC_REQUIRE([MY_BAZ])
+  ])
+  MY_FOO
 END
 
-mkdir m1 m2
-echo 'AC_DEFUN([MY_BAR], [^^my^^bar^^])' > m1/x.m4
-echo 'AC_DEFUN([MY_BAZ], [~~my~~baz~~])' > m2/x.m4
+  mkdir m1 m2
+  echo 'AC_DEFUN([MY_BAR], [^^my^^bar^^])' > m1/x.m4
+  echo 'AC_DEFUN([MY_BAZ], [~~my~~baz~~])' > m2/x.m4
 
-st=0; $ACLOCAL 2>stderr || st=$?
-cat stderr >&2
+  st=0; $ACLOCAL 2>stderr || st=$?
+  cat stderr >&2
 
-test $st -eq 0 \
-  && test ! -s stderr \
-  && $FGREP 'm4_include([m1/x.m4])' aclocal.m4 \
-  && $FGREP 'm4_include([m2/x.m4])' aclocal.m4 \
-  && $AUTOCONF \
-  && not $EGREP 'MY_(FOO|BAR|BAZ)' configure \
-  && $FGREP '^^my^^bar^^' configure \
-  && $FGREP '~~my~~baz~~' configure \
-  || r='not ok'
+  test $st -eq 0 \
+    && test ! -s stderr \
+    && $FGREP 'm4_include([m1/x.m4])' aclocal.m4 \
+    && $FGREP 'm4_include([m2/x.m4])' aclocal.m4 \
+    && $AUTOCONF \
+    && not $EGREP 'MY_(FOO|BAR|BAZ)' configure \
+    && $FGREP '^^my^^bar^^' configure \
+    && $FGREP '~~my~~baz~~' configure \
+    || r='not ok'
 
-test_end
+  test_end
+
+else
+
+  skip_ -r "autoconf is too old (AC_CONFIG_MACRO_DIRS not defined)"
+
+fi
 
 :
