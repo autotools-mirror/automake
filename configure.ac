@@ -40,7 +40,7 @@ dnl We call AC_PROG_CC in an unusual way, and only for use in our
 dnl testsuite, so also use 'no-dependencies' and 'no-define' among
 dnl the automake options to avoid bloating and potential problems.
 AM_INIT_AUTOMAKE([dist-xz filename-length-max=99 color-tests
-		  parallel-tests silent-rules no-define no-dependencies])
+                  parallel-tests silent-rules no-define no-dependencies])
 
 ## Keep this on a line of its own, since it must be found and processed
 ## by the 'update-copyright' rule in our Makefile.
@@ -89,11 +89,11 @@ AC_CACHE_CHECK([whether $PERL supports ithreads], [am_cv_prog_PERL_ithreads],
     use Config;
     if ($Config{useithreads})
       {
-	require threads;
-	import threads;
-	require Thread::Queue;
-	import Thread::Queue;
-	exit 0;
+        require threads;
+        import threads;
+        require Thread::Queue;
+        import Thread::Queue;
+        exit 0;
       }
     exit 1;' >&AS_MESSAGE_LOG_FD 2>&1
 then
@@ -607,10 +607,10 @@ AC_CONFIG_LINKS([defs:defs])
 
 AC_CONFIG_FILES([t/wrap/aclocal-${APIVERSION}:t/wrap/aclocal.in],
                 [chmod +x t/wrap/aclocal-${APIVERSION}],
-	        [APIVERSION=$APIVERSION])
+                [APIVERSION=$APIVERSION])
 AC_CONFIG_FILES([t/wrap/automake-${APIVERSION}:t/wrap/automake.in],
                 [chmod +x t/wrap/automake-${APIVERSION}],
-	        [APIVERSION=$APIVERSION])
+                [APIVERSION=$APIVERSION])
 
 AC_OUTPUT
 
