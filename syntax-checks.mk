@@ -43,8 +43,8 @@ ams := $(shell find $(srcdir) -name '*.dir' -prune -o -name '*.am' -print)
 # guaranteed to work on my machine.
 syntax_check_rules = \
 $(sc_tests_plain_check_rules) \
-sc_diff_automake_in_automake \
-sc_diff_aclocal_in_automake \
+sc_diff_automake \
+sc_diff_aclocal \
 sc_no_brace_variable_expansions \
 sc_rm_minus_f \
 sc_no_for_variable_in_macro \
@@ -79,21 +79,25 @@ sc_tabs_in_texi \
 sc_at_in_texi
 
 ## These check avoids accidental configure substitutions in the source.
-## There are exactly 9 lines that should be modified from automake.in to
-## automake, and 10 lines that should be modified from aclocal.in to
-## aclocal; these wors out to 32 and 34 lines of diffs, respectively.
-sc_diff_automake_in_automake:
-	@if test `diff $(srcdir)/automake.in automake | wc -l` -ne 32; then \
-	  echo "found too many diffs between automake.in and automake" 1>&2; \
-	  diff -c $(srcdir)/automake.in automake; \
-	  exit 1; \
-	fi
-sc_diff_aclocal_in_aclocal:
-	@if test `diff $(srcdir)/aclocal.in aclocal | wc -l` -ne 34; then \
-	  echo "found too many diffs between aclocal.in and aclocal" 1>&2; \
-	  diff -c $(srcdir)/aclocal.in aclocal; \
-	  exit 1; \
-	fi
+## There are exactly 8 lines that should be modified from automake.in to
+## automake, and 9 lines that should be modified from aclocal.in to
+## aclocal.
+automake_diff_no = 8
+aclocal_diff_no = 9
+sc_diff_automake sc_diff_aclocal: sc_diff_% :
+	@set +e; tmp=$*-diffs.tmp; \
+	 diff -u $(srcdir)/$*.in $* > $$tmp; test $$? -eq 1 || exit 1; \
+	 added=`grep -v '^+++ ' $$tmp | grep -c '^+'` || exit 1; \
+	 removed=`grep -v '^--- ' $$tmp | grep -c '^-'` || exit 1; \
+	 test $$added,$$removed = $($*_diff_no),$($*_diff_no) \
+	  || { \
+	    echo "Found unexpected diffs between $*.in and $*"; \
+	    echo "Lines added:   $$added"  ; \
+	    echo "Lines removed: $$removed"; \
+	    cat $$tmp >&2; \
+	    exit 1; \
+	  } >&1; \
+	rm -f $$tmp
 
 ## Expect no instances of '${...}'.  However, $${...} is ok, since that
 ## is a shell construct, not a Makefile construct.
