@@ -95,11 +95,11 @@ AC_CACHE_CHECK([whether $PERL supports ithreads], [am_cv_prog_PERL_ithreads],
     use Config;
     if ($Config{useithreads})
       {
-	require threads;
-	import threads;
-	require Thread::Queue;
-	import Thread::Queue;
-	exit 0;
+        require threads;
+        import threads;
+        require Thread::Queue;
+        import Thread::Queue;
+        exit 0;
       }
     exit 1;' >&AS_MESSAGE_LOG_FD 2>&1
 then
@@ -611,10 +611,10 @@ AC_CONFIG_LINKS([GNUmakefile:GNUmakefile])
 
 AC_CONFIG_FILES([t/wrap/aclocal-${APIVERSION}:t/wrap/aclocal.in],
                 [chmod +x t/wrap/aclocal-${APIVERSION}],
-	        [APIVERSION=$APIVERSION])
+                [APIVERSION=$APIVERSION])
 AC_CONFIG_FILES([t/wrap/automake-${APIVERSION}:t/wrap/automake.in],
                 [chmod +x t/wrap/automake-${APIVERSION}],
-	        [APIVERSION=$APIVERSION])
+                [APIVERSION=$APIVERSION])
 
 AC_OUTPUT
 
@@ -632,7 +632,8 @@ am_release_type=`AS_ECHO(["$PACKAGE_VERSION"]) | LC_ALL=C awk ["
   /^$am_beta_version_rx$/ { print \"beta version\"; exit(0); }
   { print \"development snapshot\"; }"]`
 
-test "$am_release_type" = stable || cat <<EOF
+# '$silent' is set to yes if configure is passed the '--quiet' option.
+test "$am_release_type" = stable || test "$silent" = yes || cat <<EOF
 
 WARNING: You are about to use a $am_release_type of automake.
 WARNING: It might easily suffer from new bugs or regressions.
