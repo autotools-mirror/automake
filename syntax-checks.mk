@@ -45,7 +45,6 @@ syntax_check_rules = \
 $(sc_tests_plain_check_rules) \
 sc_diff_automake_in_automake \
 sc_diff_aclocal_in_automake \
-sc_perl_syntax \
 sc_no_brace_variable_expansions \
 sc_rm_minus_f \
 sc_no_for_variable_in_macro \
@@ -95,11 +94,6 @@ sc_diff_aclocal_in_aclocal:
 	  diff -c $(srcdir)/aclocal.in aclocal; \
 	  exit 1; \
 	fi
-
-## Syntax check with default Perl (on my machine, Perl 5).
-sc_perl_syntax:
-	@perllibdir="./lib$(PATH_SEPARATOR)$(srcdir)/lib" $(PERL) -c -w automake
-	@perllibdir="./lib$(PATH_SEPARATOR)$(srcdir)/lib" $(PERL) -c -w aclocal
 
 ## Expect no instances of '${...}'.  However, $${...} is ok, since that
 ## is a shell construct, not a Makefile construct.
