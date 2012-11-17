@@ -22,15 +22,21 @@ required='makeinfo tex texi2dvi dvips'
 echo AC_OUTPUT >> configure.ac
 
 cat > Makefile.am <<'EOF'
-info_TEXINFOS = foo.texi
+info_TEXINFOS = foo.texi sub/zardoz.texi
 EOF
 
 cat > foo.texi <<'EOF'
 \input texinfo
-@c %**start of header
 @setfilename foo.info
 @settitle foo manual
-@c %**end of header
+@bye
+EOF
+
+mkdir sub
+cat > sub/zardoz.texi <<'EOF'
+\input texinfo
+@setfilename zardoz.info
+@settitle zardoz manual
 @bye
 EOF
 
@@ -40,24 +46,42 @@ $AUTOCONF
 
 ./configure --disable-silent-rules
 
-# Make sure that all labels work in silent-mode.
-$MAKE V=0 dvi html info ps pdf >stdout || { cat stdout; exit 1; }
+# Silent mode output.
+st=0
+$MAKE V=0 dvi html info ps pdf >stdout 2>stderr || st=$?
 cat stdout
-grep 'DVIPS    foo.ps' stdout || exit 1
-grep 'MAKEINFO foo.html' stdout || exit 1
+cat stderr >&2
+test $st -eq 0
+grep '^  DVIPS    foo\.ps$'         stdout
+grep '^  MAKEINFO foo\.html$'       stdout
 # NetBSD make will print './foo.info' instead of 'foo.info'.
-grep 'MAKEINFO.*foo.info' stdout || exit 1
-grep 'TEXI2DVI foo.dvi' stdout || exit 1
-grep 'TEXI2PDF foo.pdf' stdout || exit 1
+$EGREP '^  MAKEINFO (|\./)foo\.info$'       stdout
+grep '^  TEXI2DVI foo\.dvi$'        stdout
+grep '^  TEXI2PDF foo\.pdf$'        stdout
+grep '^  DVIPS    sub/zardoz.ps$'   stdout
+grep '^  MAKEINFO sub/zardoz.html$' stdout
+# NetBSD make will print './sub/zardoz.info' instead of 'zardoz.info'.
+$EGREP '^  MAKEINFO (|\./)sub/zardoz.info$' stdout
+grep '^  TEXI2DVI sub/zardoz.dvi$'  stdout
+grep '^  TEXI2PDF sub/zardoz.pdf$'  stdout
+# No make recipe is displayed before being executed.
+$EGREP 'texi2(dvi|pdf)|dvips|makeinfo|(rm|mv) ' \
+  stdout stderr && exit 1
+# No verbose output from TeX nor dvips.
+$EGREP '(zardoz|foo)\.log|3\.14|Copyright|This is|[Oo]utput ' \
+  stdout stderr && exit 1
 
-# Now make sure the labels don't appear in verbose mode.
+# Verbose mode output.
 $MAKE clean || exit 1
-$MAKE V=1 dvi html info ps pdf >stdout || { cat stdout; exit 1; }
-cat stdout
-grep 'DVIPS    foo.ps' stdout && exit 1
-grep 'MAKEINFO foo.html' stdout && exit 1
-grep 'MAKEINFO.*foo.info' stdout && exit 1
-grep 'TEXI2DVI foo.dvi' stdout && exit 1
-grep 'TEXI2PDF foo.pdf' stdout && exit 1
+$MAKE V=1 dvi html info ps pdf >output 2>&1 || { cat output; exit 1; }
+cat output
+$EGREP '(DVIPS|MAKEINFO|TEXI2(PDF|DVI)) ' output && exit 1
+# Verbose output from TeX.
+grep '[Oo]utput .*foo\.pdf' output
+grep '[Oo]utput .*zardoz\.pdf' output
+$FGREP 'foo.log' output
+$FGREP 'zardoz.log' output
+# Verbose output from dvips.
+$FGREP ' dvips' output
 
 :
