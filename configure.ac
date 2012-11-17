@@ -63,10 +63,12 @@ AC_SUBST([amdir], ["\${pkgvdatadir}/am"])
 AC_SUBST([automake_acdir], ["\${datadir}/aclocal-$APIVERSION"])
 AC_SUBST([system_acdir], ["\${datadir}/aclocal"])
 
-# $AUTOMAKE and $ACLOCAL are always run after a "cd $top_srcdir",
-# hence '.' is really what we want for perllibdir, libdir, and acdir.
-ACLOCAL="perllibdir=\"`pwd`/lib$PATH_SEPARATOR./lib\" \"`pwd`/aclocal\" --acdir=m4 -I m4"
-AUTOMAKE="perllibdir=\"`pwd`/lib$PATH_SEPARATOR./lib\" \"`pwd`/automake\" --libdir=lib"
+# Our build system is bootstrapped with the bleeding-edge versions of
+# aclocal and automake, hence the remake rules must use those versions
+# as well.  The extra quoting is to cater to cases when the build
+# directory contains whitespace or shell metacharacters.
+ACLOCAL="\"`pwd`/t/wrap/aclocal-$APIVERSION\""
+AUTOMAKE="\"`pwd`/t/wrap/automake-$APIVERSION\""
 
 AC_PATH_PROG([PERL], [perl])
 if test -z "$PERL"; then
