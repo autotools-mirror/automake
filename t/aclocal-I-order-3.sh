@@ -16,13 +16,13 @@
 
 # Make sure that when two files define the same macro in the same
 # directory, the macro from the lexically greatest file is used.
+# Same as acloca-I-ordering.sh, but without calling MACRO2.
 
 am_create_testdir=empty
 . test-init.sh
 
-cat > configure.ac << 'END'
-AC_INIT
-MACRO2
+cat > configure.ac <<END
+AC_INIT([$me], [1.0])
 MACRO1
 END
 
@@ -37,9 +37,10 @@ cat >m4/version2.m4 <<EOF
 AC_DEFUN([MACRO1], [:macro12:])
 EOF
 
-$ACLOCAL -I m4
+$ACLOCAL --verbose -I m4
 $AUTOCONF
+$FGREP ':macro11:' configure && exit 1
+$FGREP ':macro21:' configure && exit 1
 $FGREP ':macro12:' configure
-$FGREP ':macro21:' configure
 
 :

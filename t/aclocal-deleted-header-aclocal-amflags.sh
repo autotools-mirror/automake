@@ -17,7 +17,8 @@
 # Make sure the "deleted header file" issue is fixed wrt. aclocal.m4
 # dependencies.
 # NOTE: this test works by using the obsolete 'ACLOCAL_AMFLAGS' make
-# variable; see sister test 'acloca22.test' for a modern equivalent.
+# variable; see sister test 'aclocal-deleted-header.sh' for a modern
+# equivalent.
 
 . test-init.sh
 
