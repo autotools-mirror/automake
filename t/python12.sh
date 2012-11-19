@@ -36,19 +36,19 @@ $ACLOCAL
 $AUTOCONF
 $AUTOMAKE --add-missing
 
-instdir=$(pwd)/inst
+destdir=$(pwd)/inst
 mkdir inst build
 cd build
 ../configure --prefix="/usr"
-$MAKE install DESTDIR=$instdir
+$MAKE install DESTDIR=$destdir
 
 # Perfunctory test that the files were created.
-test -f "$instdir/usr/share/my/my.py"
-test -f "$instdir/usr/share/my/my.pyc"
-test -f "$instdir/usr/share/my/my.pyo"
+test -f "$destdir/usr/share/my/my.py"
+pyo=$(pyc_location -p "$destdir/usr/share/my/my.pyo")
+pyc=$(pyc_location -p "$destdir/usr/share/my/my.pyc")
 
 # If DESTDIR has made it into the byte compiled files, fail the test.
-$FGREP "$instdir" "$instdir/usr/share/my/my.pyo" \
-                  "$instdir/usr/share/my/my.pyc" && exit 1
+st=0; $FGREP "$destdir" "$pyc" "$pyo" || st=$?
+test $st -eq 1
 
 :
