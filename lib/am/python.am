@@ -94,19 +94,37 @@ endif %?INSTALL%
 ## -------------- ##
 
 if %?INSTALL%
+
+?FIRST?am__pep3147_tweak = \
+?FIRST?  sed -e 's|\.py$$||' -e 's|[^/]*$$|__pycache__/&.*.py|'
+
 .PHONY uninstall-am: uninstall-%DIR%PYTHON
 uninstall-%DIR%PYTHON:
 	@$(NORMAL_UNINSTALL)
 	@list='$(%DIR%_PYTHON)'; test -n "$(%NDIR%dir)" || list=; \
-?BASE?	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
-?!BASE?	$(am__nobase_strip_setup); files=`$(am__nobase_strip)`; \
-	test -n "$$files" || exit 0; \
+?BASE?	py_files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
+?!BASE?	$(am__nobase_strip_setup); py_files=`$(am__nobase_strip)`; \
+	test -n "$$py_files" || exit 0; \
 	dir='$(DESTDIR)$(%NDIR%dir)'; \
 ## Also remove the .pyc and .pyo byte compiled versions.
-	filesc=`echo "$$files" | sed 's|$$|c|'`; \
-	fileso=`echo "$$files" | sed 's|$$|o|'`; \
+## This is somewhat tricky, because for newer pythons we have to take
+## PEP-3147 into account.
+	pyc_files=`echo "$$py_files" | sed 's|$$|c|'`; \
+	pyo_files=`echo "$$py_files" | sed 's|$$|o|'`; \
+	py_files_pep3147=`echo "$$py_files" | $(am__pep3147_tweak)`; \
+	echo "$$py_files_pep3147";\
+	pyc_files_pep3147=`echo "$$py_files_pep3147" | sed 's|$$|c|'`; \
+	pyo_files_pep3147=`echo "$$py_files_pep3147" | sed 's|$$|o|'`; \
 	st=0; \
-	for files in "$$files" "$$filesc" "$$fileso"; do \
+	for files in \
+	  "$$py_files" \
+	  "$$pyc_files" \
+	  "$$pyo_files" \
+## Installation of '.py' files is not influenced by PEP-3147, so it
+## is correct *not* to have $pyfiles_pep3147 here.
+	  "$$pyc_files_pep3147" \
+	  "$$pyo_files_pep3147" \
+	; do \
 	  $(am__uninstall_files_from_dir) || st=$$?; \
 	done; \
 	exit $$st
