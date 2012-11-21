@@ -443,6 +443,65 @@ fetch_tap_driver ()
 # use the perl implementation by default for the moment.
 am_tap_implementation=${am_tap_implementation-shell}
 
+# $PYTHON and support for PEP-3147.  Needed to check our python-related
+# install rules.
+python_has_pep3147 ()
+{
+  if test -z "$am_pep3147_tag"; then
+    am_pep3147_tag=$($PYTHON -c 'import imp; print(imp.get_tag())') \
+      || am_pep3147_tag=none
+  fi
+  test $am_pep3147_tag != none
+}
+am_pep3147_tag=
+
+# pyc_location [-p] [FILE]
+# ------------------------
+# Determine what the actual location of the given '.pyc' or '.pyo'
+# byte-compiled file should be, taking into account PEP-3147.  Save
+# the location in the '$am_pyc_file' variable.  If the '-p' option
+# is given, print the location on the standard output as well.
+pyc_location ()
+{
+  case $#,$1 in
+    2,-p) am_pyc_print=yes; shift;;
+     1,*) am_pyc_print=no;;
+       *) fatal_ "pyc_location: invalid usage";;
+  esac
+  if python_has_pep3147; then
+    case $1 in
+      */*) am_pyc_dir=${1%/*} am_pyc_base=${1##*/};;
+        *) am_pyc_dir=. am_pyc_base=$1;;
+    esac
+    am_pyc_ext=${am_pyc_base##*.}
+    am_pyc_base=${am_pyc_base%.py?}
+    am_pyc_file=$am_pyc_dir/__pycache__/$am_pyc_base.$am_pep3147_tag.$am_pyc_ext
+  else
+    am_pyc_file=$1
+  fi
+  test $am_pyc_print = no || printf '%s\n' "$am_pyc_file"
+}
+
+# py_installed [--not] FILE
+# --------------------------
+# Check that the given python FILE has been installed (resp. *not*
+# installed, if the '--not' option is specified).  If FILE is a
+# byte-compiled '.pyc' file, the new installation layout specified
+# by PEP-3147 will be taken into account.
+py_installed ()
+{
+  case $#,$1 in
+        1,*) am_test_py_file='test -f';;
+    2,--not) am_test_py_file='test ! -e'; shift;;
+          *) fatal_ "pyc_installed: invalid usage";;
+  esac
+  case $1 in
+    *.py[co]) pyc_location "$1"; am_target_py_file=$am_pyc_file;;
+           *) am_target_py_file=$1;;
+  esac
+  $am_test_py_file "$am_target_py_file"
+}
+
 # Usage: require_compiler_ {cc|c++|fortran|fortran77}
 require_compiler_ ()
 {
@@ -654,9 +713,10 @@ require_tool ()
       ! cross_compiling || skip_all_ "doesn't work in cross-compile mode"
       ;;
     python)
-      # Python doesn't support --version, it has -V
-      echo "$me: running python -V"
-      python -V || skip_all_ "python interpreter not available"
+      PYTHON=${PYTHON-python}
+      # Older python versions don't support --version, they have -V.
+      echo "$me: running $PYTHON -V"
+      $PYTHON -V || skip_all_ "python interpreter not available"
       ;;
     ro-dir)
       # Skip this test case if read-only directories aren't supported

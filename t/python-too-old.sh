@@ -34,6 +34,7 @@ py_too_old ()
   grep '[Pp]ython interpreter is too old' stderr
 }
 
+saved_PYTHON=$PYTHON; export saved_PYTHON
 PYTHON=; unset PYTHON
 
 cat > configure.ac <<END
@@ -50,7 +51,7 @@ py_too_old python
 mkdir bin
 cat > bin/my-python << 'END'
 #! /bin/sh
-exec python ${1+"$@"}
+exec $saved_PYTHON ${1+"$@"}
 END
 chmod a+x bin/my-python
 PATH=$(pwd)/bin$PATH_SEPARATOR$PATH

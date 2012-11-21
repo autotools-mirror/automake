@@ -874,7 +874,6 @@ t/print-libdir.sh \
 t/proginst.sh \
 t/programs-primary-rewritten.sh \
 t/py-compile-basic.sh \
-t/py-compile-basic2.sh \
 t/py-compile-basedir.sh \
 t/py-compile-destdir.sh \
 t/py-compile-env.sh \

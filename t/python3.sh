@@ -40,8 +40,8 @@ mkdir build
 cd build
 ../configure --prefix="$(pwd)/inst"
 $MAKE install
-test -f inst/my/one.py
-test -f inst/my/one.pyc
-test -f inst/my/one.pyo
+py_installed inst/my/one.py
+py_installed inst/my/one.pyc
+py_installed inst/my/one.pyo
 
 :
