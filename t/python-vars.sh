@@ -23,8 +23,6 @@ required=python
 # In case the user's config.site defines pythondir or pyexecdir.
 CONFIG_SITE=/dev/null; export CONFIG_SITE
 
-PYTHON=python
-
 # Update the definition below if the documentation changes.
 # Note that the value of the 'pythondir' and 'pyexecdir' variables can
 # vary among different python installations, so we need more relaxed
