@@ -20,6 +20,12 @@
 required='cc flex'
 . ./defs || exit 1
 
+# Here, we need to use the use flex option '--header-file', but some
+# older flex versions don't support is (see automake bug#11524 and
+# bug#12836).  Skip this test if such an old flex version is detected.
+$LEX --help | grep '.*--header-file' \
+  || skip_ "flex doesn't support the --header-file' option"
+
 cat >> configure.ac << 'END'
 AC_PROG_CC
 AC_PROG_LEX
