@@ -18,8 +18,11 @@
 
 . test-init.sh
 
-cat >> configure.ac << 'END'
+cat > configure.ac << 'END'
+AC_INIT([m4sinclude], [1.0])
+AM_INIT_AUTOMAKE
 m4_include([somefile.m4])
+AC_CONFIG_FILES([Makefile])
 AC_OUTPUT
 END
 
