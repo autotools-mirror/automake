@@ -46,7 +46,8 @@ class Foo:
 bar = baz = (1, (2,), [3, 4]); zardoz = 0;
 END
 
-cat > bar.py <<'END'
+mkdir sub
+cat > sub/bar.py <<'END'
 # Import of non-existent modules, or assertion of false conditions,
 # shouldn't cause problems, as it should be enough for the code to
 # be syntactically correct.
@@ -54,10 +55,16 @@ import Automake.No.Such.Module
 assert False
 END
 
-./py-compile foo.py bar.py
-test -f foo.pyc
-test -f foo.pyo
-test -f bar.pyc
-test -f bar.pyo
+# An empty file in a more deeply-nested directory should be ok as well.
+mkdir -p 1/_/2/_/3/_
+: > 1/_/2/_/3/_/0.py
+
+./py-compile foo.py sub/bar.py 1/_/2/_/3/_/0.py
+py_installed foo.pyc
+py_installed foo.pyo
+py_installed sub/bar.pyc
+py_installed sub/bar.pyo
+py_installed 1/_/2/_/3/_/0.pyc
+py_installed 1/_/2/_/3/_/0.pyo
 
 :

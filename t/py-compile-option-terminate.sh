@@ -26,18 +26,18 @@ cp "$am_scriptdir/py-compile" . \
 : > ./-o.py
 : > ./--foo.py
 ./py-compile -- -o.py --foo.py
-test -f ./-o.pyc
-test -f ./-o.pyo
-test -f ./--foo.pyc
-test -f ./--foo.pyo
+py_installed ./-o.pyc
+py_installed ./-o.pyo
+py_installed ./--foo.pyc
+py_installed ./--foo.pyo
 rm -f ./-*.py[co]
 : > x.py
 ./py-compile x.py -o.py --foo.py
-test -f ./x.pyc
-test -f ./x.pyo
-test -f ./-o.pyc
-test -f ./-o.pyo
-test -f ./--foo.pyc
-test -f ./--foo.pyo
+py_installed ./x.pyc
+py_installed ./x.pyo
+py_installed ./-o.pyc
+py_installed ./-o.pyo
+py_installed ./--foo.pyc
+py_installed ./--foo.pyo
 
 :

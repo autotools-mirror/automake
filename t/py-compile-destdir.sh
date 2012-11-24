@@ -1,4 +1,4 @@
-#! /bin/sh
+    #! /bin/sh
 # Copyright (C) 2011-2012 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
@@ -31,13 +31,17 @@ echo 'def foo (): return "foo"' > $destdir/foo.py
 echo 'def bar (): return "bar"' > $destdir/sub/bar.py
 
 ./py-compile --destdir $destdir foo.py sub/bar.py
-ls -l $destdir $destdir/sub # For debugging.
-ls . sub | grep '\.py[co]$' && exit 1
-test -f $destdir/foo.pyc
-test -f $destdir/foo.pyo
-test -f $destdir/sub/bar.pyc
-test -f $destdir/sub/bar.pyo
-strings $destdir/*.py[co] $destdir/sub/*.py[co] || : # For debugging.
-$FGREP $destdir $destdir/*.py[co] $destdir/sub/*.py[co] && exit 1
+
+find $destdir # For debugging.
+st=0
+for x in c o; do
+  for b in foo sub/bar; do
+    f=$(pyc_location -p "$destdir/$b.py$x")
+    test -f "$f"
+    strings "$f" || : # For debugging.
+    $FGREP $destdir $f && { echo BAD: $f; st=1; }
+  done
+done
+exit $st
 
 :

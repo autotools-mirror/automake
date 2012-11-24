@@ -46,10 +46,10 @@ test -f py-compile
 
 ./configure --prefix="$(pwd)/inst"
 $MAKE install
-test -f inst/py/yes.py
-test -f inst/py/yes.pyc
-test ! -e inst/py/no.py
-test ! -e inst/py/no.pyc
+test -f            inst/py/yes.py
+test ! -e          inst/py/no.py
+py_installed       inst/py/yes.pyc
+py_installed --not inst/py/no.pyc
 
 $MAKE disttest
 

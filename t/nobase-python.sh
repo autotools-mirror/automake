@@ -28,20 +28,30 @@ cat > Makefile.am <<'END'
 mydir=$(prefix)/my
 my_PYTHON = one.py sub/base.py
 nobase_my_PYTHON = two.py sub/nobase.py
-
-test-install-data: install-data
-	find inst -print # For debugging.
-	test   -f inst/my/one.py
-	test   -f inst/my/one.pyc
-	test   -f inst/my/two.py
-	test   -f inst/my/two.pyc
-	test   -f inst/my/base.py
-	test   -f inst/my/base.pyc
-	test   -f inst/my/sub/nobase.py
-	test   -f inst/my/sub/nobase.pyc
-	test ! -f inst/my/nobase.py
-	test ! -f inst/my/nobase.pyc
 END
+
+test_install()
+{
+  $MAKE install-data
+  find inst -print # For debugging.
+  py_installed inst/my/one.py
+  py_installed inst/my/one.pyc
+  py_installed inst/my/two.py
+  py_installed inst/my/two.pyc
+  py_installed inst/my/base.py
+  py_installed inst/my/base.pyc
+  py_installed inst/my/sub/nobase.py
+  py_installed inst/my/sub/nobase.pyc
+  py_installed --not inst/my/nobase.py
+  py_installed --not inst/my/nobase.pyc
+}
+
+test_uninstall()
+{
+  $MAKE uninstall
+  test -d inst/my
+  ! find inst/my -type f -print | grep .
+}
 
 mkdir sub
 
@@ -56,23 +66,19 @@ $AUTOMAKE --add-missing
 ./configure --prefix "$(pwd)/inst" --program-prefix=p
 
 $MAKE
-$MAKE test-install-data
-$MAKE uninstall
-
-find inst/my -type f -print | grep . && exit 1
+test_install
+test_uninstall
 
 $MAKE install-strip
+test_uninstall
 
 # Likewise, in a VPATH build.
 
-$MAKE uninstall
 $MAKE distclean
 mkdir build
 cd build
 ../configure --prefix "$(pwd)/inst" --program-prefix=p
-$MAKE
-$MAKE test-install-data
-$MAKE uninstall
-find inst/my -type f -print | grep . && exit 1
+test_install
+test_uninstall
 
 :

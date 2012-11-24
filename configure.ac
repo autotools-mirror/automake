@@ -62,16 +62,12 @@ AC_SUBST([amdir], ["\${pkgvdatadir}/am"])
 AC_SUBST([automake_acdir], ["\${datadir}/aclocal-$APIVERSION"])
 AC_SUBST([system_acdir], ["\${datadir}/aclocal"])
 
-# $AUTOMAKE and $ACLOCAL are always run after a "cd $top_srcdir",
-# hence '.' is really what we want for perllibdir, libdir, and acdir.
-# Use '-I' with aclocal so that our own *.m4 files in m4/ gets included,
-# not copied, in aclocal.m4.
-ACLOCAL="\
-  perllibdir=\"`pwd`/lib$PATH_SEPARATOR./lib\" \"`pwd`/aclocal\" \
-  --automake-acdir=m4 --system-acdir=m4/acdir -I m4"
-AUTOMAKE="\
-  perllibdir=\"`pwd`/lib$PATH_SEPARATOR./lib\" \"`pwd`/automake\" \
-  --libdir=lib"
+# Our build system is bootstrapped with the bleeding-edge versions of
+# aclocal and automake, hence the remake rules must use those versions
+# as well.  The extra quoting is to cater to cases when the build
+# directory contains whitespace or shell metacharacters.
+ACLOCAL="\"`pwd`/t/wrap/aclocal-$APIVERSION\""
+AUTOMAKE="\"`pwd`/t/wrap/automake-$APIVERSION\""
 
 AC_PATH_PROG([PERL], [perl])
 if test -z "$PERL"; then
@@ -580,10 +576,10 @@ AC_CONFIG_LINKS([GNUmakefile:GNUmakefile])
 
 AC_CONFIG_FILES([t/wrap/aclocal-${APIVERSION}:t/wrap/aclocal.in],
                 [chmod +x t/wrap/aclocal-${APIVERSION}],
-	        [APIVERSION=$APIVERSION])
+                [APIVERSION=$APIVERSION])
 AC_CONFIG_FILES([t/wrap/automake-${APIVERSION}:t/wrap/automake.in],
                 [chmod +x t/wrap/automake-${APIVERSION}],
-	        [APIVERSION=$APIVERSION])
+                [APIVERSION=$APIVERSION])
 
 AC_OUTPUT
 
@@ -601,7 +597,8 @@ am_release_type=`AS_ECHO(["$PACKAGE_VERSION"]) | LC_ALL=C awk ["
   /^$am_beta_version_rx$/ { print \"beta version\"; exit(0); }
   { print \"development snapshot\"; }"]`
 
-test "$am_release_type" = stable || cat <<EOF
+# '$silent' is set to yes if configure is passed the '--quiet' option.
+test "$am_release_type" = stable || test "$silent" = yes || cat <<EOF
 
 WARNING: You are about to use a $am_release_type of Automake-NG.
 WARNING: It might easily suffer from new bugs or regressions.

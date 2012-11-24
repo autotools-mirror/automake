@@ -23,9 +23,11 @@ required='cc python virtualenv'
 # In case the user's config.site defines pythondir or pyexecdir.
 CONFIG_SITE=/dev/null; export CONFIG_SITE
 
+py_version_pre=$($PYTHON -V)
+
 # Skip the test if a proper virtualenv cannot be created.
-virtualenv --verbose virtenv && test -f virtenv/bin/activate \
-  || skip_ "coulnd't create python virtual environment"
+virtualenv -p"$PYTHON" --verbose virtenv && py_installed virtenv/bin/activate \
+  || skip_ "couldn't create python virtual environment"
 
 # Activate the virtualenv.
 . ./virtenv/bin/activate
@@ -34,16 +36,29 @@ if test -z "$VIRTUAL_ENV"; then
   framework_failure_ "can't activate python virtual environment"
 fi
 
+py_version_post=$(python -V)
+
+# Sanity check.
+test "$py_version_pre" = "$py_version_post"
+
 cwd=$(pwd) || fatal_ "getting current working directory"
 py_version=$(python -c 'import sys; print("%u.%u" % tuple(sys.version_info[:2]))')
 py_site=$VIRTUAL_ENV/lib/python$py_version/site-packages
+
+# We need to do do this early, just to set some cache variables properly,
+# since because we're going to unset $PYTHON next.
+if python_has_pep3147; then
+  : PEP 3147 will be used in installation of ".pyc" files
+fi
+# We don't want our original python to be picked up by configure
+# invocations.
+unset PYTHON
 
 # We need control over the package name.
 cat > configure.ac << END
 AC_INIT([am_virtenv], [1.0])
 AM_INIT_AUTOMAKE
 AC_CONFIG_FILES([Makefile])
-AC_SUBST([MY_VIRTENV], ['$cwd/virtenv'])
 AC_PROG_CC
 AM_PROG_AR
 AC_PROG_RANLIB
@@ -59,9 +74,7 @@ libquux_a_SOURCES = foo.c
 pkgpyexec_LIBRARIES = libzardoz.a
 libzardoz_a_SOURCES = foo.c
 
-py_site = $(MY_VIRTENV)/lib/python$(PYTHON_VERSION)/site-packages
-
-.PYTHON: debug test-run test-install test-uninstall
+.PYTHON: debug test-run
 debug:
 	@echo PYTHON: $(PYTHON)
 	@echo PYTHON_VERSION: $(PYTHON_VERSION)
@@ -85,24 +98,6 @@ test-run:
 	## available.
 	python -c 'from am_foo import foo_func; assert (foo_func () == 12345)'
 	python -c 'from am_virtenv import old_am; assert (old_am () == "AutoMake")'
-test-install:
-	test -f $(py_site)/am_foo.py
-	test -f $(py_site)/am_foo.pyc
-	test -f $(py_site)/am_foo.pyo
-	test -f $(py_site)/am_virtenv/__init__.py
-	test -f $(py_site)/am_virtenv/__init__.pyc
-	test -f $(py_site)/am_virtenv/__init__.pyo
-	test -f $(py_site)/libquux.a
-	test -f $(py_site)/am_virtenv/libzardoz.a
-test-uninstall:
-	test ! -f $(py_site)/am_foo.py
-	test ! -f $(py_site)/am_foo.pyc
-	test ! -f $(py_site)/am_foo.pyo
-	test ! -f $(py_site)/am_virtenv/__init__.py
-	test ! -f $(py_site)/am_virtenv/__init__.pyc
-	test ! -f $(py_site)/am_virtenv/__init__.pyo
-	test ! -f $(py_site)/libquux.a
-	test ! -f $(py_site)/am_virtenv/libzardoz.a
 all-local: debug
 END
 
@@ -123,6 +118,34 @@ int foo (void)
 }
 END
 
+check_install ()
+{
+  $MAKE install ${1+"$@"}
+
+  test -f      "$py_site"/am_foo.py
+  py_installed "$py_site"/am_foo.pyc
+  py_installed "$py_site"/am_foo.pyo
+  py_installed "$py_site"/am_virtenv/__init__.py
+  py_installed "$py_site"/am_virtenv/__init__.pyc
+  py_installed "$py_site"/am_virtenv/__init__.pyo
+  test -f      "$py_site"/libquux.a
+  test -f      "$py_site"/am_virtenv/libzardoz.a
+}
+
+check_uninstall ()
+{
+  $MAKE uninstall ${1+"$@"}
+
+  test ! -e          "$py_site"/am_foo.py
+  py_installed --not "$py_site"/am_foo.pyc
+  py_installed --not "$py_site"/am_foo.pyo
+  test ! -e          "$py_site"/am_virtenv/__init__.py
+  py_installed --not "$py_site"/am_virtenv/__init__.pyc
+  py_installed --not "$py_site"/am_virtenv/__init__.pyo
+  test ! -e          "$py_site"/libquux.a
+  test ! -e          "$py_site"/am_virtenv/libzardoz.a
+}
+
 $ACLOCAL
 $AUTOCONF
 $AUTOMAKE --add-missing
@@ -131,47 +154,35 @@ $AUTOMAKE --add-missing
 mkdir build
 cd build
 ../configure --prefix="$VIRTUAL_ENV"
-$MAKE install
-$MAKE test-install
+check_install
 $MAKE test-run
-$MAKE uninstall
-$MAKE test-uninstall
+check_uninstall
 cd ..
 
 # Try an in-tree build.
 ./configure --prefix="$VIRTUAL_ENV"
-$MAKE install
-$MAKE test-install
+check_install
 $MAKE test-run
-$MAKE uninstall
-$MAKE test-uninstall
+check_uninstall
 
 $MAKE distclean
 
 # Overriding pythondir and pyexecdir with cache variables should work.
 ./configure am_cv_python_pythondir="$py_site" \
             am_cv_python_pyexecdir="$py_site"
-$MAKE install
-$MAKE test-install
+check_install
 $MAKE test-run
-$MAKE uninstall
-$MAKE test-uninstall
+check_uninstall
 
 $MAKE distclean
 
 # Overriding pythondir and pyexecdir at make time should be enough.
 ./configure --prefix="$cwd/bad-prefix"
 
-xMAKE () { $MAKE pythondir="$py_site" pyexecdir="$py_site" "$@"; }
-
-export pythondir pyexecdir
-xMAKE install
+check_install pythondir="$py_site" pyexecdir="$py_site"
 test ! -e bad-prefix
-xMAKE test-install
-xMAKE test-run
-xMAKE uninstall
-xMAKE test-uninstall
-unset pythondir pyexecdir
+$MAKE test-run pythondir="$py_site" pyexecdir="$py_site"
+check_uninstall pythondir="$py_site" pyexecdir="$py_site"
 
 # Also check that the distribution is self-contained, for completeness.
 $MAKE distcheck

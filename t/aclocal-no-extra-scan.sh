@@ -21,6 +21,7 @@ am_create_testdir=empty
 . test-init.sh
 
 cat > configure.ac << 'END'
+AC_INIT([x], [0])
 AC_SUBST([POM])
 END
 
@@ -31,6 +32,6 @@ AC_DEFUN([AM_SOME_MACRO],
 EOF
 
 $ACLOCAL -I m4
-grep m4/some.m4 aclocal.m4 && exit 1
+$EGREP 'some.m4|GREPME' aclocal.m4 && exit 1
 
 :

@@ -79,11 +79,15 @@ if %?INSTALL%
 uninstall-%DIR%PYTHON:
 	@$(NORMAL_UNINSTALL)
 	$(call am.uninst.cmd,$(%NDIR%dir), \
-	  $(foreach i,\
-?BASE?	    $(notdir $(%DIR%_PYTHON)), \
-?!BASE?	    $(patsubst $(srcdir)/%,%,$(%DIR%_PYTHON)), \
-## Also remove the '.pyc' and '.py'o byte-compiled versions.
-	      $(i) $(i)c $(i)o))
+	  $(strip $(foreach i, $(patsubst %.py,%, \
+?BASE?	    $(notdir $(%DIR%_PYTHON))), \
+?!BASE?	    $(patsubst $(srcdir)/%,%,$(%DIR%_PYTHON))), \
+	      $i.py \
+## Also remove the '.pyc' and '.pyo' byte-compiled versions, catering
+## to PEP-3147.   Note that installation of '.py' files is *not*
+## influenced by that PEP.
+	      $(foreach e, pyc pyo, \
+	        $i.$e $(dir $i)__pycache__/$(notdir $i).*.$e))))
 endif %?INSTALL%
 
 

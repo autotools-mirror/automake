@@ -58,29 +58,29 @@ cwd=$(pwd) || fatal_ "getting current working directory"
 
 ../configure --prefix="$cwd/$inst" one=0
 $MAKE install
-test -f "$inst/your/two.py"
-test -f "$inst/your/two.pyc"
-test -f "$inst/your/two.pyo"
-test ! -e "$inst/my/one.py"
-test ! -e "$inst/my/one.pyc"
-test ! -e "$inst/my/one.pyo"
+test -f            "$inst/your/two.py"
+py_installed       "$inst/your/two.pyc"
+py_installed       "$inst/your/two.pyo"
+py_installed --not "$inst/my/one.py"
+py_installed --not "$inst/my/one.pyc"
+py_installed --not "$inst/my/one.pyo"
 $MAKE uninstall
-test ! -e "$inst/your/two.py"
-test ! -e "$inst/your/two.pyc"
-test ! -e "$inst/your/two.pyo"
+py_installed --not "$inst/your/two.py"
+py_installed --not "$inst/your/two.pyc"
+py_installed --not "$inst/your/two.pyo"
 
 ../configure --prefix=$cwd/"$inst" one=1
 $MAKE install
-test ! -e "$inst/your/two.py"
-test ! -e "$inst/your/two.pyc"
-test ! -e "$inst/your/two.pyo"
-test -f "$inst/my/one.py"
-test -f "$inst/my/one.pyc"
-test -f "$inst/my/one.pyo"
+py_installed --not "$inst/your/two.py"
+py_installed --not "$inst/your/two.pyc"
+py_installed --not "$inst/your/two.pyo"
+test -f            "$inst/my/one.py"
+py_installed       "$inst/my/one.pyc"
+py_installed       "$inst/my/one.pyo"
 $MAKE uninstall
-test ! -e "$inst/my/one.py"
-test ! -e "$inst/my/one.pyc"
-test ! -e "$inst/my/one.pyo"
+py_installed --not "$inst/my/one.py"
+py_installed --not "$inst/my/one.pyc"
+py_installed --not "$inst/my/one.pyo"
 
 $MAKE disttest
 

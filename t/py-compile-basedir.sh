@@ -38,13 +38,17 @@ for d in foo foo/bar "$(pwd)/foo" . .. ../foo ''; do
   : > "$d2/$f.py"
   : > "$d2/sub/$f.py"
   ./py-compile --basedir "$d" "$f.py" "sub/$f.py"
-  ls -l "$d2" "$d2/sub" # For debugging.
-  test -f "$d2/$f.pyc"
-  test -f "$d2/$f.pyo"
-  test -f "$d2/sub/$f.pyc"
-  test -f "$d2/sub/$f.pyo"
-  rm -f "$d2/$f.pyc" "$d2/$f.pyo" "$d2/sub/$f.pyc" "$d2/sub/$f.pyo"
-  find . | grep '\.py[co]$' && exit 1
+  find "$d2" # For debugging.
+  py_installed "$d2/$f.pyc"
+  py_installed "$d2/$f.pyo"
+  py_installed "$d2/sub/$f.pyc"
+  py_installed "$d2/sub/$f.pyo"
+  files=$(find "$d2" | grep '\.py[co]$')
+  test $(echo "$files" | wc -l) -eq 4
+  case $d2 in
+    .|..) rm -f $files;;
+       *) rm -rf "$d2";;
+  esac
 done
 
 :
