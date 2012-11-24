@@ -510,7 +510,7 @@ check-local: check-tests-syntax
 # that helps catching such problems in Automake-generated recipes.
 # See automake bug#10436.
 check-no-trailing-backslash-in-recipes:
-	$(AM_V_at)$(MAKE) $(AM_MAKEFLAGS) check \
+	$(AM_V_at)$(MAKE) check \
 	  CONFIG_SHELL='$(abs_top_builddir)/t/ax/shell-no-trail-bslash'
 .PHONY: check-no-trailing-backslash-in-recipes
 
