@@ -297,9 +297,6 @@ dist_automake_ac_DATA = \
   m4/upc.m4 \
   m4/vala.m4
 
-automake_internal_acdir = $(automake_acdir)/internal
-dist_automake_internal_ac_DATA = m4/internal/ac-config-macro-dirs.m4
-
 dist_system_ac_DATA = m4/acdir/README
 
 # We build amversion.m4 here, instead of from config.status,

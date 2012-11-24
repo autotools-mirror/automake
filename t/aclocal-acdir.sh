@@ -21,9 +21,6 @@
 . test-init.sh
 
 mkdir am sys
-# FIXME: remove in Automake 2.0
-mkdir am/internal
-: > am/internal/ac-config-macro-dirs.m4
 
 cat >> configure.ac <<'END'
 MY_MACRO
