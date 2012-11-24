@@ -105,6 +105,7 @@ t/aclocal-path-nonexistent.sh \
 t/aclocal-path-precedence.sh \
 t/aclocal-pr450.sh \
 t/aclocal-print-acdir.sh \
+t/aclocal-req.sh \
 t/aclocal-remake-misc.sh \
 t/aclocal-scan-configure-ac-pr319.sh \
 t/aclocal-serial.sh \
@@ -115,6 +116,7 @@ t/acsilent.sh \
 t/acsubst.sh \
 t/acsubst2.sh \
 t/add-missing.tap \
+t/add-missing-multiple.sh \
 t/all.sh \
 t/all2.sh \
 t/alloca.sh \
@@ -186,7 +188,6 @@ t/backsl4.sh \
 t/badline.sh \
 t/badopt.sh \
 t/badprog.sh \
-t/block.sh \
 t/built-sources-check.sh \
 t/built-sources-cond.sh \
 t/built-sources-fork-bomb.sh \
@@ -249,6 +250,7 @@ t/comment8.sh \
 t/comment9.sh \
 t/commen10.sh \
 t/commen11.sh \
+t/comment-block.sh \
 t/comments-in-var-def.sh \
 t/compile.sh \
 t/compile2.sh \
@@ -947,8 +949,6 @@ t/remake-renamed-am.sh \
 t/remake-aclocal-version-mismatch.sh \
 t/remake-macrodir.sh \
 t/remake-timing-bug-pr8365.sh \
-t/req.sh \
-t/reqd.sh \
 t/reqd2.sh \
 t/repeated-options.sh \
 t/rulepat.sh \

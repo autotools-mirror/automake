@@ -43,3 +43,5 @@ test -f one/mdate-sh
 test -f one/texinfo.tex
 test -f two/mdate-sh
 test -f two/texinfo.tex
+
+:
