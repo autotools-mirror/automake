@@ -84,6 +84,9 @@ t/aclocal-deleted-header-aclocal-amflags.sh \
 t/aclocal-deleted-header.sh \
 t/aclocal-deps-subdir.sh \
 t/aclocal-deps.sh \
+t/aclocal-dirlist.sh \
+t/aclocal-dirlist-globbing.sh \
+t/aclocal-dirlist-abspath.sh \
 t/aclocal-install-absdir.sh \
 t/aclocal-install-fail.sh \
 t/aclocal-install-mkdir.sh \
@@ -379,9 +382,6 @@ t/depend6.sh \
 t/deprecated-acinit.sh \
 t/destdir.sh \
 t/dir-named-obj-is-bad.sh \
-t/dirlist.sh \
-t/dirlist2.sh \
-t/dirlist-abspath.sh \
 t/discover.sh \
 t/dist-formats.tap \
 t/dist-auxdir-many-subdirs.sh \
