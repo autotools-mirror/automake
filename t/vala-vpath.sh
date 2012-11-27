@@ -17,21 +17,23 @@
 # Test to make sure vala support handles from-scratch VPATH builds.
 # See automake bug#8753.
 
-required="cc valac GNUmake"
+required="cc valac pkg-config GNUmake"
 . test-init.sh
 
 cat >> configure.ac << 'END'
 AC_CONFIG_SRCDIR([hello.vala])
 AC_PROG_CC
 AM_PROG_VALAC([0.7.3])
+PKG_CHECK_MODULES([GOBJECT], [gobject-2.0 >= 2.4])
 AC_OUTPUT
 END
 
 cat > Makefile.am <<'END'
 bin_PROGRAMS = foo bar
-AM_VALAFLAGS = --profile=posix
+AM_CFLAGS = $(GOBJECT_CFLAGS)
+LDADD = $(GOBJECT_LIBS)
 foo_SOURCES = hello.vala
-bar_VALAFLAGS = $(AM_VALAFLAGS) -H zardoz.h
+bar_VALAFLAGS = -H zardoz.h
 bar_SOURCES = goodbye.vala
 END
 

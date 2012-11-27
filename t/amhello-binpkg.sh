@@ -44,8 +44,8 @@ if tar --version </dev/null | grep GNU; then
 END
 else
   : Be laxer with other tar implementations, to avoid spurious failures.
-  $EGREP '(^| )\./usr/bin/hello'$EXEEXT'( |$)' tar.got
-  $EGREP '(^| )\./usr/share/doc/amhello/README( |$)' tar.got
+  $EGREP '(^| )(\./)?usr/bin/hello'$EXEEXT'( |$)' tar.got
+  $EGREP '(^| )(\./)?usr/share/doc/amhello/README( |$)' tar.got
 fi
 
 :

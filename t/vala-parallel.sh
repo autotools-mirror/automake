@@ -16,19 +16,21 @@
 
 # Vala support with parallel make.
 
-required='valac cc GNUmake'
+required='valac cc pkg-config GNUmake'
 . test-init.sh
 
 cat >> configure.ac <<'END'
 AC_PROG_CC
 AC_PROG_CXX
+PKG_CHECK_MODULES([GOBJECT], [gobject-2.0 >= 2.4])
 AM_PROG_VALAC([0.7.3])
 AC_OUTPUT
 END
 
 cat > Makefile.am <<'END'
 bin_PROGRAMS = zardoz
-AM_VALAFLAGS = --profile=posix
+AM_CFLAGS = $(GOBJECT_CFLAGS)
+LDADD = $(GOBJECT_LIBS)
 zardoz_SOURCES = main.vala 1.vala 2.vala 3.vala 4.vala 5.vala 6.vala
 END
 
