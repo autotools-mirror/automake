@@ -16,23 +16,25 @@
 
 # Vala sources and C sources in the same program.  Functional test.
 
-required='valac cc'
+required='valac cc pkg-config'
 . test-init.sh
 
 cat >> configure.ac <<'END'
 AC_PROG_CC
 AM_PROG_CC_C_O
 AM_PROG_VALAC([0.7.3])
+PKG_CHECK_MODULES([GOBJECT], [gobject-2.0 >= 2.4])
 AC_OUTPUT
 END
 
 cat > Makefile.am <<'END'
 bin_PROGRAMS = zardoz mu baz
-AM_VALAFLAGS = --profile=posix
+AM_CFLAGS = $(GOBJECT_CFLAGS)
+LDADD = $(GOBJECT_LIBS)
 zardoz_SOURCES = foo.vala bar.c
 mu_SOURCES = 1.vala 2.c
-mu_VALAFLAGS = $(AM_VALAFLAGS) --main=run
-mu_CFLAGS = -DHAVE_MU
+mu_VALAFLAGS = --main=run
+mu_CFLAGS = -DHAVE_MU $(AM_CFLAGS)
 baz_SOURCES = baz.c
 END
 

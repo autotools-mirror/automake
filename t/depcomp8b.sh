@@ -36,8 +36,8 @@ libzardoz_la_SOURCES = foo.c sub/bar.c
 END
 
 mkdir sub
-echo 'extern int foo = 0;' > foo.c
-echo 'extern int bar = 0;' > sub/bar.c
+echo 'int foo (void) { return 0; }' > foo.c
+echo 'int bar (void) { return 0; }' > sub/bar.c
 
 libtoolize
 $ACLOCAL

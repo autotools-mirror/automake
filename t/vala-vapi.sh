@@ -16,27 +16,30 @@
 
 # Test and that vapi files are correctly handled by Vala support.
 
-required='valac cc'
+required='valac cc pkg-config'
 . test-init.sh
 
 cat >> configure.ac <<'END'
 AC_PROG_CC
 AM_PROG_CC_C_O
 AM_PROG_VALAC([0.7.3])
+PKG_CHECK_MODULES([GOBJECT], [gobject-2.0 >= 2.4])
 AC_OUTPUT
 END
 
 cat > Makefile.am <<'END'
 bin_PROGRAMS = zardoz
-AM_VALAFLAGS = --profile=posix
+AM_CFLAGS = $(GOBJECT_CFLAGS)
+LDADD = $(GOBJECT_LIBS)
 zardoz_SOURCES = zardoz.vala foo.vapi foo.h
 END
 
 cat > zardoz.vala <<'END'
-int main ()
-{
+using GLib;
+public class Zardoz {
+  public static void main () {
     stdout.printf (BARBAR);
-    return 0;
+  }
 }
 END
 

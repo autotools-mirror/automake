@@ -34,10 +34,6 @@ END
 $ACLOCAL
 
 AUTOMAKE_fails -Wbazquux
-# FIXME: we could get rid of this once we improve our wrapper scripts.
-sed "s/^automake:/automake-$APIVERSION:/" stderr > t
-mv -f t stderr
-cat stderr >&2
 grep '^configure\.ac:2:.* unknown warning category.*zardoz' stderr
 grep '^Makefile\.am:1:.* unknown warning category.*foobar' stderr
 grep "^automake-$APIVERSION:.* unknown warning category.*bazquux" stderr
