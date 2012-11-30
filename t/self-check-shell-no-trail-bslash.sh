@@ -17,9 +17,6 @@
 # Check that our fake "shell" used to guard against use of trailing
 # backslashes in recipes actually complains when those are used.
 
-# Our hack doesn't work with some make implementations (see comments
-# in 't/ax/shell-no-trail-bslash.in' for more details).
-required=GNUmake
 am_create_testdir=empty
 . test-init.sh
 
