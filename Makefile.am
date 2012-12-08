@@ -950,55 +950,47 @@ CLEANFILES += announcement
 ##  Synchronize third-party files that are committed in our repository.  ##
 ## --------------------------------------------------------------------- ##
 
-## Program to use to fetch files.
+# Program to use to fetch files.
 WGET = wget
-WGET_SV_CVS = $(WGET) http://savannah.gnu.org/cgi-bin/viewcvs/~checkout~/
-WGET_SV_GIT_CF = $(WGET) 'http://git.savannah.gnu.org/gitweb/?p=config.git;a=blob_plain;hb=HEAD;f='
-WGET_SV_GIT_AC = $(WGET) 'http://git.savannah.gnu.org/gitweb/?p=autoconf.git;a=blob_plain;hb=HEAD;f='
-WGET_SV_GIT_GL = $(WGET) 'http://git.savannah.gnu.org/gitweb/?p=gnulib.git;a=blob_plain;hb=HEAD;f='
 
-## Files that we fetch and which we compare against.
-## The 'lib/COPYING' file must still be synced by hand.
+# Some repositories we sync files from.
+SV_CVS    = 'http://savannah.gnu.org/cgi-bin/viewcvs/~checkout~/'
+SV_GIT_CF = 'http://git.savannah.gnu.org/gitweb/?p=config.git;a=blob_plain;hb=HEAD;f='
+SV_GIT_AC = 'http://git.savannah.gnu.org/gitweb/?p=autoconf.git;a=blob_plain;hb=HEAD;f='
+SV_GIT_GL = 'http://git.savannah.gnu.org/gitweb/?p=gnulib.git;a=blob_plain;hb=HEAD;f='
+
+# Files that we fetch and which we compare against.
+# Note that the 'lib/COPYING' file must still be synced by hand.
 FETCHFILES = \
-INSTALL \
-config.guess \
-config.sub \
-gendocs.sh \
-gendocs_template \
-gitlog-to-changelog \
-gnupload \
-texinfo.tex \
-update-copyright
+  $(SV_GIT_CF)config.guess \
+  $(SV_GIT_CF)config.sub \
+  $(SV_CVS)texinfo/texinfo/doc/texinfo.tex \
+  $(SV_CVS)texinfo/texinfo/util/gendocs.sh \
+  $(SV_CVS)texinfo/texinfo/util/gendocs_template \
+  $(SV_GIT_GL)build-aux/gitlog-to-changelog \
+  $(SV_GIT_GL)build-aux/gnupload \
+  $(SV_GIT_GL)build-aux/update-copyright \
+  $(SV_GIT_GL)doc/INSTALL
 
-## Fetch the latest versions of files we care about.
+# Fetch the latest versions of few scripts and files we care about.
 fetch:
-	rm -rf Fetchdir > /dev/null 2>&1
-	mkdir Fetchdir
-## If a get fails then that is a problem.
-	($(am__cd) Fetchdir && \
-	$(WGET_SV_GIT_CF)config.guess -O config.guess && \
-	$(WGET_SV_GIT_CF)config.sub -O config.sub && \
-	$(WGET_SV_CVS)texinfo/texinfo/doc/texinfo.tex -O texinfo.tex && \
-	$(WGET_SV_CVS)texinfo/texinfo/util/gendocs.sh -O gendocs.sh && \
-	$(WGET_SV_CVS)texinfo/texinfo/util/gendocs_template -O gendocs_template && \
-	$(WGET_SV_GIT_GL)doc/INSTALL -O INSTALL && \
-	$(WGET_SV_GIT_GL)build-aux/gnupload -O gnupload && \
-	$(WGET_SV_GIT_GL)build-aux/update-copyright -O update-copyright && \
-	$(WGET_SV_GIT_GL)build-aux/gitlog-to-changelog -O gitlog-to-changelog)
-## Don't exit after test because we want to give as many errors as
-## possible.
-	@stat=0; for file in $(FETCHFILES); do \
-	  if diff -u $(srcdir)/lib/$$file Fetchdir/$$file \
-	          >>Fetchdir/update.patch 2>/dev/null; then :; \
-	  else \
-	    stat=1; \
-	    echo "Updating $(srcdir)/lib/$$file ..."; \
-	    cp Fetchdir/$$file $(srcdir)/lib/$$file; \
-	  fi; \
-	done; \
-	test $$stat = 0 || \
-	  echo "See Fetchdir/update.patch for a log of the changes."; \
-	exit $$stat
+	$(AM_V_at)rm -rf Fetchdir
+	$(AM_V_at)mkdir Fetchdir
+	$(AM_V_GEN)set -e; \
+	if $(AM_V_P); then wget_opts=; else wget_opts=-nv; fi; \
+	for url in $(FETCHFILES); do \
+	   file=`printf '%s\n' "$$url" | sed 's|^.*/||; s|^.*=||'`; \
+## A retrieval failure usually means a serious problem.  Just bail out.
+	   $(WGET) $$wget_opts "$$url" -O Fetchdir/$$file || exit 1; \
+	   if cmp Fetchdir/$$file $(srcdir)/lib/$$file >/dev/null; then \
+	     : Nothing to do; \
+	   else \
+	     echo "$@: updating file $$file"; \
+## Ditto for a copying failure.
+	     cp Fetchdir/$$file $(srcdir)/lib/$$file || exit 1; \
+	   fi; \
+	done
+	$(AM_V_at)rm -rf Fetchdir
 .PHONY: fetch
 
 ## --------------------------------------------------------------------- ##
@@ -1054,7 +1046,7 @@ update-copyright:
 	sed -i "/^RELEASE_YEAR=/s/=.*$$/=$$current_year/" \
 	  bootstrap.sh configure.ac; \
 	excluded_re=`echo $(FETCHFILES) \
-	  | sed -e 's|^|lib/|' -e 's| | lib/|g' -e 's, ,|,g'`; \
+	  | sed -e 's|^.*/|lib/|' -e 's| | lib/|g' -e 's, ,|,g'`; \
 	$(GIT) ls-files \
 	  | grep -Ev '^(lib/)?(COPYING|INSTALL)$$' \
 	  | grep -Ev "^($$excluded_re)$$" \
