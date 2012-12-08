@@ -963,8 +963,10 @@ FETCHFILES = \
 INSTALL \
 config.guess \
 config.sub \
-gnupload \
+gendocs.sh \
+gendocs_template \
 gitlog-to-changelog \
+gnupload \
 texinfo.tex \
 update-copyright
 
@@ -977,6 +979,8 @@ fetch:
 	$(WGET_SV_GIT_CF)config.guess -O config.guess && \
 	$(WGET_SV_GIT_CF)config.sub -O config.sub && \
 	$(WGET_SV_CVS)texinfo/texinfo/doc/texinfo.tex -O texinfo.tex && \
+	$(WGET_SV_CVS)texinfo/texinfo/util/gendocs.sh -O gendocs.sh && \
+	$(WGET_SV_CVS)texinfo/texinfo/util/gendocs_template -O gendocs_template && \
 	$(WGET_SV_GIT_GL)doc/INSTALL -O INSTALL && \
 	$(WGET_SV_GIT_GL)build-aux/gnupload -O gnupload && \
 	$(WGET_SV_GIT_GL)build-aux/update-copyright -O update-copyright && \
@@ -997,6 +1001,7 @@ fetch:
 	exit $$stat
 .PHONY: fetch
 
+EXTRA_DIST += lib/gendocs.sh lib/gendocs_template
 
 ## ------------------------------------------------ ##
 ##  Update copyright years of all committed files.  ##
