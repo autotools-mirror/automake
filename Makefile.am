@@ -1000,8 +1000,8 @@ fetch:
 # The gendocs.sh script sadly leaves TeX and Texinfo auxiliary files
 # in the directory where it's invoked.
 clean_texinfo_clutter_cmd = \
-  cd doc && rm -f *.ac *.aux *.cm *.cp *.cps *.fn *.fns *.ky \
-                  *.log *.op *.pg *.toc *.tp *.tr *.vr *.vrs
+  $(am__cd) doc && rm -f *.ac *.aux *.cm *.cp *.cps *.fn *.fns *.ky \
+                         *.log *.op *.pg *.toc *.tp *.tr *.vr *.vrs
 
 clean-web-manuals:
 	$(AM_V_at)rm -rf doc/web-manuals
@@ -1014,7 +1014,7 @@ web-manuals:
 	$(AM_V_at)rm -rf doc/web-manuals
 	$(AM_V_GEN): \
 ## The gendocs.sh script only works from the srcdir, sadly.
-	  && cd $(srcdir)/doc \
+	  && $(am__cd) $(srcdir)/doc \
 	  && GENDOCS_TEMPLATE_DIR=../lib \
 	  && export GENDOCS_TEMPLATE_DIR \
 ## Try to respect silent rules.
