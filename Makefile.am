@@ -757,9 +757,10 @@ GIT = git
 
 EXTRA_DIST += lib/gnupload
 
-version_rx = ^[1-9][0-9]*\.[0-9][0-9]*(\.[0-9][0-9]*)?
-stable_version_rx = $(version_rx)$$
-beta_version_rx = $(version_rx)[bdfhjlnprtvxz]$$
+base_version_rx = ^[1-9][0-9]*\.[0-9][0-9]*
+stable_major_version_rx = $(base_version_rx)$$
+stable_minor_version_rx = $(base_version_rx)\.[0-9][0-9]*$$
+beta_version_rx = $(base_version_rx)(\.[0-9][0-9]*)?[bdfhjlnprtvxz]$$
 match_version = echo "$(VERSION)" | $(EGREP) >/dev/null
 
 ## Check that we don't have uncommitted or unstaged changes.
@@ -774,13 +775,21 @@ git_must_have_clean_workdir = \
     || fatal "you have uncommitted or unstaged changes"
 
 determine_release_type = \
-  if $(match_version) '$(stable_version_rx)'; then \
-    release_type='Release' dest=ftp; \
+  if $(match_version) '$(stable_major_version_rx)'; then \
+    release_type='Major release' dest=ftp; \
+  elif $(match_version) '$(stable_minor_version_rx)'; then \
+    release_type='Minor release' dest=ftp; \
   elif $(match_version) '$(beta_version_rx)'; then \
     release_type='Beta release' dest=alpha; \
   else \
     fatal "invalid version '$(VERSION)' for a release"; \
   fi
+
+# Help the debugging of $(determine_release_type) and related code.
+print-release-type:
+	@fatal () { echo "$@: $$*"; exit 0; } \
+	  && $(determine_release_type) \
+	  && echo "$$release_type $(VERSION)"
 
 git-tag-release: maintainer-check
 	@set -e; set -u; \
@@ -809,7 +818,7 @@ git-upload-release:
 	echo Will upload to $$dest: $(DIST_ARCHIVES); \
 	$(srcdir)/lib/gnupload $(GNUPLOADFLAGS) --to $$dest $(DIST_ARCHIVES)
 
-.PHONY: git-upload-release git-tag-release
+.PHONY: print-release-type git-upload-release git-tag-release
 
 
 ## ------------------------------------------------------------------ ##
