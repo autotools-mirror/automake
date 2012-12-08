@@ -776,20 +776,28 @@ git_must_have_clean_workdir = \
 
 determine_release_type = \
   if $(match_version) '$(stable_major_version_rx)'; then \
-    release_type='Major release' dest=ftp; \
+    release_type='Major release'; \
+    announcement_type='major release'; \
+    dest=ftp; \
   elif $(match_version) '$(stable_minor_version_rx)'; then \
-    release_type='Minor release' dest=ftp; \
+    release_type='Minor release'; \
+    announcement_type='maintenance release'; \
+    dest=ftp; \
   elif $(match_version) '$(beta_version_rx)'; then \
-    release_type='Beta release' dest=alpha; \
+    release_type='Beta release'; \
+    announcement_type='test release'; \
+    dest=alpha; \
   else \
     fatal "invalid version '$(VERSION)' for a release"; \
   fi
 
 # Help the debugging of $(determine_release_type) and related code.
 print-release-type:
-	@fatal () { echo "$@: $$*"; exit 0; } \
+	@set -e -u \
+	  && fatal () { echo "$@: $$*"; exit 0; } \
 	  && $(determine_release_type) \
-	  && echo "$$release_type $(VERSION)"
+	  && echo "$$release_type $(VERSION);" \
+	          "it will be announced as a $$announcement_type"
 
 git-tag-release: maintainer-check
 	@set -e; set -u; \
@@ -895,6 +903,48 @@ compare-autodiffs: autodiffs
 	exit $$st
 .PHONY: autodiffs compare-autodiffs
 
+## ---------------------------------------------- ##
+##  Help writing the announcement for a release.  ##
+## ---------------------------------------------- ##
+
+PACKAGE_MAILINGLIST = automake@gnu.org
+
+announcement: NEWS
+	$(AM_V_GEN): \
+	  && rm -f $@ $@-t \
+	  && fatal () { echo "$@: $$*" >&2; exit 1; } \
+	  && $(determine_release_type) \
+	  && ftp_base="ftp://$$dest.gnu.org/gnu/$(PACKAGE)" \
+	  && X () { printf '%s\n' "$$*" >> $@-t; } \
+	  && X "We are pleased to announce the $(PACKAGE_NAME) $(VERSION)" \
+	       "$$announcement_type." \
+	  && X \
+	  && X "**TODO** Brief description of the release here." \
+	  && X \
+	  && X "**TODO** This description can span multiple paragraphs." \
+	  && X \
+	  && X "See below for the detailed list of changes since the" \
+	  && X "previous version, as summarized by the NEWS file." \
+	  && X \
+	  && X "Download here:" \
+	  && X \
+	  && X "  $$ftp_base/$(PACKAGE)-$(VERSION).tar.gz" \
+	  && X "  $$ftp_base/$(PACKAGE)-$(VERSION).tar.xz" \
+	  && X \
+	  && X "Please report bugs and problems to" \
+	       "<$(PACKAGE_BUGREPORT)>," \
+	  && X "and send general comments and feedback to" \
+	       "<$(PACKAGE_MAILINGLIST)>." \
+	  && X \
+	  && X "Thanks to everyone who has reported problems, contributed" \
+	  && X "patches, and helped testing Automake!" \
+	  && X \
+	  && X "-*-*-*-" \
+	  && X \
+	  && sed -n -e '/^~~~/q' -e p $(srcdir)/NEWS >> $@-t \
+	  && mv -f $@-t $@
+.PHONY: announcement
+CLEANFILES += announcement
 
 ## --------------------------------------------------------------------- ##
 ##  Synchronize third-party files that are committed in our repository.  ##
