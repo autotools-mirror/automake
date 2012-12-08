@@ -1001,6 +1001,39 @@ fetch:
 	exit $$stat
 .PHONY: fetch
 
+## --------------------------------------------------------------------- ##
+##  Generate manuals in several formats, for upload on the GNU website.  ##
+## --------------------------------------------------------------------- ##
+
+# The gendocs.sh script sadly leaves TeX and Texinfo auxiliary files
+# in the directory where it's invoked.
+clean_texinfo_clutter_cmd = \
+  cd doc && rm -f *.ac *.aux *.cm *.cp *.cps *.fn *.fns *.ky \
+                  *.log *.op *.pg *.toc *.tp *.tr *.vr *.vrs
+
+clean-web-manuals:
+	$(AM_V_at)rm -rf doc/web-manuals
+clean-texinfo-clutter:
+	$(AM_V_at)$(clean_texinfo_clutter_cmd)
+clean-local: clean-web-manuals clean-texinfo-clutter
+.PHONY: clean-web-manuals clean-texinfo-clutter
+
+web-manuals:
+	$(AM_V_at)rm -rf doc/web-manuals
+	$(AM_V_GEN): \
+## The gendocs.sh script only works from the srcdir, sadly.
+	  && cd $(srcdir)/doc \
+	  && GENDOCS_TEMPLATE_DIR=../lib \
+	  && export GENDOCS_TEMPLATE_DIR \
+## Try to respect silent rules.
+	  && if $(AM_V_P); then :; else exec >/dev/null 2>&1; fi \
+## Finally generate the manual in several formats.
+	  && $(SHELL) ../lib/gendocs.sh -o web-manuals \
+	     --email $(PACKAGE_BUGREPORT) $(PACKAGE) '$(PACKAGE_NAME)'
+	$(AM_V_at)$(clean_texinfo_clutter_cmd)
+	$(AM_V_at)if $(AM_V_P); then ls -l doc/web-manuals; else :; fi
+.PHONY: web-manuals
+
 EXTRA_DIST += lib/gendocs.sh lib/gendocs_template
 
 ## ------------------------------------------------ ##
