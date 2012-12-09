@@ -96,9 +96,6 @@ $MAKE
 $MAKE test-build
 $MAKE test-dist
 
-# But the distribution must work correctly, assuming the user has
-# the proper tools to process yacc files.  Do this check only with
-# GNU make, to avoid tripping on automake bug#7884.
-if using_gmake; then $MAKE distcheck; fi
+yl_distcheck
 
 :

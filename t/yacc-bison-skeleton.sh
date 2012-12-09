@@ -71,6 +71,6 @@ $MAKE
 
 # Check that distribution is self-contained, and do not require
 # bison to be built.
-env YACC=false DISTCHECK_CONFIGURE_FLAGS='YACC=false' $MAKE -e distcheck
+yl_distcheck YACC=false DISTCHECK_CONFIGURE_FLAGS='YACC=false'
 
 :
