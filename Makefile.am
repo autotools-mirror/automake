@@ -735,9 +735,10 @@ GIT = git
 
 EXTRA_DIST += lib/gnupload
 
-version_rx = ^[1-9][0-9]*\.[0-9][0-9]*(\.[0-9][0-9]*)?
-stable_version_rx = $(version_rx)$$
-beta_version_rx = $(version_rx)[bdfhjlnprtvxz]$$
+base_version_rx = ^[1-9][0-9]*\.[0-9][0-9]*
+stable_major_version_rx = $(base_version_rx)$$
+stable_minor_version_rx = $(base_version_rx)\.[0-9][0-9]*$$
+beta_version_rx = $(base_version_rx)(\.[0-9][0-9]*)?[bdfhjlnprtvxz]$$
 match_version = echo "$(VERSION)" | $(EGREP) >/dev/null
 
 ## Check that we don't have uncommitted or unstaged changes.
@@ -752,13 +753,29 @@ git_must_have_clean_workdir = \
     || fatal "you have uncommitted or unstaged changes"
 
 determine_release_type = \
-  if $(match_version) '$(stable_version_rx)'; then \
-    release_type='Release' dest=ftp; \
+  if $(match_version) '$(stable_major_version_rx)'; then \
+    release_type='Major release'; \
+    announcement_type='major release'; \
+    dest=ftp; \
+  elif $(match_version) '$(stable_minor_version_rx)'; then \
+    release_type='Minor release'; \
+    announcement_type='maintenance release'; \
+    dest=ftp; \
   elif $(match_version) '$(beta_version_rx)'; then \
-    release_type='Beta release' dest=alpha; \
+    release_type='Beta release'; \
+    announcement_type='test release'; \
+    dest=alpha; \
   else \
     fatal "invalid version '$(VERSION)' for a release"; \
   fi
+
+# Help the debugging of $(determine_release_type) and related code.
+print-release-type:
+	@set -e -u \
+	  && fatal () { echo "$@: $$*"; exit 0; } \
+	  && $(determine_release_type) \
+	  && echo "$$release_type $(VERSION);" \
+	          "it will be announced as a $$announcement_type"
 
 git-tag-release: maintainer-check
 	@set -e; set -u; \
@@ -787,7 +804,7 @@ git-upload-release:
 	echo Will upload to $$dest: $(DIST_ARCHIVES); \
 	$(srcdir)/lib/gnupload $(GNUPLOADFLAGS) --to $$dest $(DIST_ARCHIVES)
 
-.PHONY: git-upload-release git-tag-release
+.PHONY: print-release-type git-upload-release git-tag-release
 
 
 ## ------------------------------------------------------------------ ##
@@ -864,58 +881,130 @@ compare-autodiffs: autodiffs
 	exit $$st
 .PHONY: autodiffs compare-autodiffs
 
+## ---------------------------------------------- ##
+##  Help writing the announcement for a release.  ##
+## ---------------------------------------------- ##
+
+PACKAGE_MAILINGLIST = automake@gnu.org
+
+announcement: NEWS
+	$(AM_V_GEN): \
+	  && rm -f $@ $@-t \
+	  && fatal () { echo "$@: $$*" >&2; exit 1; } \
+	  && $(determine_release_type) \
+	  && ftp_base="ftp://$$dest.gnu.org/gnu/$(PACKAGE)" \
+	  && X () { printf '%s\n' "$$*" >> $@-t; } \
+	  && X "We are pleased to announce the $(PACKAGE_NAME) $(VERSION)" \
+	       "$$announcement_type." \
+	  && X \
+	  && X "**TODO** Brief description of the release here." \
+	  && X \
+	  && X "**TODO** This description can span multiple paragraphs." \
+	  && X \
+	  && X "See below for the detailed list of changes since the" \
+	  && X "previous version, as summarized by the NEWS file." \
+	  && X \
+	  && X "Download here:" \
+	  && X \
+	  && X "  $$ftp_base/$(PACKAGE)-$(VERSION).tar.gz" \
+	  && X "  $$ftp_base/$(PACKAGE)-$(VERSION).tar.xz" \
+	  && X \
+	  && X "Please report bugs and problems to" \
+	       "<$(PACKAGE_BUGREPORT)>," \
+	  && X "and send general comments and feedback to" \
+	       "<$(PACKAGE_MAILINGLIST)>." \
+	  && X \
+	  && X "Thanks to everyone who has reported problems, contributed" \
+	  && X "patches, and helped testing Automake!" \
+	  && X \
+	  && X "-*-*-*-" \
+	  && X \
+	  && sed -n -e '/^~~~/q' -e p $(srcdir)/NEWS >> $@-t \
+	  && mv -f $@-t $@
+.PHONY: announcement
+CLEANFILES += announcement
 
 ## --------------------------------------------------------------------- ##
 ##  Synchronize third-party files that are committed in our repository.  ##
 ## --------------------------------------------------------------------- ##
 
-## Program to use to fetch files.
+# Program to use to fetch files.
 WGET = wget
-WGET_SV_CVS = $(WGET) http://savannah.gnu.org/cgi-bin/viewcvs/~checkout~/
-WGET_SV_GIT_CF = $(WGET) 'http://git.savannah.gnu.org/gitweb/?p=config.git;a=blob_plain;hb=HEAD;f='
-WGET_SV_GIT_AC = $(WGET) 'http://git.savannah.gnu.org/gitweb/?p=autoconf.git;a=blob_plain;hb=HEAD;f='
-WGET_SV_GIT_GL = $(WGET) 'http://git.savannah.gnu.org/gitweb/?p=gnulib.git;a=blob_plain;hb=HEAD;f='
 
-## Files that we fetch and which we compare against.
-## The 'lib/COPYING' file must still be synced by hand.
+# Some repositories we sync files from.
+SV_CVS    = 'http://savannah.gnu.org/cgi-bin/viewcvs/~checkout~/'
+SV_GIT_CF = 'http://git.savannah.gnu.org/gitweb/?p=config.git;a=blob_plain;hb=HEAD;f='
+SV_GIT_AC = 'http://git.savannah.gnu.org/gitweb/?p=autoconf.git;a=blob_plain;hb=HEAD;f='
+SV_GIT_GL = 'http://git.savannah.gnu.org/gitweb/?p=gnulib.git;a=blob_plain;hb=HEAD;f='
+
+# Files that we fetch and which we compare against.
+# Note that the 'lib/COPYING' file must still be synced by hand.
 FETCHFILES = \
-INSTALL \
-config.guess \
-config.sub \
-gnupload \
-gitlog-to-changelog \
-texinfo.tex \
-update-copyright
+  $(SV_GIT_CF)config.guess \
+  $(SV_GIT_CF)config.sub \
+  $(SV_CVS)texinfo/texinfo/doc/texinfo.tex \
+  $(SV_CVS)texinfo/texinfo/util/gendocs.sh \
+  $(SV_CVS)texinfo/texinfo/util/gendocs_template \
+  $(SV_GIT_GL)build-aux/gitlog-to-changelog \
+  $(SV_GIT_GL)build-aux/gnupload \
+  $(SV_GIT_GL)build-aux/update-copyright \
+  $(SV_GIT_GL)doc/INSTALL
 
-## Fetch the latest versions of files we care about.
+# Fetch the latest versions of few scripts and files we care about.
 fetch:
-	rm -rf Fetchdir > /dev/null 2>&1
-	mkdir Fetchdir
-## If a get fails then that is a problem.
-	(cd Fetchdir && \
-	$(WGET_SV_GIT_CF)config.guess -O config.guess && \
-	$(WGET_SV_GIT_CF)config.sub -O config.sub && \
-	$(WGET_SV_CVS)texinfo/texinfo/doc/texinfo.tex -O texinfo.tex && \
-	$(WGET_SV_GIT_GL)doc/INSTALL -O INSTALL && \
-	$(WGET_SV_GIT_GL)build-aux/gnupload -O gnupload && \
-	$(WGET_SV_GIT_GL)build-aux/update-copyright -O update-copyright && \
-	$(WGET_SV_GIT_GL)build-aux/gitlog-to-changelog -O gitlog-to-changelog)
-## Don't exit after test because we want to give as many errors as
-## possible.
-	@stat=0; for file in $(FETCHFILES); do \
-	  if diff -u $(srcdir)/lib/$$file Fetchdir/$$file \
-	          >>Fetchdir/update.patch 2>/dev/null; then :; \
-	  else \
-	    stat=1; \
-	    echo "Updating $(srcdir)/lib/$$file ..."; \
-	    cp Fetchdir/$$file $(srcdir)/lib/$$file; \
-	  fi; \
-	done; \
-	test $$stat = 0 || \
-	  echo "See Fetchdir/update.patch for a log of the changes."; \
-	exit $$stat
+	$(AM_V_at)rm -rf Fetchdir
+	$(AM_V_at)mkdir Fetchdir
+	$(AM_V_GEN)set -e; \
+	if $(AM_V_P); then wget_opts=; else wget_opts=-nv; fi; \
+	for url in $(FETCHFILES); do \
+	   file=`printf '%s\n' "$$url" | sed 's|^.*/||; s|^.*=||'`; \
+## A retrieval failure usually means a serious problem.  Just bail out.
+	   $(WGET) $$wget_opts "$$url" -O Fetchdir/$$file || exit 1; \
+	   if cmp Fetchdir/$$file $(srcdir)/lib/$$file >/dev/null; then \
+	     : Nothing to do; \
+	   else \
+	     echo "$@: updating file $$file"; \
+## Ditto for a copying failure.
+	     cp Fetchdir/$$file $(srcdir)/lib/$$file || exit 1; \
+	   fi; \
+	done
+	$(AM_V_at)rm -rf Fetchdir
 .PHONY: fetch
 
+## --------------------------------------------------------------------- ##
+##  Generate manuals in several formats, for upload on the GNU website.  ##
+## --------------------------------------------------------------------- ##
+
+# The gendocs.sh script sadly leaves TeX and Texinfo auxiliary files
+# in the directory where it's invoked.
+clean_texinfo_clutter_cmd = \
+  cd doc && rm -f *.ac *.aux *.cm *.cp *.cps *.fn *.fns *.ky \
+                  *.log *.op *.pg *.toc *.tp *.tr *.vr *.vrs
+
+clean-web-manuals:
+	$(AM_V_at)rm -rf doc/web-manuals
+clean-texinfo-clutter:
+	$(AM_V_at)$(clean_texinfo_clutter_cmd)
+clean-local: clean-web-manuals clean-texinfo-clutter
+.PHONY: clean-web-manuals clean-texinfo-clutter
+
+web-manuals:
+	$(AM_V_at)rm -rf doc/web-manuals
+	$(AM_V_GEN): \
+## The gendocs.sh script only works from the srcdir, sadly.
+	  && cd $(srcdir)/doc \
+	  && GENDOCS_TEMPLATE_DIR=../lib \
+	  && export GENDOCS_TEMPLATE_DIR \
+## Try to respect silent rules.
+	  && if $(AM_V_P); then :; else exec >/dev/null 2>&1; fi \
+## Finally generate the manual in several formats.
+	  && $(SHELL) ../lib/gendocs.sh -o web-manuals \
+	     --email $(PACKAGE_BUGREPORT) $(PACKAGE) '$(PACKAGE_NAME)'
+	$(AM_V_at)$(clean_texinfo_clutter_cmd)
+	$(AM_V_at)if $(AM_V_P); then ls -l doc/web-manuals; else :; fi
+.PHONY: web-manuals
+
+EXTRA_DIST += lib/gendocs.sh lib/gendocs_template
 
 ## ------------------------------------------------ ##
 ##  Update copyright years of all committed files.  ##
@@ -935,7 +1024,7 @@ update-copyright:
 	sed -i "/^RELEASE_YEAR=/s/=.*$$/=$$current_year/" \
 	  bootstrap.sh configure.ac; \
 	excluded_re=`echo $(FETCHFILES) \
-	  | sed -e 's|^|lib/|' -e 's| | lib/|g' -e 's, ,|,g'`; \
+	  | sed -e 's|^.*/|lib/|' -e 's| | lib/|g' -e 's, ,|,g'`; \
 	$(GIT) ls-files \
 	  | grep -Ev '^(lib/)?(COPYING|INSTALL)$$' \
 	  | grep -Ev "^($$excluded_re)$$" \
