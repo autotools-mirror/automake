@@ -997,6 +997,8 @@ fetch:
 ##  Generate and upload manuals in several formats, for the GNU website.  ##
 ## ---------------------------------------------------------------------- ##
 
+web_manual_dir = doc/web-manual
+
 RSYNC = rsync
 CVS = cvs
 CVSU = cvsu
@@ -1004,7 +1006,7 @@ CVS_USER = $${USER}
 WEBCVS_ROOT = cvs.savannah.gnu.org:/web
 
 web-manual:
-	$(AM_V_at)rm -rf doc/web-manuals
+	$(AM_V_at)rm -rf $(web_manual_dir)
 	$(AM_V_GEN)tmp=$@.dir \
 	  && rm -rf $$tmp \
 	  && mkdir $$tmp \
@@ -1020,10 +1022,10 @@ web-manual:
 	     -I '$(abs_srcdir)/doc' --email $(PACKAGE_BUGREPORT) \
 	     $(PACKAGE) '$(PACKAGE_NAME)'
 	$(AM_V_at)tmp=$@.dir \
-	 && mkdir doc/web-manuals \
-	 && mv -f $$tmp/manual/* doc/web-manuals \
+	 && mkdir $(web_manual_dir) \
+	 && mv -f $$tmp/manual/* $(web_manual_dir) \
 	 && rm -rf $$tmp \
-	 && { ! $(AM_V_P) || ls -l doc/web-manuals; }
+	 && { ! $(AM_V_P) || ls -l $(web_manual_dir); }
 .PHONY: web-manual
 
 web-manual-update:
@@ -1034,7 +1036,7 @@ web-manual-update:
 	  *) echo "Cannot upload manuals from a \"$$release_type\"" >&2; \
 	     exit 1;; \
 	esac
-	$(AM_V_at)test -f doc/web-manuals/$(PACKAGE).html || { \
+	$(AM_V_at)test -f $(web_manual_dir)/$(PACKAGE).html || { \
 	  echo 'You have to run "$(MAKE) web-manuals" before' \
 	       'invoking "$(MAKE) $@"' >&2; \
 	  exit 1; \
@@ -1048,7 +1050,7 @@ web-manual-update:
 	  && $(CVS) -z3 -d :ext:$(CVS_USER)@$(WEBCVS_ROOT)/$(PACKAGE) \
 	            co $(PACKAGE) \
 	  && cd .. \
-	  && $(RSYNC) -avP doc/web-manuals/ $$tmp/$(PACKAGE)/manual \
+	  && $(RSYNC) -avP $(web_manual_dir)/ $$tmp/$(PACKAGE)/manual \
 	  && ( \
 	    cd $$tmp/$(PACKAGE)/manual \
 	      && new_files=`$(CVSU) --types='?'` \
@@ -1060,7 +1062,7 @@ web-manual-update:
 .PHONY: web-manual-update
 
 clean-web-manual:
-	$(AM_V_at)rm -rf doc/web-manuals
+	$(AM_V_at)rm -rf $(web_manual_dir)
 .PHONY: clean-web-manual
 clean-local: clean-web-manual
 
