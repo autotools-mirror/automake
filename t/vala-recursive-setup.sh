@@ -56,8 +56,6 @@ $ACLOCAL
 $AUTOCONF
 $AUTOMAKE -a
 
-grep PKG_CHECK_MODULES configure && skip_ "pkg-config m4 macros not found"
-
 ./configure
 $MAKE
 
