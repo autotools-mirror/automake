@@ -993,9 +993,9 @@ fetch:
 	$(AM_V_at)rm -rf Fetchdir
 .PHONY: fetch
 
-## --------------------------------------------------------------------- ##
-##  Generate manuals in several formats, for upload on the GNU website.  ##
-## --------------------------------------------------------------------- ##
+## ---------------------------------------------------------------------- ##
+##  Generate and upload manuals in several formats, for the GNU website.  ##
+## ---------------------------------------------------------------------- ##
 
 # The gendocs.sh script sadly leaves TeX and Texinfo auxiliary files
 # in the directory where it's invoked.
@@ -1025,6 +1025,45 @@ web-manuals:
 	$(AM_V_at)$(clean_texinfo_clutter_cmd)
 	$(AM_V_at)if $(AM_V_P); then ls -l doc/web-manuals; else :; fi
 .PHONY: web-manuals
+
+RSYNC = rsync
+CVS = cvs
+CVSU = cvsu
+CVS_USER = $${USER}
+WEBCVS_ROOT = cvs.savannah.gnu.org:/web
+
+upload-web-manuals:
+	$(AM_V_at)fatal () { echo "$@: $$*" >&2; exit 1; }; \
+	$(determine_release_type); \
+	case $$release_type in \
+	  [Mm]ajor\ release|[Mm]inor\ release);; \
+	  *) echo "Cannot upload manuals from a \"$$release_type\"" >&2; \
+	     exit 1;; \
+	esac
+	$(AM_V_at)test -f $(srcdir)/doc/web-manuals/$(PACKAGE).html || { \
+	  echo 'You have to run "$(MAKE) web-manuals" before' \
+	       'invoking "$(MAKE) $@"' >&2; \
+	  exit 1; \
+	}
+	$(AM_V_GEN): \
+	  && CVS_RSH=ssh && export CVS_RSH=ssh \
+	  && tmp=$@.dir \
+	  && rm -rf $$tmp \
+	  && mkdir $$tmp \
+	  && $(am__cd) $$tmp \
+	  && $(CVS) -z3 -d :ext:$(CVS_USER)@$(WEBCVS_ROOT)/$(PACKAGE) \
+	            co $(PACKAGE) \
+	  && cd .. \
+	  && $(RSYNC) -avP $(srcdir)/doc/web-manuals/ $$tmp/$(PACKAGE)/manual \
+	  && ( \
+	    cd $$tmp/$(PACKAGE)/manual \
+	      && new_files=`$(CVSU) --types='?'` \
+	      && new_files=`echo "$$new_files" | sed s/^..//` \
+	      && { test -z "$$new_files" || $(CVS) add -ko $$new_files; } \
+	      && $(CVS) ci -m $(VERSION) \
+	    ) \
+	  && rm -rf $$tmp
+.PHONY: upload-web-manuals
 
 EXTRA_DIST += lib/gendocs.sh lib/gendocs_template
 
