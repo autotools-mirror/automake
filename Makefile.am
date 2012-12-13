@@ -997,33 +997,32 @@ fetch:
 ##  Generate and upload manuals in several formats, for the GNU website.  ##
 ## ---------------------------------------------------------------------- ##
 
-# The gendocs.sh script sadly leaves TeX and Texinfo auxiliary files
-# in the directory where it's invoked.
-clean_texinfo_clutter_cmd = \
-  $(am__cd) doc && rm -f *.ac *.aux *.cm *.cp *.cps *.fn *.fns *.ky \
-                         *.log *.op *.pg *.toc *.tp *.tr *.vr *.vrs
-
 clean-web-manuals:
 	$(AM_V_at)rm -rf doc/web-manuals
-clean-texinfo-clutter:
-	$(AM_V_at)$(clean_texinfo_clutter_cmd)
-clean-local: clean-web-manuals clean-texinfo-clutter
-.PHONY: clean-web-manuals clean-texinfo-clutter
+.PHONY: clean-web-manuals
+clean-local: clean-web-manuals
 
 web-manuals:
 	$(AM_V_at)rm -rf doc/web-manuals
-	$(AM_V_GEN): \
-## The gendocs.sh script only works from the srcdir, sadly.
-	  && $(am__cd) $(srcdir)/doc \
-	  && GENDOCS_TEMPLATE_DIR=../lib \
+	$(AM_V_GEN)tmp=$@.dir \
+	  && rm -rf $$tmp \
+	  && mkdir $$tmp \
+	  && $(am__cd) $$tmp \
+	  && GENDOCS_TEMPLATE_DIR='$(abs_srcdir)/lib' \
 	  && export GENDOCS_TEMPLATE_DIR \
+## Needed to pacify extra checks from gendocs.sh.
+	  && $(LN_S) '$(abs_srcdir)/doc/$(PACKAGE).texi' . \
 ## Try to respect silent rules.
 	  && if $(AM_V_P); then :; else exec >/dev/null 2>&1; fi \
 ## Finally generate the manual in several formats.
-	  && $(SHELL) ../lib/gendocs.sh -o web-manuals \
-	     --email $(PACKAGE_BUGREPORT) $(PACKAGE) '$(PACKAGE_NAME)'
-	$(AM_V_at)$(clean_texinfo_clutter_cmd)
-	$(AM_V_at)if $(AM_V_P); then ls -l doc/web-manuals; else :; fi
+	  && $(SHELL) '$(abs_srcdir)/lib/gendocs.sh' \
+	     -I '$(abs_srcdir)/doc' --email $(PACKAGE_BUGREPORT) \
+	     $(PACKAGE) '$(PACKAGE_NAME)'
+	$(AM_V_at)tmp=$@.dir \
+	 && mkdir doc/web-manuals \
+	 && mv -f $$tmp/manual/* doc/web-manuals \
+	 && rm -rf $$tmp \
+	 && { ! $(AM_V_P) || ls -l doc/web-manuals; }
 .PHONY: web-manuals
 
 RSYNC = rsync
@@ -1040,7 +1039,7 @@ upload-web-manuals:
 	  *) echo "Cannot upload manuals from a \"$$release_type\"" >&2; \
 	     exit 1;; \
 	esac
-	$(AM_V_at)test -f $(srcdir)/doc/web-manuals/$(PACKAGE).html || { \
+	$(AM_V_at)test -f doc/web-manuals/$(PACKAGE).html || { \
 	  echo 'You have to run "$(MAKE) web-manuals" before' \
 	       'invoking "$(MAKE) $@"' >&2; \
 	  exit 1; \
@@ -1054,7 +1053,7 @@ upload-web-manuals:
 	  && $(CVS) -z3 -d :ext:$(CVS_USER)@$(WEBCVS_ROOT)/$(PACKAGE) \
 	            co $(PACKAGE) \
 	  && cd .. \
-	  && $(RSYNC) -avP $(srcdir)/doc/web-manuals/ $$tmp/$(PACKAGE)/manual \
+	  && $(RSYNC) -avP doc/web-manuals/ $$tmp/$(PACKAGE)/manual \
 	  && ( \
 	    cd $$tmp/$(PACKAGE)/manual \
 	      && new_files=`$(CVSU) --types='?'` \
