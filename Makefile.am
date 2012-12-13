@@ -1045,8 +1045,10 @@ update-copyright:
 	  || { echo "$@: cannot get current year" >&2; exit 1; }; \
 	sed -i "/^RELEASE_YEAR=/s/=.*$$/=$$current_year/" \
 	  bootstrap.sh configure.ac; \
-	excluded_re=`echo $(FETCHFILES) \
-	  | sed -e 's|^.*/|lib/|' -e 's| | lib/|g' -e 's, ,|,g'`; \
+	excluded_re=`\
+	  for url in $(FETCHFILES); do echo "$$url"; done \
+	    | sed -e 's!^.*/!!' -e 's!^.*=!!' -e 's!^!lib/!' \
+	    | sed -e '$$!s,$$,|,' | tr -d '\012\015'`; \
 	$(GIT) ls-files \
 	  | grep -Ev '^(lib/)?(COPYING|INSTALL)$$' \
 	  | grep -Ev "^($$excluded_re)$$" \
