@@ -1050,6 +1050,9 @@ web-manual-update:
 	  && $(CVS) -z3 -d :ext:$(CVS_USER)@$(WEBCVS_ROOT)/$(PACKAGE) \
 	            co $(PACKAGE) \
 	  && cd .. \
+## According to the rsync manpage, "a trailing slash on the source [...]
+## avoids creating an additional directory level at the destination".
+## So the trailing '/' after '$(web_manual_dir)' below is intended.
 	  && $(RSYNC) -avP $(web_manual_dir)/ $$tmp/$(PACKAGE)/manual \
 	  && ( \
 	    cd $$tmp/$(PACKAGE)/manual \
