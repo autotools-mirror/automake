@@ -1038,6 +1038,26 @@ update_copyright_env = \
   UPDATE_COPYRIGHT_FORCE=1 \
   UPDATE_COPYRIGHT_USE_INTERVALS=2
 
+# In addition to the several README files, these as well are
+# not expected to have a copyright notice.
+files_without_copyright = \
+  .autom4te.cfg \
+  .git-log-fix \
+  .gitattributes \
+  .gitignore \
+  INSTALL \
+  COPYING \
+  AUTHORS \
+  THANKS \
+  lib/INSTALL \
+  lib/COPYING
+
+# This script is in the public domain.
+files_without_copyright += lib/mkinstalldirs
+
+# This script has an MIT-style license
+files_without_copyright += lib/install-sh
+
 .PHONY: update-copyright
 update-copyright:
 	$(AM_V_GEN)set -e; \
@@ -1045,11 +1065,12 @@ update-copyright:
 	  || { echo "$@: cannot get current year" >&2; exit 1; }; \
 	sed -i "/^RELEASE_YEAR=/s/=.*$$/=$$current_year/" \
 	  bootstrap.sh configure.ac; \
-	excluded_re=`\
+	excluded_re=`( \
 	  for url in $(FETCHFILES); do echo "$$url"; done \
 	    | sed -e 's!^.*/!!' -e 's!^.*=!!' -e 's!^!lib/!' \
-	    | sed -e '$$!s,$$,|,' | tr -d '\012\015'`; \
+	  && for f in $(files_without_copyright); do echo $$f; done \
+	) | sed -e '$$!s,$$,|,' | tr -d '\012\015'`; \
 	$(GIT) ls-files \
-	  | grep -Ev '^(lib/)?(COPYING|INSTALL)$$' \
+	  | grep -Ev '(^|/)README$$' \
 	  | grep -Ev "^($$excluded_re)$$" \
 	  | $(update_copyright_env) xargs $(srcdir)/lib/$@
