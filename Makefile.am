@@ -997,10 +997,11 @@ fetch:
 ##  Generate and upload manuals in several formats, for the GNU website.  ##
 ## ---------------------------------------------------------------------- ##
 
-clean-web-manuals:
-	$(AM_V_at)rm -rf doc/web-manuals
-.PHONY: clean-web-manuals
-clean-local: clean-web-manuals
+RSYNC = rsync
+CVS = cvs
+CVSU = cvsu
+CVS_USER = $${USER}
+WEBCVS_ROOT = cvs.savannah.gnu.org:/web
 
 web-manuals:
 	$(AM_V_at)rm -rf doc/web-manuals
@@ -1024,12 +1025,6 @@ web-manuals:
 	 && rm -rf $$tmp \
 	 && { ! $(AM_V_P) || ls -l doc/web-manuals; }
 .PHONY: web-manuals
-
-RSYNC = rsync
-CVS = cvs
-CVSU = cvsu
-CVS_USER = $${USER}
-WEBCVS_ROOT = cvs.savannah.gnu.org:/web
 
 upload-web-manuals:
 	$(AM_V_at)fatal () { echo "$@: $$*" >&2; exit 1; }; \
@@ -1063,6 +1058,11 @@ upload-web-manuals:
 	    ) \
 	  && rm -rf $$tmp
 .PHONY: upload-web-manuals
+
+clean-web-manuals:
+	$(AM_V_at)rm -rf doc/web-manuals
+.PHONY: clean-web-manuals
+clean-local: clean-web-manuals
 
 EXTRA_DIST += lib/gendocs.sh lib/gendocs_template
 
