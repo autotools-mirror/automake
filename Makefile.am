@@ -1003,7 +1003,7 @@ CVSU = cvsu
 CVS_USER = $${USER}
 WEBCVS_ROOT = cvs.savannah.gnu.org:/web
 
-web-manuals:
+web-manual:
 	$(AM_V_at)rm -rf doc/web-manuals
 	$(AM_V_GEN)tmp=$@.dir \
 	  && rm -rf $$tmp \
@@ -1024,9 +1024,9 @@ web-manuals:
 	 && mv -f $$tmp/manual/* doc/web-manuals \
 	 && rm -rf $$tmp \
 	 && { ! $(AM_V_P) || ls -l doc/web-manuals; }
-.PHONY: web-manuals
+.PHONY: web-manual
 
-upload-web-manuals:
+web-manual-update:
 	$(AM_V_at)fatal () { echo "$@: $$*" >&2; exit 1; }; \
 	$(determine_release_type); \
 	case $$release_type in \
@@ -1057,12 +1057,12 @@ upload-web-manuals:
 	      && $(CVS) ci -m $(VERSION) \
 	    ) \
 	  && rm -rf $$tmp
-.PHONY: upload-web-manuals
+.PHONY: web-manual-update
 
-clean-web-manuals:
+clean-web-manual:
 	$(AM_V_at)rm -rf doc/web-manuals
-.PHONY: clean-web-manuals
-clean-local: clean-web-manuals
+.PHONY: clean-web-manual
+clean-local: clean-web-manual
 
 EXTRA_DIST += lib/gendocs.sh lib/gendocs_template
 
