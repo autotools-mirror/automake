@@ -116,6 +116,11 @@ INSTALL: lib/INSTALL
 maintainer-clean-local:
 	rm -rf .autom4te.cache
 
+# So that automake won't complain about the missing ChangeLog.
+# The real rule for ChangeLog generation is now in maint.mk (as
+# it is maintainer-specific).
+ChangeLog:
+
 
 ## -------------------------------------------------------------------- ##
 ##  Auxiliary scripts and files for use with "automake --add-missing".  ##
