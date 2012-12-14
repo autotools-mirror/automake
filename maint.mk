@@ -15,6 +15,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+# Avoid CDPATH issues.
+unexport CDPATH
+
 # --------------------------------------------------------- #
 #  Automatic generation of the ChangeLog from git history.  #
 # --------------------------------------------------------- #
@@ -34,18 +37,11 @@ EXTRA_DIST += $(gitlog_to_changelog_fixes)
 # fails, or if no distributed ChangeLog file is present, complain and
 # give an error).
 #
-# We need the apparently useless dependency from another .PHONY target
-# 'am--changelog-regen-hook' to work around a bug of Solaris make, which
-# doesn't execute the recipe of a target named as an existing file, even
-# if such target is declared '.PHONY' (yikes!)
-#
 # The ChangeLog should be regenerated unconditionally when working from
 # checked-out sources; otherwise, if we're working from a distribution
 # tarball, we expect the ChangeLog to be distributed, so check that it
 # is indeed present in the source directory.
-.PHONY: am--changelog-regen-hook
-am--changelog-regen-hook:
-ChangeLog: am--changelog-regen-hook
+ChangeLog:
 	$(AM_V_GEN)set -e; set -u; \
 	if test -d $(srcdir)/.git; then \
 	  rm -f $@-t \
@@ -59,6 +55,7 @@ ChangeLog: am--changelog-regen-hook
 	       "$@ file has been found there" >&2; \
 	  exit 1; \
 	fi
+.PHONY: ChangeLog
 
 
 # --------------------------- #
@@ -69,11 +66,11 @@ PERL_COVERAGE_DB = $(abs_top_builddir)/cover_db
 PERL_COVERAGE_FLAGS = -MDevel::Cover=-db,$(PERL_COVERAGE_DB),-silent,on,-summary,off
 PERL_COVER = cover
 
-check-coverage-run recheck-coverage-run: all
+check-coverage-run recheck-coverage-run: %-coverage-run: all
 	$(mkinstalldirs) $(PERL_COVERAGE_DB)
 	PERL5OPT="$$PERL5OPT $(PERL_COVERAGE_FLAGS)"; export PERL5OPT; \
 	WANT_NO_THREADS=yes; export WANT_NO_THREADS; unset AUTOMAKE_JOBS; \
-	$(MAKE) $(AM_MAKEFLAGS) `echo $@ | sed 's/-coverage-run//'`
+	$(MAKE) $(AM_MAKEFLAGS) $*
 
 check-coverage-report:
 	@if test ! -d "$(PERL_COVERAGE_DB)"; then \
@@ -122,7 +119,7 @@ git_must_have_clean_workdir = \
     && $(GIT) update-index -q --refresh \
     && $(GIT) diff-files --quiet \
     && $(GIT) diff-index --quiet --cached HEAD \
-    || fatal "you have uncommitted or unstaged changes"
+    || { echo "$@: you have uncommitted or unstaged changes" >&2; exit 1; }
 
 determine_release_type = \
   if $(match_version) '$(stable_major_version_rx)'; then \
@@ -138,43 +135,46 @@ determine_release_type = \
     announcement_type='test release'; \
     dest=alpha; \
   else \
-    fatal "invalid version '$(VERSION)' for a release"; \
+    echo "$@: invalid version '$(VERSION)' for a release" >&2; \
+    exit 1; \
   fi
 
 # Help the debugging of $(determine_release_type) and related code.
 print-release-type:
-	@set -e -u \
-	  && fatal () { echo "$@: $$*"; exit 0; } \
-	  && $(determine_release_type) \
-	  && echo "$$release_type $(VERSION);" \
-	          "it will be announced as a $$announcement_type"
+	@$(determine_release_type); \
+	 echo "$$release_type $(VERSION);" \
+	      "it will be announced as a $$announcement_type"
 
 git-tag-release: maintainer-check
-	@set -e; set -u; \
-	fatal () { echo "$@: $$*; not tagging" >&2; exit 1; }; \
+	@set -e -u; \
 	case '$(AM_TAG_DRYRUN)' in \
 	  ""|[nN]|[nN]o|NO) run="";; \
 	  *) run="echo Running:";; \
 	esac; \
 	$(determine_release_type); \
 	$(git_must_have_clean_workdir); \
-## If all was successful, tag the release in the local repository.
 	$$run $(GIT) tag -s "v$(VERSION)" -m "$$release_type $(VERSION)"
 
 git-upload-release:
-	@set -e; set -u; \
-	fatal () { echo "$@: $$*; not releasing" >&2; exit 1; }; \
-	$(determine_release_type); \
-	dest=$$dest.gnu.org:automake; \
-	$(git_must_have_clean_workdir); \
-## Check that we are releasing from a valid tag.
+	@# Check this a version we can cut a release release from the
+	@# current repository: we must have a beta version, and the
+	@# repository must be clean.
+	@$(determine_release_type)
+	@$(git_must_have_clean_workdir)
+	@# Check that we are releasing from a valid tag.
 	tag=`$(GIT) describe` \
 	  && case $$tag in "v$(VERSION)") true;; *) false;; esac \
-	  || fatal "you can only create a release from a tagged version"; \
-## Build and upload the distribution tarball(s).
-	$(MAKE) $(AM_MAKEFLAGS) dist || exit 1; \
-	echo Will upload to $$dest: $(DIST_ARCHIVES); \
-	$(srcdir)/lib/gnupload $(GNUPLOADFLAGS) --to $$dest $(DIST_ARCHIVES)
+	  || { echo "$@: you can only create a release from a tagged" \
+	            "version" >&2; \
+	       exit 1; }
+	@# Build the distribution tarball(s).
+	$(MAKE) $(AM_MAKEFLAGS) dist
+	@# Upload it to the correct FTP repository.
+	@$(determine_release_type) \
+	  && dest=$$dest.gnu.org:automake \
+	  && echo "Will upload to $$dest: $(DIST_ARCHIVES)" \
+	  && $(srcdir)/lib/gnupload $(GNUPLOADFLAGS) --to $$dest \
+	                            $(DIST_ARCHIVES)
 
 .PHONY: print-release-type git-upload-release git-tag-release
 
@@ -197,14 +197,14 @@ autodiffs:
 	     rev=$$1 dir=$$2 \
 	       && echo "$@: will get files from revision $$rev" \
 	       && $(GIT) clone -q --depth 1 "$$am_gitdir" tmp \
-	       && $(am__cd) tmp \
+	       && cd tmp \
 	       && $(GIT) checkout -q "$$rev" \
 	       && echo "$@: bootstrapping $$rev" \
 	       && $(SHELL) ./bootstrap.sh \
 	       && echo "$@: copying files from $$rev" \
 	       && makefile_ins=`find . -name Makefile.in` \
 	       && (tar cf - configure aclocal.m4 $$makefile_ins) | \
-	          (cd .. && $(am__cd) "$$dir" && tar xf -) \
+	          (cd .. && cd "$$dir" && tar xf -) \
 	       && cd .. \
 	       && rm -rf tmp; \
 	 }; \
@@ -214,7 +214,7 @@ autodiffs:
 	   && $(GIT) --git-dir="$$am_gitdir" describe $$NEW_COMMIT >/dev/null \
 	   && rm -rf $$outdir \
 	   && mkdir $$outdir \
-	   && $(am__cd) $$outdir \
+	   && cd $$outdir \
 	   && mkdir new old \
 	   && get_autofiles_from_rev $$OLD_COMMIT old \
 	   && get_autofiles_from_rev $$NEW_COMMIT new \
@@ -262,7 +262,6 @@ PACKAGE_MAILINGLIST = automake@gnu.org
 announcement: NEWS
 	$(AM_V_GEN): \
 	  && rm -f $@ $@-t \
-	  && fatal () { echo "$@: $$*" >&2; exit 1; } \
 	  && $(determine_release_type) \
 	  && ftp_base="ftp://$$dest.gnu.org/gnu/$(PACKAGE)" \
 	  && X () { printf '%s\n' "$$*" >> $@-t; } \
@@ -354,6 +353,8 @@ CVS = cvs
 CVSU = cvsu
 CVS_USER = $${USER}
 WEBCVS_ROOT = cvs.savannah.gnu.org:/web
+CVS_RSH = ssh
+export CVS_RSH
 
 .PHONY: web-manual web-manual-update
 web-manual web-manual-update: t = $@.dir
@@ -367,7 +368,7 @@ web-manual:
 	$(AM_V_at)rm -rf $(web_manual_dir) $t
 	$(AM_V_at)mkdir $t
 	$(AM_V_at)$(LN_S) '$(abs_srcdir)/doc/$(PACKAGE).texi' '$t/'
-	$(AM_V_GEN)$(am__cd) $t \
+	$(AM_V_GEN)cd $t \
 	  && GENDOCS_TEMPLATE_DIR='$(abs_srcdir)/lib' \
 	  && export GENDOCS_TEMPLATE_DIR \
 	  && if $(AM_V_P); then :; else exec >/dev/null 2>&1; fi \
@@ -381,8 +382,7 @@ web-manual:
 
 # Upload manual to www.gnu.org, using CVS (sigh!)
 web-manual-update:
-	$(AM_V_at)fatal () { echo "$@: $$*" >&2; exit 1; }; \
-	$(determine_release_type); \
+	$(AM_V_at)$(determine_release_type); \
 	case $$release_type in \
 	  [Mm]ajor\ release|[Mm]inor\ release);; \
 	  *) echo "Cannot upload manuals from a \"$$release_type\"" >&2; \
@@ -395,8 +395,7 @@ web-manual-update:
 	}
 	$(AM_V_at)rm -rf $t
 	$(AM_V_at)mkdir $t
-	$(AM_V_at)CVS_RSH=ssh && export CVS_RSH=ssh \
-	  && $(am__cd) $t \
+	$(AM_V_at)cd $t \
 	  && $(CVS) -z3 -d :ext:$(CVS_USER)@$(WEBCVS_ROOT)/$(PACKAGE) \
 	            co $(PACKAGE)
 	@# According to the rsync manpage, "a trailing slash on the
@@ -404,7 +403,7 @@ web-manual-update:
 	@# level at the destination".  So the trailing '/' after
 	@# '$(web_manual_dir)' below is intended.
 	$(AM_V_at)$(RSYNC) -avP $(web_manual_dir)/ $t/$(PACKAGE)/manual
-	$(AM_V_GEN)CVS_RSH=ssh && export CVS_RSH=ssh \
+	$(AM_V_GEN): \
 	  && cd $t/$(PACKAGE)/manual \
 	  && new_files=`$(CVSU) --types='?'` \
 	  && new_files=`echo "$$new_files" | sed s/^..//` \
