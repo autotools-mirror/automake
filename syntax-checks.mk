@@ -163,6 +163,7 @@ sc_mkinstalldirs:
 	  $(ams) \
 	  $(srcdir)/automake.in \
 	  $(srcdir)/doc/*.texi \
+	  $(srcdir)/maint.mk \
 	"; \
 	if grep 'mkinstalldirs' $$files; then \
 	  echo "Found use of mkinstalldirs; that is obsolete" 1>&2; \
