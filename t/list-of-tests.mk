@@ -1279,7 +1279,8 @@ t/yflags-force-conditional.sh \
 t/yflags-force-override.sh \
 t/yflags-var-expand.sh \
 t/libtool-macros.sh \
-t/gettext-macros.sh
+t/gettext-macros.sh \
+t/pkg-config-macros.sh
 
 print-list-of-tests:
 	@echo $(handwritten_TESTS)
