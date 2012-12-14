@@ -443,9 +443,6 @@ files_without_copyright = \
   lib/INSTALL \
   lib/COPYING
 
-# This script is in the public domain.
-files_without_copyright += lib/mkinstalldirs
-
 # This script has an MIT-style license
 files_without_copyright += lib/install-sh
 
