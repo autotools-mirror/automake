@@ -69,6 +69,8 @@ AC_SUBST([system_acdir], ["\${datadir}/aclocal"])
 ACLOCAL="\"`pwd`/t/wrap/aclocal-$APIVERSION\""
 AUTOMAKE="\"`pwd`/t/wrap/automake-$APIVERSION\""
 
+AC_PROG_LN_S
+
 AC_PATH_PROG([PERL], [perl])
 if test -z "$PERL"; then
    AC_MSG_ERROR([perl not found])

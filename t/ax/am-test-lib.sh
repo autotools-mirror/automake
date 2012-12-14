@@ -659,14 +659,14 @@ process_requirements ()
   for am_tool in $*; do
     require_tool $am_tool
   done
+  # We might need extra m4 macros, e.g., for Libtool or Gettext.
+  for am_tool in gettext libtool pkg-config; do
+    case " $required " in
+      # The lack of whitespace after $am_tool is intended.
+      *" $am_tool"*) . ./t/$am_tool-macros.dir/get.sh;;
+    esac
+  done
   am_tool=; unset am_tool
-  # We might need extra macros, e.g., from Libtool or Gettext.
-  case " $required " in
-    *\ libtool*) . ./t/libtool-macros.dir/get.sh;;
-  esac
-  case " $required " in
-    *\ gettext*) . ./t/gettext-macros.dir/get.sh;;
-  esac
 }
 
 ## ---------------------------------------------------------------- ##
