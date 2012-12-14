@@ -999,38 +999,81 @@ fetch:
 	$(AM_V_at)rm -rf Fetchdir
 .PHONY: fetch
 
-## --------------------------------------------------------------------- ##
-##  Generate manuals in several formats, for upload on the GNU website.  ##
-## --------------------------------------------------------------------- ##
+## ---------------------------------------------------------------------- ##
+##  Generate and upload manuals in several formats, for the GNU website.  ##
+## ---------------------------------------------------------------------- ##
 
-# The gendocs.sh script sadly leaves TeX and Texinfo auxiliary files
-# in the directory where it's invoked.
-clean_texinfo_clutter_cmd = \
-  $(am__cd) doc && rm -f *.ac *.aux *.cm *.cp *.cps *.fn *.fns *.ky \
-                         *.log *.op *.pg *.toc *.tp *.tr *.vr *.vrs
+web_manual_dir = doc/web-manual
 
-clean-web-manuals:
-	$(AM_V_at)rm -rf doc/web-manuals
-clean-texinfo-clutter:
-	$(AM_V_at)$(clean_texinfo_clutter_cmd)
-clean-local: clean-web-manuals clean-texinfo-clutter
-.PHONY: clean-web-manuals clean-texinfo-clutter
+RSYNC = rsync
+CVS = cvs
+CVSU = cvsu
+CVS_USER = $${USER}
+WEBCVS_ROOT = cvs.savannah.gnu.org:/web
 
-web-manuals:
-	$(AM_V_at)rm -rf doc/web-manuals
-	$(AM_V_GEN): \
-## The gendocs.sh script only works from the srcdir, sadly.
-	  && $(am__cd) $(srcdir)/doc \
-	  && GENDOCS_TEMPLATE_DIR=../lib \
+web-manual:
+	$(AM_V_at)rm -rf $(web_manual_dir)
+	$(AM_V_GEN)tmp=$@.dir \
+	  && rm -rf $$tmp \
+	  && mkdir $$tmp \
+	  && $(am__cd) $$tmp \
+	  && GENDOCS_TEMPLATE_DIR='$(abs_srcdir)/lib' \
 	  && export GENDOCS_TEMPLATE_DIR \
+## Needed to pacify extra checks from gendocs.sh.
+	  && $(LN_S) '$(abs_srcdir)/doc/$(PACKAGE).texi' . \
 ## Try to respect silent rules.
 	  && if $(AM_V_P); then :; else exec >/dev/null 2>&1; fi \
 ## Finally generate the manual in several formats.
-	  && $(SHELL) ../lib/gendocs.sh -o web-manuals \
-	     --email $(PACKAGE_BUGREPORT) $(PACKAGE) '$(PACKAGE_NAME)'
-	$(AM_V_at)$(clean_texinfo_clutter_cmd)
-	$(AM_V_at)if $(AM_V_P); then ls -l doc/web-manuals; else :; fi
-.PHONY: web-manuals
+	  && $(SHELL) '$(abs_srcdir)/lib/gendocs.sh' \
+	     -I '$(abs_srcdir)/doc' --email $(PACKAGE_BUGREPORT) \
+	     $(PACKAGE) '$(PACKAGE_NAME)'
+	$(AM_V_at)tmp=$@.dir \
+	 && mkdir $(web_manual_dir) \
+	 && mv -f $$tmp/manual/* $(web_manual_dir) \
+	 && rm -rf $$tmp \
+	 && { ! $(AM_V_P) || ls -l $(web_manual_dir); }
+.PHONY: web-manual
+
+web-manual-update:
+	$(AM_V_at)fatal () { echo "$@: $$*" >&2; exit 1; }; \
+	$(determine_release_type); \
+	case $$release_type in \
+	  [Mm]ajor\ release|[Mm]inor\ release);; \
+	  *) echo "Cannot upload manuals from a \"$$release_type\"" >&2; \
+	     exit 1;; \
+	esac
+	$(AM_V_at)test -f $(web_manual_dir)/$(PACKAGE).html || { \
+	  echo 'You have to run "$(MAKE) web-manuals" before' \
+	       'invoking "$(MAKE) $@"' >&2; \
+	  exit 1; \
+	}
+	$(AM_V_GEN): \
+	  && CVS_RSH=ssh && export CVS_RSH=ssh \
+	  && tmp=$@.dir \
+	  && rm -rf $$tmp \
+	  && mkdir $$tmp \
+	  && $(am__cd) $$tmp \
+	  && $(CVS) -z3 -d :ext:$(CVS_USER)@$(WEBCVS_ROOT)/$(PACKAGE) \
+	            co $(PACKAGE) \
+	  && cd .. \
+## According to the rsync manpage, "a trailing slash on the source [...]
+## avoids creating an additional directory level at the destination".
+## So the trailing '/' after '$(web_manual_dir)' below is intended.
+	  && $(RSYNC) -avP $(web_manual_dir)/ $$tmp/$(PACKAGE)/manual \
+	  && ( \
+	    cd $$tmp/$(PACKAGE)/manual \
+	      && new_files=`$(CVSU) --types='?'` \
+	      && new_files=`echo "$$new_files" | sed s/^..//` \
+	      && { test -z "$$new_files" || $(CVS) add -ko $$new_files; } \
+	      && $(CVS) ci -m $(VERSION) \
+	    ) \
+	  && rm -rf $$tmp
+.PHONY: web-manual-update
+
+clean-web-manual:
+	$(AM_V_at)rm -rf $(web_manual_dir)
+.PHONY: clean-web-manual
+clean-local: clean-web-manual
 
 EXTRA_DIST += lib/gendocs.sh lib/gendocs_template
 
@@ -1044,6 +1087,26 @@ update_copyright_env = \
   UPDATE_COPYRIGHT_FORCE=1 \
   UPDATE_COPYRIGHT_USE_INTERVALS=2
 
+# In addition to the several README files, these as well are
+# not expected to have a copyright notice.
+files_without_copyright = \
+  .autom4te.cfg \
+  .git-log-fix \
+  .gitattributes \
+  .gitignore \
+  INSTALL \
+  COPYING \
+  AUTHORS \
+  THANKS \
+  lib/INSTALL \
+  lib/COPYING
+
+# This script is in the public domain.
+files_without_copyright += lib/mkinstalldirs
+
+# This script has an MIT-style license
+files_without_copyright += lib/install-sh
+
 .PHONY: update-copyright
 update-copyright:
 	$(AM_V_GEN)set -e; \
@@ -1051,9 +1114,12 @@ update-copyright:
 	  || { echo "$@: cannot get current year" >&2; exit 1; }; \
 	sed -i "/^RELEASE_YEAR=/s/=.*$$/=$$current_year/" \
 	  bootstrap.sh configure.ac; \
-	excluded_re=`echo $(FETCHFILES) \
-	  | sed -e 's|^.*/|lib/|' -e 's| | lib/|g' -e 's, ,|,g'`; \
+	excluded_re=`( \
+	  for url in $(FETCHFILES); do echo "$$url"; done \
+	    | sed -e 's!^.*/!!' -e 's!^.*=!!' -e 's!^!lib/!' \
+	  && for f in $(files_without_copyright); do echo $$f; done \
+	) | sed -e '$$!s,$$,|,' | tr -d '\012\015'`; \
 	$(GIT) ls-files \
-	  | grep -Ev '^(lib/)?(COPYING|INSTALL)$$' \
+	  | grep -Ev '(^|/)README$$' \
 	  | grep -Ev "^($$excluded_re)$$" \
 	  | $(update_copyright_env) xargs $(srcdir)/lib/$@
