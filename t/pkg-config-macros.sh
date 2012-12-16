@@ -68,7 +68,7 @@ XT_ACLOCAL_PATH=$XT_ACLOCAL_PATH${ACLOCAL_PATH+":$ACLOCAL_PATH"}
 
 # Try once again to fetch the pkg-config macros.
 mkdir m4
-ACLOCAL_PATH=$XT_ACLOCAL_PATH $ACLOCAL --install -I m4
+ACLOCAL_PATH=$XT_ACLOCAL_PATH $ACLOCAL -Wno-syntax --install -I m4
 if test -f m4/pkg.m4 && have_pkg_config_macros; then
    echo "ACLOCAL_PATH='$(pwd)/m4':\$ACLOCAL_PATH" >> get.sh
    echo "export ACLOCAL_PATH" >> get.sh
