@@ -38,14 +38,13 @@ AC_DEFUN([AX_FOO], [
 EOF
 
 cat > m4/bar.m4 <<'EOF'
-AC_DEFUN([AX_BAR], [AC_SUBST([WHOMAI], [SuperPkg])])
+AC_DEFUN([AX_BAR], [AC_SUBST([WHOAMI], [SuperPkg])])
 EOF
 
 cat > Makefile.am << 'END'
-test-whomai:
+test-whoami:
 	test '$(WHOAMI)' = SuperPkg
-check-local: test
-.PHONY: test
+check-local: test-whoami
 END
 
 mkdir pkg
@@ -60,14 +59,13 @@ END
 
 mkdir pkg/macros
 cat > pkg/macros/zardoz.m4 << 'END'
-AC_DEFUN([AX_BAR], [AC_SUBST([WHOMAI], [sub-pkg])])
+AC_DEFUN([AX_BAR], [AC_SUBST([WHOAMI], [sub-pkg])])
 END
 
 cat > pkg/Makefile.am << 'END'
-test-whomai:
+test-whoami:
 	test '$(WHOAMI)' = sub-pkg
-check-local: test
-.PHONY: test
+check-local: test-whomai
 END
 
 AUTOMAKE=$AUTOMAKE ACLOCAL=$ACLOCAL AUTOCONF=$AUTOCONF $AUTORECONF -vi
@@ -79,8 +77,8 @@ $FGREP 'm4_include([macros/zardoz.m4])' pkg/aclocal.m4
 
 ./configure
 
-$MAKE test
-(cd pkg && $MAKE test) || exit 1
+$MAKE test-whoami
+(cd pkg && $MAKE test-whoami) || exit 1
 
 $MAKE distcheck
 
