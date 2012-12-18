@@ -23,6 +23,9 @@ required='cc etags'
 cat >> configure.ac <<'END'
 AC_PROG_CC
 AC_CONFIG_FILES([sub/Makefile])
+# Fake linking.  Help avoid possible spurious errors from make
+# or from the linker; errors that are irrelevant to this test.
+AC_SUBST([LINK], ['echo $(CCLD) $(CFLAGS) $(LDFLAGS) -o $@'])
 AC_OUTPUT
 END
 
@@ -33,7 +36,6 @@ all-local: tags
 	$(CC) $(DEFS) $(CPPFLAGS) $(CFLAGS) -c $*.c
 	rm -f $*.c
 
-LINK = $(CCLD) $(CFLAGS) $(LDFLAGS) -o $@
 noinst_PROGRAMS = foo
 foo_SOURCES = foo-main.pc barbar.c
 SUBDIRS = sub
@@ -47,7 +49,6 @@ all-local: tags
 	$(CC) $(DEFS) $(CPPFLAGS) $(CFLAGS) -c $*.c
 	rm -f $*.c
 
-LINK = $(CCLD) $(CFLAGS) $(LDFLAGS) -o $@
 noinst_PROGRAMS = zap
 zap_SOURCES = zardoz.pc
 END
