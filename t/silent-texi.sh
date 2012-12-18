@@ -55,13 +55,13 @@ test $st -eq 0
 grep '^  DVIPS    foo\.ps$'         stdout
 grep '^  MAKEINFO foo\.html$'       stdout
 # NetBSD make will print './foo.info' instead of 'foo.info'.
-$EGREP '^  MAKEINFO (|\./)foo\.info$'       stdout
+$EGREP '^  MAKEINFO (\./)?foo\.info$' stdout
 grep '^  TEXI2DVI foo\.dvi$'        stdout
 grep '^  TEXI2PDF foo\.pdf$'        stdout
 grep '^  DVIPS    sub/zardoz.ps$'   stdout
 grep '^  MAKEINFO sub/zardoz.html$' stdout
 # NetBSD make will print './sub/zardoz.info' instead of 'zardoz.info'.
-$EGREP '^  MAKEINFO (|\./)sub/zardoz.info$' stdout
+$EGREP '^  MAKEINFO (\./)?sub/zardoz.info$' stdout
 grep '^  TEXI2DVI sub/zardoz.dvi$'  stdout
 grep '^  TEXI2PDF sub/zardoz.pdf$'  stdout
 # No make recipe is displayed before being executed.
