@@ -73,9 +73,9 @@ EXTRA_DIST += \
   syntax-checks.mk \
   HACKING
 
-## Make versioned links.  We only run the transform on the root name;
-## then we make a versioned link with the transformed base name.  This
-## seemed like the most reasonable approach.
+# Make versioned links.  We only run the transform on the root name;
+# then we make a versioned link with the transformed base name.  This
+# seemed like the most reasonable approach.
 install-exec-hook:
 	@$(POST_INSTALL)
 	@for p in $(bin_SCRIPTS); do \
@@ -93,8 +93,8 @@ uninstall-hook:
 	  rm -f "$(DESTDIR)$(bindir)/$$fv"; \
 	done
 
-## These files depend on Makefile so they are rebuilt if $(VERSION),
-## $(datadir) or other do_subst'ituted variables change.
+# These files depend on Makefile so they are rebuilt if $(VERSION),
+# $(datadir) or other do_subst'ituted variables change.
 automake: automake.in
 aclocal: aclocal.in
 automake aclocal: Makefile
@@ -105,9 +105,9 @@ automake aclocal: Makefile
 ## comments, and that is perfectly legit.
 	$(AM_V_at)chmod a+x,a-w $@-t && mv -f $@-t $@
 
-## The master location for INSTALL is lib/INSTALL.
-## This is where "make fetch" will install new versions.
-## Make sure we also update this copy.
+# The master location for INSTALL is lib/INSTALL.
+# This is where "make fetch" will install new versions.
+# Make sure we also update this copy.
 INSTALL: lib/INSTALL
 	$(AM_V_GEN)cp $(srcdir)/lib/INSTALL $@
 
@@ -131,9 +131,9 @@ dist_pkgvdata_DATA = \
   lib/INSTALL \
   lib/texinfo.tex
 
-## These must all be executable when installed.  However, if we use
-## _SCRIPTS, then the program transform will be applied, which is not
-## what we want.  So we make them executable by hand.
+# These must all be executable when installed.  However, if we use
+# _SCRIPTS, then the program transform will be applied, which is not
+# what we want.  So we make them executable by hand.
 dist_script_DATA = \
   lib/config.guess \
   lib/config.sub \
@@ -334,7 +334,8 @@ AM_TAP_LOG_DRIVER_FLAGS = --merge
 
 EXTRA_DIST += t/README t/ax/is t/ax/is_newest
 
-TESTS = ## Will be updated later.
+## Will be updated later.
+TESTS =
 
 # Some testsuite-influential variables should be overridable from the
 # test scripts, but not from the environment.
@@ -390,9 +391,9 @@ $(srcdir)/t/testsuite-part.am:
 	$(AM_V_at)mv -f t/testsuite-part.tmp $@
 EXTRA_DIST += gen-testsuite-part
 
-## The dependecies declared here are not truly complete, but such
-## completeness would cause more issues than it would solve.  See
-## automake bug#11347.
+# The dependecies declared here are not truly complete, but such
+# completeness would cause more issues than it would solve.  See
+# automake bug#11347.
 $(generated_TESTS): $(srcdir)/gen-testsuite-part
 $(srcdir)/t/testsuite-part.am: $(srcdir)/gen-testsuite-part Makefile.am
 
@@ -432,7 +433,8 @@ EXTRA_DIST += t/ax/test-defs.in
 CLEANFILES += t/ax/test-defs.sh
 nodist_noinst_DATA = t/ax/test-defs.sh
 
-noinst_SCRIPTS = # Will be updated soon.
+## Will be updated soon.
+noinst_SCRIPTS =
 
 t/ax/shell-no-trail-bslash: t/ax/shell-no-trail-bslash.in Makefile
 	$(AM_V_at)rm -f $@ $@-t
