@@ -156,13 +156,13 @@ git-tag-release: maintainer-check
 	$$run $(GIT) tag -s "v$(VERSION)" -m "$$release_type $(VERSION)"
 
 git-upload-release:
-	@# Check this a version we can cut a release release from the
-	@# current repository: we must have a beta version, and the
-	@# repository must be clean.
+	@# Check this is a version we can cut a release (either test
+	@# or stable) from.
 	@$(determine_release_type)
+	@# The repository must be clean.
 	@$(git_must_have_clean_workdir)
 	@# Check that we are releasing from a valid tag.
-	tag=`$(GIT) describe` \
+	@tag=`$(GIT) describe` \
 	  && case $$tag in "v$(VERSION)") true;; *) false;; esac \
 	  || { echo "$@: you can only create a release from a tagged" \
 	            "version" >&2; \

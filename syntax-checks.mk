@@ -115,7 +115,7 @@ sc_diff_automake sc_diff_aclocal: sc_diff_% :
 sc_no_brace_variable_expansions:
 	@if grep -v '^ *#' $(ams) | grep -F '$${' | grep -F -v '$$$$'; then \
 	  echo "Found too many uses of '\$${' in the lines above." 1>&2; \
-	  exit 1;				\
+	  exit 1; \
 	else :; fi
 
 ## Make sure 'rm' is called with '-f'.
@@ -125,7 +125,7 @@ sc_rm_minus_f:
 	   | grep -E '\<rm ([^-]|\-[^f ]*\>)'; \
 	then \
 	  echo "Suspicious 'rm' invocation." 1>&2; \
-	  exit 1;				\
+	  exit 1; \
 	else :; fi
 
 ## Never use something like "for file in $(FILES)", this doesn't work

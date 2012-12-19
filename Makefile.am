@@ -66,13 +66,13 @@ EXTRA_DIST += \
   NG-NEWS \
   $(gitlog_to_changelog_fixes)
 
-## Make versioned links.  We only run the transform on the root name;
-## then we make a versioned link with the transformed base name.  This
-## seemed like the most reasonable approach.
+# Make versioned links.  We only run the transform on the root name;
+# then we make a versioned link with the transformed base name.  This
+# seemed like the most reasonable approach.
 install-exec-hook:
 	@$(POST_INSTALL)
 	@for p in $(bin_SCRIPTS); do \
-	  f="`echo $$p|sed '$(transform)'`"; \
+	  f=`echo $$p | sed '$(transform)'`; \
 	  fv="$$f-$(APIVERSION)"; \
 	  rm -f "$(DESTDIR)$(bindir)/$$fv"; \
 	  echo " $(LN) '$(DESTDIR)$(bindir)/$$f' '$(DESTDIR)$(bindir)/$$fv'"; \
@@ -81,13 +81,13 @@ install-exec-hook:
 
 uninstall-hook:
 	@for p in $(bin_SCRIPTS); do \
-	  f="`echo $$p|sed '$(transform)'`"; \
+	  f=`echo $$p | sed '$(transform)'`; \
 	  fv="$$f-$(APIVERSION)"; \
 	  rm -f "$(DESTDIR)$(bindir)/$$fv"; \
 	done
 
-## These files depend on Makefile so they are rebuilt if $(VERSION),
-## $(datadir) or other do_subst'ituted variables change.
+# These files depend on Makefile so they are rebuilt if $(VERSION),
+# $(datadir) or other do_subst'ituted variables change.
 automake aclocal: %: %.in Makefile
 	$(AM_V_at)rm -f $@ $@-t
 	$(AM_V_GEN)$(do_subst)
@@ -96,9 +96,9 @@ automake aclocal: %: %.in Makefile
 ## comments, and that is perfectly legit.
 	$(AM_V_at)chmod a+x,a-w $@-t && mv -f $@-t $@
 
-## The master location for INSTALL is lib/INSTALL.
-## This is where "make fetch" will install new versions.
-## Make sure we also update this copy.
+# The master location for INSTALL is lib/INSTALL.
+# This is where "make fetch" will install new versions.
+# Make sure we also update this copy.
 INSTALL: lib/INSTALL
 	$(AM_V_GEN)cp $(srcdir)/lib/INSTALL $@
 
@@ -122,9 +122,9 @@ dist_pkgvdata_DATA = \
   lib/INSTALL \
   lib/texinfo.tex
 
-## These must all be executable when installed.  However, if we use
-## _SCRIPTS, then the program transform will be applied, which is not
-## what we want.  So we make them executable by hand.
+# These must all be executable when installed.  However, if we use
+# _SCRIPTS, then the program transform will be applied, which is not
+# what we want.  So we make them executable by hand.
 dist_script_DATA = \
   lib/config.guess \
   lib/config.sub \
@@ -398,9 +398,9 @@ AM_TESTS_ENVIRONMENT += \
 # Automatically-computed dependencies for tests.
 include $(srcdir)/testsuite-autodeps.am
 
-## The dependencies declared here are not truly complete, but such
-## completeness would cause more issues than it would solve.  See
-## automake bug#11347.
+# The dependencies declared here are not truly complete, but such
+# completeness would cause more issues than it would solve.  See
+# automake bug#11347.
 $(srcdir)/testsuite-autodeps.am: $(srcdir)/gen-testsuite-part
 	$(AM_V_at)rm -f $(@F)-t $@
 	$(AM_V_GEN)$(PERL) $< --srcdir $(srcdir) > $(@F)-t
@@ -437,7 +437,8 @@ EXTRA_DIST += t/ax/test-defs.in
 CLEANFILES += t/ax/test-defs.sh
 nodist_noinst_DATA = t/ax/test-defs.sh
 
-noinst_SCRIPTS = # Will be updated soon.
+## Will be updated soon.
+noinst_SCRIPTS =
 
 t/ax/shell-no-trail-bslash: t/ax/shell-no-trail-bslash.in Makefile
 	$(AM_V_at)rm -f $@ $@-t
