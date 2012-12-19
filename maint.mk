@@ -162,7 +162,7 @@ git-upload-release:
 	@$(determine_release_type)
 	@$(git_must_have_clean_workdir)
 	@# Check that we are releasing from a valid tag.
-	tag=`$(GIT) describe` \
+	@tag=`$(GIT) describe` \
 	  && case $$tag in "v$(VERSION)") true;; *) false;; esac \
 	  || { echo "$@: you can only create a release from a tagged" \
 	            "version" >&2; \
