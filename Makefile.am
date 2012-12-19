@@ -79,7 +79,7 @@ EXTRA_DIST += \
 install-exec-hook:
 	@$(POST_INSTALL)
 	@for p in $(bin_SCRIPTS); do \
-	  f="`echo $$p|sed '$(transform)'`"; \
+	  f=`echo $$p | sed '$(transform)'`; \
 	  fv="$$f-$(APIVERSION)"; \
 	  rm -f "$(DESTDIR)$(bindir)/$$fv"; \
 	  echo " $(LN) '$(DESTDIR)$(bindir)/$$f' '$(DESTDIR)$(bindir)/$$fv'"; \
@@ -88,7 +88,7 @@ install-exec-hook:
 
 uninstall-hook:
 	@for p in $(bin_SCRIPTS); do \
-	  f="`echo $$p|sed '$(transform)'`"; \
+	  f=`echo $$p | sed '$(transform)'`; \
 	  fv="$$f-$(APIVERSION)"; \
 	  rm -f "$(DESTDIR)$(bindir)/$$fv"; \
 	done
