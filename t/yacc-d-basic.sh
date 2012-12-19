@@ -59,8 +59,10 @@ END
 # the conversion from y.tab.c to parse.c.  This was OK when Bison was
 # not issuing such an #include (up to 2.6).
 #
-# To make sure that we perform this conversion, in bar/parse.y, use
-# y.tab.h instead of parse.c.
+# To make sure that we perform this conversion even with version of
+# Bison that do not generate this include, in bar/parse.y, use y.tab.h
+# instead of parse.h, and check the ylwrap does replace "y.tab.h" with
+# "parse.h".
 sed -e 's/parse\.h/y.tab.h/' <foo/parse.y >bar/parse.y
 
 cat > foo/main.c << 'END'
@@ -107,12 +109,21 @@ $AUTOMAKE baz/Makefile
 
 $MAKE
 
-test -f foo/parse.c
-test -f foo/parse.h
-test -f bar/parse.c
-test -f bar/parse.h
-test -f baz/zardoz-parse.c
-test -f baz/zardoz-parse.h
+generated="
+  foo/parse.c
+  foo/parse.h
+  bar/parse.c
+  bar/parse.h
+  baz/zardoz-parse.c
+  baz/zardoz-parse.h
+"
+
+for i in $generated; do
+  test -f $i
+done
+
+# There must remain no obsolete header guard.
+grep Y_TAB_H $generated && exit 1
 
 # The generated C source and header files must be shipped.
 for dir in foo bar; do
@@ -130,12 +141,9 @@ cd ..
 
 $MAKE distdir
 ls -l $distdir
-test -f $distdir/foo/parse.c
-test -f $distdir/foo/parse.h
-test -f $distdir/bar/parse.c
-test -f $distdir/bar/parse.h
-test -f $distdir/baz/zardoz-parse.c
-test -f $distdir/baz/zardoz-parse.h
+for i in $generated; do
+  test -f $distdir/$i
+done
 
 # Sanity check the distribution.
 yl_distcheck
@@ -143,19 +151,13 @@ yl_distcheck
 # While we are at it, make sure that 'parse.c' and 'parse.h' are erased
 # by maintainer-clean, and not by distclean.
 $MAKE distclean
-test -f foo/parse.c
-test -f foo/parse.h
-test -f bar/parse.c
-test -f bar/parse.h
-test -f baz/zardoz-parse.c
-test -f baz/zardoz-parse.h
+for i in $generated; do
+  test -f $i
+done
 ./configure # Re-create 'Makefile'.
 $MAKE maintainer-clean
-test ! -e foo/parse.c
-test ! -e foo/parse.h
-test ! -e bar/parse.c
-test ! -e bar/parse.h
-test ! -e baz/zardoz-parse.c
-test ! -e baz/zardoz-parse.h
+for i in $generated; do
+  test ! -e $i
+done
 
 :
