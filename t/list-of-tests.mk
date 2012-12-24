@@ -1220,10 +1220,6 @@ t/txinfo-vtexi2.sh \
 t/txinfo-vtexi3.sh \
 t/txinfo-vtexi4.sh \
 t/txinfo-without-info-suffix.sh \
-t/txinfo23.sh \
-t/txinfo24.sh \
-t/txinfo25.sh \
-t/txinfo28.sh \
 t/transform.sh \
 t/transform2.sh \
 t/transform3.sh \
