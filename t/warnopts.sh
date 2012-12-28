@@ -55,8 +55,8 @@ AUTOMAKE_fails
 #   sub/Makefile.am:1: warning: 'AUTOMAKE_OPTIONS' cannot have conditional contents
 grep '^Makefile.am:.*foo_SOURCES' stderr
 grep '^sub/Makefile.am:.*AUTOMAKE_OPTIONS' stderr
-grep '^sub/Makefile.am:.*foo_SOURCES' stderr && Exit 1
-grep '^Makefile.am:.*AUTOMAKE_OPTIONS' stderr && Exit 1
+grep '^sub/Makefile.am:.*foo_SOURCES' stderr && exit 1
+grep '^Makefile.am:.*AUTOMAKE_OPTIONS' stderr && exit 1
 # Only three lines of warnings.
 test $(grep -v 'warnings are treated as errors' stderr | wc -l) = 3
 
