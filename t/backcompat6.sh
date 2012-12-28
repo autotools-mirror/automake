@@ -15,8 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Backward-compatibility test: try to build and distribute a package
-# using obsoleted forms of AC_INIT, AM_INIT_AUTOMAKE and AC_OUTPUT,
-# and 'configure.in' as autconf input file.
+# using obsoleted forms of AC_INIT, AM_INIT_AUTOMAKE and AC_OUTPUT.
 # This script can also serve as mild stress-testing for Automake.
 # See also the similar test 'backcompat5.test'.
 
