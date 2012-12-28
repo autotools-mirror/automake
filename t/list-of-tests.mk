@@ -1168,7 +1168,6 @@ t/txinfo10.sh \
 t/txinfo13.sh \
 t/txinfo16.sh \
 t/txinfo17.sh \
-t/txinfo19.sh \
 t/txinfo20.sh \
 t/txinfo21.sh \
 t/txinfo22.sh \

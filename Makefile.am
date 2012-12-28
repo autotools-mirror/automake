@@ -275,7 +275,6 @@ dist_automake_ac_DATA = \
   m4/gcj.m4 \
   m4/init.m4 \
   m4/install-sh.m4 \
-  m4/lead-dot.m4 \
   m4/lex.m4 \
   m4/lispdir.m4 \
   m4/maintainer.m4 \

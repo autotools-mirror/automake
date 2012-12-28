@@ -198,16 +198,12 @@ result=no
 test "x$am_cv_prog_ln" = xln && result=yes
 AC_MSG_RESULT([$result])
 
-# The amount we should wait after modifying files depends on the platform.
-# On Windows '95, '98 and ME, files modifications have 2-seconds
-# granularity and can be up to 3 seconds in the future w.r.t. the
-# system clock.  When it is important to ensure one file is older
+# The amount we should wait after modifying files.
+# FIXME: for file systems with sub-second timestamp resolutions, this
+# FIXME: might be just one second (or even less if 'sleep' supports
+# FIXME: non-integer arguments); is it worth pursuing that road?
 # than another we wait at least 5 seconds between creations.
-case $build in
-  *-pc-msdosdjgpp) MODIFICATION_DELAY=5;;
-  *)               MODIFICATION_DELAY=2;;
-esac
-AC_SUBST([MODIFICATION_DELAY])
+AC_SUBST([MODIFICATION_DELAY], [2])
 
 ## ------------------------------------------- ##
 ##  Test for things needed by the test suite.  ##
