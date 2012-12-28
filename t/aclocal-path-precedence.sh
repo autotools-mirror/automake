@@ -46,10 +46,16 @@ cat > mdir3/bar.m4 << 'END'
 AC_DEFUN([BAR_MACRO], [::pass-bar::])
 END
 
-cat > mdir2/quux.m4 << 'END'
-AC_DEFUN([AM_INIT_AUTOMAKE], [::fail-init::])
-AC_DEFUN([AC_PROG_LIBTOOL],  [::pass-libtool::])
-AC_DEFUN([AM_GNU_GETTEXT],   [::pass-gettext::])
+cat > mdir2/quux-a.m4 << 'END'
+AC_DEFUN([AM_INIT_AUTOMAKE], [::pass-am-init::])
+END
+
+cat > mdir2/quux-b.m4 << 'END'
+AC_DEFUN([AC_PROG_LIBTOOL], [::pass-libtool::])
+END
+
+cat > mdir2/quux-c.m4 << 'END'
+AC_DEFUN([AM_GNU_GETTEXT], [::pass-gettext::])
 END
 
 cat > sysdir/libtool.m4 << 'END'
@@ -81,9 +87,9 @@ $FGREP '::pass-bar::' configure
 $FGREP '::pass-gettext::' configure
 $FGREP '::pass-libtool::' configure
 
-# Directories in ACLOCAL_PATH shouldn't take precedence over the internal
+# Directories in ACLOCAL_PATH shoul take precedence over the internal
 # automake acdir (typically '${prefix}/share/aclocal-${APIVERSION}').
-$FGREP 'am__api_version' configure
+$FGREP '::pass-am-init::' configure
 
 # A final sanity check.
 $FGREP '::fail' configure && exit 1

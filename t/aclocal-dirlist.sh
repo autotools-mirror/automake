@@ -35,9 +35,9 @@ module=[$1]
 AC_SUBST(module)])
 END
 
-cat >dirlist-test/init.m4 <<EOF
-AC_DEFUN([AM_INIT_AUTOMAKE], [I should not be included])
-EOF
+cat >dirlist-test/init.m4 <<'END'
+AC_DEFUN([AM_INIT_AUTOMAKE], [Hey, I should be included, really!])
+END
 
 $ACLOCAL --system-acdir acdir
 $AUTOCONF
@@ -49,8 +49,6 @@ grep m4_include aclocal.m4 && exit 1
 
 grep 'GUILE-VERSION' configure
 
-# This bug can occur only when we do a VPATH build of Automake
-# but it's OK because VPATH builds are done by 'make distcheck'.
-grep 'I should not be included' configure && exit 1
+$FGREP 'Hey, I should be included, really!' configure
 
 :

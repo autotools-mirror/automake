@@ -22,7 +22,10 @@
 
 . test-init.sh
 
-cat >>configure.ac <<EOF
+cat > configure.ac <<EOF
+AC_INIT([$me], [1.3])
+AM_INIT_AUTOMAKE([-Wno-obsolete])
+AC_CONFIG_FILES([Makefile])
 FOO
 AC_OUTPUT
 EOF

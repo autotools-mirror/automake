@@ -831,7 +831,7 @@ register_language ('name' => 'asm',
 		   'config_vars' => ['CCAS', 'CCASFLAGS'],
 
 		   'flags' => ['CCASFLAGS'],
-		   # Users can set AM_CCASFLAGS to include, say, DEFS,
+		   # Users can set AM_CCASFLAGS to include, say, $(DEFS),
 		   # or anything else required.  They can also set CCAS.
 		   # Or simply use Preprocessed Assembler.
 		   'compile' => '$(CCAS) $(AM_CCASFLAGS) $(CCASFLAGS)',
@@ -6641,6 +6641,16 @@ sub generate_makefile ($$)
 	  reject_var $var, "'$var' should not be defined"
 	    if $def->owner != VAR_AUTOMAKE;
 	}
+    }
+
+  # Catch some obsolete variables.
+  reject_var 'INCLUDES', "'INCLUDES' is the obsolete name for " .
+                         "'AM_CPPFLAGS' (or '*_CPPFLAGS')";
+  if (my $amflags = var ('ACLOCAL_AMFLAGS'))
+    {
+      msg_var 'obsolete', $amflags,
+              "'ACLOCAL_AMFLAGS' is deprecated; use 'AC_CONFIG_MACRO_DIRS'"
+              . " in configure.ac instead";
     }
 
   # Some of these must do this after reading .am file.

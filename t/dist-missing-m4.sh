@@ -23,6 +23,7 @@
 . test-init.sh
 
 cat >> configure.ac <<'END'
+AC_CONFIG_MACRO_DIR([m4])
 m4_pattern_forbid([^MY_])
 MY_FOOBAR || exit 1
 MY_ZARDOZ || exit 1
@@ -33,9 +34,9 @@ mkdir m4
 echo 'AC_DEFUN([MY_FOOBAR], [:])' > m4/foobar.m4
 echo 'AC_DEFUN([MY_ZARDOZ], [:])' > m4/zardoz.m4
 
-echo 'ACLOCAL_AMFLAGS = -I m4' > Makefile.am
+: > Makefile.am
 
-$ACLOCAL -I m4
+$ACLOCAL
 $AUTOCONF
 $AUTOMAKE
 

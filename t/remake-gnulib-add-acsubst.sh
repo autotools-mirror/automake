@@ -26,12 +26,12 @@ required=cc
 
 cat >> configure.ac <<'END'
 AC_PROG_CC
+AC_CONFIG_MACRO_DIRS([m4])
 MY_MACROS
 AC_OUTPUT
 END
 
 cat > Makefile.am <<'END'
-ACLOCAL_AMFLAGS = -I m4
 noinst_PROGRAMS = foo
 foo_SOURCES = foo.c
 BUILT_SOURCES = foo.h
@@ -70,7 +70,7 @@ int main (void) { return 0; }
 typedef int checkfoo[1 - 2 * (foo != 42)];
 END
 
-$ACLOCAL -I m4
+$ACLOCAL
 $AUTOCONF
 $AUTOMAKE
 

@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2011-2012 Free Software Foundation, Inc.
+# Copyright (C) 2012 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,21 +14,19 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Check that automake warnings in the 'obsolete' category are enabled
-# by default.
+# Support for $(INCLUDES) has been removed.
 
 . test-init.sh
 
-# We want (almost) complete control over automake options.
-AUTOMAKE="$am_original_AUTOMAKE --foreign -Werror"
+echo AC_PROG_CC >> configure.ac
 
-echo ACLOCAL_AMFLAGS = > Makefile.am
+cat > Makefile.am << 'END'
+bin_PROGRAMS = foo
+INCLUDES = -DFOO
+END
 
 $ACLOCAL
-AUTOMAKE_fails
-grep '^Makefile\.am:1:.*ACLOCAL_AMFLAGS.*deprecated' stderr
-
-# Check that we can override warnings about obsolete stuff.
-$AUTOMAKE -Wno-obsolete
+AUTOMAKE_fails -Wnone -Wno-error
+grep "^Makefile\\.am:2:.* 'INCLUDES'.* obsolete.* 'AM_CPPFLAGS'" stderr
 
 :
