@@ -15,8 +15,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Test aclocal's '--automake-acdir' and '--system-acdir' options.  Also
-# check that stuff in the automake acdir takes precedence over stuff in
-# the system acdir.
+# check that stuff in the system acdir takes precedence over stuff in
+# the automake acdir.
 
 . test-init.sh
 
@@ -65,14 +65,14 @@ $FGREP 'my--macro' configure
 
 rm -rf autom4te*.cache
 
-# Stuff in automake acdir takes precedence over stuff in system acdir.
+# Stuff in system acdir takes precedence over stuff in automake acdir.
 cat > am/bar.m4 <<'END'
 AC_DEFUN([MY_MACRO], [am--macro])
 END
 $ACLOCAL --automake-acdir am --system-acdir sys
 $AUTOCONF --force
 $FGREP 'fake--init--automake' configure
-$FGREP 'am--macro' configure
-$FGREP 'my--macro' configure && exit 1 # Just to be sure.
+$FGREP 'my--macro' configure
+$FGREP 'am--macro' configure && exit 1
 
 :

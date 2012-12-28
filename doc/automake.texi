@@ -3318,15 +3318,10 @@ way as it is for @command{automake} (@pxref{automake Invocation}).
 @cindex Macro search path
 @cindex @command{aclocal} search path
 
-By default, @command{aclocal} searches for @file{.m4} files in the following
-directories, in this order:
+By default, @command{aclocal} searches for @file{.m4} files in the
+following directories, in this order:
 
 @table @code
-@item @var{acdir-APIVERSION}
-This is where the @file{.m4} macros distributed with Automake itself
-are stored.  @var{APIVERSION} depends on the Automake release used;
-for example, for Automake 1.11.x, @var{APIVERSION} = @code{1.11}.
-
 @item @var{acdir}
 This directory is intended for third party @file{.m4} files, and is
 configured when @command{automake} itself is built.  This is
@@ -3334,14 +3329,19 @@ configured when @command{automake} itself is built.  This is
 expands to @file{$@{prefix@}/share/aclocal/}.  To find the compiled-in
 value of @var{acdir}, use the @option{--print-ac-dir} option
 (@pxref{aclocal Options}).
+
+@item @var{acdir-APIVERSION}
+This is where the @file{.m4} macros distributed with Automake itself
+are stored.  @var{APIVERSION} depends on the Automake release used;
+for example, for Automake 1.11.x, @var{APIVERSION} = @code{1.11}.
 @end table
 
 As an example, suppose that @command{automake-1.11.2} was configured with
 @option{--prefix=@-/usr/local}.  Then, the search path would be:
 
 @enumerate
-@item @file{/usr/local/share/aclocal-1.11.2/}
 @item @file{/usr/local/share/aclocal/}
+@item @file{/usr/local/share/aclocal-1.11.2/}
 @end enumerate
 
 The paths for the @var{acdir} and @var{acdir-APIVERSION} directories can
@@ -3363,8 +3363,8 @@ Any extra directories specified using @option{-I} options
 @enumerate
 @item @file{/foo}
 @item @file{/bar}
-@item @var{acdir}-@var{APIVERSION}
 @item @var{acdir}
+@item @var{acdir}-@var{APIVERSION}
 @end enumerate
 
 @subsubheading Modifying the Macro Search Path: @file{dirlist}
@@ -3391,13 +3391,14 @@ and that @command{aclocal} was called with the @samp{-I /foo -I /bar} options.
 Then, the search path would be
 
 @c @code looks better than @file here
+@c See test aclocal-dirlist.sh
 @enumerate
 @item @code{/foo}
 @item @code{/bar}
-@item @var{acdir}-@var{APIVERSION}
 @item @var{acdir}
 @item @code{/test1}
 @item @code{/test2}
+@item @var{acdir}-@var{APIVERSION}
 @end enumerate
 
 @noindent
@@ -3414,19 +3415,22 @@ If the @option{--system-acdir=@var{dir}} option is used, then
 directories are
 
 @c @code looks better than @file here
+@c Keep in sync with aclocal-path-precedence.sh
 @enumerate
-@item @code{/usr/share/aclocal-1.11/}
 @item @code{/usr/share/aclocal/}
+@item @code{/usr/share/aclocal-1.11/}
 @end enumerate
 
-However, suppose further that many packages have been manually
-installed on the system, with $prefix=/usr/local, as is typical.  In
+However, suppose further that many packages have been manually installed
+on the system, with @code{$@{prefix@}=/usr/local}, as is typical.  In
 that case, many of these ``extra'' @file{.m4} files are in
-@file{/usr/local/share/aclocal}.  The only way to force
-@file{/usr/bin/aclocal} to find these ``extra'' @file{.m4} files is to
-always call @samp{aclocal -I /usr/local/share/aclocal}.  This is
-inconvenient.  With @file{dirlist}, one may create a file
-@file{/usr/share/aclocal/dirlist} containing only the single line
+@file{/usr/local/share/aclocal}.  A way to force @file{/usr/bin/aclocal}
+to find these ``extra'' @file{.m4} files is to export @code{ACLOCAL_PATH}
+to @samp{/usr/local/share/aclocal}.  This is a little inconvenient,
+since it requires either explicit user cooperation, or editing of the
+system global shell initialization file.  With @file{dirlist}, one may
+create a file @file{/usr/share/aclocal/dirlist} containing only the
+single line
 
 @example
 /usr/local/share/aclocal
@@ -3435,20 +3439,18 @@ inconvenient.  With @file{dirlist}, one may create a file
 Now, the ``default'' search path on the affected system is
 
 @c @code looks better than @file here
+@c See test aclocal-dirlist.sh
 @enumerate
-@item @code{/usr/share/aclocal-1.11/}
 @item @code{/usr/share/aclocal/}
 @item @code{/usr/local/share/aclocal/}
+@item @code{/usr/share/aclocal-1.11/}
 @end enumerate
 
-without the need for @option{-I} options; @option{-I} options can be reserved
-for project-specific needs (@file{my-source-dir/m4/}), rather than
-using it to work around local system-dependent tool installation
-directories.
+without the need of any explicit @code{ACLOCAL_PATH} setting.
 
 Similarly, @file{dirlist} can be handy if you have installed a local
-copy of Automake in your account and want @command{aclocal} to look for
-macros installed at other places on the system.
+copy of Automake in your account and want @command{aclocal} to look
+for macros installed at other places on the system.
 
 @anchor{ACLOCAL_PATH}
 @subsubheading Modifying the Macro Search Path: @file{ACLOCAL_PATH}
@@ -3475,16 +3477,6 @@ In this case, serial numbers in @file{.m4} are honoured too,
 Conversely to @file{dirlist}, @env{ACLOCAL_PATH} is useful if you are
 using a global copy of Automake and want @command{aclocal} to look for
 macros somewhere under your home directory.
-
-@subsubheading Planned future incompatibilities
-
-The order in which the directories in the macro search path are currently
-looked up is confusing and/or suboptimal in various aspects, and is
-probably going to be changed in the future Automake release.  In
-particular, directories in @env{ACLOCAL_PATH} and @file{@var{acdir}}
-might end up taking precedence over @file{@var{acdir-APIVERSION}}, and
-directories in @file{@var{acdir}/dirlist} might end up taking precedence
-over @file{@var{acdir}}.  @emph{This is a possible future incompatibility!}
 
 @node Extending aclocal
 @subsection Writing your own aclocal macros
@@ -3513,7 +3505,7 @@ aclocal_DATA = mymacro.m4 myothermacro.m4
 @noindent
 Please do use @file{$(datadir)/aclocal}, and not something based on
 the result of @samp{aclocal --print-ac-dir} (@pxref{Hard-Coded Install
-Paths}, for arguments).  It might also be helpful to suggest to
+Paths}, for rationale).  It might also be helpful to suggest to
 the user to add the @file{$(datadir)/aclocal} directory to his
 @env{ACLOCAL_PATH} variable (@pxref{ACLOCAL_PATH}) so that
 @command{aclocal} will find the @file{.m4} files installed by your
