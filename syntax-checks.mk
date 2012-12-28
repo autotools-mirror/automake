@@ -443,12 +443,7 @@ sc_m4_am_plain_egrep_fgrep:
 ## deprecated for several years (at least since autoconf 2.50) and
 ## support for it will be removed in Automake 1.14.
 sc_tests_no_configure_in:
-	@if grep -E '\bconfigure\\*\.in\b' $(xtests) $(xdefs) \
-	      | grep -Ev '/backcompat.*\.(sh|tap):' \
-	      | grep -Ev '/autodist-configure-no-subdir\.sh:' \
-	      | grep -Ev '/(configure|help)\.sh:' \
-	      | grep .; \
-	then \
+	@if grep -E '\bconfigure\\*\.in\b' $(xtests) $(xdefs); then \
 	  echo "Use 'configure.ac', not 'configure.in', as the name" >&2; \
 	  echo "for configure input files in the test cases above." >&2; \
 	  exit 1; \
