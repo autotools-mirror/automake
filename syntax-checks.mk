@@ -438,9 +438,10 @@ sc_m4_am_plain_egrep_fgrep:
 	  exit 1; \
 	fi
 
-## Prefer 'configure.ac' over the obsolescent 'configure.in' as the name
+## Use 'configure.ac', not the obsolete 'configure.in', as the name
 ## for configure input files in our testsuite.  The latter  has been
-## deprecated for several years (at least since autoconf 2.50).
+## deprecated for several years (at least since autoconf 2.50) and
+## support for it will be removed in Automake 1.14.
 sc_tests_no_configure_in:
 	@if grep -E '\bconfigure\\*\.in\b' $(xtests) $(xdefs) \
 	      | grep -Ev '/backcompat.*\.(sh|tap):' \
