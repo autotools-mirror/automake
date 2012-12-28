@@ -22,16 +22,11 @@
 # We want (almost) complete control over automake options.
 AUTOMAKE="$am_original_AUTOMAKE --foreign -Werror"
 
-echo AC_PROG_CC >> configure.ac
-
-cat > Makefile.am <<'END'
-bin_PROGRAMS = foo
-INCLUDES = -Ibar
-END
+echo ACLOCAL_AMFLAGS = > Makefile.am
 
 $ACLOCAL
 AUTOMAKE_fails
-grep '^Makefile\.am:2:.*INCLUDES.*AM_CPPFLAGS' stderr
+grep '^Makefile\.am:1:.*ACLOCAL_AMFLAGS.*deprecated' stderr
 
 # Check that we can override warnings about obsolete stuff.
 $AUTOMAKE -Wno-obsolete
