@@ -95,8 +95,8 @@ $MAKE distcheck
 # Invocation of AC_CONFIG_LIBOBJ_DIR may be necessary for reasons
 # unrelated to Automake or Makefile.am layout.
 
-sed 's/#: //' configure.ac >configure.int
-mv -f configure.int configure.ac
+sed 's/#: //' configure.ac >configure.tmp
+mv -f configure.tmp configure.ac
 
 $ACLOCAL
 $AUTOCONF
@@ -120,8 +120,8 @@ mv -f src/t src/Makefile.am
 ## Test using ALLOCA from a sibling directory. ##
 ## ------------------------------------------- ##
 
-sed 's/#x //; s/lib\/Makefile //' configure.ac >configure.int
-mv -f configure.int configure.ac
+sed 's/#x //; s/lib\/Makefile //' configure.ac >configure.tmp
+mv -f configure.tmp configure.ac
 
 cat >Makefile.am <<'EOF'
 SUBDIRS = src
@@ -157,8 +157,8 @@ $MAKE distclean
 ## Test using ALLOCA from parent directory. ##
 ## ---------------------------------------- ##
 
-sed 's/^.*src\/Makefile.*$//' configure.ac >configure.int
-mv -f configure.int configure.ac
+sed 's/^.*src\/Makefile.*$//' configure.ac >configure.tmp
+mv -f configure.tmp configure.ac
 
 cat >Makefile.am <<'EOF'
 AUTOMAKE_OPTIONS = subdir-objects

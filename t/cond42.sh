@@ -1,4 +1,5 @@
 #!/bin/sh
+nfig
 # Copyright (C) 2008-2012 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
@@ -28,10 +29,10 @@ _AM_COND_IF([COND])
 AC_OUTPUT
 END
 
-edit_configure_in ()
+edit_configure_ac ()
 {
-  sed "$@" < configure.ac >configure.int
-  mv -f configure.int configure.ac
+  sed "$@" < configure.ac >configure.tmp
+  mv -f configure.tmp configure.ac
   rm -rf autom4te*.cache
 }
 
@@ -41,15 +42,15 @@ $ACLOCAL
 AUTOMAKE_fails
 grep '^configure\.ac:8:.* condition stack' stderr
 
-edit_configure_in 's/_AM_COND_IF/_AM_COND_ELSE/'
+edit_configure_ac 's/_AM_COND_IF/_AM_COND_ELSE/'
 AUTOMAKE_fails
 grep '^configure\.ac:7:.* else without if' stderr
 
-edit_configure_in 's/_AM_COND_ELSE/_AM_COND_ENDIF/'
+edit_configure_ac 's/_AM_COND_ELSE/_AM_COND_ENDIF/'
 AUTOMAKE_fails
 grep '^configure\.ac:7:.* endif without if' stderr
 
-edit_configure_in 's/\(_AM_COND_ENDIF\).*/_AM_COND_IF\
+edit_configure_ac 's/\(_AM_COND_ENDIF\).*/_AM_COND_IF\
 _AM_COND_ENDIF/'
 AUTOMAKE_fails
 grep '^configure\.ac:7:.* not enough arguments.* _AM_COND_IF' stderr

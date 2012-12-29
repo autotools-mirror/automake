@@ -38,14 +38,14 @@ grep '^MAINT.*#' Makefile
 ./configure --enable-maintainer-mode
 grep '^MAINT.*#' Makefile && exit 1
 
-sed 's/\(AM_MAINTAINER_MODE\).*/\1([disable])/' configure.ac > configure.int
-mv -f configure.int configure.ac
+sed 's/\(AM_MAINTAINER_MODE\).*/\1([disable])/' configure.ac > configure.tmp
+mv -f configure.tmp configure.ac
 mv configure configure1
 $AUTOCONF --force
 diff configure configure1
 
-sed 's/\(AM_MAINTAINER_MODE\).*/\1([enable])/' configure.ac > configure.int
-mv -f configure.int configure.ac
+sed 's/\(AM_MAINTAINER_MODE\).*/\1([enable])/' configure.ac > configure.tmp
+mv -f configure.tmp configure.ac
 $AUTOCONF --force
 
 ./configure
@@ -57,8 +57,8 @@ grep '^MAINT.*#' Makefile && exit 1
 ./configure --disable-maintainer-mode
 grep '^MAINT.*#' Makefile
 
-sed 's/\(AM_MAINTAINER_MODE\).*/\1([foo])/' configure.ac > configure.int
-mv -f configure.int configure.ac
+sed 's/\(AM_MAINTAINER_MODE\).*/\1([foo])/' configure.ac > configure.tmp
+mv -f configure.tmp configure.ac
 $AUTOCONF --force -Werror && exit 1
 
 :
