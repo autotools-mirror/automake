@@ -18,6 +18,12 @@ AU_DEFUN([AM_PROG_CC_STDC],
     Also, your code should no longer depend upon 'am_cv_prog_cc_stdc',
     but upon 'ac_cv_prog_cc_stdc'.])])
 
+AC_DEFUN([AM_PROG_MKDIR_P],
+[AC_FATAL(['$0': this macro is obsolete.
+    You should simply use the 'AC][_PROG_MKDIR_P' macro instead, and
+    use '$(MKDIR_P)' instead of '$(mkdir_p)' in your Makefile.am
+    files.])])
+
 AC_DEFUN([AM_C_PROTOTYPES],
          [AC_FATAL([automatic de-ANSI-fication support has been removed])])
 AU_DEFUN([fp_C_PROTOTYPES], [AM_C_PROTOTYPES])

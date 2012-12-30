@@ -133,6 +133,7 @@ t/aminit-moreargs-deprecation.sh \
 t/amassign.sh \
 t/am-config-header-no-more.sh \
 t/am-prog-cc-stdc-no-more.sh \
+t/am-prog-mkdir-p-no-more.sh \
 t/am-macro-not-found.sh \
 t/amopt.sh \
 t/amopts-location.sh \
