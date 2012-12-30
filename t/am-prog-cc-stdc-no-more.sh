@@ -1,5 +1,5 @@
-#!/bin/sh
-# Copyright (C) 2008-2012 Free Software Foundation, Inc.
+#! /bin/sh
+# Copyright (C) 2011-2012 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,31 +14,30 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Ensure an error with underquoted usage of AM_COND_IF in configure.ac.
+# Check that any attempt to use the obsolete macro AM_CONFIG_HEADER
+# elicits clear and explicit fatal errors.
 
 . test-init.sh
 
-cat >>configure.ac <<'END'
-AM_CONDITIONAL([COND1], [:])
-AM_CONDITIONAL([COND2], [:])
-AM_COND_IF([COND1],
-           AM_COND_IF([COND2], [:])
-)
-AC_OUTPUT
-END
-
-: >Makefile.am
+geterr ()
+{
+    "$@" -Wnone 2>stderr && { cat stderr >&2; exit 1; }
+    cat stderr >&2
+    grep "^configure\.ac:4:.*'AM_PROG_CC_STDC'.*obsolete" stderr
+    grep "'AC_PROG_CC'.* instead" stderr
+}
 
 $ACLOCAL
-AUTOMAKE_fails
-$EGREP '^configure\.ac:7:.* missing m4 quoting.*macro depth 2( |$)' stderr
+mv aclocal.m4 aclocal.sav
 
-sed '/.AM_COND_IF/{
-        s/^/[/
-        s/$/]/
-     }' < configure.ac > configure.tmp
-mv -f configure.tmp configure.ac
-rm -rf autom4te*.cache
-$AUTOMAKE
+echo AM_PROG_CC_STDC >> configure.ac
+
+geterr $ACLOCAL
+test ! -f aclocal.m4
+
+cat aclocal.sav "$am_automake_acdir"/obsolete-err.m4 > aclocal.m4
+
+geterr $AUTOCONF
+geterr $AUTOMAKE
 
 :

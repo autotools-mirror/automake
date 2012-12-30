@@ -46,8 +46,8 @@ if $ACLOCAL; then
 fi
 
 : >config.rpath
-sed '/AM_GNU_GETTEXT_VERSION/d' configure.ac >configure.int
-mv -f configure.int configure.ac
+sed '/AM_GNU_GETTEXT_VERSION/d' configure.ac >configure.tmp
+mv -f configure.tmp configure.ac
 
 $ACLOCAL
 

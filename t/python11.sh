@@ -43,8 +43,8 @@ grep 'checking for IShouldNotExist1' stdout
 grep 'checking for IShouldNotExist2' stdout
 grep 'no suitable Python interpreter found' stderr
 
-sed 's/AM_PATH_PYTHON/AM_PATH_PYTHON(,,:)/' configure.ac >configure.int
-mv -f configure.int configure.ac
+sed 's/AM_PATH_PYTHON/AM_PATH_PYTHON(,,:)/' configure.ac >configure.tmp
+mv -f configure.tmp configure.ac
 $ACLOCAL --force
 $AUTOCONF --force
 # This one should define PYTHON as ":" and exit successfully.
