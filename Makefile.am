@@ -256,6 +256,7 @@ dist_automake_ac_DATA = \
   m4/lispdir.m4 \
   m4/minuso.m4 \
   m4/missing.m4 \
+  m4/obsolete-err.m4 \
   m4/options.m4 \
   m4/python.m4 \
   m4/runlog.m4 \
