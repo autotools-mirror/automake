@@ -17,8 +17,8 @@
 # Check that the version.texi file is automatically created and distributed
 # if @included into a texi source.  Also check that is correctly defined
 # @values definitions it is advertised to.
-# See also the related test 'vtexi3.sh', which does similar checks, but
-# for more vers*.texi files, and does not require makeinfo, tex and
+# See also the related test 'txinfo-vtexi4.sh', which does similar checks,
+# but for more vers*.texi files, and does not require makeinfo, tex and
 # texi2dvi.
 
 required='makeinfo tex texi2dvi grep-nonprint'
