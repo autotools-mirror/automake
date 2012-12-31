@@ -315,16 +315,19 @@ sub _process_option_list (\%@)
         {
           set_strictness ($_);
         }
+      # TODO: Remove this special check in Automake 1.14 or 1.15.
       elsif (/^(.*\/)?ansi2knr$/)
         {
           # Obsolete (and now removed) de-ANSI-fication support.
           error ($where,
                  "automatic de-ANSI-fication support has been removed");
         }
+      # TODO: Remove this special check in Automake 1.15.
       elsif ($_ eq 'cygnus')
         {
           error $where, "support for Cygnus-style trees has been removed";
         }
+      # TODO: Remove this special check in Automake 1.14 or 1.15.
       elsif ($_ eq 'dist-lzma')
         {
           error ($where, "support for lzma-compressed distribution " .

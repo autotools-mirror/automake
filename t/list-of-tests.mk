@@ -41,7 +41,6 @@ t/remake-timing-bug-pr8365.sh \
 t/lex-subobj-nodep.sh \
 t/remake-am-pr10111.sh \
 t/remake-m4-pr10111.sh \
-t/txinfo5.sh \
 $(perl_fake_XFAIL_TESTS)
 
 perl_TESTS = \
@@ -1159,30 +1158,29 @@ t/targetclash.sh \
 t/tests-environment-fd-redirect.sh \
 t/tests-environment-and-log-compiler.sh \
 t/txinfo.sh \
-t/txinfo2.sh \
-t/txinfo3.sh \
-t/txinfo4.sh \
-t/txinfo6.sh \
-t/txinfo7.sh \
-t/txinfo8.sh \
-t/txinfo9.sh \
+t/txinfo-no-extra-dist.sh \
+t/txinfo-suffix-less-info.sh \
+t/txinfo-unrecognized-info-suffix.sh \
+t/txinfo-other-suffixes.sh \
+t/txinfo-add-missing-and-dist.sh \
+t/txinfo-no-repeated-targets.sh \
 t/txinfo10.sh \
-t/txinfo13.sh \
-t/txinfo16.sh \
-t/txinfo17.sh \
+t/txinfo-subdir-pr343.sh \
+t/txinfo-info-in-srcdir.sh \
+t/txinfo-setfilename-repeated.sh \
 t/txinfo20.sh \
-t/txinfo21.sh \
-t/txinfo22.sh \
+t/txinfo-many-output-formats.sh \
+t/txinfo-override-texinfo-tex.sh \
 t/txinfo23.sh \
 t/txinfo24.sh \
 t/txinfo25.sh \
-t/txinfo26.sh \
-t/txinfo27.sh \
+t/txinfo-absolute-srcdir-pr408.sh \
+t/txinfo-no-installinfo.sh \
 t/txinfo28.sh \
-t/txinfo29.sh \
-t/txinfo31.sh \
-t/txinfo32.sh \
-t/txinfo33.sh \
+t/txinfo-override-infodeps.sh \
+t/txinfo-setfilename-suffix-match.sh \
+t/txinfo-bsd-make-recurs.sh \
+t/txinfo-clean.sh \
 t/txinfo-no-clutter.sh \
 t/txinfo-unrecognized-extension.sh \
 t/transform.sh \
