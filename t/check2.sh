@@ -57,7 +57,7 @@ grep '^PASS: subrun\.sh *$' stdout
 grep 'PASS.*echo\.sh' stdout && exit 1
 
 # 'check' should depend directly on 'check-am' (similar tests are
-# in check.sh and check3.sh).
+# in 'check.sh' and 'built-sources-check.sh').
 $EGREP '^check:.* check-recursive( |$)' Makefile.in
 $EGREP '^check:.* check-am( |$)' dir/Makefile.in
 
