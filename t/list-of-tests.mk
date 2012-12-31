@@ -919,6 +919,7 @@ t/remake-after-aclocal-m4.sh \
 t/remake-include-configure.sh \
 t/remake-include-makefile.sh \
 t/remake-include-aclocal.sh \
+t/remake-config-status-dependencies.sh \
 t/remake-deeply-nested.sh \
 t/remake-mild-stress.sh \
 t/remake-all-1.sh \
