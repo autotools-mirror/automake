@@ -15,8 +15,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Make sure aclocal define macros in the same order as -I's.
-# This is the same as aclocal9.sh, with the macro calls reversed.
-# (It did make a difference.)
+# This is the same as aclocal-I-order-1.sh, with the macro calls
+# reversed (it did make a difference).
 #
 # Also check for --install.
 

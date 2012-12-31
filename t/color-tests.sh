@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Test Automake TESTS color output, by forcing it.
-# Keep this in sync with the sister test 'color2.sh'.
+# Keep this in sync with the sister test 'color-tests2.sh'.
 
 required='grep-nonprint'
 # For gen-testsuite-part: ==> try-with-serial-tests <==
