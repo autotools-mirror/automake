@@ -309,6 +309,7 @@ sub _process_option_list (\%@)
         {
           set_strictness ($_);
         }
+      # TODO: Remove this special check in Automake 1.15.
       elsif ($_ eq 'cygnus')
         {
           error $where, "support for Cygnus-style trees has been removed";
