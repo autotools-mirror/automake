@@ -1,6 +1,6 @@
 ##                                                          -*- Autoconf -*-
 ## Generated from amversion.in; do not edit by hand.
-# Copyright (C) 2002-2012 Free Software Foundation, Inc.
+# Copyright (C) 2002-2013 Free Software Foundation, Inc.
 #
 # This file is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
