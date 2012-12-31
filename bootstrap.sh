@@ -2,7 +2,7 @@
 
 # This script helps bootstrap automake, when checked out from git.
 #
-# Copyright (C) 2002-2012 Free Software Foundation, Inc.
+# Copyright (C) 2002-2013 Free Software Foundation, Inc.
 # Originally written by Pavel Roskin <proski@gnu.org> September 2002.
 #
 # This program is free software; you can redistribute it and/or modify
