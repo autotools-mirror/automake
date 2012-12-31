@@ -16,6 +16,9 @@
 
 # Test support for building HTML documentation, and the many
 # install-DOC flavors.
+# Keep in sync with sister test 'txinfo-many-output-formats-vpath.sh'.
+# FIXME: in the long term, the best thing to do is probably to convert
+# FIXME: this test and that sister test to TAP, and merge them.
 
 required='makeinfo tex texi2dvi'
 . test-init.sh
@@ -34,7 +37,6 @@ AC_OUTPUT
 EOF
 
 cat > Makefile.am << 'END'
-check-local: ps pdf dvi html # For "make distcheck".
 SUBDIRS = rec
 info_TEXINFOS = main.texi sub/main2.texi
 END
@@ -73,7 +75,7 @@ info_TEXINFOS = main3.texi
 
 install-pdf-local:
 	@$(MKDIR_P) "$(pdfdir)"
-	:> "$(pdfdir)/hello"
+	: > "$(pdfdir)/hello"
 uninstall-local:
 	rm -f "$(pdfdir)/hello"
 
@@ -84,7 +86,15 @@ $ACLOCAL
 $AUTOMAKE --add-missing
 $AUTOCONF
 
-./configure --prefix "$(pwd)"
+# To simplify syncing with sister test 'txinfo-many-output-formats.sh'
+srcdir=.
+
+if test $srcdir = ..; then
+  mkdir build
+  cd build
+fi
+
+$srcdir/configure --prefix="$(pwd)"
 
 $MAKE
 
@@ -96,11 +106,11 @@ test -d sub/main2.html
 test -d rec/main3.html
 
 # Rebuilding main.html should cause its timestamp to be updated.
-is_newest main.html main.texi
+is_newest main.html $srcdir/main.texi
 $sleep
-touch main.texi
+touch $srcdir/main.texi
 $MAKE html
-is_newest main.html main.texi
+is_newest main.html $srcdir/main.texi
 
 $MAKE clean
 test ! -e main.html
@@ -119,19 +129,18 @@ test ! -e rec/main3.html
 
 # Make sure AM_MAKEINFOHTMLFLAGS is supported, and override AM_MAKEINFO.
 
-cp Makefile.am Makefile.sav
-cat >>Makefile.am <<\EOF
+cp $srcdir/Makefile.am $srcdir/Makefile.sav
+cat >> $srcdir/Makefile.am <<'EOF'
 AM_MAKEINFOHTMLFLAGS = --no-headers --no-split
 AM_MAKEINFOFLAGS = --unsupported-option
 EOF
-$AUTOMAKE
+(cd $srcdir && $AUTOMAKE)
 ./config.status Makefile
 
 $MAKE html
 test -f main.html
 test -f sub/main2.html
 test -d rec/main3.html
-
 $MAKE clean
 test ! -e main.html
 test ! -e sub/main2.html
@@ -150,7 +159,6 @@ $MAKE dvi
 test -f main.dvi
 test -f sub/main2.dvi
 test -f rec/main3.dvi
-
 $MAKE clean
 test ! -e main.dvi
 test ! -e sub/main2.dvi
@@ -191,10 +199,7 @@ test ! -e share/$me/pdf/main3.pdf
 test ! -e share/$me/pdf/hello
 
 # Restore the makefile without a broken AM_MAKEINFOFLAGS definition.
-mv -f Makefile.sav Makefile.am
-$AUTOMAKE
-./config.status Makefile
-
+cp -f $srcdir/Makefile.sav $srcdir/Makefile.am
 $MAKE distcheck
 
 :

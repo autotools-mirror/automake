@@ -16,10 +16,9 @@
 
 # Test support for building HTML documentation, and the many
 # install-DOC flavors, in VPATH builds.
-# Keep in sync with sister test 'txinfo21.sh'.
-# FIXME: in the long term, the best thing to do is probably to
-# FIXME: convert this test and the sister test 'txinfo21.sh' to
-# FIXME: TAP, and merge them.
+# Keep in sync with sister test 'txinfo-many-output-formats.sh'.
+# FIXME: in the long term, the best thing to do is probably to convert
+# FIXME: this test and that sister test to TAP, and merge them.
 
 required='makeinfo tex texi2dvi'
 . test-init.sh
@@ -76,18 +75,26 @@ info_TEXINFOS = main3.texi
 
 install-pdf-local:
 	@$(MKDIR_P) "$(pdfdir)"
-	:> "$(pdfdir)/hello"
+	: > "$(pdfdir)/hello"
 uninstall-local:
 	rm -f "$(pdfdir)/hello"
+
+check-local: ps pdf dvi html # For "make distcheck".
 END
 
 $ACLOCAL
 $AUTOMAKE --add-missing
 $AUTOCONF
 
-mkdir build
-cd build
-../configure
+# To simplify syncing with sister test 'txinfo-many-output-formats.sh'
+srcdir=..
+
+if test $srcdir = ..; then
+  mkdir build
+  cd build
+fi
+
+$srcdir/configure --prefix="$(pwd)"
 
 $MAKE
 
@@ -99,16 +106,16 @@ test -d sub/main2.html
 test -d rec/main3.html
 
 # Rebuilding main.html should cause its timestamp to be updated.
-is_newest main.html ../main.texi
+is_newest main.html $srcdir/main.texi
 $sleep
-touch ../main.texi
+touch $srcdir/main.texi
 $MAKE html
-is_newest main.html ../main.texi
+is_newest main.html $srcdir/main.texi
 
 $MAKE clean
-test ! -d main.html
-test ! -d sub/main2.html
-test ! -d rec/main3.html
+test ! -e main.html
+test ! -e sub/main2.html
+test ! -e rec/main3.html
 
 # Test production of a single HTML file.
 $MAKE MAKEINFOFLAGS=--no-split html
@@ -116,42 +123,55 @@ test -f main.html
 test -f sub/main2.html
 test -f rec/main3.html
 $MAKE clean
-test ! -f main.html
-test ! -f sub/main2.html
-test ! -f rec/main3.html
+test ! -e main.html
+test ! -e sub/main2.html
+test ! -e rec/main3.html
 
 # Make sure AM_MAKEINFOHTMLFLAGS is supported, and override AM_MAKEINFO.
-cat >> ../Makefile.am <<\EOF
+
+cp $srcdir/Makefile.am $srcdir/Makefile.sav
+cat >> $srcdir/Makefile.am <<'EOF'
 AM_MAKEINFOHTMLFLAGS = --no-headers --no-split
 AM_MAKEINFOFLAGS = --unsupported-option
 EOF
-../configure --prefix "$(pwd)"
+(cd $srcdir && $AUTOMAKE)
+./config.status Makefile
+
 $MAKE html
 test -f main.html
 test -f sub/main2.html
 test -d rec/main3.html
 $MAKE clean
-test ! -f main.html
-test ! -f sub/main2.html
-test ! -d rec/main3.html
+test ! -e main.html
+test ! -e sub/main2.html
+test ! -e rec/main3.html
 
 $MAKE install-html
 test -f share/$me/html/main.html
 test -f share/$me/html/main2.html
 test -d share/$me/html/main3.html
 $MAKE uninstall
-test ! -f share/$me/html/main.html
-test ! -f share/$me/html/main2.html
-test ! -d share/$me/html/main3.html
+test ! -e share/$me/html/main.html
+test ! -e share/$me/html/main2.html
+test ! -e share/$me/html/main3.html
+
+$MAKE dvi
+test -f main.dvi
+test -f sub/main2.dvi
+test -f rec/main3.dvi
+$MAKE clean
+test ! -e main.dvi
+test ! -e sub/main2.dvi
+test ! -e rec/main3.dvi
 
 $MAKE install-dvi
 test -f share/$me/dvi/main.dvi
 test -f share/$me/dvi/main2.dvi
 test -f share/$me/dvi/main3.dvi
 $MAKE uninstall
-test ! -f share/$me/dvi/main.dvi
-test ! -f share/$me/dvi/main2.dvi
-test ! -f share/$me/dvi/main3.dvi
+test ! -e share/$me/dvi/main.dvi
+test ! -e share/$me/dvi/main2.dvi
+test ! -e share/$me/dvi/main3.dvi
 
 dvips --help || skip_ "dvips is missing"
 
@@ -160,9 +180,9 @@ test -f share/$me/ps/main.ps
 test -f share/$me/ps/main2.ps
 test -f share/$me/ps/main3.ps
 $MAKE uninstall
-test ! -f share/$me/ps/main.ps
-test ! -f share/$me/ps/main2.ps
-test ! -f share/$me/ps/main3.ps
+test ! -e share/$me/ps/main.ps
+test ! -e share/$me/ps/main2.ps
+test ! -e share/$me/ps/main3.ps
 
 pdfetex --help || pdftex --help \
   || skip_ "pdftex and pdfetex are both missing"
@@ -173,9 +193,13 @@ test -f share/$me/pdf/main2.pdf
 test -f share/$me/pdf/main3.pdf
 test -f share/$me/pdf/hello
 $MAKE uninstall
-test ! -f share/$me/pdf/main.pdf
-test ! -f share/$me/pdf/main2.pdf
-test ! -f share/$me/pdf/main3.pdf
-test ! -f share/$me/pdf/hello
+test ! -e share/$me/pdf/main.pdf
+test ! -e share/$me/pdf/main2.pdf
+test ! -e share/$me/pdf/main3.pdf
+test ! -e share/$me/pdf/hello
+
+# Restore the makefile without a broken AM_MAKEINFOFLAGS definition.
+cp -f $srcdir/Makefile.sav $srcdir/Makefile.am
+$MAKE distcheck
 
 :
