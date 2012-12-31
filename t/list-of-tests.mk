@@ -1162,8 +1162,7 @@ t/txinfo-no-extra-dist.sh \
 t/txinfo-suffix-less-info.sh \
 t/txinfo-unrecognized-info-suffix.sh \
 t/txinfo-other-suffixes.sh \
-t/txinfo-add-missing.sh \
-t/txinfo-add-missing2.sh \
+t/txinfo-add-missing-and-dist.sh \
 t/txinfo-no-repeated-targets.sh \
 t/txinfo10.sh \
 t/txinfo-subdir-pr343.sh \
