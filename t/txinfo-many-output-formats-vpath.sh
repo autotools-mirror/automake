@@ -15,8 +15,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Test support for building HTML documentation, and the many
-# install-DOC flavors.
-# Keep in sync with sister test 'txinfo-many-output-formats-vpath.sh'.
+# install-DOC flavors, in VPATH builds.
+# Keep in sync with sister test 'txinfo-many-output-formats.sh'.
 # FIXME: in the long term, the best thing to do is probably to convert
 # FIXME: this test and that sister test to TAP, and merge them.
 
@@ -87,7 +87,7 @@ $AUTOMAKE --add-missing
 $AUTOCONF
 
 # To simplify syncing with sister test 'txinfo-many-output-formats.sh'
-srcdir=.
+srcdir=..
 
 if test $srcdir = ..; then
   mkdir build
