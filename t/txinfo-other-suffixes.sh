@@ -19,15 +19,17 @@
 . test-init.sh
 
 cat > Makefile.am << 'END'
-info_TEXINFOS = foo.txi
+info_TEXINFOS = foo.txi bar.texinfo
 END
 
 echo '@setfilename foo.info' > foo.txi
+echo '@setfilename bar.info' > bar.texinfo
 : > texinfo.tex
 
 $ACLOCAL
 $AUTOMAKE
 
 grep '^\.txi\.info: *$' Makefile.in
+grep '^\.texinfo\.info: *$' Makefile.in
 
 :

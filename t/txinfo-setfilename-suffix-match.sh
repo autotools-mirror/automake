@@ -14,7 +14,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Make sure file extensions are matched correctly.
+# Make sure file extensions are matched correctly in the code
+# parsing texi files for @setfilename declarations.
 # Report from Eric Dorland.
 
 . test-init.sh
@@ -25,5 +26,8 @@ cat >bar.texi <<EOF
 EOF
 
 $ACLOCAL
-$AUTOCONF
 $AUTOMAKE --add-missing
+
+$EGREP '[ /]bar-1\.9\.info( |$)' Makefile.in
+
+:

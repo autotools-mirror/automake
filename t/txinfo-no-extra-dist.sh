@@ -14,8 +14,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Test to ensure that a ".info~" file doesn't end up in the
-# distribution.  Bug report from Greg McGary.
+# Test to ensure that a ".info~" or ".info.bak" file doesn't end up
+# in the distribution.  Bug report from Greg McGary.
 
 . test-init.sh
 
@@ -24,22 +24,36 @@ AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
-info_TEXINFOS = textutils.texi
-.PHONY: test
-test:
+info_TEXINFOS = textutils.texi subdir/main.texi
+test: distdir
 	@echo DISTFILES = $(DISTFILES)
-	case '$(DISTFILES)' in *'~'*) exit 1;; *) exit 0;; esac
+	@case '$(DISTFILES)' in *'~'*|*'.bak'*) exit 1;; *) exit 0;; esac
+	st=0; \
+	 find $(distdir) | grep '~' && st=1; \
+	 find $(distdir) | grep '\.bak' && st=1; \
+	 exit $$st
+PHONY: test
 END
 
 : > texinfo.tex
+mkdir subdir
 echo '@setfilename textutils.info' > textutils.texi
-: > textutils.info~
+echo '@setfilename main.info' > subdir/main.texi
 
 $ACLOCAL
 $AUTOCONF
 $AUTOMAKE
 
 ./configure
+: > textutils.info
+: > subdir/main.info
+: > textutils.info~
+: > textutils.info.bak
+: > subdir/main.info~
+: > subdir/main.info.bak
 $MAKE test
+$MAKE maintainer-clean
+test -f subdir/main.info~
+test -f subdir/main.info.bak
 
 :

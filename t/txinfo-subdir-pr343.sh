@@ -15,8 +15,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Check for subdir Texinfo (PR/343).
-# Also make sure we do not distribute too much foo.info* files (Report
-# from Vincent Lefevre).
 
 required='makeinfo tex texi2dvi'
 . test-init.sh
@@ -29,8 +27,6 @@ subdir_main_TEXINFOS = subdir/inc.texi
 
 installcheck-local:
 	test -f "$(infodir)/main.info"
-check-local:
-	test ! -f $(srcdir)/subdir/main.info.bak
 END
 
 mkdir subdir
@@ -50,8 +46,6 @@ cat > subdir/inc.texi << 'END'
 I'm included.
 END
 
-touch subdir/main.info.bak
-
 $ACLOCAL
 $AUTOMAKE --add-missing
 $AUTOCONF
@@ -62,6 +56,5 @@ cd build
 $MAKE distcheck
 test -f ../subdir/main.info
 test ! -e subdir/main.info
-test -f ../subdir/main.info.bak
 
 :
