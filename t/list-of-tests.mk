@@ -1165,6 +1165,7 @@ t/txinfo-dvi-recurs.sh \
 t/txinfo-info-in-srcdir.sh \
 t/txinfo-makeinfo-error-no-clobber.sh \
 t/txinfo-many-output-formats.sh \
+t/txinfo-many-output-formats-vpath.sh \
 t/txinfo-no-clutter.sh \
 t/txinfo-no-extra-dist.sh \
 t/txinfo-no-installinfo.sh \
