@@ -63,7 +63,7 @@ test -f sub/am-two.el
 test -f x/y/z/am-three.el
 
 # Byte-compiling only a subset of the elisp files.
-$MAKE am-one.elc sub/am-two.elc 
+$MAKE am-one.elc sub/am-two.elc
 test -f am-one.elc
 test -f sub/am-two.elc
 test ! -e x/y/z/am-three.elc
