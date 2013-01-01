@@ -3146,11 +3146,17 @@ sub handle_texinfo_helper ($)
       ($info_texinfos->value_as_list_recursive (inner_expand => 1))
     {
       my $infobase = $texi;
-      # TODO: In Automake 1.14 (or even 1.13.2), start warning against
-      # TODO: suffixes != ".texi", to ease transition to Automake-NG.
-      $infobase =~ s/\.(txi|texinfo|texi)$//;
-
-      if ($infobase eq $texi)
+      if ($infobase =~ s/\.texi$//)
+        {
+          1; # Nothing more to do.
+        }
+      elsif ($infobase =~ s/\.(txi|texinfo)$//)
+        {
+	  msg_var 'obsolete', $info_texinfos,
+	          "suffix '.$1' for Texinfo files is discouraged;" .
+                  " use '.texi' instead";
+        }
+      else
 	{
 	  # FIXME: report line number.
 	  err_am "texinfo file '$texi' has unrecognized extension";
