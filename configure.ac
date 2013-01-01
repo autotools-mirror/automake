@@ -439,12 +439,14 @@ AS_IF([test x"$GCC" = x"yes"], [am_CC_is_GNU=yes], [am_CC_is_GNU=no])
 # On case-insensitive file systems (seen e.g. on Cygwin and Mac OS X)
 # we must avoid looking for 'CC', because that would be the same as
 # 'cc', and could cause $CXX to point to the C compiler, instead of
-# to a C++ compiler as expected.  See automake bugs #11893 and #10766.
+# to a C++ compiler as expected (see automake bugs #11893 and #10766).
+# Similarly, we must avoid looking for 'RCC', as that can point to the
+# Qt4 "Resource Compiler": <http://doc.qt.digia.com/4.2/rcc.html>
 if test -f /bIn/rMdIr || test -f /uSr/bIn/rMdIr; then
   # Case-insensitive file system, don't look for CC.
-  am_CC=
+  am_CC= am_RCC=
 else
-  am_CC=CC
+  am_CC=CC am_RCC=RCC
 fi
 
 # The list of C++ compilers here has been copied, pasted and edited
@@ -452,7 +454,7 @@ fi
 # Keep it in sync, or better again, find out a way to avoid this code
 # duplication.
 _AM_COMPILER_CAN_FAIL([AC_PROG_CXX(dnl
-  [aCC $am_CC FCC KCC RCC xlC_r xlC c++ cxx cc++ gpp g++])],
+  [aCC $am_CC FCC KCC $am_RCC xlC_r xlC c++ cxx cc++ gpp g++])],
   [CXX=false; _AM_SKIP_COMP_TESTS([C++])])
 
 AS_IF([test x"$GXX" = x"yes"], [am_CXX_is_GNU=yes], [am_CXX_is_GNU=no])
