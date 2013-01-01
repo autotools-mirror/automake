@@ -29,7 +29,7 @@ END
 # Required when using Texinfo.
 : > texinfo.tex
 : > mdate-sh
-echo '@setfilename textutils' > textutils.texi
+echo '@setfilename textutils.info' > textutils.texi
 
 # Use "././" to confuse Automake into thinking this is a subdir build.
 $ACLOCAL

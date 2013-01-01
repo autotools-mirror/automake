@@ -29,7 +29,7 @@ mkdir sub
 
 cat > main.texi << 'END'
 \input texinfo
-@setfilename main
+@setfilename main.info
 @settitle main
 @node Top
 Hello walls.
@@ -46,15 +46,15 @@ $AUTOCONF
 $MAKE
 
 # Feign more info files.
-: > main-1
-: > sub/main-1
+: > main.info-1
+: > sub/main.info-1
 
 # Break main.texi.
 $sleep
 cp main.texi main.old
 cat > main.texi << 'END'
 \input texinfo
-@setfilename main
+@setfilename main.info
 @settitle main
 @node Top
 @unknown_macro{Hello walls.}
@@ -63,16 +63,16 @@ END
 
 # makeinfo will bail out, but we should conserve the old info files.
 $MAKE && exit 1
-test -f main
-test -f main-1
+test -f main.info
+test -f main.info-1
 
 # Restore main.texi, and break sub/main.texi.
 cp main.texi sub/main.texi
 mv main.old main.texi
 $MAKE && exit 1
-test -f main
-test ! -e main-1
-test -f sub/main
-test -f sub/main-1
+test -f main.info
+test ! -e main.info-1
+test -f sub/main.info
+test -f sub/main.info-1
 
 :
