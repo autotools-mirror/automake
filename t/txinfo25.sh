@@ -53,8 +53,13 @@ Hello walls.
 END
 
 $ACLOCAL
-$AUTOMAKE --add-missing
 $AUTOCONF
+
+AUTOMAKE_fails --add-missing
+grep "Makefile\.am:.*undocumented.* automake hack" stderr
+grep "Makefile\.am:.*'info-in-builddir' automake option" stderr
+
+$AUTOMAKE --add-missing -Wno-obsolete
 
 mkdir build
 cd build
