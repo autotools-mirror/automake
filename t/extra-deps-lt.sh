@@ -14,49 +14,41 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Test EXTRA_*_DEPENDENCIES.  See extradep2 for libtool variant.
+# Test EXTRA_*_DEPENDENCIES, libtool version; see 'extra-deps.sh' for
+# non-libtool variant.
 
-required=cc
+required='cc libtoolize'
 . test-init.sh
 
 cat >> configure.ac << 'END'
 AC_PROG_CC
 AM_PROG_AR
-AC_PROG_RANLIB
+AC_PROG_LIBTOOL
 AC_SUBST([deps], [bardep])
-AM_CONDITIONAL([COND], [test -n "$cond"])
 AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
-noinst_LIBRARIES = libfoo.a
-EXTRA_libfoo_a_DEPENDENCIES = libfoodep
+noinst_LTLIBRARIES = libfoo.la
+EXTRA_libfoo_la_DEPENDENCIES = libfoodep
 libfoodep:
 	@echo making $@
 	@: > $@
 CLEANFILES = libfoodep
 
-bin_PROGRAMS = foo bar
-EXTRA_foo_DEPENDENCIES = foodep
-if COND
-EXTRA_foo_DEPENDENCIES += foodep2
-endif
-bar_LDADD = libfoo.a
+bin_PROGRAMS = bar
+bar_LDADD = libfoo.la
 EXTRA_bar_DEPENDENCIES = $(deps)
 
-EXTRA_DIST = foodep bardep
+EXTRA_DIST = bardep
 
 .PHONY: bar-has-been-updated
 bar-has-been-updated:
-	is_newest bar$(EXEEXT) libfoo.a
+	is_newest bar$(EXEEXT) libfoo.la
 END
 
 cat >libfoo.c <<'END'
 int libfoo () { return 0; }
-END
-
-cat >foo.c <<'END'
-int main () { return 0; }
 END
 
 cat >bar.c <<'END'
@@ -64,16 +56,14 @@ extern int libfoo ();
 int main () { return libfoo (); }
 END
 
+libtoolize
 $ACLOCAL
 $AUTOMAKE --add-missing
 $AUTOCONF
 
-./configure cond=yes
+./configure
 
-# Hypotheses:
-#  - EXTRA_*_DEPENDENCIES are honored.
-#  - Conditionals and substitutions are honored.
-#  - *_DEPENDENCIES are not overwritten by their EXTRA_* counterparts.
+# Hypothesis: EXTRA_*_DEPENDENCIES are honored.
 
 : >foodep
 : >foodep2
@@ -82,21 +72,13 @@ $MAKE >stdout || { cat stdout; exit 1; }
 cat stdout
 grep 'making libfoodep' stdout
 
-rm -f foodep
-$MAKE && exit 1
-: >foodep
-
-rm -f foodep2
-$MAKE && exit 1
-: >foodep2
-
 rm -f bardep
 $MAKE && exit 1
 : >bardep
 
 $MAKE
 $sleep
-touch libfoo.a
+touch libfoo.la
 $MAKE
 $MAKE bar-has-been-updated
 
