@@ -53,3 +53,5 @@ mkdir baz2
 touch baz2/foo2
 
 $MAKE check
+
+:

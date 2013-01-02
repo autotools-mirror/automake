@@ -30,4 +30,5 @@ $ACLOCAL
 $AUTOMAKE
 
 grep EXTRA_foo_SOURCES Makefile.in && exit 1
-exit 0
+
+:
