@@ -38,10 +38,4 @@ SUBDIRS = \
 END
 $AUTOMAKE
 
-# Make sure we diagnose trailing backslash at the end of a file.
-# Report from Akim Demaile <akim@epita.fr>.
-echo 'foo = \' > Makefile.am
-AUTOMAKE_fails
-grep 'trailing backslash' stderr
-
 :
