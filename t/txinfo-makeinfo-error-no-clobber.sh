@@ -45,6 +45,10 @@ $AUTOCONF
 ./configure
 $MAKE
 
+# Feign more info files.
+: > main.info-1
+: > sub/main.info-1
+
 # Break main.texi.
 $sleep
 cp main.texi main.old
@@ -60,6 +64,7 @@ END
 # makeinfo will bail out, but we should conserve the old info files.
 $MAKE && exit 1
 test -f main.info
+test -f main.info-1
 
 # Restore main.texi, and break sub/main.texi.
 cp main.texi sub/main.texi
@@ -67,5 +72,8 @@ mv main.old main.texi
 $MAKE && exit 1
 test -f main.info
 test -f sub/main.info
+test ! -e main.info-1
+test -f sub/main.info
+test -f sub/main.info-1
 
 :

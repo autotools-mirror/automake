@@ -36,3 +36,5 @@ mkdir build
 cd build
 ../configure
 $MAKE distdir
+
+:

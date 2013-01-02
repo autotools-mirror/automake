@@ -40,4 +40,4 @@ AUTOMAKE_fails
 grep 'bin_PROGRAMS.*contains configure substitution' stderr
 grep 'lib_LIBRARIES.*contains configure substitution' stderr && exit 1
 
-exit 0
+:

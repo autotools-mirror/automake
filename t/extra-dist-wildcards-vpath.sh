@@ -47,3 +47,5 @@ echo ddd > build/d.bar
 cd build
 ../configure
 $MAKE test
+
+:

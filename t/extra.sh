@@ -37,4 +37,5 @@ grep "^zardoz" Makefile.in
 
 # Can't have EXTRA clean rules.
 grep 'clean.*EXTRA' Makefile.in && exit 1
-exit 0
+
+:

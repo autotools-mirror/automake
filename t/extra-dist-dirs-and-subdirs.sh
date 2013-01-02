@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 1998-2013 Free Software Foundation, Inc.
+# Copyright (C) 2002-2013 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,16 +14,44 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Check to make sure EXTRA_DATA can be specified.
+# Check to make sure EXTRA_DIST can contain a directory or
+# a subdirectory, in $(builddir) or $(srcdir).
 
 . test-init.sh
 
-echo 'AC_SUBST(CODICIL)' >> configure.ac
+echo AC_OUTPUT >> configure.ac
 
 cat > Makefile.am << 'END'
-sysconf_DATA = @CODICIL@
-EXTRA_DATA = codicil.txt
+EXTRA_DIST=foo/bar baz foo2/bar2 baz2
+
+check: distdir
+	test -f $(distdir)/foo/bar/baz
+	test -f $(distdir)/baz/foo
+	test -f $(distdir)/foo2/bar2/baz2
+	test -f $(distdir)/baz2/foo2
 END
+
+# Create some files in $(srcdir)
+mkdir foo
+mkdir foo/bar
+touch foo/bar/baz
+mkdir baz
+touch baz/foo
 
 $ACLOCAL
 $AUTOMAKE
+$AUTOCONF
+mkdir build
+cd build
+../configure
+
+# Create some files in $(builddir)
+mkdir foo2
+mkdir foo2/bar2
+touch foo2/bar2/baz2
+mkdir baz2
+touch baz2/foo2
+
+$MAKE check
+
+:
