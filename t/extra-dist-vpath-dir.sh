@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2002-2013 Free Software Foundation, Inc.
+# Copyright (C) 2001-2013 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,29 +14,20 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Check to make sure EXTRA_DIST can contain a directory or
-# a subdirectory, in $(builddir) or $(srcdir).
+# Check to make sure EXTRA_DIST can contain a directory from $buildir.
+# From Dean Povey.
 
 . test-init.sh
 
 echo AC_OUTPUT >> configure.ac
 
 cat > Makefile.am << 'END'
-EXTRA_DIST=foo/bar baz foo2/bar2 baz2
+EXTRA_DIST=foo
 
-check: distdir
-	test -f $(distdir)/foo/bar/baz
-	test -f $(distdir)/baz/foo
-	test -f $(distdir)/foo2/bar2/baz2
-	test -f $(distdir)/baz2/foo2
+foo:
+	mkdir foo
+	touch foo/bar
 END
-
-# Create some files in $(srcdir)
-mkdir foo
-mkdir foo/bar
-touch foo/bar/baz
-mkdir baz
-touch baz/foo
 
 $ACLOCAL
 $AUTOMAKE
@@ -44,12 +35,6 @@ $AUTOCONF
 mkdir build
 cd build
 ../configure
+$MAKE distdir
 
-# Create some files in $(builddir)
-mkdir foo2
-mkdir foo2/bar2
-touch foo2/bar2/baz2
-mkdir baz2
-touch baz2/foo2
-
-$MAKE check
+:

@@ -29,6 +29,7 @@ END
 
 cat > textutils.texi <<EOF
 \input texinfo
+@c dummy comment
 @setfilename textutils
 @settitle main
 @node Top
@@ -38,7 +39,10 @@ EOF
 
 $ACLOCAL
 $AUTOCONF
-$AUTOMAKE --add-missing
+AUTOMAKE_fails -a
+$EGREP '^(\./)?textutils\.texi:3:.*suffix-less info file' stderr
+
+$AUTOMAKE -a -Wno-obsolete
 
 grep '^INFO_DEPS.*textutils$' Makefile.in
 

@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2001-2013 Free Software Foundation, Inc.
+# Copyright (C) 2010-2013 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,25 +14,40 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Check to make sure EXTRA_DIST can contain a directory from $buildir.
-# From Dean Povey.
+# Check that wildcards in elements of EXTRA_DIST are honoured when
+# $srcdir != $builddir, if properly declared.
+# Suggested by observations from Braden McDaniel.
 
+required=GNUmake
 . test-init.sh
 
 echo AC_OUTPUT >> configure.ac
 
-cat > Makefile.am << 'END'
-EXTRA_DIST=foo
 
-foo:
-	mkdir foo
-	touch foo/bar
+cat > Makefile.am <<'END'
+EXTRA_DIST = *.foo $(srcdir)/*.foo $(builddir)/*.bar $(srcdir)/*.bar
+
+.PHONY: test
+test: distdir
+	ls -l $(srcdir) $(builddir) $(distdir)
+	diff $(srcdir)/a.foo $(distdir)/a.foo
+	diff $(srcdir)/b.bar $(distdir)/b.bar
+	diff $(builddir)/c.foo $(distdir)/c.foo
+	diff $(builddir)/d.bar $(distdir)/d.bar
 END
 
 $ACLOCAL
 $AUTOMAKE
 $AUTOCONF
+
+echo aaa > a.foo
+echo bbb > b.bar
 mkdir build
+echo ccc > build/c.foo
+echo ddd > build/d.bar
+
 cd build
 ../configure
-$MAKE distdir
+$MAKE test
+
+:

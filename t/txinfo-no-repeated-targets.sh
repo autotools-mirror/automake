@@ -19,12 +19,12 @@
 . test-init.sh
 
 cat > Makefile.am << 'END'
-info_TEXINFOS = maude.texi liver.txi heart.texinfo
+info_TEXINFOS = maude.texi liver.texi heart.texi
 END
 
 echo '@setfilename maude.info' > maude.texi
-echo '@setfilename liver.info' > liver.txi
-echo '@setfilename heart.info' > heart.texinfo
+echo '@setfilename liver.info' > liver.texi
+echo '@setfilename heart.info' > heart.texi
 : > texinfo.tex
 
 $ACLOCAL

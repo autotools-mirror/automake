@@ -62,3 +62,5 @@ mkdir baz
 echo build > baz/foo2
 
 $MAKE check
+
+:

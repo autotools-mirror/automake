@@ -38,7 +38,7 @@ AC_DEFUN([AC_PROG_LIBTOOL],
 END
 
 # Other required files.
-echo '@setfilename foo' > foo.texi
+echo '@setfilename foo.info' > foo.texi
 : > texinfo.tex
 : > py-compile
 : > ar-lib

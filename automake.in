@@ -2984,9 +2984,12 @@ sub scan_texinfo_file ($)
 	  next if $outfile;
 
 	  $outfile = $1;
-	  # TODO: In Automake 1.14 (or even 1.13.2), start warning against
-	  # TODO: suffixes != ".info", to ease transition to Automake-NG.
-	  if ($outfile =~ /\.([^.]+)$/ && $1 ne 'info')
+	  if (index ($outfile, '.') < 0)
+	    {
+	      msg 'obsolete', "$filename:$.",
+	          "use of suffix-less info files is discouraged"
+	    }
+	  elsif ($outfile !~ /\.info$/)
 	    {
 	      error ("$filename:$.",
 		     "output '$outfile' has unrecognized extension");
@@ -3007,10 +3010,6 @@ sub scan_texinfo_file ($)
       return;
     }
 
-  my $infobase = basename ($filename);
-  # TODO: In Automake 1.14 (or even 1.13.2), start warning against
-  # TODO: suffixes != ".texi", to ease transition to Automake-NG.
-  $infobase =~ s/\.te?xi(nfo)?$//;
   return ($outfile, $vfile);
 }
 
@@ -3138,11 +3137,17 @@ sub handle_texinfo_helper ($)
       ($info_texinfos->value_as_list_recursive (inner_expand => 1))
     {
       my $infobase = $texi;
-      # TODO: In Automake 1.14 (or even 1.13.2), start warning against
-      # TODO: suffixes != ".texi", to ease transition to Automake-NG.
-      $infobase =~ s/\.(txi|texinfo|texi)$//;
-
-      if ($infobase eq $texi)
+      if ($infobase =~ s/\.texi$//)
+        {
+          1; # Nothing more to do.
+        }
+      elsif ($infobase =~ s/\.(txi|texinfo)$//)
+        {
+	  msg_var 'obsolete', $info_texinfos,
+	          "suffix '.$1' for Texinfo files is discouraged;" .
+                  " use '.texi' instead";
+        }
+      else
 	{
 	  # FIXME: report line number.
 	  err_am "texinfo file '$texi' has unrecognized extension";

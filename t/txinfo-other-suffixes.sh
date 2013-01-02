@@ -14,7 +14,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Test to make sure '.txi' extension works.
+# Test to make sure '.txi' and '.texinfo' extensions are deprecated,
+# but still work.
 
 . test-init.sh
 
@@ -27,7 +28,12 @@ echo '@setfilename bar.info' > bar.texinfo
 : > texinfo.tex
 
 $ACLOCAL
-$AUTOMAKE
+AUTOMAKE_fails
+grep "^Makefile\.am:.*suffix '.txi'.*Texinfo file.*discouraged" stderr
+grep "^Makefile\.am:.*suffix '.texinfo'.*Texinfo file.*discouraged" stderr
+grep "^Makefile\.am:.* use '.texi' instead" stderr
+
+$AUTOMAKE -Wno-obsolete
 
 grep '^\.txi\.info: *$' Makefile.in
 grep '^\.texinfo\.info: *$' Makefile.in

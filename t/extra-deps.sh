@@ -14,40 +14,49 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Test EXTRA_*_DEPENDENCIES, libtool version; see 'extradep.sh'.
+# Test EXTRA_*_DEPENDENCIES.  See 'extra-deps-lt.sh' for libtool variant.
 
-required='cc libtoolize'
+required=cc
 . test-init.sh
 
 cat >> configure.ac << 'END'
 AC_PROG_CC
 AM_PROG_AR
-AC_PROG_LIBTOOL
+AC_PROG_RANLIB
 AC_SUBST([deps], [bardep])
+AM_CONDITIONAL([COND], [test -n "$cond"])
 AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
-noinst_LTLIBRARIES = libfoo.la
-EXTRA_libfoo_la_DEPENDENCIES = libfoodep
+noinst_LIBRARIES = libfoo.a
+EXTRA_libfoo_a_DEPENDENCIES = libfoodep
 libfoodep:
 	@echo making $@
 	@: > $@
 CLEANFILES = libfoodep
 
-bin_PROGRAMS = bar
-bar_LDADD = libfoo.la
+bin_PROGRAMS = foo bar
+EXTRA_foo_DEPENDENCIES = foodep
+if COND
+EXTRA_foo_DEPENDENCIES += foodep2
+endif
+bar_LDADD = libfoo.a
 EXTRA_bar_DEPENDENCIES = $(deps)
 
-EXTRA_DIST = bardep
+EXTRA_DIST = foodep bardep
 
 .PHONY: bar-has-been-updated
 bar-has-been-updated:
-	is_newest bar$(EXEEXT) libfoo.la
+	is_newest bar$(EXEEXT) libfoo.a
 END
 
 cat >libfoo.c <<'END'
 int libfoo () { return 0; }
+END
+
+cat >foo.c <<'END'
+int main () { return 0; }
 END
 
 cat >bar.c <<'END'
@@ -55,14 +64,16 @@ extern int libfoo ();
 int main () { return libfoo (); }
 END
 
-libtoolize
 $ACLOCAL
 $AUTOMAKE --add-missing
 $AUTOCONF
 
-./configure
+./configure cond=yes
 
-# Hypothesis: EXTRA_*_DEPENDENCIES are honored.
+# Hypotheses:
+#  - EXTRA_*_DEPENDENCIES are honored.
+#  - Conditionals and substitutions are honored.
+#  - *_DEPENDENCIES are not overwritten by their EXTRA_* counterparts.
 
 : >foodep
 : >foodep2
@@ -71,13 +82,21 @@ $MAKE >stdout || { cat stdout; exit 1; }
 cat stdout
 grep 'making libfoodep' stdout
 
+rm -f foodep
+$MAKE && exit 1
+: >foodep
+
+rm -f foodep2
+$MAKE && exit 1
+: >foodep2
+
 rm -f bardep
 $MAKE && exit 1
 : >bardep
 
 $MAKE
 $sleep
-touch libfoo.la
+touch libfoo.a
 $MAKE
 $MAKE bar-has-been-updated
 

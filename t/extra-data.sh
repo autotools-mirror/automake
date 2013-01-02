@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 1999-2013 Free Software Foundation, Inc.
+# Copyright (C) 1998-2013 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,17 +14,20 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# We must skip the backslash, not complain about './\' not existing.
-# Reported by Rick Scott <rwscott@omnisig.com>
+# Checks on the obsolete EXTRA_DATA variable.
 
 . test-init.sh
 
-cat > Makefile.am << 'END'
-SUBDIRS = \
-   .
-END
+echo 'AC_SUBST([CODICIL])' >> configure.ac
 
 $ACLOCAL
+
+# EXTRA_DATA is not required ....
+echo sysconf_DATA = @CODICIL@ > Makefile.am
+$AUTOMAKE
+
+# ... but it can nonetheless be specified.
+echo EXTRA_DATA = codicil.txt >> Makefile.am
 $AUTOMAKE
 
 :
