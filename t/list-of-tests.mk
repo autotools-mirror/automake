@@ -185,10 +185,8 @@ t/backcompat2.sh \
 t/backcompat3.sh \
 t/backcompat6.sh \
 t/backcompat-acout.sh \
-t/backsl.sh \
-t/backsl2.sh \
-t/backsl3.sh \
-t/backsl4.sh \
+t/backslash-issues.sh \
+t/backslash-before-trailing-whitespace.sh \
 t/badline.sh \
 t/badopt.sh \
 t/badprog.sh \

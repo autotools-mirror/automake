@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 1999-2013 Free Software Foundation, Inc.
+# Copyright (C) 1996-2013 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,17 +14,34 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# We must skip the backslash, not complain about './\' not existing.
-# Reported by Rick Scott <rwscott@omnisig.com>
+# Test for "\" problems.
+# TODO: might be nice to convert this to TAP...
 
 . test-init.sh
 
+echo AC_PROG_CC >> configure.ac
+$ACLOCAL
+
+# Bug report from Joerg-Martin Schwarz.
+cat > Makefile.am << 'END'
+bin_PROGRAMS = \
+   frob
+END
+$AUTOMAKE
+grep '^_SOURCE' Makefile.in && exit 1
+
+# We must skip the backslash, not complain about './\' not existing.
+# Reported by Rick Scott <rwscott@omnisig.com>
 cat > Makefile.am << 'END'
 SUBDIRS = \
    .
 END
-
-$ACLOCAL
 $AUTOMAKE
+
+# Make sure we diagnose trailing backslash at the end of a file.
+# Report from Akim Demaile <akim@epita.fr>.
+echo 'foo = \' > Makefile.am
+AUTOMAKE_fails
+grep 'trailing backslash' stderr
 
 :
