@@ -679,3 +679,12 @@ EXTRA_DIST += \
   old/ChangeLog.09 \
   old/ChangeLog.11 \
   old/TODO
+
+## ---------------------------------------- ##
+##  Maintainer-specific files and scripts.  ##
+## ---------------------------------------- ##
+  
+EXTRA_DIST += \
+  maint/am-ft \
+  maint/am-xft \
+  maint/rename-tests
