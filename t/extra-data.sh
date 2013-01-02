@@ -14,16 +14,20 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Check to make sure EXTRA_DATA can be specified.
+# Checks on the obsolete EXTRA_DATA variable.
 
 . test-init.sh
 
-echo 'AC_SUBST(CODICIL)' >> configure.ac
-
-cat > Makefile.am << 'END'
-sysconf_DATA = @CODICIL@
-EXTRA_DATA = codicil.txt
-END
+echo 'AC_SUBST([CODICIL])' >> configure.ac
 
 $ACLOCAL
+
+# EXTRA_DATA is not required ....
+echo sysconf_DATA = @CODICIL@ > Makefile.am
 $AUTOMAKE
+
+# ... but it can nonetheless be specified.
+echo EXTRA_DATA = codicil.txt >> Makefile.am
+$AUTOMAKE
+
+:
