@@ -71,7 +71,8 @@ EXTRA_DIST += \
   GNUmakefile \
   maint.mk \
   syntax-checks.mk \
-  HACKING
+  HACKING \
+  PLANS
 
 # Make versioned links.  We only run the transform on the root name;
 # then we make a versioned link with the transformed base name.  This
