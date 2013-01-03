@@ -1159,6 +1159,7 @@ t/tests-environment-and-log-compiler.sh \
 t/txinfo-absolute-srcdir-pr408.sh \
 t/txinfo-add-missing-and-dist.sh \
 t/txinfo-bsd-make-recurs.sh \
+t/txinfo-builddir.sh \
 t/txinfo-clean.sh \
 t/txinfo-dvi-recurs.sh \
 t/txinfo-info-in-srcdir.sh \

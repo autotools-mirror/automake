@@ -50,7 +50,7 @@ Hello walls.
 END
 
 $ACLOCAL
-$AUTOMAKE --add-missing
+$AUTOMAKE --add-missing -Wno-error
 $AUTOCONF
 
 mkdir build
