@@ -69,8 +69,6 @@ EXTRA_DIST += \
   $(AUTOMAKESOURCES) \
   bootstrap.sh \
   GNUmakefile \
-  maint.mk \
-  syntax-checks.mk \
   HACKING
 
 # Make versioned links.  We only run the transform on the root name;
@@ -117,8 +115,8 @@ maintainer-clean-local:
 	rm -rf .autom4te.cache
 
 # So that automake won't complain about the missing ChangeLog.
-# The real rule for ChangeLog generation is now in maint.mk (as
-# it is maintainer-specific).
+# The real rule for ChangeLog generation is now in main/maint.mk
+# (as it is maintainer-specific).
 ChangeLog:
 
 
@@ -687,4 +685,6 @@ EXTRA_DIST += \
 EXTRA_DIST += \
   maint/am-ft \
   maint/am-xft \
-  maint/rename-tests
+  maint/rename-tests \
+  maint/maint.mk \
+  maint/syntax-checks.mk
