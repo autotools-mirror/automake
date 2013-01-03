@@ -39,7 +39,7 @@ AC_SUBST([am_AUTOUPDATE], ["${AUTOUPDATE-autoupdate}"])
 dnl We call AC_PROG_CC in an unusual way, and only for use in our
 dnl testsuite, so also use 'no-dependencies' and 'no-define' among
 dnl the automake options to avoid bloating and potential problems.
-AM_INIT_AUTOMAKE([dist-xz filename-length-max=99 color-tests
+AM_INIT_AUTOMAKE([-Wall -Werror dist-xz filename-length-max=99 color-tests
                   no-define no-dependencies])
 
 ## Keep this on a line of its own, since it must be found and processed
