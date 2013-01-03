@@ -104,12 +104,13 @@ $PERL ./gen-testsuite-part > t/testsuite-part.tmp
 chmod a-w t/testsuite-part.tmp
 mv -f t/testsuite-part.tmp t/testsuite-part.am
 
-# Run the autotools.
+# Run the autotools.  Bail out if any warning is triggered.
 # Use '-I' here so that our own *.m4 files in m4/ gets included,
 # not copied, in aclocal.m4.
-$PERL ./aclocal.tmp -I m4 --automake-acdir m4 --system-acdir m4/acdir
-$AUTOCONF
-$PERL ./automake.tmp
+$PERL ./aclocal.tmp -Wall -Werror -I m4 \
+                    --automake-acdir=m4 --system-acdir=m4/acdir
+$AUTOCONF -Wall -Werror
+$PERL ./automake.tmp -Wall -Werror
 
 # Remove temporary files and directories.
 rm -rf aclocal-$APIVERSION automake-$APIVERSION

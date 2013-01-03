@@ -69,8 +69,6 @@ EXTRA_DIST += \
   $(AUTOMAKESOURCES) \
   bootstrap.sh \
   GNUmakefile \
-  maint.mk \
-  syntax-checks.mk \
   HACKING
 
 # Make versioned links.  We only run the transform on the root name;
@@ -117,8 +115,8 @@ maintainer-clean-local:
 	rm -rf .autom4te.cache
 
 # So that automake won't complain about the missing ChangeLog.
-# The real rule for ChangeLog generation is now in maint.mk (as
-# it is maintainer-specific).
+# The real rule for ChangeLog generation is now in main/maint.mk
+# (as it is maintainer-specific).
 ChangeLog:
 
 
@@ -336,7 +334,7 @@ TESTS =
 
 # Some testsuite-influential variables should be overridable from the
 # test scripts, but not from the environment.
-# Keep this in sync with the similar list in 'runtest.in'.
+# Keep this in sync with the similar list in 't/ax/runtest.in'.
 AM_TESTS_ENVIRONMENT = \
   for v in \
     required \
@@ -444,14 +442,14 @@ EXTRA_DIST += t/ax/shell-no-trail-bslash.in
 CLEANFILES += t/ax/shell-no-trail-bslash
 noinst_SCRIPTS += t/ax/shell-no-trail-bslash
 
-runtest: runtest.in Makefile
+runtest: t/ax/runtest.in Makefile
 	$(AM_V_at)rm -f $@ $@-t
-	$(AM_V_GEN)in=runtest.in \
+	$(AM_V_GEN)in=t/ax/runtest.in \
 	  && $(MKDIR_P) t/ax \
-	  && $(do_subst) <$(srcdir)/runtest.in >$@-t \
+	  && $(do_subst) <$(srcdir)/$$in >$@-t \
 	  && chmod a+x $@-t
 	$(generated_file_finalize)
-EXTRA_DIST += runtest.in
+EXTRA_DIST += t/ax/runtest.in
 CLEANFILES += runtest
 noinst_SCRIPTS += runtest
 
@@ -676,3 +674,14 @@ EXTRA_DIST += \
   old/ChangeLog.09 \
   old/ChangeLog.11 \
   old/TODO
+
+## ---------------------------------------- ##
+##  Maintainer-specific files and scripts.  ##
+## ---------------------------------------- ##
+  
+EXTRA_DIST += \
+  maint/am-ft \
+  maint/am-xft \
+  maint/rename-tests \
+  maint/maint.mk \
+  maint/syntax-checks.mk

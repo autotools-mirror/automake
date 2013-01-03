@@ -276,6 +276,7 @@ sub _is_valid_easy_option ($)
     dist-tarZ
     dist-xz
     dist-zip
+    info-in-builddir
     no-define
     no-dependencies
     no-dist

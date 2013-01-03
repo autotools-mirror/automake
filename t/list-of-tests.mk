@@ -991,7 +991,7 @@ t/spell.sh \
 t/spell2.sh \
 t/spell3.sh \
 t/spelling.sh \
-t/spy.sh \
+t/spy-double-colon.sh \
 t/spy-rm.tap \
 t/stdinc.sh \
 t/stamph2.sh \
@@ -1159,6 +1159,7 @@ t/tests-environment-and-log-compiler.sh \
 t/txinfo-absolute-srcdir-pr408.sh \
 t/txinfo-add-missing-and-dist.sh \
 t/txinfo-bsd-make-recurs.sh \
+t/txinfo-builddir.sh \
 t/txinfo-clean.sh \
 t/txinfo-dvi-recurs.sh \
 t/txinfo-info-in-srcdir.sh \
@@ -1235,10 +1236,10 @@ t/werror3.sh \
 t/werror4.sh \
 t/whoami.sh \
 t/xsource.sh \
-t/yacc4.sh \
-t/yaccdry.sh \
-t/yaccpp.sh \
-t/yaccvpath.sh \
+t/yacc-misc.sh \
+t/yacc-dry.sh \
+t/yacc-cxx-grepping.sh \
+t/yacc-vpath.sh \
 t/yacc-auxdir.sh \
 t/yacc-basic.sh \
 t/yacc-cxx.sh \
