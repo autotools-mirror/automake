@@ -39,7 +39,8 @@ AC_SUBST([am_AUTOUPDATE], ["${AUTOUPDATE-autoupdate}"])
 dnl We call AC_PROG_CC in an unusual way, and only for use in our
 dnl testsuite, so also use 'no-dependencies' and 'no-define' among
 dnl the automake options to avoid bloating and potential problems.
-AM_INIT_AUTOMAKE([filename-length-max=99 ng no-define no-dependencies])
+AM_INIT_AUTOMAKE([ng -Wall -Werror filename-length-max=99 
+                  no-define no-dependencies])
 
 ## Keep this on a line of its own, since it must be found and processed
 ## by the 'update-copyright' rule in our Makefile.

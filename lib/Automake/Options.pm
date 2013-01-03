@@ -270,6 +270,7 @@ sub _is_valid_easy_option ($)
     check-news
     color-tests
     dejagnu
+    info-in-builddir
     ng
     no-define
     no-dependencies

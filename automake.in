@@ -2832,23 +2832,50 @@ sub handle_texinfo_helper ($)
       # have a single variable ($INSRC) that controls whether
       # the current .info file must be built in the source tree
       # or in the build tree.  Actually this variable is switched
-      # off for .info files that appear to be cleaned; this is
-      # for backward compatibility with package such as Texinfo,
-      # which do things like
-      #   info_TEXINFOS = texinfo.texi info-stnd.texi info.texi
-      #   DISTCLEANFILES = texinfo texinfo-* info*.info*
-      #   # Do not create info files for distribution.
-      #   dist-info:
-      # in order not to distribute .info files.
-      my $insrc = ($out_file =~ $user_cleaned_files) ? 0 : 1;
+      # off in two cases:
+      #  (1) For '.info' files that appear to be cleaned; this is for
+      #      backward compatibility with package such as Texinfo,
+      #      which do things like
+      #        info_TEXINFOS = texinfo.txi info-stnd.texi info.texi
+      #        DISTCLEANFILES = texinfo texinfo-* info*.info*
+      #        # Do not create info files for distribution.
+      #        dist-info:
+      #      in order not to distribute .info files.
+      #  (2) When the undocumented option 'info-in-builddir' is given.
+      #      This is done to allow the developers of GCC, GDB, GNU
+      #      binutils and the GNU bfd library to force the '.info' files
+      #      to be generated in the builddir rather than the srcdir, as
+      #      was once done when the (now removed) 'cygnus' option was
+      #      given.  See automake bug#11034 for more discussion.
+      my $insrc = 1;
 
-      my $soutdir = '$(srcdir)/' . $outdir;
-      $outdir = $soutdir if $insrc;
+      if (option 'info-in-builddir')
+        {
+          $insrc = 0;
+        }
+      elsif ($out_file =~ $user_cleaned_files)
+        {
+          $insrc = 0;
+          msg 'obsolete', "$am_file.am", <<EOF;
+Oops!
+    It appears this file (or files included by it) are triggering
+    an undocumented, soon-to-be-removed automake hack.
+    Future automake versions will no longer place in the builddir
+    (rather than in the srcdir) the generated '.info' files that
+    appear to be cleaned, by e.g. being listed in CLEANFILES or
+    DISTCLEANFILES.
+    If you want your '.info' files to be placed in the builddir
+    rather than in the srcdir, you have to use the shiny new
+    'info-in-builddir' automake option.
+EOF
+        }
+
+      $outdir = '$(srcdir)/' . $outdir if $insrc;
 
       # If user specified file_TEXINFOS, then use that as explicit
       # dependency list.
       @texi_deps = ();
-      push (@texi_deps, "$soutdir$vtexi") if $vtexi;
+      push (@texi_deps, "$outdir$vtexi") if $vtexi;
 
       my $canonical = canonicalize ($infobase);
       if (var ($canonical . "_TEXINFOS"))
@@ -2895,8 +2922,8 @@ sub handle_texinfo_helper ($)
 					  new Automake::Location,
 					  TEXI     => $texi,
 					  VTI      => $vti,
-					  STAMPVTI => "${soutdir}stamp-$vti",
-					  VTEXI    => "$soutdir$vtexi");
+					  STAMPVTI => "${outdir}stamp-$vti",
+					  VTEXI    => "$outdir$vtexi");
 	}
     }
 

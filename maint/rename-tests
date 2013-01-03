@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+# Convenience script to rename test cases in Automake.
+
+set -e -u
+
+me=${0##*/}
+fatal () { echo "$me: $*" >&2; exit 1; }
+
+case $# in
+  0) input=$(cat);;
+  1) input=$(cat -- "$1");;
+  *) fatal "too many arguments";;
+esac
+
+AWK=${AWK-awk}
+SED=${SED-sed}
+
+[[ -f automake.in && -d lib/Automake ]] \
+  || fatal "can only be run from the top-level of the Automake source tree"
+
+$SED --version 2>&1 | grep GNU >/dev/null 2>&1 \
+  || fatal "GNU sed is required by this script"
+
+# Validate and cleanup input.
+input=$(
+  $AWK -v me="$me" "
+    /^#/ { next; }
+    (NF == 0) { next; }
+    (NF != 2) { print me \": wrong number of fields at line \" NR;
+                exit(1); }
+    { printf (\"t/%s t/%s\\n\", \$1, \$2); }
+  " <<<"$input")
+
+# Prepare git commit message.
+exec 5>$me.git-msg
+echo "tests: more significant names for some tests" >&5
+echo >&5
+$AWK >&5 <<<"$input" \
+  '{ printf ("* %s: Rename...\n* %s: ... like this.\n", $1, $2) }'
+exec 5>&-
+
+# Rename tests.
+eval "$($AWK '{ printf ("git mv %s %s\n", $1, $2) }' <<<"$input")"
+
+# Adjust the list of tests (do this conditionally, since such a
+# list is not required nor used in Automake-NG.
+if test -f t/list-of-tests.mk; then
+  $SED -e "$($AWK '{ printf ("s|^%s |%s |\n", $1, $2) }' <<<"$input")" \
+       -i t/list-of-tests.mk
+fi
+
+git status
