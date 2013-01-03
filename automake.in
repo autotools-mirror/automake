@@ -3139,21 +3139,6 @@ sub handle_texinfo_helper ($)
   my @f = ();
   push @f, $d->value_as_list_recursive (inner_expand => 1) if $d;
   push @f, $c->value_as_list_recursive (inner_expand => 1) if $c;
-  if (@f && !option 'info-in-builddir')
-  {
-    msg 'obsolete', "$am_file.am", <<EOF;
-Oops!
-    It appears this file (or files included by it) are triggering
-    an undocumented, soon-to-be-removed automake hack.
-    Future automake versions will no longer place in the builddir
-    (rather than in the srcdir) the generated '.info' files that
-    appear to be cleaned, by e.g. being listed in CLEANFILES or
-    DISTCLEANFILES.
-    If you want your '.info' files to be placed in the builddir
-    rather than in the srcdir, you have to use the shiny new
-    'info-in-builddir' automake option.
-EOF
-  }
   @f = map { s|[^A-Za-z_0-9*\[\]\-]|\\$&|g; s|\*|[^/]*|g; $_; } @f;
   my $user_cleaned_files = '^(?:' . join ('|', @f) . ')$';
 
@@ -3305,8 +3290,27 @@ EOF
       #      was once done when the (now removed) 'cygnus' option was
       #      given.  See automake bug#11034 for more discussion.
       my $insrc = 1;
-      $insrc = 0 if $out_file =~ $user_cleaned_files;
-      $insrc = 0 if option 'info-in-builddir';
+
+      if (option 'info-in-builddir')
+        {
+          $insrc = 0;
+        }
+      elsif ($out_file =~ $user_cleaned_files)
+        {
+          $insrc = 0;
+          msg 'obsolete', "$am_file.am", <<EOF;
+Oops!
+    It appears this file (or files included by it) are triggering
+    an undocumented, soon-to-be-removed automake hack.
+    Future automake versions will no longer place in the builddir
+    (rather than in the srcdir) the generated '.info' files that
+    appear to be cleaned, by e.g. being listed in CLEANFILES or
+    DISTCLEANFILES.
+    If you want your '.info' files to be placed in the builddir
+    rather than in the srcdir, you have to use the shiny new
+    'info-in-builddir' automake option.
+EOF
+        }
 
       $outdir = '$(srcdir)/' . $outdir if $insrc;
 
