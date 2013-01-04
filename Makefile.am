@@ -69,7 +69,8 @@ EXTRA_DIST += \
   $(AUTOMAKESOURCES) \
   bootstrap.sh \
   GNUmakefile \
-  HACKING
+  HACKING \
+  PLANS
 
 # Make versioned links.  We only run the transform on the root name;
 # then we make a versioned link with the transformed base name.  This
