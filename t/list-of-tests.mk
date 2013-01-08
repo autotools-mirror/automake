@@ -72,10 +72,10 @@ t/get-sysconf.sh \
 $(perl_TESTS) \
 t/instspc.tap \
 t/aclocal.sh \
-t/acloca10.sh \
 t/aclocal-I-order-1.sh \
 t/aclocal-I-order-2.sh \
 t/aclocal-I-order-3.sh \
+t/aclocal-I-and-install.sh \
 t/aclocal-acdir.sh \
 t/aclocal-amflags.sh \
 t/aclocal-autoconf-version-check.sh \
