@@ -178,13 +178,6 @@ my $gen_copyright = "\
 # PARTICULAR PURPOSE.
 ";
 
-# These constants are returned by the lang_*_rewrite functions.
-# LANG_SUBDIR means that the resulting object file should be in a
-# subdir if the source file is.  In this case the file name cannot
-# have '..' components.
-use constant LANG_IGNORE  => 0;
-use constant LANG_SUBDIR  => 2;
-
 # These are used when keeping track of whether an object can be built
 # by two different paths.
 use constant COMPILE_LIBTOOL  => 1;
@@ -708,7 +701,7 @@ register_language ('name' => 'header',
 		   # Nothing to do.
 		   '_finish' => sub { });
 
-# Vala
+# Vala.
 register_language ('name' => 'vala',
 		   'Name' => 'Vala',
 		   'config_vars' => ['VALAC'],
@@ -716,9 +709,10 @@ register_language ('name' => 'vala',
 		   'compile' => '$(VALAC) $(AM_VALAFLAGS) $(VALAFLAGS)',
 		   'ccer' => 'VALAC',
 		   'compiler' => 'VALACOMPILE',
-		   'extensions' => ['.vala'],
-		   'output_extensions' => sub { (my $ext = $_[0]) =~ s/vala$/c/;
-						return ($ext,) },
+		   'extensions' => ['.vala', '.vapi'],
+                   # Vala compilation must be handled in a special way, so
+                   # nothing to do or return here.
+		   'output_extensions' => sub { },
 		   'rule_file' => 'vala',
 		   '_finish' => \&lang_vala_finish,
 		   '_target_hook' => \&lang_vala_target_hook,
@@ -1312,26 +1306,13 @@ sub handle_languages ()
 	    # This is not used by depend2.am.
 	    my $der_ext = ($lang->output_extensions->($ext))[0];
 
-	    # When we output an inference rule like '.c.o:' we
-	    # have two cases to consider: either subdir-objects
-	    # is used, or it is not.
-	    #
-	    # In the latter case the rule is used to build objects
-	    # in the current directory, and dependencies always
-	    # go into './$(DEPDIR)/'.  We can hard-code this value.
-	    #
-	    # In the former case the rule can be used to build
-	    # objects in sub-directories too.  Dependencies should
-	    # go into the appropriate sub-directories, e.g.,
-	    # 'sub/$(DEPDIR)/'.  The value of this directory
-	    # needs to be computed on-the-fly.
-	    #
-	    # DEPBASE holds the name of this directory, plus the
-	    # basename part of the object file (extensions Po, TPo,
-	    # Plo, TPlo will be added later as appropriate).  It is
-	    # either hardcoded, or a shell variable ('$depbase') that
-	    # will be computed by the rule.
-	    my $depbase = '$$depbase';
+            # Even when subdir sources are present, an inference rule
+            # like '.c.o:' can be used to build corresponding objects
+            # in the sane subdirectory too.  We should be careful to also
+            # place dependency files into the appropriate subdirectory,
+            # e.g., 'sub/$(DEPDIR)/'.  The value of this directory needs
+            # to be computed on-the-fly (that is done by our makefile
+            # recipes in 'depend2.am').
 	    $output_rules .=
 	      file_contents ($rule_file,
 			     new Automake::Location,
@@ -1340,7 +1321,6 @@ sub handle_languages ()
 
 			     'DERIVED-EXT' => $der_ext,
 
-			     DEPBASE   => $depbase,
 			     BASE      => '$*',
 			     SOURCE    => '$<',
 			     SOURCEFLAG => $sourceflags{$ext} || '',
@@ -1397,20 +1377,12 @@ sub handle_languages ()
 	    # We _need_ '-o' for per object rules.
 	    my $output_flag = $lang->output_flag || '-o';
 
-	    my $depbase = dirname ($obj);
-	    $depbase = ''
-		if $depbase eq '.';
-	    $depbase .= '/'
-		unless $depbase eq '';
-	    $depbase .= '$(DEPDIR)/' . basename ($obj);
-
 	    $output_rules .=
 	      file_contents ($rule_file,
 			     new Automake::Location,
 			     %transform,
 			     GENERIC   => 0,
 
-			     DEPBASE   => $depbase,
 			     BASE      => $obj,
 			     SOURCE    => $source,
 			     SOURCEFLAG => $sourceflags{$srcext} || '',
@@ -1630,20 +1602,24 @@ sub handle_single_transform
 		  }
 	      }
 
-	    # Note: computed subr call.  The language rewrite function
-	    # should return one of the LANG_* constants.  It could
-	    # also return a list whose first value is such a constant
-	    # and whose second value is a new source extension which
-	    # should be applied.  This means this particular language
-	    # generates another source file which we must then process
-	    # further.
-	    my $subr = \&{'lang_' . $lang->name . '_rewrite'};
-	    defined &$subr or $subr = sub { return LANG_SUBDIR; };
-	    my ($r, $source_extension)
-		= &$subr ($directory, $base, $extension,
-			  $obj, $have_per_exec_flags, $var);
-	    # Skip this entry if we were asked not to process it.
-	    next if $r == LANG_IGNORE;
+            # NOTE: computed subr calls here.
+
+            # The language ignore function can ask not to preprocess
+            # a source file further.
+            my $subr_ignore = \&{'lang_' . $lang->name . '_ignore'};
+            next if defined &$subr_ignore
+                    and &$subr_ignore ($directory, $base, $extension);
+            # The language rewrite function can return a new source
+            # extension which should be applied.  This means this
+            # particular language generates another source file which
+            # we must then process further.  This happens, for example,
+            # with yacc and lex.
+            my $subr_rewrite = \&{'lang_' . $lang->name . '_rewrite'};
+            $subr_rewrite = sub { } unless defined &$subr_rewrite;
+            my $source_extension = &$subr_rewrite ($directory, $base,
+                                                   $extension, $obj,
+                                                   $have_per_exec_flags,
+                                                   $var);
 
 	    # Now extract linker and other info.
 	    $linker = $lang->linker;
@@ -1691,39 +1667,9 @@ sub handle_single_transform
 		$renamed = 1;
 	    }
 
-	    # If rewrite said it was ok, put the object into a
-	    # subdir.
-	    if ($directory ne '')
-	    {
-              if ($r == LANG_SUBDIR)
-                {
-                  $object = $directory . '/' . $object;
-                }
-              else
-                {
-                  # Since the next major version of automake (2.0) will
-                  # make the behaviour so far only activated with the
-                  # 'subdir-object' option mandatory, it's better if we
-                  # start warning users not using that option.
-                  # As suggested by Peter Johansson, we strive to avoid
-                  # the warning when it would be irrelevant, i.e., if
-                  # all source files sit in "current" directory.
-                  msg_var 'unsupported', $var,
-                          "source file '$full' is in a subdirectory,"
-                          . "\nbut option 'subdir-objects' is disabled";
-                  msg 'unsupported', INTERNAL, <<'EOF', uniq_scope => US_GLOBAL;
-possible forward-incompatibility.
-At least a source file is in a subdirectory, but the 'subdir-objects'
-automake option hasn't been enabled.  For now, the corresponding output
-object file(s) will be placed in the top-level directory.  However,
-this behaviour will change in future Automake versions: they will
-unconditionally cause object files to be placed in the same subdirectory
-of the corresponding sources.
-You are advised to start using 'subdir-objects' option throughout your
-project, to avoid future incompatibilities.
-EOF
-                }
-	    }
+	    # If rewrite said it was ok, put the object into a subdir.
+	    $object = $directory . '/' . $object
+	      unless $directory eq '';
 
 	    # If the object file has been renamed (because per-target
 	    # flags are used) we cannot compile the file with an
@@ -5440,40 +5386,37 @@ sub check_gnits_standards ()
 #
 # Functions to handle files of each language.
 
-# Each 'lang_X_rewrite($DIRECTORY, $BASE, $EXT)' function follows a
-# simple formula: Return value is LANG_SUBDIR if the resulting object
-# file should be in a subdir if the source file is, LANG_PROCESS if
-# file is to be dealt with, LANG_IGNORE otherwise.
-
 # Much of the actual processing is handled in
 # handle_single_transform.  These functions exist so that
 # auxiliary information can be recorded for a later cleanup pass.
 # Note that the calls to these functions are computed, so don't bother
 # searching for their precise names in the source.
 
-# Rewrite a single header file.
-sub lang_header_rewrite
+# Header files are simply ignored.
+sub lang_header_ignore { 1; }
+
+# Vala '.vapi' are a kind of header files as well, and should
+# not be processed into compilation rules.
+ sub lang_vala_ignore
 {
-    # Header files are simply ignored.
-    return LANG_IGNORE;
+    my ($directory, $base, $ext) = @_;
+    return ($ext =~ m/\.vapi$/ ? 1 : 0);
 }
 
 # Rewrite a single Vala source file.
 sub lang_vala_rewrite
 {
     my ($directory, $base, $ext) = @_;
-
-    (my $newext = $ext) =~ s/vala$/c/;
-    return (LANG_SUBDIR, $newext);
+    $ext =~ s/vala$/c/;
+    return $ext;
 }
 
 # Rewrite a single yacc/yacc++ file.
 sub lang_yacc_rewrite
 {
     my ($directory, $base, $ext) = @_;
-
-    (my $newext = $ext) =~ tr/y/c/;
-    return (LANG_SUBDIR, $newext);
+    $ext =~ tr/y/c/;
+    return $ext;
 }
 sub lang_yaccxx_rewrite { lang_yacc_rewrite (@_); };
 
@@ -5481,17 +5424,10 @@ sub lang_yaccxx_rewrite { lang_yacc_rewrite (@_); };
 sub lang_lex_rewrite
 {
     my ($directory, $base, $ext) = @_;
-
-    (my $newext = $ext) =~ tr/l/c/;
-    return (LANG_SUBDIR, $newext);
+    $ext =~ tr/l/c/;
+    return $ext;
 }
 sub lang_lexxx_rewrite { lang_lex_rewrite (@_); };
-
-# Rewrite a single Java file.
-sub lang_java_rewrite
-{
-    return LANG_SUBDIR;
-}
 
 # The lang_X_finish functions are called after all source file
 # processing is done.  Each should handle defining rules for the
