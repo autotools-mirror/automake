@@ -347,6 +347,7 @@ perl_fake_XFAIL_TESTS = \
 
 XFAIL_TESTS = \
   t/all.sh \
+  t/ccnoco4.sh \
   t/override-suggest-local.sh \
   t/comments-in-var-def.sh \
   t/cond17.sh \
