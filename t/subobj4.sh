@@ -41,7 +41,6 @@ END
 cat > d2/Makefile.am << 'END'
 END
 
-: > compile
 : > d2/z.c
 
 $ACLOCAL

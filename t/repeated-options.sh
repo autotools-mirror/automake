@@ -58,7 +58,7 @@ int main (void)
 }
 END
 
-cp "$am_scriptdir"/compile "$am_scriptdir"/test-driver .
+cp "$am_scriptdir"/test-driver .
 
 $ACLOCAL
 $AUTOMAKE --foreign --foreign -Wall 2>stderr || { cat stderr >&2; exit 1; }

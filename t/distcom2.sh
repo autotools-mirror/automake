@@ -44,6 +44,8 @@ $ACLOCAL
 
 for opt in '' --no-force; do
 
+  rm -f compile depcomp
+
   $AUTOMAKE $opt --add-missing
 
   test -f compile

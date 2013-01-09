@@ -55,15 +55,8 @@ cat - libMakefile.am > libMakefile2.am << 'END'
 AUTOMAKE_OPTIONS = no-dependencies
 END
 
-# Make sure 'compile' is required.
-for m in $makefiles; do
-  AUTOMAKE_fails $m
-  $EGREP " required file.* '(compile|\./compile)'" stderr
-done
-
 makefiles=$(for mkf in $makefiles; do echo $mkf.in; done)
 
-: > compile
 $AUTOMAKE
 
 # Sanity check.

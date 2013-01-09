@@ -63,6 +63,7 @@ END
   required_files='
     install-sh
     missing
+    compile
     depcomp
     py-compile
     test-driver
