@@ -14,10 +14,11 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Check that Automake doesn't pass "-c -o" to  losing compiler when
-# the 'subdir-objects' is used but sources are only present in the
-# top-level directory.  Reported by Nick Bowler in the discussion on
-# automake bug#13378:
+# Check that Automake-generated C compilation rules don't mistakenly
+# use the "-c -o" options combination unconditionally (even with losing
+# compilers) when the 'subdir-objects' is used but sources are only
+# present in the top-level directory.  Reported by Nick Bowler in the
+# discussion on automake bug#13378:
 # <http://debbugs.gnu.org/cgi/bugreport.cgi?bug=13378#35>
 # <http://debbugs.gnu.org/cgi/bugreport.cgi?bug=13378#44>
 
