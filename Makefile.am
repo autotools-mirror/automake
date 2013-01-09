@@ -62,6 +62,7 @@ EXTRA_DIST += \
   GNUmakefile \
   HACKING \
   NG-NEWS \
+  PLANS \
   $(gitlog_to_changelog_fixes)
 
 # Make versioned links.  We only run the transform on the root name;
