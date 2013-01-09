@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Make sure aclocal define macros in the same order as -I's.
-# This is the same as aclocal-I-order-1.sh, with the macro calls
+# This is the similar to aclocal-I-order-1.sh, with the macro calls
 # reversed (it did make a difference).
 #
 # Also check for --install.
@@ -28,8 +28,8 @@ am_create_testdir=empty
 
 cat > configure.ac << 'END'
 AC_INIT
-MACRO1
 MACRO2
+MACRO1
 MACRO3
 END
 

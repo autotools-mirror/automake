@@ -16,7 +16,7 @@
 
 # Test remake rules when an m4 file gets renamed and *simultaneously*
 # an m4 macro in it gets renamed.  Kudos to Bruno Haible for thinking
-# about this situation.  See also related test 'acloca22.sh'.
+# about this situation.  See also related test 'aclocal-deleted-header.sh'.
 
 . test-init.sh
 

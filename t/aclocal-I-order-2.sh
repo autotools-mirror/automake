@@ -16,7 +16,7 @@
 
 # Make sure that when two files define the same macro in the same
 # directory, the macro from the lexically greatest file is used.
-# See also sister test 'aclocal-I-ordering-2.sh'.
+# See also sister test 'aclocal-I-order-3.sh'.
 
 am_create_testdir=empty
 . test-init.sh

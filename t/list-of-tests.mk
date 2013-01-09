@@ -30,6 +30,7 @@ t/pm/Version3.pl
 
 XFAIL_TESTS = \
 t/all.sh \
+t/ccnoco4.sh \
 t/cond17.sh \
 t/gcj6.sh \
 t/override-conditional-2.sh \
@@ -71,10 +72,10 @@ t/get-sysconf.sh \
 $(perl_TESTS) \
 t/instspc.tap \
 t/aclocal.sh \
-t/acloca10.sh \
 t/aclocal-I-order-1.sh \
 t/aclocal-I-order-2.sh \
 t/aclocal-I-order-3.sh \
+t/aclocal-I-and-install.sh \
 t/aclocal-acdir.sh \
 t/aclocal-amflags.sh \
 t/aclocal-autoconf-version-check.sh \
@@ -210,6 +211,7 @@ t/canon-name.sh \
 t/ccnoco.sh \
 t/ccnoco2.sh \
 t/ccnoco3.sh \
+t/ccnoco4.sh \
 t/check.sh \
 t/check2.sh \
 t/check4.sh \
@@ -1166,6 +1168,7 @@ t/txinfo-info-in-srcdir.sh \
 t/txinfo-makeinfo-error-no-clobber.sh \
 t/txinfo-many-output-formats.sh \
 t/txinfo-many-output-formats-vpath.sh \
+t/txinfo-nodist-info.sh \
 t/txinfo-no-clutter.sh \
 t/txinfo-no-extra-dist.sh \
 t/txinfo-no-installinfo.sh \
