@@ -25,8 +25,8 @@ ifeq ($(wildcard Makefile),)
   $(error Fatal Error)
 endif
 include ./Makefile
-include $(srcdir)/maint/maint.mk
-include $(srcdir)/maint/syntax-checks.mk
+include $(srcdir)/maintainer/maint.mk
+include $(srcdir)/maintainer/syntax-checks.mk
 
 else # ! bootstrap in $(MAKECMDGOALS)
 

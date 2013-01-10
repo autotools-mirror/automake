@@ -116,7 +116,7 @@ maintainer-clean-local:
 	rm -rf .autom4te.cache
 
 # So that automake won't complain about the missing ChangeLog.
-# The real rule for ChangeLog generation is now in main/maint.mk
+# The real rule for ChangeLog generation is now in maintainer/maint.mk
 # (as it is maintainer-specific).
 ChangeLog:
 
@@ -684,8 +684,8 @@ EXTRA_DIST += \
 ## ---------------------------------------- ##
   
 EXTRA_DIST += \
-  maint/am-ft \
-  maint/am-xft \
-  maint/rename-tests \
-  maint/maint.mk \
-  maint/syntax-checks.mk
+  maintainer/am-ft \
+  maintainer/am-xft \
+  maintainer/rename-tests \
+  maintainer/maint.mk \
+  maintainer/syntax-checks.mk
