@@ -32,13 +32,16 @@
 ## a package with gcc 3.x or later.  In this case we can skip the use of
 ## depcomp and easily inline the dependency tracking.
 
+if %?FIRST%
+## TODO: rewrite this to avoid extra forks once we can assume a POSIX shell.
+am__set_depbase = depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.[^.]*$$||'`
+endif %?FIRST%
+
 if %?NONLIBTOOL%
 ?GENERIC?%EXT%.o:
 ?!GENERIC?%OBJ%: %SOURCE%
 if %FASTDEP%
-## TODO: rewrite this to avoid extra forks once we can assume a POSIX
-## TODO: shell.
-	%VERBOSE%depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.[^.]*$$||'` \
+	%VERBOSE%$(am__set_depbase) \
 	  && %COMPILE% -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ %SOURCEFLAG% \
 ?GENERIC?	%SOURCE% \
 ## For non-suffix rules, we must emulate a VPATH search on %SOURCE%.
@@ -58,9 +61,7 @@ endif !%FASTDEP%
 ?GENERIC?%EXT%.obj:
 ?!GENERIC?%OBJOBJ%: %SOURCE%
 if %FASTDEP%
-## TODO: rewrite this to avoid extra forks once we can assume a POSIX
-## TODO: shell.
-	%VERBOSE%depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.[^.]*$$||'` \
+	%VERBOSE%$(am__set_depbase) \
 	&& %COMPILE% -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ %SOURCEFLAG% \
 ?GENERIC?	`$(CYGPATH_W) '%SOURCE%'` \
 ## For non-suffix rules, we must emulate a VPATH search on %SOURCE%.
@@ -84,9 +85,7 @@ if %?LIBTOOL%
 ?GENERIC?%EXT%.lo:
 ?!GENERIC?%LTOBJ%: %SOURCE%
 if %FASTDEP%
-## TODO: rewrite this to avoid extra forks once we can assume a POSIX
-## TODO: shell.
-	%VERBOSE%depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.[^.]*$$||'` \
+	%VERBOSE%$(am__set_depbase) \
 	  && %LTCOMPILE% -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ %SOURCEFLAG% \
 ?GENERIC?	%SOURCE% \
 ## For non-suffix rules, we must emulate a VPATH search on %SOURCE%.
