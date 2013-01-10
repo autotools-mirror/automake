@@ -1296,12 +1296,6 @@ sub handle_languages ()
 	if (((! option 'no-dependencies') && $lang->autodep ne 'no')
 	    || defined $lang->compile)
 	{
-	    # Some C compilers don't support -c -o.  Use it only if really
-	    # needed.
-	    my $output_flag = $lang->output_flag || '';
-	    $output_flag = '-o'
-	      if (! $output_flag && $lang->name eq 'c');
-
 	    # Compute a possible derived extension.
 	    # This is not used by depend2.am.
 	    my $der_ext = ($lang->output_extensions->($ext))[0];
@@ -1330,7 +1324,7 @@ sub handle_languages ()
 
 			     COMPILE   => '$(' . $lang->compiler . ')',
 			     LTCOMPILE => '$(LT' . $lang->compiler . ')',
-			     -o        => $output_flag);
+			    );
 	}
 
 	# Now include code for each specially handled object with this
@@ -1374,9 +1368,6 @@ sub handle_languages ()
 	      "\$(LIBTOOL) $ltverbose $libtool_tag\$($ptltflags) \$(LIBTOOLFLAGS) "
 	      . "--mode=compile $obj_compile";
 
-	    # We _need_ '-o' for per object rules.
-	    my $output_flag = $lang->output_flag || '-o';
-
 	    $output_rules .=
 	      file_contents ($rule_file,
 			     new Automake::Location,
@@ -1398,7 +1389,6 @@ sub handle_languages ()
 			     SILENT    => $silent,
 			     COMPILE   => $obj_compile,
 			     LTCOMPILE => $obj_ltcompile,
-			     -o        => $output_flag,
 			     %file_transform);
 	}
 
