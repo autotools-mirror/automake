@@ -30,7 +30,6 @@ t/pm/Version3.pl
 
 XFAIL_TESTS = \
 t/all.sh \
-t/ccnoco4.sh \
 t/cond17.sh \
 t/gcj6.sh \
 t/override-conditional-2.sh \
@@ -209,7 +208,6 @@ t/canon7.sh \
 t/canon8.sh \
 t/canon-name.sh \
 t/ccnoco.sh \
-t/ccnoco2.sh \
 t/ccnoco3.sh \
 t/ccnoco4.sh \
 t/check.sh \
@@ -954,6 +952,7 @@ t/remake-timing-bug-pr8365.sh \
 t/reqd2.sh \
 t/repeated-options.sh \
 t/rulepat.sh \
+t/self-check-cc-no-c-o.sh \
 t/self-check-configure-help.sh \
 t/self-check-dir.tap \
 t/self-check-exit.tap \

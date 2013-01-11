@@ -55,7 +55,6 @@ extern int dummy;
 END
 
 cp "$am_scriptdir/ar-lib" . || fatal_ "fetching auxiliary script 'ar-lib'"
-cp "$am_scriptdir/compile" . || fatal_ "fetching auxiliary script 'compile'"
 
 $ACLOCAL
 $AUTOCONF

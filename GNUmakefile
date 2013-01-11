@@ -25,8 +25,8 @@ ifeq ($(wildcard Makefile),)
   $(error Fatal Error)
 endif
 include ./Makefile
-include $(srcdir)/maint/maint.mk
-include $(srcdir)/maint/syntax-checks.mk
+include $(srcdir)/maintainer/maint.mk
+include $(srcdir)/maintainer/syntax-checks.mk
 
 else # ! bootstrap in $(MAKECMDGOALS)
 
@@ -50,7 +50,7 @@ export BOOTSTRAP_SHELL
 #      kick in, because the tree might be in an inconsistent state (e.g.,
 #      we have just switched from 'maint' to 'master', and have the built
 #      'automake' script left from 'maint', but the files 'lib/am/*.am'
-#      are from 'master': if 'automake' gets run and used those files --
+#      are from 'master': if 'automake' gets run and uses those files --
 #      boom!).
 
 ifdef config-status # Bootstrap from an already-configured tree.

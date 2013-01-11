@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2001-2013 Free Software Foundation, Inc.
+# Copyright (C) 2012-2013 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,38 +14,22 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Make sure '../foo/foo.cpp' generates a rule.
-# Report from Dave Brolley.
+# Check that our fake "C compiler" that doesn't grasp the '-c' and
+# '-o' command-line options passed together, used to enhance testsuite
+# coverage.
 
+required=gcc # Our fake compiler uses gcc.
+am_create_testdir=empty
 . test-init.sh
 
-cat >> configure.ac << 'END'
-AC_PROG_CC
-AM_PROG_CC_C_O
-AC_PROG_CXX
-AC_CONFIG_FILES([d1/Makefile d2/Makefile])
-AC_OUTPUT
-END
+CC=$am_testaux_builddir/cc-no-c-o; export CC
 
-mkdir d1 d2
-
-cat > Makefile.am << 'END'
-SUBDIRS = d1 d2
-END
-
-cat > d1/Makefile.am << 'END'
-bin_PROGRAMS = z
-z_SOURCES = ../d2/z.c
-END
-
-cat > d2/Makefile.am << 'END'
-END
-
-: > d2/z.c
-
-$ACLOCAL
-$AUTOMAKE
-
-grep '\$(CC) .*\.\./d2/z\.c' d1/Makefile.in
+echo 'int main (void) { return 0; }' > foo.c
+$CC -c foo.c
+test -f foo.o || test -f foo.obj
+$CC -c -o bar.o foo.c 2>stderr && { cat stderr >&2; exit 1; }
+cat stderr >&2
+grep "both '-o' and '-c' seen on the command line" stderr
+test ! -e bar.o && test ! -e bar.obj
 
 :

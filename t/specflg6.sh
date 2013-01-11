@@ -36,8 +36,6 @@ foo_CFLAGS = -DFOO
 foo_SOURCES = foo.c
 END
 
-: > compile
-
 $ACLOCAL
 $AUTOMAKE
 

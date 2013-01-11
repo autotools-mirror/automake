@@ -378,9 +378,6 @@ my $package_version_location;
 # TRUE if we've seen AM_PROG_AR
 my $seen_ar = 0;
 
-# TRUE if we've seen AM_PROG_CC_C_O
-my $seen_cc_c_o = 0;
-
 # Location of AC_REQUIRE_AUX_FILE calls, indexed by their argument.
 my %required_aux_file = ();
 
@@ -5160,7 +5157,6 @@ sub scan_autoconf_traces ($)
 		AM_INIT_AUTOMAKE => 0,
 		AM_MAINTAINER_MODE => 0,
 		AM_PROG_AR => 0,
-		AM_PROG_CC_C_O => 0,
 		_AM_SUBST_NOTMAKE => 1,
 		_AM_COND_IF => 1,
 		_AM_COND_ELSE => 1,
@@ -5355,10 +5351,6 @@ EOF
       elsif ($macro eq 'AM_PROG_AR')
 	{
 	  $seen_ar = $where;
-	}
-      elsif ($macro eq 'AM_PROG_CC_C_O')
-	{
-	  $seen_cc_c_o = $where;
 	}
       elsif ($macro eq '_AM_COND_IF')
         {
@@ -5577,45 +5569,6 @@ sub check_gnits_standards
 sub lang_sub_obj
 {
     return option 'subdir-objects' ? LANG_SUBDIR : LANG_PROCESS;
-}
-
-# Rewrite a single C source file.
-sub lang_c_rewrite
-{
-  my ($directory, $base, $ext, $obj, $have_per_exec_flags, $var) = @_;
-
-  my $r = LANG_PROCESS;
-  if (option 'subdir-objects')
-    {
-      $r = LANG_SUBDIR;
-      if ($directory && $directory ne '.')
-	{
-	  $base = $directory . '/' . $base;
-
-	  # libtool is always able to put the object at the proper place,
-	  # so we do not have to require AM_PROG_CC_C_O when building .lo files.
-	  msg_var ('portability', $var,
-		   "compiling '$base.c' in subdir requires "
-		   . "'AM_PROG_CC_C_O' in '$configure_ac'",
-		   uniq_scope => US_GLOBAL,
-		   uniq_part => 'AM_PROG_CC_C_O subdir')
-	    unless $seen_cc_c_o || $obj eq '.lo';
-	}
-    }
-
-  if (! $seen_cc_c_o
-      && $have_per_exec_flags
-      && ! option 'subdir-objects'
-      && $obj ne '.lo')
-    {
-      msg_var ('portability',
-	       $var, "compiling '$base.c' with per-target flags requires "
-	       . "'AM_PROG_CC_C_O' in '$configure_ac'",
-	       uniq_scope => US_GLOBAL,
-	       uniq_part => 'AM_PROG_CC_C_O per-target')
-    }
-
-    return $r;
 }
 
 # Rewrite a single header file.

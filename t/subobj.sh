@@ -20,6 +20,8 @@
 
 cat >> configure.ac << 'END'
 AC_PROG_CC
+dnl This should be a no-op now, but still be supported
+dnl without causing warnings.
 AM_PROG_CC_C_O
 END
 
@@ -30,10 +32,11 @@ wish_SOURCES = generic/a.c generic/b.c
 END
 
 $ACLOCAL
+rm -f compile
 $AUTOMAKE --add-missing 2>stderr || { cat stderr >&2; exit 1; }
 cat stderr >&2
 # Make sure compile is installed, and that Automake says so.
-grep 'install.*compile' stderr
+grep '^configure\.ac:4:.*install.*compile' stderr
 test -f compile
 
 grep '^generic/a\.\$(OBJEXT):' Makefile.in

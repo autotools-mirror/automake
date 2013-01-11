@@ -47,7 +47,6 @@ END
 
 : > config.guess
 : > config.sub
-: > compile
 
 $ACLOCAL
 $AUTOCONF
