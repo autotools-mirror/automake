@@ -55,11 +55,11 @@ echo 'int three (void) { return 3; }' > sub/subsub/3.c
 libtoolize
 $ACLOCAL
 
+# Make sure compile is installed, and that Automake says so.
+rm -f compile
 $AUTOMAKE --add-missing 2>stderr || { cat stderr >&2; exit 1; }
 cat stderr >&2
-
-# Make sure compile is installed, and that Automake says so.
-grep 'install.*compile' stderr
+grep '^configure\.ac:4:.*install.*compile' stderr
 test -f compile
 
 grep '[^/][123]\.lo' Makefile.in && exit 1
