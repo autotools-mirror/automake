@@ -446,11 +446,17 @@ files_without_copyright = \
 # This script has an MIT-style license
 files_without_copyright += lib/install-sh
 
+# The UPDATE_COPYRIGHT_YEAR environment variable is honoured by the
+# 'lib/update-copyright' script.
 .PHONY: update-copyright
 update-copyright:
 	$(AM_V_GEN)set -e; \
-	current_year=`date +%Y` && test -n "$$current_year" \
-	  || { echo "$@: cannot get current year" >&2; exit 1; }; \
+	if test -n "$$UPDATE_COPYRIGHT_YEAR"; then \
+	   current_year=$$UPDATE_COPYRIGHT_YEAR; \
+	else \
+	  current_year=`date +%Y` && test -n "$$current_year" \
+	    || { echo "$@: cannot get current year" >&2; exit 1; }; \
+	fi; \
 	sed -i "/^RELEASE_YEAR=/s/=.*$$/=$$current_year/" \
 	  bootstrap.sh configure.ac; \
 	excluded_re=`( \
@@ -460,5 +466,6 @@ update-copyright:
 	) | sed -e '$$!s,$$,|,' | tr -d '\012\015'`; \
 	$(GIT) ls-files \
 	  | grep -Ev '(^|/)README$$' \
+	  | grep -Ev '^PLANS(/|$$)' \
 	  | grep -Ev "^($$excluded_re)$$" \
 	  | $(update_copyright_env) xargs $(srcdir)/lib/$@

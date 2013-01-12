@@ -39,7 +39,7 @@ PACKAGE=automake
 datadir=.
 # This should be automatically updated by the 'update-copyright'
 # rule of our Makefile.
-RELEASE_YEAR=2012
+RELEASE_YEAR=2013
 
 # Read the rule for calculating APIVERSION and execute it.
 apiver_cmd=`sed -ne 's/\[\[/[/g;s/\]\]/]/g;/^APIVERSION=/p' configure.ac`

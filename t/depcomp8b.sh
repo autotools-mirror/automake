@@ -24,7 +24,6 @@ required='cc libtoolize'
 
 cat >> configure.ac << 'END'
 AC_PROG_CC
-AM_PROG_CC_C_O
 AM_PROG_AR
 AC_PROG_LIBTOOL
 AC_OUTPUT
@@ -42,9 +41,10 @@ echo 'int bar (void) { return 0; }' > sub/bar.c
 libtoolize
 $ACLOCAL
 $AUTOMAKE -a
+
 grep include Makefile.in # For debugging.
 grep 'include.*\./\$(DEPDIR)/foo\.P' Makefile.in
-grep 'include.*[^a-zA-Z0-9_/]sub/\$(DEPDIR)/bar\.P' Makefile.in
+LC_ALL=C grep 'include.*[^a-zA-Z0-9_/]sub/\$(DEPDIR)/bar\.P' Makefile.in
 $EGREP 'include.*/(\.|sub)/\$\(DEPDIR\)' Makefile.in && exit 1
 
 $AUTOCONF

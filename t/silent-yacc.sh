@@ -20,7 +20,7 @@ required='cc yacc'
 . test-init.sh
 
 cat >>configure.ac <<'EOF'
-AM_PROG_CC_C_O
+AC_PROG_CC
 AC_PROG_YACC
 AC_OUTPUT
 EOF

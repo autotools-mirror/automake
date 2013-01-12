@@ -23,7 +23,6 @@ required='cc libtoolize'
 
 cat >>configure.ac <<'END'
 AC_PROG_CC
-AM_PROG_CC_C_O
 AM_PROG_AR
 AC_PROG_LIBTOOL
 AM_PATH_PYTHON

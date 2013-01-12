@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2001-2013 Free Software Foundation, Inc.
+# Copyright (C) 2012-2013 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,46 +14,22 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Test to make sure 'compile' doesn't call 'mv SRC SRC'.
+# Check that our fake "C compiler" that doesn't grasp the '-c' and
+# '-o' command-line options passed together, used to enhance testsuite
+# coverage.
 
-required=gcc # For cc-no-c-o.
+required=gcc # Our fake compiler uses gcc.
+am_create_testdir=empty
 . test-init.sh
 
-cat >> configure.ac << 'END'
-AC_PROG_CC
-$CC --version; $CC -v; # For debugging.
-AC_OUTPUT
-END
-
-cat > Makefile.am << 'END'
-bin_PROGRAMS = wish
-wish_SOURCES = a.c
-END
-
-mkdir sub
-
-cat > a.c << 'END'
-#include <stdio.h>
-
-int main ()
-{
-  printf ("hi\n");
-}
-END
-
-# Make sure the compiler doesn't understand '-c -o'
 CC=$am_testaux_builddir/cc-no-c-o; export CC
 
-$ACLOCAL
-$AUTOCONF
-$AUTOMAKE --copy --add-missing
-
-mkdir build
-cd build
-
-../configure
-$MAKE 2>stderr || { cat stderr >&2; exit 1; }
+echo 'int main (void) { return 0; }' > foo.c
+$CC -c foo.c
+test -f foo.o || test -f foo.obj
+$CC -c -o bar.o foo.c 2>stderr && { cat stderr >&2; exit 1; }
 cat stderr >&2
-grep 'mv.*the same file' stderr && exit 1
+grep "both '-o' and '-c' seen on the command line" stderr
+test ! -e bar.o && test ! -e bar.obj
 
 :

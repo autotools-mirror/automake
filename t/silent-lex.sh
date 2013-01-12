@@ -20,7 +20,6 @@ required='cc lex'
 . test-init.sh
 
 cat >>configure.ac <<'EOF'
-AM_PROG_CC_C_O
 AC_PROG_LEX
 AC_OUTPUT
 EOF

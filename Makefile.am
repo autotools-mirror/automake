@@ -107,7 +107,7 @@ maintainer-clean-local:
 	rm -rf .autom4te.cache
 
 # So that automake won't complain about the missing ChangeLog.
-# The real rule for ChangeLog generation is now in main/maint.mk
+# The real rule for ChangeLog generation is now in maintainer/maint.mk
 # (as it is maintainer-specific).
 ChangeLog:
 
@@ -453,6 +453,17 @@ EXTRA_DIST += t/ax/shell-no-trail-bslash.in
 CLEANFILES += t/ax/shell-no-trail-bslash
 noinst_SCRIPTS += t/ax/shell-no-trail-bslash
 
+t/ax/cc-no-c-o: t/ax/cc-no-c-o.in Makefile
+	$(AM_V_at)rm -f $@ $@-t
+	$(AM_V_GEN)in=t/ax/cc-no-c-o.in \
+	  && $(MKDIR_P) t/ax \
+	  && $(do_subst) <$(srcdir)/$$in >$@-t \
+	  && chmod a+x $@-t
+	$(generated_file_finalize)
+EXTRA_DIST += t/ax/cc-no-c-o.in
+CLEANFILES += t/ax/cc-no-c-o
+noinst_SCRIPTS += t/ax/cc-no-c-o
+
 runtest: t/ax/runtest.in Makefile
 	$(AM_V_at)rm -f $@ $@-t
 	$(AM_V_GEN)$(do_subst)
@@ -522,6 +533,17 @@ check-no-trailing-backslash-in-recipes:
 	$(AM_V_at)$(MAKE) check \
 	  CONFIG_SHELL='$(abs_top_builddir)/t/ax/shell-no-trail-bslash'
 .PHONY: check-no-trailing-backslash-in-recipes
+
+# Some compilers out there (hello, MSVC) still choke on "-c -o" being
+# passed together on the command line.  Run the whole testsuite faking
+# the presence of such a compiler, to help catch regressions that would
+# otherwise only present themselves later "in the wild".  See also the
+# long discussion about automake bug#13378.
+check-cc-no-c-o:
+	$(AM_V_at)$(MAKE) $(AM_MAKEFLAGS) check \
+	  CC='$(abs_top_builddir)/t/ax/cc-no-c-o' \
+	  GNU_CC='$(abs_top_builddir)/t/ax/cc-no-c-o'
+.PHONY: check-cc-no-c-o
 
 # Run the testsuite with the installed aclocal and automake.
 installcheck-local: installcheck-testsuite
@@ -667,8 +689,8 @@ EXTRA_DIST += \
 ## ---------------------------------------- ##
   
 EXTRA_DIST += \
-  maint/am-ft \
-  maint/am-xft \
-  maint/rename-tests \
-  maint/maint.mk \
-  maint/syntax-checks.mk
+  maintainer/am-ft \
+  maintainer/am-xft \
+  maintainer/rename-tests \
+  maintainer/maint.mk \
+  maintainer/syntax-checks.mk
