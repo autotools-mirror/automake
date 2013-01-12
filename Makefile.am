@@ -539,7 +539,7 @@ check-no-trailing-backslash-in-recipes:
 # otherwise only present themselves later "in the wild".  See also the
 # long discussion about automake bug#13378.
 check-cc-no-c-o:
-	$(AM_V_at)$(MAKE) $(AM_MAKEFLAGS) check \
+	$(AM_V_at)$(MAKE) check \
 	  CC='$(abs_top_builddir)/t/ax/cc-no-c-o' \
 	  GNU_CC='$(abs_top_builddir)/t/ax/cc-no-c-o'
 .PHONY: check-cc-no-c-o
