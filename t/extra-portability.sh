@@ -62,30 +62,32 @@ $AUTOMAKE -Wall -Wno-portability
 # Now, a setup where also a "simple" portability warning is present.
 #
 
-echo 'var = $(foo--bar)' >> Makefile.am
+echo 'SUBDIRS = aux' >> Makefile.am
 
 # Enabling extra-portability enables portability as well ...
 AUTOMAKE_fails -Wextra-portability
-grep 'foo--bar' stderr
+grep "'aux'.*reserved on W32" stderr
 grep 'requires.*AM_PROG_AR' stderr
 # ... even if it had been previously disabled.
 AUTOMAKE_fails -Wno-portability -Wextra-portability
-grep 'foo--bar' stderr
+grep "'aux'.*reserved on W32" stderr
 grep 'requires.*AM_PROG_AR' stderr
 
 # Disabling extra-portability leaves portability intact (1).
 AUTOMAKE_fails -Wportability -Wno-extra-portability
-grep 'foo--bar' stderr
+grep "'aux'.*reserved on W32" stderr
 grep 'requires.*AM_PROG_AR' stderr && exit 1
 # Disabling extra-portability leaves portability intact (2).
 AUTOMAKE_fails -Wall -Wno-extra-portability
-grep 'foo--bar' stderr
+grep "'aux'.*reserved on W32" stderr
 grep 'requires.*AM_PROG_AR' stderr && exit 1
 
 # Enabling portability does not enable extra-portability.
 AUTOMAKE_fails -Wportability
-grep 'foo--bar' stderr
+grep "'aux'.*reserved on W32" stderr
 grep 'requires.*AM_PROG_AR' stderr && exit 1
+
+mkdir aux || skip_ "couldn't create directory named 'aux'"
 
 # Disabling portability disables extra-portability.
 $AUTOMAKE -Wno-portability
