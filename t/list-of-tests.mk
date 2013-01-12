@@ -569,6 +569,7 @@ t/lex-header.sh \
 t/lex-lib.sh \
 t/lex-lib-external.sh \
 t/lex-libobj.sh \
+t/lex-multiple.sh \
 t/lex-noyywrap.sh \
 t/lex-clean-cxx.sh \
 t/lex-clean.sh \
