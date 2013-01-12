@@ -48,7 +48,6 @@ sc_diff_aclocal \
 sc_no_brace_variable_expansions \
 sc_rm_minus_f \
 sc_no_for_variable_in_macro \
-sc_old_includes_vars \
 sc_mkinstalldirs \
 sc_pre_normal_post_install_uninstall \
 sc_perl_no_undef \
@@ -138,20 +137,6 @@ sc_no_for_variable_in_macro:
 	    | grep -Ev '\bfor [a-zA-Z0-9_]+ in \$$\(am__installdirs\)'; \
 	then \
 	  echo 'Use "list=$$(mumble); for var in $$$$list".' 1>&2 ; \
-	  exit 1; \
-	else :; fi
-
-## Older, deprecated, and now invalid aliases for $(AM_CPPFLAGS).
-sc_old_includes_vars:
-	@files="\
-	  $(xtests) \
-	  $(pms) \
-	  $(ams) \
-	  $(srcdir)/automake.in \
-	  $(srcdir)/doc/*.texi \
-	"; \
-	if grep -E '\bINCLUDES\b' $$files; then \
-	  echo '$$(INCLUDES) is deprecated, use $$(AM_CPPFLAGS) instead' >&2; \
 	  exit 1; \
 	else :; fi
 
