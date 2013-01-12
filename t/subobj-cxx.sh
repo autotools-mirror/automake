@@ -78,7 +78,6 @@ END
 
 $ACLOCAL
 $AUTOMAKE -a
-test ! -f compile # This is not needed by C++ support.
 $EGREP '[^/](a|b|foo)\.\$(OBJEXT)' Makefile.in && exit 1
 
 $AUTOCONF
