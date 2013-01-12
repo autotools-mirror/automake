@@ -114,14 +114,14 @@ $ACLOCAL
 $AUTOCONF
 $AUTOMAKE
 
-test ! -f compile
+test ! -f ylwrap
 cd lib
 $ACLOCAL
 $AUTOCONF
 $AUTOHEADER
 $AUTOMAKE --add-missing
 cd ..
-test -f compile
+test -f ylwrap
 
 ./configure
 
