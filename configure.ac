@@ -44,7 +44,7 @@ AM_INIT_AUTOMAKE([-Wall -Werror dist-xz filename-length-max=99
 
 ## Keep this on a line of its own, since it must be found and processed
 ## by the 'update-copyright' rule in our Makefile.
-RELEASE_YEAR=2012
+RELEASE_YEAR=2013
 AC_SUBST([RELEASE_YEAR])
 
 # The API version is the base version.  We must guarantee

@@ -38,7 +38,7 @@ datadir=.
 PERL_THREADS=0
 # This should be automatically updated by the 'update-copyright'
 # rule of our Makefile.
-RELEASE_YEAR=2012
+RELEASE_YEAR=2013
 
 # Override SHELL.  This is required on DJGPP so that Perl's system()
 # uses bash, not COMMAND.COM which doesn't quote arguments properly.
