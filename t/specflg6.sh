@@ -22,7 +22,6 @@
 
 cat >> configure.ac << 'END'
 AC_PROG_CC
-AM_PROG_CC_C_O
 AM_CONDITIONAL([BAR], [true])
 END
 

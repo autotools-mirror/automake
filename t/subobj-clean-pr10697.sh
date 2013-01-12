@@ -26,7 +26,6 @@ required=cc
 
 cat >> configure.ac << 'END'
 AC_PROG_CC
-AM_PROG_CC_C_O
 AC_CONFIG_FILES([get-objext.sh:get-objext.in])
 AC_OUTPUT
 END

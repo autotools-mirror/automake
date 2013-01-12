@@ -26,7 +26,6 @@ AC_INIT([$me], [1.0])
 AM_INIT_AUTOMAKE([-Wno-extra-portability])
 AC_CONFIG_FILES([$makefiles])
 AC_PROG_CC
-AM_PROG_CC_C_O
 AC_PROG_CXX
 AC_PROG_RANLIB
 AC_OUTPUT

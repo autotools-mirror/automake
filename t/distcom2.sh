@@ -22,7 +22,6 @@
 
 cat >> configure.ac << 'END'
 AC_PROG_CC
-AM_PROG_CC_C_O
 AC_CONFIG_FILES([subdir/Makefile])
 AC_OUTPUT
 END
@@ -76,7 +75,7 @@ for opt in '' --no-force; do
 
   $FGREP ' $(top_srcdir)/depcomp ' subdir/dc.txt
   # The 'compile' script will be listed in the DIST_COMMON of the top-level
-  # Makefile because it's required in configure.ac (by AM_PROG_CC_C_O).
+  # Makefile because it's required in configure.ac (by AC_PROG_CC).
   $FGREP ' $(top_srcdir)/compile ' dc.txt || $FGREP ' compile ' dc.txt
 
 done

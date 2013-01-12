@@ -22,7 +22,7 @@ required='cc yacc'
 mkdir sub
 
 cat >>configure.ac <<'EOF'
-AM_PROG_CC_C_O
+AC_PROG_CC
 AC_PROG_YACC
 AC_CONFIG_FILES([sub/Makefile])
 AC_OUTPUT

@@ -22,7 +22,6 @@ required=cc
 cat >> configure.ac << 'END'
 AC_CONFIG_LIBOBJ_DIR([libobj-dir])
 AC_PROG_CC
-AM_PROG_CC_C_O
 AM_PROG_AR
 AC_PROG_RANLIB
 AC_LIBOBJ([foobar])

@@ -23,7 +23,6 @@ required=cc
 
 cat >>configure.ac <<EOF
 AC_PROG_CC
-AM_PROG_CC_C_O
 AC_OUTPUT
 EOF
 

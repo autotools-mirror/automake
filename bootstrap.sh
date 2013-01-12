@@ -37,10 +37,9 @@ BOOTSTRAP_SHELL=${BOOTSTRAP_SHELL-/bin/sh}
 VERSION=`sed -ne '/AC_INIT/s/^[^[]*\[[^[]*\[\([^]]*\)\].*$/\1/p' configure.ac`
 PACKAGE=automake
 datadir=.
-PERL_THREADS=0
 # This should be automatically updated by the 'update-copyright'
 # rule of our Makefile.
-RELEASE_YEAR=2012
+RELEASE_YEAR=2013
 
 # Read the rule for calculating APIVERSION and execute it.
 apiver_cmd=`sed -ne 's/\[\[/[/g;s/\]\]/]/g;/^APIVERSION=/p' configure.ac`
@@ -76,7 +75,6 @@ dosubst ()
   sed -e "s%@APIVERSION@%$APIVERSION%g" \
       -e "s%@PACKAGE@%$PACKAGE%g" \
       -e "s%@PERL@%$PERL%g" \
-      -e "s%@PERL_THREADS@%$PERL_THREADS%g" \
       -e "s%@SHELL@%$BOOTSTRAP_SHELL%g" \
       -e "s%@VERSION@%$VERSION%g" \
       -e "s%@datadir@%$datadir%g" \

@@ -25,7 +25,6 @@ required='cc yacc'
 cat >> configure.ac << 'END'
 AC_CONFIG_FILES([sub/Makefile])
 AC_PROG_CC
-AM_PROG_CC_C_O
 AC_PROG_YACC
 AC_OUTPUT
 END
