@@ -27,6 +27,9 @@ AC_INIT([$me], [1.0])
 AM_INIT_AUTOMAKE([-Wall -Werror gnu])
 AC_CONFIG_FILES([Makefile])
 AC_PROG_CC
+AC_PROG_RANLIB
+# The absence of AM_PROG_AR will give a warning with
+# '-Wextra-portability', which we want to elicit.
 END
 
 cat > Makefile.am <<'END'
@@ -39,10 +42,8 @@ foo1 = ${foo2}
 foo2 = no-dist -Wnone
 foo2 += $(foo3)
 foo3 = -Wno-error
-bar = -Wportability
-noinst_PROGRAMS = foo
-# This will give a warning with '-Wportability'.
-foo_SOURCES = sub/foo.c
+bar = -Wextra-portability
+noinst_LIBRARIES = libfoo.a
 # This would give a warning with '-Woverride'.
 install:
 END
@@ -54,8 +55,8 @@ END
 
 $ACLOCAL
 AUTOMAKE_run
-grep '^Makefile\.am:.*sub/foo\.c.*requires.*AM_PROG_CC_C_O' stderr
-grep README stderr && exit 1
+$FGREP 'AM_PROG_AR' stderr
+$FGREP 'README' stderr && exit 1
 $EGREP '(install|override)' stderr && exit 1
 $EGREP 'distdir|\.tar[ .]' Makefile.in && exit 1
 
