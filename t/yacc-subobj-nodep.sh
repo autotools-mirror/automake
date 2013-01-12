@@ -25,7 +25,6 @@ AC_INIT([$me], [1.0])
 AM_INIT_AUTOMAKE([no-dependencies])
 AC_CONFIG_FILES([Makefile])
 AC_PROG_CC
-AM_PROG_CC_C_O
 AC_PROG_YACC
 AC_OUTPUT
 END

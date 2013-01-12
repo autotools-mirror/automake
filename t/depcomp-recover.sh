@@ -24,7 +24,6 @@ required=cc
 
 cat >> configure.ac <<'END'
 AC_PROG_CC
-AM_PROG_CC_C_O
 AC_CONFIG_FILES([sub/Makefile])
 AC_OUTPUT
 END

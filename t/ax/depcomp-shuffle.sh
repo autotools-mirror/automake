@@ -68,11 +68,12 @@ else
   grep_prog_out () { ./prg && ./prg | grep "$1" || exit 1; }
 fi
 
-echo AC_PROG_CC                         >> configure.ac
-echo AM_PROG_AR                         >> configure.ac
-echo AC_PROG_RANLIB                     >> configure.ac
-test -z "$xdir" || echo AM_PROG_CC_C_O  >> configure.ac
-echo AC_OUTPUT                          >> configure.ac
+cat >> configure.ac <<'END'
+AC_PROG_CC
+AM_PROG_AR
+AC_PROG_RANLIB
+AC_OUTPUT
+END
 
 cat > Makefile.am <<END
 noinst_PROGRAMS = prg

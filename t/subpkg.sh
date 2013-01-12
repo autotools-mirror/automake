@@ -24,7 +24,6 @@ mkdir m4
 cat >m4/foo.m4 <<'EOF'
 AC_DEFUN([FOO],[
   AC_REQUIRE([AC_PROG_CC])
-  AC_REQUIRE([AM_PROG_CC_C_O])
   AC_OUTPUT
 ])
 EOF
