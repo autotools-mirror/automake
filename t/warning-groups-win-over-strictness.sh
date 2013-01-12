@@ -30,8 +30,8 @@ touch README INSTALL NEWS AUTHORS ChangeLog COPYING THANKS
 cat > configure.ac << END
 AC_INIT([$me], [1.0])
 m4_include([am-init-automake.m4])
-AC_PROG_CC
 AC_CONFIG_FILES([Makefile])
+AM_CONDITIONAL([NEVERTRUE], [false)]
 # Other similar tests do not use AC_OUTPUT, so we use it here,
 # for completeness and for better coverage.
 AC_OUTPUT
@@ -39,8 +39,9 @@ END
 
 cat > Makefile.am <<END
 include automake-options.am
-noinst_PROGRAMS = foo
-foo_SOURCES = sub/foo.c
+if NEVERTRUE
+AUTOMAKE_OPTIONS = no-dependencies
+endif
 END
 
 rm -rf autom4te*.cache
@@ -48,7 +49,7 @@ rm -rf autom4te*.cache
 echo 'AM_INIT_AUTOMAKE' > am-init-automake.m4
 $ACLOCAL
 AUTOMAKE_fails -Werror -Wall --foreign
-grep '^Makefile\.am:3:.*sub/foo\.c.*requires.*AM_PROG_CC_C_O' stderr
+grep "^Makefile\\.am:3:.*AUTOMAKE_OPTIONS.*conditional" stderr
 
 rm -rf autom4te*.cache
 : > automake-options.am

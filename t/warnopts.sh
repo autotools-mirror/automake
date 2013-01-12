@@ -25,41 +25,38 @@ AM_CONDITIONAL([COND_FALSE], [false])
 AC_OUTPUT
 END
 
-mkdir sub
+mkdir aux sub sub/aux || skip_ "cannot create directories named 'aux'"
 
 # These two Makefile contain the same errors, but have different
 # warnings disabled.
 
 cat > Makefile.am << 'END'
-AUTOMAKE_OPTIONS = subdir-objects -Wno-unsupported
+AUTOMAKE_OPTIONS = -Wno-unsupported
 if COND_FALSE
 AUTOMAKE_OPTIONS += no-dependencies
 endif
-bin_PROGRAMS = foo
-foo_SOURCES = sub/foo.c
-SUBDIRS = sub
+SUBDIRS = sub aux
 END
 
 cat > sub/Makefile.am << 'END'
-AUTOMAKE_OPTIONS = subdir-objects -Wno-portability
+AUTOMAKE_OPTIONS = -Wno-portability
 if COND_FALSE
 AUTOMAKE_OPTIONS += no-dependencies
 endif
-bin_PROGRAMS = foo
-foo_SOURCES = sub/foo.c
+SUBDIRS = aux
 END
 
 $ACLOCAL
 AUTOMAKE_fails
-# The expected diagnostic is
+# The expected diagnostic is:
 #   automake: warnings are treated as errors
-#   Makefile.am:6: warning: compiling 'sub/foo.c' in subdir requires 'AM_PROG_CC_C_O' in 'configure.ac'
+#   Makefile.am:5: warning: name 'aux' is reserved on W32 and DOS platforms
 #   sub/Makefile.am:1: warning: 'AUTOMAKE_OPTIONS' cannot have conditional contents
-grep '^Makefile\.am:.*sub/foo\.c.*AM_PROG_CC_C_O' stderr
-grep '^sub/Makefile.am:.*AUTOMAKE_OPTIONS' stderr
-grep '^sub/Makefile\.am:.*AM_PROG_CC_C_O' stderr && exit 1
-grep '^Makefile\.am:.*AUTOMAKE_OPTIONS' stderr && exit 1
-# Only two lines of warnings.
+grep "^Makefile\\.am:.*'aux' is reserved on W32" stderr
+grep "^sub/Makefile\\.am:.*AUTOMAKE_OPTIONS.*conditional" stderr
+grep "^Makefile\\.am:.*AUTOMAKE_OPTIONS" stderr && exit 1
+grep "^sub/Makefile\\.am:.*'aux'" stderr && exit 1
+# Only two lines of warnings proper.
 test $(grep -v 'warnings are treated as errors' stderr | wc -l) -eq 2
 
 rm -rf autom4te*.cache

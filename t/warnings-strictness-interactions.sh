@@ -20,16 +20,16 @@
 
 . test-init.sh
 
+mkdir aux || skip_ "cannot create directories named 'aux'"
+
 # We want (almost) complete control over automake options.
 AUTOMAKE="$am_original_AUTOMAKE -Werror"
 
-echo AC_PROG_CC >> configure.ac
 $ACLOCAL
 
 cat > Makefile.am <<END
 AUTOMAKE_OPTIONS = ## For later editing by 'set_am_opts'.
-noinst_PROGRAMS = foo
-foo_SOURCES = sub/foo.c
+SUBDIRS = aux
 END
 
 set_am_opts ()
@@ -56,6 +56,6 @@ set_am_opts '-Wno-portability' configure.ac
 set_am_opts 'gnu' Makefile.am
 
 AUTOMAKE_fails
-grep '^Makefile\.am:.*sub/foo\.c.*requires.*AM_PROG_CC_C_O' stderr
+grep "^Makefile\\.am:.*'aux' is reserved on W32" stderr
 
 :

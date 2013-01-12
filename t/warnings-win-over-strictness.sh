@@ -19,6 +19,8 @@
 
 . test-init.sh
 
+mkdir aux || skip_ "cannot create directories named 'aux'"
+
 # We want complete control over automake options.
 AUTOMAKE=$am_original_AUTOMAKE
 
@@ -31,7 +33,7 @@ ok ()
 ko ()
 {
   AUTOMAKE_run $*
-  grep '^Makefile\.am:.*sub/foo\.c.*requires.*AM_PROG_CC_C_O' stderr
+  grep "^Makefile\\.am:.*'aux' is reserved on W32" stderr
   test $(wc -l <stderr) -eq 1
 }
 
@@ -48,13 +50,11 @@ set_am_opts ()
 # Files required in gnu strictness.
 touch README INSTALL NEWS AUTHORS ChangeLog COPYING
 
-echo AC_PROG_CC >> configure.ac
 $ACLOCAL
 
 cat > Makefile.am <<END
 AUTOMAKE_OPTIONS = ## For later editing by 'set_am_opts'.
-noinst_PROGRAMS = foo
-foo_SOURCES = sub/foo.c
+SUBDIRS = aux
 END
 
 ko --foreign -Wportability
