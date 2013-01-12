@@ -469,5 +469,6 @@ update-copyright:
 	) | sed -e '$$!s,$$,|,' | tr -d '\012\015'`; \
 	$(GIT) ls-files \
 	  | grep -Ev '(^|/)README$$' \
+	  | grep -Ev '^PLANS(/|$$)' \
 	  | grep -Ev "^($$excluded_re)$$" \
 	  | $(update_copyright_env) xargs $(srcdir)/lib/$@
