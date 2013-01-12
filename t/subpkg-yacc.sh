@@ -17,6 +17,7 @@
 # Check that ylwrap is installed properly, and $(YLWRAP) us defined
 # properly, when a subpackage is involved.
 
+am_create_testdir=empty
 required='cc yacc'
 . test-init.sh
 
@@ -112,7 +113,7 @@ EOF
 
 $ACLOCAL
 $AUTOCONF
-$AUTOMAKE
+$AUTOMAKE -a
 
 test ! -f ylwrap
 cd lib
