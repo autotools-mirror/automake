@@ -25,7 +25,6 @@
 required=gcc # For cc-no-c-o.
 . test-init.sh
 
-# We deliberately do not call AM_PROG_CC_C_O here.
 cat >> configure.ac << 'END'
 AC_PROG_CC
 $CC --version; $CC -v; # For debugging.

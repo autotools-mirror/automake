@@ -27,7 +27,6 @@ AC_CONFIG_SRCDIR([tests/test.test])
 AC_CONFIG_AUX_DIR([build-aux])
 AM_INIT_AUTOMAKE
 AC_PROG_CC
-AM_PROG_CC_C_O
 AM_PROG_AR
 AC_PROG_RANLIB
 AM_CONDITIONAL([RUN_TESTS], [test x"$run_tests" != x"no"])

@@ -21,7 +21,6 @@ required=gcc # For cc-no-c-o.
 
 cat >> configure.ac << 'END'
 AC_PROG_CC
-AM_PROG_CC_C_O
 $CC --version; $CC -v; # For debugging.
 AC_OUTPUT
 END

@@ -22,9 +22,7 @@ required=gcc # For cc-no-c-o.
 
 cat >> configure.ac << 'END'
 AC_PROG_CC
-AM_PROG_CC_C_O
-# Make sure that $CC can be used after AM_PROG_CC_C_O.
-$CC -v || exit 1
+$CC --version; $CC -v; # For debugging.
 AC_OUTPUT
 END
 

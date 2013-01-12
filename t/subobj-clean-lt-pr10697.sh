@@ -28,7 +28,6 @@ cat >> configure.ac << 'END'
 AM_PROG_AR
 AC_PROG_LIBTOOL
 AC_PROG_CC
-AM_PROG_CC_C_O
 AC_OUTPUT
 END
 

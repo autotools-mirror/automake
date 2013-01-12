@@ -21,7 +21,6 @@ required='cc lex'
 
 cat >> configure.ac << 'END'
 AC_PROG_CC
-AM_PROG_CC_C_O
 AM_PROG_LEX
 AC_OUTPUT
 END

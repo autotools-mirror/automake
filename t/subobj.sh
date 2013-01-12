@@ -18,12 +18,7 @@
 
 . test-init.sh
 
-cat >> configure.ac << 'END'
-AC_PROG_CC
-dnl This should be a no-op now, but still be supported
-dnl without causing warnings.
-AM_PROG_CC_C_O
-END
+echo AC_PROG_CC >> configure.ac
 
 cat > Makefile.am << 'END'
 AUTOMAKE_OPTIONS = subdir-objects

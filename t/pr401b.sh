@@ -45,7 +45,6 @@ cat >>configure.ac << 'EOF'
 ## These lines are activated for later tests
 #: AC_CONFIG_LIBOBJ_DIR([lib])
 AC_PROG_CC
-#x AM_PROG_CC_C_O
 AC_LIBOBJ([feep])
 AC_LIBSOURCE([feep.c])
 AM_PROG_AR
@@ -118,7 +117,7 @@ mv -f src/t src/Makefile.am
 ## Test using LTLIBOBJS from a sibling directory. ##
 ## ---------------------------------------------- ##
 
-sed 's/#x //; s/lib\/Makefile //' configure.ac >configure.tmp
+sed 's/lib\/Makefile //' configure.ac >configure.tmp
 mv -f configure.tmp configure.ac
 
 cat >Makefile.am <<'EOF'

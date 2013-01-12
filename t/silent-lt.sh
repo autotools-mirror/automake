@@ -26,7 +26,6 @@ cat >>configure.ac <<'EOF'
 AC_CONFIG_FILES([sub/Makefile])
 AC_PROG_CC
 AM_PROG_AR
-AM_PROG_CC_C_O
 AC_PROG_LIBTOOL
 AC_OUTPUT
 EOF

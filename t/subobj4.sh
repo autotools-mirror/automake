@@ -21,7 +21,6 @@
 
 cat >> configure.ac << 'END'
 AC_PROG_CC
-AM_PROG_CC_C_O
 AC_PROG_CXX
 AC_CONFIG_FILES([d1/Makefile d2/Makefile])
 AC_OUTPUT

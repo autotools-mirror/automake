@@ -21,7 +21,7 @@ required=cc
 . test-init.sh
 
 cat >> configure.ac << 'END'
-AM_PROG_CC_C_O
+AC_PROG_CC
 AC_OUTPUT
 END
 

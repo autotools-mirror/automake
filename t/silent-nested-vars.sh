@@ -22,7 +22,6 @@
 cat >>configure.ac <<'EOF'
 AM_SILENT_RULES
 AC_PROG_CC
-AM_PROG_CC_C_O
 AC_OUTPUT
 EOF
 

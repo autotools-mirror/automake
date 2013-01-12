@@ -132,7 +132,6 @@ AC_INIT([$me], [1.0])
 AC_CONFIG_AUX_DIR([build-aux])
 AM_INIT_AUTOMAKE
 AC_PROG_CC
-AM_PROG_CC_C_O
 AM_PROG_AR
 $(if test $depcomp_with_libtool = yes; then
     echo AC_PROG_LIBTOOL

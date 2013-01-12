@@ -23,7 +23,6 @@ AC_INIT([$me], [1.0])
 AC_CONFIG_AUX_DIR([tools])
 AM_INIT_AUTOMAKE
 AC_PROG_CC
-AM_PROG_CC_C_O
 AC_CONFIG_FILES([Makefile foo/Makefile])
 AC_OUTPUT
 END
