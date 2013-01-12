@@ -47,7 +47,6 @@ $MAKE test-1
 
 $sleep
 echo EXTRA_VERSION=2.1 > version.sh
-using_gmake || $MAKE Makefile
 $MAKE test-2
 
 $MAKE distclean
@@ -57,7 +56,6 @@ cd build
 $MAKE test-2
 $sleep
 echo EXTRA_VERSION=3.14 > ../version.sh
-using_gmake || $MAKE Makefile
 $MAKE test-3
 
 # Contents of $(CONFIG_STATUS_DEPENDENCIES) are *not* to be

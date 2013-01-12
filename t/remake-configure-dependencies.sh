@@ -62,7 +62,6 @@ $AUTOMAKE
 $MAKE test-1
 
 (echo '#!/bin/sh' && echo 'printf %s 2.1') > print-version
-using_gmake || $MAKE Makefile
 $MAKE test-2
 
 $MAKE distclean
@@ -71,7 +70,6 @@ cd build
 ../configure
 $MAKE test-2
 (echo '#!/bin/sh' && echo 'printf %s 3.14') > ../print-version
-using_gmake || $MAKE Makefile
 $MAKE test-3
 
 # Check that $(CONFIGURE_DEPENDENCIES) are automatically distributed.
