@@ -53,18 +53,9 @@ END
 $ACLOCAL
 $AUTOCONF
 $AUTOMAKE -a
+
 ./configure
-$MAKE
 
-$MAKE distcheck
-$MAKE distclean
-
-# Should also work without subdir-objects.
-
-sed '/subdir-objects/d' < Makefile.am > t
-mv -f t Makefile.am
-$AUTOMAKE
-./configure
 $MAKE
 $MAKE distcheck
 

@@ -29,7 +29,7 @@ AC_PROG_CC
 END
 
 $ACLOCAL
-$AUTOMAKE
+$AUTOMAKE -Wno-unsupported
 
 grep '^z\.o: x/z\.c$' Makefile.in
 

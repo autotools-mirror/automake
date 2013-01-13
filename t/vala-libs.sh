@@ -31,6 +31,7 @@ AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
+AUTOMAKE_OPTIONS = subdir-objects
 lib_LIBRARIES = libmu.a
 lib_LTLIBRARIES = src/libzardoz.la
 libmu_a_SOURCES = mu.vala mu2.c mu.vapi mu2.h
@@ -75,7 +76,7 @@ int main ()
 }
 END
 
-mkdir src
+mkdir -p src
 cat > src/zardoz-foo.vala << 'END'
 using GLib;
 public class Foo {

@@ -40,7 +40,7 @@ $ACLOCAL
 
 cat >Makefile.am <<END
 EXTRA_LIBRARIES = libfoo.a
-libfoo_a_SOURCES = sub/foo.c
+libfoo_a_SOURCES = foo.c
 END
 
 # Sanity check: extra-portability warnings causes the expected error.

@@ -1793,9 +1793,36 @@ sub handle_single_transform ($$$$$%)
 
 	    # If rewrite said it was ok, put the object into a
 	    # subdir.
-	    if ($r == LANG_SUBDIR && $directory ne '')
+	    if ($directory ne '')
 	    {
-		$object = $directory . '/' . $object;
+              if ($r == LANG_SUBDIR)
+                {
+                  $object = $directory . '/' . $object;
+                }
+              else
+                {
+                  # Since the next major version of automake (1.14) will
+                  # make the behaviour so far only activated with the
+                  # 'subdir-object' option mandatory, it's better if we
+                  # start warning users not using that option.
+                  # As suggested by Peter Johansson, we strive to avoid
+                  # the warning when it would be irrelevant, i.e., if
+                  # all source files sit in "current" directory.
+                  msg_var 'unsupported', $var,
+                          "source file '$full' is in a subdirectory,"
+                          . "\nbut option 'subdir-objects' is disabled";
+                  msg 'unsupported', INTERNAL, <<'EOF', uniq_scope => US_GLOBAL;
+possible forward-incompatibility.
+At least a source file is in a subdirectory, but the 'subdir-objects'
+automake option hasn't been enabled.  For now, the corresponding output
+object file(s) will be placed in the top-level directory.  However,
+this behaviour will change in future Automake versions: they will
+unconditionally cause object files to be placed in the same subdirectory
+of the corresponding sources.
+You are advised to start using 'subdir-objects' option throughout your
+project, to avoid future incompatibilities.
+EOF
+                }
 	    }
 
 	    # If the object file has been renamed (because per-target
