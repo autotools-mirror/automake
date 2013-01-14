@@ -133,7 +133,7 @@ t/amassign.sh \
 t/am-config-header-no-more.sh \
 t/am-prog-cc-c-o.sh \
 t/am-prog-cc-stdc-no-more.sh \
-t/am-prog-mkdir-p-no-more.sh \
+t/am-prog-mkdir-p.sh \
 t/am-macro-not-found.sh \
 t/amopt.sh \
 t/amopts-location.sh \
@@ -686,7 +686,6 @@ t/missing-version-mismatch.sh \
 t/missing3.sh \
 t/am-missing-prog.sh \
 t/missing-auxfile-stops-makefiles-creation.sh \
-t/mkdir_p.sh \
 t/mkinstall.sh \
 t/mkinst2.sh \
 t/mkinst3.sh \
