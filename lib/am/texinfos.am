@@ -191,12 +191,11 @@ install-info-am: $(INFO_DEPS)
 	  case $$file in \
 	    $(srcdir)/*) file=`echo "$$file" | sed "s|^$$srcdirstrip/||"`;; \
 	  esac; \
-	  if test -f $$file; then d=.; else d=$(srcdir); fi; \
-	  for ifile in $$d/$$file $$d/$$file-[0-9] $$d/$$file-[0-9][0-9]; do \
-	    if test -f $$ifile; then \
-	      echo "$$ifile"; \
-	    else : ; fi; \
-	  done; \
+	  if test -f $$file; then \
+	    echo ./$$file; \
+	  else \
+	    echo $(srcdir)/$$file; \
+	  fi; \
 	done | $(am__base_list) | \
 	while read files; do \
 	  echo " $(INSTALL_DATA) $$files '$(DESTDIR)$(infodir)'"; \
@@ -311,8 +310,8 @@ uninstall-info-am:
 	for file in $$list; do \
 	  relfile=`echo "$$file" | sed 's|^.*/||'`; \
 	  (if test -d "$(DESTDIR)$(infodir)" && cd "$(DESTDIR)$(infodir)"; then \
-	     echo " cd '$(DESTDIR)$(infodir)' && rm -f $$relfile $$relfile-[0-9] $$relfile-[0-9][0-9]"; \
-	     rm -f $$relfile $$relfile-[0-9] $$relfile-[0-9][0-9]; \
+	     echo " cd '$(DESTDIR)$(infodir)' && rm -f $$relfile"; \
+	     rm -f $$relfile; \
 	   else :; fi); \
 	done
 
@@ -345,15 +344,14 @@ dist-info: $(INFO_DEPS)
 	  case $$base in \
 	    $(srcdir)/*) base=`echo "$$base" | sed "s|^$$srcdirstrip/||"`;; \
 	  esac; \
-	  if test -f $$base; then d=.; else d=$(srcdir); fi; \
-	  for file in $$d/$$base $$d/$$base-[0-9] $$d/$$base-[0-9][0-9]; do \
-	    if test -f $$file; then \
-## Strip leading '$$d/'.
-	      relfile=`expr "$$file" : "$$d/\(.*\)"`; \
-	      test -f "$(distdir)/$$relfile" || \
-		cp -p $$file "$(distdir)/$$relfile"; \
-	    else :; fi; \
-	  done; \
+	  if test -f $$base; then \
+	    file=./$$base; \
+	  else \
+	    file=$(srcdir)/$$base; \
+	  fi; \
+	  if test -f $$file && test ! -f "$(distdir)/$$base"; then \
+	    cp -p $$file "$(distdir)/$$base"; \
+	  fi; \
 	done
 endif %?LOCAL-TEXIS%
 
@@ -383,10 +381,7 @@ clean-aminfo:
 
 .PHONY maintainer-clean-am: maintainer-clean-aminfo
 maintainer-clean-aminfo:
-	@list='$(INFO_DEPS)'; for i in $$list; do \
-	  echo " rm -f $$i $$i-[0-9] $$i-[0-9][0-9]"; \
-	  rm -f $$i $$i-[0-9] $$i-[0-9][0-9]; \
-	done
+	-test -z "$(INFO_DEPS)" || rm -f $(INFO_DEPS)
 ## Use '-rf', not just '-f'; see comments in 'mostlyclean-aminfo'
 ## above for details.
 ?MAINTCLEAN?	-test -z "%MAINTCLEAN%" \
