@@ -43,7 +43,7 @@ END
 : > d2/z.c
 
 $ACLOCAL
-$AUTOMAKE
+$AUTOMAKE -Wno-unsupported
 
 grep '\$(CC) .*\.\./d2/z\.c' d1/Makefile.in
 

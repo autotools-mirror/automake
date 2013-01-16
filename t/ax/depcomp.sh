@@ -130,7 +130,7 @@ check_distclean ()
 cat > configure.ac <<END
 AC_INIT([$me], [1.0])
 AC_CONFIG_AUX_DIR([build-aux])
-AM_INIT_AUTOMAKE
+AM_INIT_AUTOMAKE([subdir-objects])
 AC_PROG_CC
 AM_PROG_AR
 $(if test $depcomp_with_libtool = yes; then
@@ -199,18 +199,17 @@ ${normalized_target}_${LINKADD} = src/libbaz.$a
 grep-test:
 ## For debugging.
 	cat \$(DEPDIR)/foo.$po || :
-	cat \$(DEPDIR)/subfoo.$po || :
+	cat sub/\$(DEPDIR)/subfoo.$po || :
 	cat src/\$(DEPDIR)/baz.$po || :
 	cat src/sub2/\$(DEPDIR)/sub2foo.$po || :
-## Checks done here.
+## Checks are done here.
 	grep '^foo.$objext.*:' \$(DEPDIR)/foo.$po
-	grep '^subfoo\.$objext.*:' \$(DEPDIR)/subfoo.$po
+	grep '^sub/subfoo\.$objext.*:' sub/\$(DEPDIR)/subfoo.$po
 	grep '^baz\.$objext.*:' src/\$(DEPDIR)/baz.$po
 	grep '^sub2/sub2foo\.$objext.*:' src/sub2/\$(DEPDIR)/sub2foo.$po
 END
 
 cat > src/Makefile.am <<END
-AUTOMAKE_OPTIONS = subdir-objects
 noinst_${LIBPRIMARY} = libbaz.$a
 # We include sub2foo only to be sure that the munging in depcomp
 # doesn't remove too much from the object file name.

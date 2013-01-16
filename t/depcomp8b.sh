@@ -31,6 +31,9 @@ AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
+## FIXME: stop disabling the warnings in the 'unsupported' category
+## FIXME: once the 'subdir-objects' option has been mandatory.
+AUTOMAKE_OPTIONS = -Wno-unsupported
 lib_LTLIBRARIES = libzardoz.la
 libzardoz_la_SOURCES = foo.c sub/bar.c
 END
@@ -42,7 +45,9 @@ echo 'int bar (void) { return 0; }' > sub/bar.c
 libtoolize
 
 $ACLOCAL
-$AUTOMAKE -a
+# FIXME: stop disabling the warnings in the 'unsupported' category
+# FIXME: once the 'subdir-objects' option has been mandatory.
+$AUTOMAKE -a -Wno-unsupported
 grep include Makefile.in # For debugging.
 grep 'include.*\./\$(DEPDIR)/foo\.P' Makefile.in
 grep 'include.*\./\$(DEPDIR)/bar\.P' Makefile.in
@@ -56,7 +61,7 @@ DISTCHECK_CONFIGURE_FLAGS='--enable-dependency-tracking' $MAKE distcheck
 
 # Try again with subdir-objects option.
 
-echo AUTOMAKE_OPTIONS = subdir-objects >> Makefile.am
+echo AUTOMAKE_OPTIONS += subdir-objects >> Makefile.am
 
 $AUTOMAKE
 grep include Makefile.in # For debugging.

@@ -76,7 +76,9 @@ c_outputs='zardoz.c bar-quux.c sub/foo-zardoz.c sub/dir/quux.c'
 
 $ACLOCAL
 $AUTOCONF
-$AUTOMAKE -a
+# FIXME: stop disabling the warnings in the 'unsupported' category
+# FIXME: once the 'subdir-objects' option has been mandatory.
+$AUTOMAKE -a -Wno-unsupported
 
 for vpath in : false; do
 
