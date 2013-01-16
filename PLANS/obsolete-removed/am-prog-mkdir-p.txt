@@ -1,67 +1,9 @@
-In Automake 1.13.x
-------------------
+We have dropped any plan to remove the obsolescent macro AM_PROG_MKDIR_P,
+(today just an alias for the Autoconf-provided macro AC_PROG_MKDIR_P), as
+well as the related $(mkdir_p) make variable and the @mkdir_p@ configure
+substitution.
 
-We had already scheduled the removal of the long-deprecated AM_PROG_MKDR_P
-macro (superseded by the autoconf-provided one AC_PROG_MKDIR_P) for
-Automake 1.13 -- see commit 'v1.12-20-g8a1c64f'.
+That planned removal has already proven source of countless headaches and
+backward-compatibility issues, which vastly outweigh any "clean-up benefit"
+we would get from the removal of that obsolescent but unobtrusive cruft.
 
-Alas, it turned out the latest Gettext version at the time (0.18.1.1) was
-still using that macro:
-
-  <http://lists.gnu.org/archive/html/automake/2012-09/msg00010.html>
-
-And since the maintenance of Gettext was stalled, we couldn't get a fix
-committed and released in time for the appearance of automake 1.13:
-
-  <http://lists.gnu.org/archive/html/bug-gettext/2012-04/msg00018.html>
-  <http://lists.gnu.org/archive/html/bug-gettext/2012-06/msg00012.html>
-  <http://lists.gnu.org/archive/html/bug-gettext/2012-10/msg00001.html>
-
-So, on a strong advice by Jim Meyering, in commit 'v1.12.4-158-gdf23daf'
-we re-introduced AM_PROG_MKDIR_P in Automake.  That has been an
-unfortunate necessity (thanks to Jim for having convinced me of that in
-time!)
-
-
-For Automake 1.14
------------------
-
-Finally, AM_PROG_MKDR_P we'll be fully obsolete in in Automake 1.14 (see
-commit 'v1.12.4-174-g5a28948', merged in master by 'v1.13-5-gb373ad9'),
-while still offering a clear error message for the moment (see follow-up
-commit 'v1.13-30-gd01834b').
-
-We can finally do so because Gettext has got a maintainer in the meantime,
-and a new release has been made that no longer uses AM_PROG_MKDIR_P:
-
-  <http://lists.gnu.org/archive/html/bug-gettext/2012-12/msg00064.html>
-
-We still keep the obsolete '@mkdir_p@' substitution and '$(mkdir_p)'
-variable around though, since they are still used by 'Makefile.in.in'
-template from gettext:
-
-  $ cd ~/src/gettext
-  $ git checkout master
-  $ git describe
-  v0.18.2-4-g3188bbf
-  $ grep mkdir_p gettext-runtime/po/Makefile.in.in | grep -v '^#'
-  mkdir_p = @mkdir_p@
-	$(mkdir_p) $(DESTDIR)$(gettextsrcdir); \
-	$(mkdir_p) $(DESTDIR)$$dir; \
-	$(mkdir_p) $(DESTDIR)$(gettextsrcdir); \
-	$(mkdir_p) $(DESTDIR)$$dir; \
-
-(see also Automake commit v1.12.1-112-g2551021).
-
-More to the point, it's almost impossible to diagnose usages of those
-macro and substitution using the existing Automake parsing and warning
-infrastructure; it's much easier to just keep them around for a while.
-
-
-The future
-----------
-
-We want to finally remove '@mkdir_p@' and '$(mkdir_p)' as well some
-day.  It would be nice if we could do so with some kind of deprecation,
-but that is not worth too much work.  Anyway, no hurry an no high
-priority for this removal.

@@ -24,6 +24,7 @@ AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
+AUTOMAKE_OPTIONS = subdir-objects
 bin_PROGRAMS = zzfoo zzbar
 zzfoo_SOURCES = sub/foo.c
 zzbar_SOURCES = bar.c

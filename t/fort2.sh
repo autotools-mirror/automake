@@ -35,6 +35,8 @@ AC_OUTPUT
 END
 
 cat >Makefile.am <<'END'
+AUTOMAKE_OPTIONS = subdir-objects
+FC = fake-fc
 bin_PROGRAMS = hello goodbye
 hello_SOURCES = hello.f90 foo.f95 sub/bar.f95 hi.f03 sub/howdy.f03 \
                 greets.f08 sub/bonjour.f08
@@ -64,7 +66,7 @@ $AUTOCONF
 touch hello.f90 foo.f95 sub/bar.f95 hi.f03 sub/howdy.f03 greets.f08 \
       sub/bonjour.f08 bye.f95 sub/baz.f90
 
-$MAKE -n FC=fake-fc \
+$MAKE -n \
   FCFLAGS_f90=--@90 FCFLAGS_f95=--@95 FCFLAGS_f03=--@03 FCFLAGS_f08=--@08 \
   > stdout || { cat stdout; exit 1; }
 cat stdout

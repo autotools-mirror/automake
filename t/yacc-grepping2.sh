@@ -30,7 +30,9 @@ cat > Makefile.am << 'END'
 bin_PROGRAMS = maude
 maude_SOURCES = sub/maude.y
 END
+
 $AUTOMAKE -a
+
 # No rule needed, the default .y.c: inference rule is enough
 # (but there may be an additional dependency on a dirstamp file).
 grep '^sub/maude\.c:.*maude\.y' Makefile.in && exit 1
@@ -43,7 +45,9 @@ maude_SOURCES = sub/maude.y
 ## A particularly tricky case.
 maude_YFLAGS = -d
 END
+
 $AUTOMAKE -a
+
 grep '^sub/maude-maude\.c:.*sub/maude\.y' Makefile.in
 # Rule should use maude_YFLAGS.
 grep 'AM_YFLAGS.*maude' Makefile.in && exit 1

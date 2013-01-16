@@ -25,6 +25,7 @@ AC_PROG_CXX
 EOF
 
 cat >Makefile.am <<EOF
+AUTOMAKE_OPTIONS = subdir-objects
 bin_PROGRAMS = p q r
 p_SOURCES = a.cc b.cpp c.cxx
 q_SOURCES = sub/d.cc sub/e.cpp sub/f.cxx

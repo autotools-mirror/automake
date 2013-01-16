@@ -39,6 +39,7 @@ public class Zardoz {
 END
 
 cat > 'Makefile.am' <<'END'
+AUTOMAKE_OPTIONS = subdir-objects
 bin_PROGRAMS = src/zardoz
 src_zardoz_CFLAGS = $(GOBJECT_CFLAGS)
 src_zardoz_LDADD = $(GOBJECT_LIBS)

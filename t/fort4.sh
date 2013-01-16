@@ -87,7 +87,7 @@ test-obj:
 END
 
 $ACLOCAL
-$AUTOMAKE -a
+$AUTOMAKE -a -Wno-unsupported
 # The Fortran 77 linker should be preferred:
 grep '.\$(FCLINK)' Makefile.in && exit 1
 

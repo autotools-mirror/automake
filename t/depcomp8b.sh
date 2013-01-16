@@ -30,6 +30,9 @@ AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
+## FIXME: stop disabling the warnings in the 'unsupported' category
+## FIXME: once the 'subdir-objects' option has been mandatory.
+AUTOMAKE_OPTIONS = -Wno-unsupported
 lib_LTLIBRARIES = libzardoz.la
 libzardoz_la_SOURCES = foo.c sub/bar.c
 END

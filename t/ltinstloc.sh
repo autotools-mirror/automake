@@ -35,6 +35,7 @@ lib_LTLIBRARIES = liba1.la sub/liba2.la
 pkglib_LTLIBRARIES = liba1.la
 nobase_lib_LTLIBRARIES = sub/liba2.la
 endif
+AUTOMAKE_OPTIONS = subdir-objects
 END
 
 libtoolize

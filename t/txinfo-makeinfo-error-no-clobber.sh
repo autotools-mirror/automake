@@ -67,6 +67,5 @@ mv main.old main.texi
 $MAKE && exit 1
 test -f main.info
 test -f sub/main.info
-test -f sub/main.info
 
 :

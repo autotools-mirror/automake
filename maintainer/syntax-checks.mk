@@ -617,3 +617,7 @@ sc_at_in_texi:
 $(syntax_check_rules): automake aclocal
 maintainer-check: $(syntax_check_rules)
 .PHONY: maintainer-check $(syntax_check_rules)
+
+# I'm a lazy typist.
+lint: maintainer-check
+.PHONY: lint

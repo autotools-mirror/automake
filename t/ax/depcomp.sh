@@ -130,7 +130,7 @@ check_distclean ()
 cat > configure.ac <<END
 AC_INIT([$me], [1.0])
 AC_CONFIG_AUX_DIR([build-aux])
-AM_INIT_AUTOMAKE
+AM_INIT_AUTOMAKE([subdir-objects])
 AC_PROG_CC
 AM_PROG_AR
 $(if test $depcomp_with_libtool = yes; then
