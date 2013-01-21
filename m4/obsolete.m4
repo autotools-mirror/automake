@@ -15,19 +15,21 @@ AC_DIAGNOSE([obsolete],
 You should use the Autoconf-provided 'AC][_PROG_MKDIR_P' macro instead,
 and use '$(MKDIR_P)' instead of '$(mkdir_p)' in your Makefile.am files.])])
 
-dnl TODO: Remove in Automake 1.15.
 AC_DEFUN([AM_CONFIG_HEADER],
-[AC_FATAL(['$0': this macro is obsolete.
-    You should use the 'AC][_CONFIG_HEADERS' macro instead.])])
+[AC_DIAGNOSE([obsolete],
+['$0': this macro is obsolete.
+You should use the 'AC][_CONFIG_HEADERS' macro instead.])dnl
+AC_CONFIG_HEADERS($@)])
 
-dnl TODO: Remove in Automake 1.15.
 AC_DEFUN([AM_PROG_CC_STDC],
-[AC_FATAL(['$0': this macro is obsolete.
-    You should simply use the 'AC][_PROG_CC' macro instead.
-    Also, your code should no longer depend upon 'am_cv_prog_cc_stdc',
-    but upon 'ac_cv_prog_cc_stdc'.])])
+[AC_PROG_CC
+am_cv_prog_cc_stdc=$ac_cv_prog_cc_stdc
+AC_DIAGNOSE([obsolete],
+['$0': this macro is obsolete.
+You should simply use the 'AC][_PROG_CC' macro instead.
+Also, your code should no longer depend upon 'am_cv_prog_cc_stdc',
+but upon 'ac_cv_prog_cc_stdc'.])])
 
-dnl TODO: Remove in Automake 1.14.
 AC_DEFUN([AM_C_PROTOTYPES],
          [AC_FATAL([automatic de-ANSI-fication support has been removed])])
 AU_DEFUN([fp_C_PROTOTYPES], [AM_C_PROTOTYPES])

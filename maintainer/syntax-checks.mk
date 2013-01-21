@@ -111,7 +111,7 @@ sc_no_brace_variable_expansions:
 ## Make sure 'rm' is called with '-f'.
 sc_rm_minus_f:
 	@if grep -v '^#' $(ams) $(xtests) \
-	   | grep -vE '/(spy-rm\.tap|subobj-clean.*-pr10697\.sh):' \
+	   | grep -vE '/(rm-f-probe\.sh|spy-rm\.tap|subobj-clean.*-pr10697\.sh):' \
 	   | grep -E '\<rm ([^-]|\-[^f ]*\>)'; \
 	then \
 	  echo "Suspicious 'rm' invocation." 1>&2; \

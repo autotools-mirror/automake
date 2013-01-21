@@ -130,9 +130,9 @@ t/amhello-cross-compile.sh \
 t/amhello-binpkg.sh \
 t/aminit-moreargs-deprecation.sh \
 t/amassign.sh \
-t/am-config-header-no-more.sh \
+t/am-config-header.sh \
+t/am-prog-cc-stdc.sh \
 t/am-prog-cc-c-o.sh \
-t/am-prog-cc-stdc-no-more.sh \
 t/am-prog-mkdir-p.sh \
 t/am-macro-not-found.sh \
 t/amopt.sh \
@@ -952,6 +952,7 @@ t/remake-macrodir.sh \
 t/remake-timing-bug-pr8365.sh \
 t/reqd2.sh \
 t/repeated-options.sh \
+t/rm-f-probe.sh \
 t/rulepat.sh \
 t/self-check-cc-no-c-o.sh \
 t/self-check-configure-help.sh \

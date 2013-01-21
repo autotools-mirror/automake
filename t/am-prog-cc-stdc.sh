@@ -14,30 +14,31 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Check that any attempt to use the obsolete macro AM_CONFIG_HEADER
-# elicits clear and explicit fatal errors.
+# Check that the obsolete macro the obsolete macro AM_PROG_CC_STDC
+# still works.
 
+required=gcc
 . test-init.sh
 
-geterr ()
-{
-    "$@" -Wnone 2>stderr && { cat stderr >&2; exit 1; }
-    cat stderr >&2
-    grep "^configure\.ac:4:.*'AM_PROG_CC_STDC'.*obsolete" stderr
-    grep "'AC_PROG_CC'.* instead" stderr
-}
+cat >> configure.ac <<'END'
+AM_PROG_CC_STDC
+AC_OUTPUT
+END
+
+echo bin_PROGRAMS = foo > Makefile.am
 
 $ACLOCAL
-mv aclocal.m4 aclocal.sav
+$AUTOMAKE
 
-echo AM_PROG_CC_STDC >> configure.ac
+$AUTOCONF -Wnone -Wobsolete -Werror 2>stderr && { cat stderr >&2; exit 1; }
+cat stderr >&2
+grep "^configure\.ac:4:.*'AM_PROG_CC_STDC'.*obsolete" stderr
+grep "'AC_PROG_CC'.* instead" stderr
 
-geterr $ACLOCAL
-test ! -f aclocal.m4
+echo 'int main (void) { return 0; }' > foo.c
 
-cat aclocal.sav "$am_automake_acdir"/obsolete-err.m4 > aclocal.m4
-
-geterr $AUTOCONF
-geterr $AUTOMAKE
+./configure
+$MAKE
+$MAKE distcheck
 
 :
