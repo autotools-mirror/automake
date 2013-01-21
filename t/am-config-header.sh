@@ -14,30 +14,37 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Check that any attempt to use the obsolete macro AM_CONFIG_HEADER
-# elicits clear and explicit fatal errors.
+# Check that the obsolete macro AM_CONFIG_HEADER still works.
 
 . test-init.sh
 
-geterr ()
-{
-    "$@" -Wnone 2>stderr && { cat stderr >&2; exit 1; }
-    cat stderr >&2
-    grep "^configure\.ac:4:.*'AM_CONFIG_HEADER'.*obsolete" stderr
-    grep "'AC_CONFIG_HEADERS'.* instead" stderr
-}
+cat > Makefile.am <<'END'
+check-local:
+	test -f oldconf.h
+	test -f $(srcdir)/oldconf.in
+END
 
-$ACLOCAL
-mv aclocal.m4 aclocal.sav
+cat >> configure.ac <<'END'
+AM_CONFIG_HEADER([oldconf.h:oldconf.in])
+AC_OUTPUT
+END
 
-echo AM_CONFIG_HEADER >> configure.ac
+$ACLOCAL -Wno-obsolete
 
-geterr $ACLOCAL
-test ! -f aclocal.m4
+$AUTOCONF -Werror -Wall 2>stderr && { cat stderr >&2; exit 1; }
+cat stderr >&2
+grep "^configure\.ac:4:.*'AM_CONFIG_HEADER'.*obsolete" stderr
+grep "'AC_CONFIG_HEADERS'.* instead" stderr
 
-cat aclocal.sav "$am_automake_acdir"/obsolete-err.m4 > aclocal.m4
+$AUTOCONF -Werror -Wall -Wno-obsolete
 
-geterr $AUTOCONF
-geterr $AUTOMAKE
+$AUTOHEADER
+test -f oldconf.in
+
+$AUTOMAKE
+
+./configure
+$MAKE check-local
+$MAKE distcheck
 
 :

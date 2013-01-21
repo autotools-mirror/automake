@@ -32,7 +32,7 @@ $ACLOCAL -Wnone 2>stderr && { cat stderr >&2; exit 1; }
 cat stderr >&2
 grep "^configure\\.ac:5:.*$warn_rx" stderr
 
-cat aclocal.sav "$am_automake_acdir"/obsolete-err.m4 > aclocal.m4
+cat aclocal.sav "$am_automake_acdir"/obsolete.m4 > aclocal.m4
 $AUTOCONF -Wnone 2>stderr && { cat stderr >&2; exit 1; }
 cat stderr >&2
 grep "^configure\\.ac:5:.*$warn_rx" stderr

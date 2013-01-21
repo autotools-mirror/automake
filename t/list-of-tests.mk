@@ -130,8 +130,8 @@ t/amhello-cross-compile.sh \
 t/amhello-binpkg.sh \
 t/aminit-moreargs-deprecation.sh \
 t/amassign.sh \
-t/am-config-header-no-more.sh \
-t/am-prog-cc-stdc-no-more.sh \
+t/am-config-header.sh \
+t/am-prog-cc-stdc.sh \
 t/am-prog-cc-c-o.sh \
 t/am-macro-not-found.sh \
 t/amopt.sh \

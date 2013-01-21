@@ -38,7 +38,7 @@ AC_SUBST(two, $two)
 three=3
 AC_SUBST(three)
 AC_PROG_CC
-AC_CONFIG_HEADERS(config.h:config.hin)
+AM_CONFIG_HEADER(config.h:config.hin)
 AM_CONDITIONAL(CROSS_COMPILING, test "$cross_compiling" = yes)
 AC_OUTPUT(Makefile foo.got:foo1.in:foo2.in:foo3.in)
 END
