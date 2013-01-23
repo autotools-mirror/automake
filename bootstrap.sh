@@ -31,7 +31,13 @@ export AUTOCONF  # might be used by aclocal and/or automake
 export AUTOM4TE  # ditto
 : ${PERL=perl}
 
-BOOTSTRAP_SHELL=${BOOTSTRAP_SHELL-/bin/sh}
+if test -n "$DJDIR"; then
+  # This is required on DJGPP so that Perl's system() uses bash,
+  # not COMMAND.COM which doesn't quote arguments properly.
+  BOOTSTRAP_SHELL=${BOOTSTRAP_SHELL-/dev/env/DJDIR/bin/bash.exe}
+else
+  BOOTSTRAP_SHELL=${BOOTSTRAP_SHELL-/bin/sh}
+fi
 
 # Variables to substitute.
 VERSION=`sed -ne '/AC_INIT/s/^[^[]*\[[^[]*\[\([^]]*\)\].*$/\1/p' configure.ac`
@@ -64,7 +70,7 @@ if test -d automake-$APIVERSION; then
 fi
 rm -rf automake-$APIVERSION
 # Can't use "ln -s lib automake-$APIVERSION", that might not work
-# properly on MinGW/MSYS.
+# properly on MinGW/MSYS or DJGPP.
 mkdir automake-$APIVERSION
 cp -rf lib/* automake-$APIVERSION
 

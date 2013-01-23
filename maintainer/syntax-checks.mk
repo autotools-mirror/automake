@@ -83,7 +83,7 @@ sc_at_in_texi
 ## There are exactly 7 lines that should be modified from automake.in to
 ## automake, and 9 lines that should be modified from aclocal.in to
 ## aclocal.
-automake_diff_no = 7
+automake_diff_no = 8
 aclocal_diff_no = 9
 sc_diff_automake sc_diff_aclocal: sc_diff_% :
 	@set +e; tmp=$*-diffs.tmp; \
