@@ -258,7 +258,7 @@ am_set_exit_traps ()
   trap "fatal_ 'caught signal SIGINT'" 2
   trap "fatal_ 'caught signal SIGTERM'" 15
   # Various shells seems to just ignore SIGQUIT under some circumstances,
-  # even if the signal is not blocked; however, if the signal it trapped,
+  # even if the signal is not blocked; however, if the signal is trapped,
   # the trap gets correctly executed.  So we also trap SIGQUIT.
   # Here is a list of some shells that have been verified to exhibit the
   # problematic behavior with SIGQUIT:
