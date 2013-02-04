@@ -98,7 +98,7 @@ sub target_hook ($$$$%)
     my ($self) = @_;
     if (defined $self->_target_hook)
     {
-	&{$self->_target_hook} (@_);
+	$self->_target_hook->(@_);
     }
 }
 
