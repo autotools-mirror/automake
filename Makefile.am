@@ -188,6 +188,7 @@ dist_perllib_DATA = \
   lib/Automake/Getopt.pm \
   lib/Automake/Item.pm \
   lib/Automake/ItemDef.pm \
+  lib/Automake/Language.pm \
   lib/Automake/Location.pm \
   lib/Automake/Options.pm \
   lib/Automake/Rule.pm \
