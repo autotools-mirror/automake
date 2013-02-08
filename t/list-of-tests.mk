@@ -865,6 +865,7 @@ t/pr401.sh \
 t/pr401b.sh \
 t/pr401c.sh \
 t/prefix.sh \
+t/preproc-reldir.sh \
 t/primary.sh \
 t/primary2.sh \
 t/primary3.sh \
