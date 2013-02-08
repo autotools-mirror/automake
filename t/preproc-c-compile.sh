@@ -14,8 +14,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Test %reldir% and %canon_reldir%.
+# Test pre-processing substitutions '%reldir%' and '%canon_reldir%'
+# with C compilation and subdir objects.
 
+require=cc
 . test-init.sh
 
 cat >> configure.ac << 'END'
@@ -32,49 +34,53 @@ mkdir zot
 
 cat > Makefile.am << 'END'
 AUTOMAKE_OPTIONS = subdir-objects
+SUBDIRS = zot
 bin_PROGRAMS =
+
 include $(top_srcdir)/foo/local.mk
 include $(srcdir)/foo/foobar/local.mk
 include local.mk
+
+check-local:
+	is $(bin_PROGRAMS) == \
+	  foo/mumble2$(EXEEXT) \
+	  foo/bar/mumble$(EXEEXT) \
+	  foo/foobar/mumble$(EXEEXT) \
+	  mumble$(EXEEXT)
+	test '$(mumble_SOURCES)' = one.c
+	test '$(foo_mumble2_SOURCES)' = foo/one.c
+	test '$(foo_bar_mumble_SOURCES)' = foo/bar/one.c
+	test '$(foo_foobar_mumble_SOURCES)' = foo/foobar/one.c
+	test -f mumble$(EXEEXT)
+	test -f foo/mumble2$(EXEEXT)
+	test -f foo/bar/mumble$(EXEEXT)
+	test -f foo/foobar/mumble$(EXEEXT)
+	test -f zot/mumble$(EXEEXT)
+	: Test some of the object files too.
+	test -f one.$(OBJEXT)
+	test -f foo/foobar/one.$(OBJEXT)
+	test -f zot/one.$(OBJEXT)
 END
 
 cat > zot/Makefile.am << 'END'
 AUTOMAKE_OPTIONS = subdir-objects
 bin_PROGRAMS =
 include $(top_srcdir)/zot/local.mk
-include $(top_srcdir)/top.mk
-include ../reltop.mk
+
+test:
+	test '$(bin_PROGRAMS)' == mumble$(EXEEXT)
+	test '$(mumble_SOURCES)' = one.c
+check-local: test
 END
 
 cat > local.mk << 'END'
-%canon_reldir%_whoami:
-	@echo "I am %reldir%/local.mk"
-
 bin_PROGRAMS += %reldir%/mumble
 %canon_reldir%_mumble_SOURCES = %reldir%/one.c
 END
 
-cat > top.mk << 'END'
-%canon_reldir%_top_whoami:
-	@echo "I am %reldir%/top.mk"
+echo 'int main (void) { return 0; }' > one.c
 
-bin_PROGRAMS += %D%/scream
-%C%_scream_SOURCES = %D%/two.c
-END
-
-cat > reltop.mk << 'END'
-%C%_reltop_whoami:
-	@echo "I am %D%/reltop.mk"
-
-bin_PROGRAMS += %reldir%/sigh
-%canon_reldir%_sigh_SOURCES = %reldir%/three.c
-END
-
-cat > one.c << 'END'
-int main(void) { return 0; }
-END
-
-cp local.mk foo
+sed 's/mumble/mumble2/' local.mk > foo/local.mk
 cp local.mk foo/bar
 cp local.mk foo/foobar
 cp local.mk zot
@@ -84,46 +90,29 @@ cp one.c foo
 cp one.c foo/bar
 cp one.c foo/foobar
 cp one.c zot
-cp one.c two.c
-cp one.c three.c
 
 $ACLOCAL
 $AUTOCONF
-$AUTOMAKE -a
+$AUTOMAKE
 ./configure
 
-$MAKE whoami >output 2>&1 || { cat output; exit 1; }
-cat output
-grep "I am local.mk" output
-$MAKE foo_whoami >output 2>&1 || { cat output; exit 1; }
-cat output
-grep "I am foo/local.mk" output
-$MAKE foo_bar_whoami >output 2>&1 || { cat output; exit 1; }
-cat output
-grep "I am foo/bar/local.mk" output
-$MAKE foo_foobar_whoami >output 2>&1 || { cat output; exit 1; }
-cat output
-grep "I am foo/foobar/local.mk" output
-
 $MAKE
-./mumble
-foo/mumble
-foo/bar/mumble
-foo/foobar/mumble
+$MAKE check-local
+if ! cross_compiling; then
+  ./mumble
+  ./foo/mumble2
+  ./foo/bar/mumble
+  ./foo/foobar/mumble
+  ./zot/mumble
+fi
 
-cd zot
+(cd zot && $MAKE test)
 
-$MAKE ___top_whoami >output 2>&1 || { cat output; exit 1; }
-cat output
-grep "I am ../top.mk" output
-$MAKE ___reltop_whoami >output 2>&1 || { cat output; exit 1; }
-cat output
-grep "I am ../reltop.mk" output
-$MAKE whoami >output 2>&1 || { cat output; exit 1; }
-cat output
-grep "I am local.mk" output
+# GNU install refuses to override a just-installed file; since we
+# have plenty of 'mumble' dummy programs to install in the same
+# location, such "overridden installations" are not a problem for
+# us, so just force the use the 'install-sh' script
+ac_cv_path_install=$(pwd)/install-sh; export ac_cv_path_install
+$MAKE distcheck
 
-$MAKE
-./mumble
-../scream
-../sigh
+:
