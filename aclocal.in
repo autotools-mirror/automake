@@ -165,6 +165,11 @@ my @ac_config_macro_dirs;
 # If set, names a temporary file that must be erased on abnormal exit.
 my $erase_me;
 
+# Constants for the $ERR_LEVEL parameter of the 'scan_m4_dirs' function.
+use constant SCAN_M4_DIRS_SILENT => 0;
+use constant SCAN_M4_DIRS_WARN => 1;
+use constant SCAN_M4_DIRS_ERROR => 2;
+
 ################################################################
 
 # Prototypes for all subroutines.
@@ -355,21 +360,42 @@ sub list_compare (\@\@)
 
 ################################################################
 
-# scan_m4_dirs($TYPE, $ERR_ON_NONEXISTING, @DIRS)
+# scan_m4_dirs($TYPE, $ERR_LEVEL, @DIRS)
 # -----------------------------------------------
 # Scan all M4 files installed in @DIRS for new macro definitions.
 # Register each file as of type $TYPE (one of the FT_* constants).
+# If a directory in @DIRS cannot be read:
+#  - fail hard                if $ERR_LEVEL == SCAN_M4_DIRS_ERROR
+#  - just print a warning     if $ERR_LEVEL == SCAN_M4_DIRS_WA
+#  - continue silently        if $ERR_LEVEL == SCAN_M4_DIRS_SILENT
 sub scan_m4_dirs ($$@)
 {
-  my ($type, $err_on_nonexisting, @dirlist) = @_;
+  my ($type, $err_level, @dirlist) = @_;
 
   foreach my $m4dir (@dirlist)
     {
       if (! opendir (DIR, $m4dir))
 	{
 	  # TODO: maybe avoid complaining only if errno == ENONENT?
-	  next unless $err_on_nonexisting;
-	  fatal "couldn't open directory '$m4dir': $!";
+          my $message = "couldn't open directory '$m4dir': $!";
+
+          if ($err_level == SCAN_M4_DIRS_ERROR)
+            {
+              fatal $message;
+            }
+          elsif ($err_level == SCAN_M4_DIRS_WARN)
+            {
+              msg ('unsupported', $message);
+              next;
+            }
+          elsif ($err_level == SCAN_M4_DIRS_SILENT)
+            {
+              next; # Silently ignore.
+            }
+          else
+            {
+               prog_error "invalid \$err_level value '$err_level'";
+            }
 	}
 
       # We reverse the directory contents so that foo2.m4 gets
@@ -408,11 +434,15 @@ sub scan_m4_files ()
     {
       # Don't complain if the first user directory doesn't exist, in case
       # we need to create it later (can happen if '--install' was given).
-      scan_m4_dirs (FT_USER, !$install, $user_includes[0]);
-      scan_m4_dirs (FT_USER, 1, @user_includes[1..$#user_includes]);
+      scan_m4_dirs (FT_USER,
+                    $install ? SCAN_M4_DIRS_SILENT : SCAN_M4_DIRS_WARN,
+                    $user_includes[0]);
+      scan_m4_dirs (FT_USER,
+                    SCAN_M4_DIRS_ERROR,
+		    @user_includes[1..$#user_includes]);
     }
-  scan_m4_dirs (FT_AUTOMAKE, 1, @automake_includes);
-  scan_m4_dirs (FT_SYSTEM,   1, @system_includes);
+  scan_m4_dirs (FT_AUTOMAKE, SCAN_M4_DIRS_ERROR, @automake_includes);
+  scan_m4_dirs (FT_SYSTEM, SCAN_M4_DIRS_ERROR, @system_includes);
 
   # Construct a new function that does the searching.  We use a
   # function (instead of just evaluating $search in the loop) so that

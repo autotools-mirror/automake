@@ -317,23 +317,31 @@ test_end
 
 #---------------------------------------------------------------------------
 
-test_begin "AC_CONFIG_MACRO_DIRS([non-existent]) errors out (1)"
+test_begin "AC_CONFIG_MACRO_DIRS([non-existent]) warns (1)"
 
 cat > configure.ac << 'END'
 AC_INIT([oops], [1.0])
 AC_CONFIG_MACRO_DIRS([non-existent])
+AM_INIT_AUTOMAKE
 END
 
-not $ACLOCAL 2>stderr \
+$ACLOCAL -Wno-error 2>stderr \
   && cat stderr >&2 \
   && grep "couldn't open directory 'non-existent'" stderr \
+  && test -f aclocal.m4 \
+  || r='not ok'
+
+rm -rf aclocal.m4 autom4te*.cache
+
+$ACLOCAL -Werror -Wno-unsupported \
+  && test -f aclocal.m4 \
   || r='not ok'
 
 test_end
 
 #---------------------------------------------------------------------------
 
-test_begin "AC_CONFIG_MACRO_DIRS([non-existent]) errors out (2)"
+test_begin "AC_CONFIG_MACRO_DIRS([non-existent]) warns (2)"
 
 cat > configure.ac << 'END'
 AC_INIT([oops], [1.0])
@@ -346,13 +354,14 @@ not $ACLOCAL 2>stderr \
   && cat stderr >&2 \
   && grep "couldn't open directory 'dir-ko'" stderr \
   && not grep "dir-ok" stderr \
+  && test ! -e aclocal.m4 \
   || r='not ok'
 
 test_end
 
 #---------------------------------------------------------------------------
 
-test_begin "AC_CONFIG_MACRO_DIRS([non-existent]) errors out (tricky setup)"
+test_begin "AC_CONFIG_MACRO_DIRS([existent non-existent]) errors out"
 
 cat > configure.ac << 'END'
 AC_INIT([oops], [1.0])
