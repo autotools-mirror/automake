@@ -432,6 +432,16 @@ sub scan_m4_files ()
 
   if (@user_includes)
     {
+      # Don't explore the same directory multiple times.  This is here not
+      # only for speedup purposes.  We need this when the user has e.g.
+      # specified 'ACLOCAL_AMFLAGS = -I m4' and has also set
+      # AC_CONFIG_MACRO_DIR[S]([m4]) in configure.ac.  This makes the 'm4'
+      # directory to occur twice here and fail on the second call to
+      # scan_m4_dirs([m4]) when the 'm4' directory doesn't exist.
+      # TODO: Shouldn't there be rather a check in scan_m4_dirs for
+      #       @user_includes[0]?
+      @user_includes = uniq @user_includes;
+
       # Don't complain if the first user directory doesn't exist, in case
       # we need to create it later (can happen if '--install' was given).
       scan_m4_dirs (FT_USER,

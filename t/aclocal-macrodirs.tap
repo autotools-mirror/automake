@@ -20,7 +20,7 @@
 am_create_testdir=empty
 . test-init.sh
 
-plan_ 14
+plan_ 15
 
 ocwd=$(pwd) || fatal_ "getting current working directory"
 ACLOCAL_PATH=; unset ACLOCAL_PATH
@@ -375,6 +375,26 @@ not $ACLOCAL -Wnone --install 2>stderr \
   && cat stderr >&2 \
   && grep "couldn't open directory 'dir-ko'" stderr \
   && test ! -e dir-ko \
+  || r='not ok'
+
+test_end
+
+#---------------------------------------------------------------------------
+
+test_begin "AC_CONFIG_MACRO_DIRS([not-exist]) and ACLOCAL_AMFLAGS = -I not-exist"
+
+cat > configure.ac << 'END'
+AC_INIT([oops], [1.0])
+AC_CONFIG_MACRO_DIRS([not-exist])
+END
+
+cat > Makefile.am << 'END'
+ACLOCAL_AMFLAGS = -I not-exist
+END
+
+$ACLOCAL -Wno-error 2>stderr \
+  && cat stderr >&2 \
+  && test $(grep -c "couldn't open directory 'not-exist'" stderr) -eq 1 \
   || r='not ok'
 
 test_end
