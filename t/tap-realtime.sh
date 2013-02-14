@@ -45,7 +45,7 @@ rm -f expect-check
 # user as soon as it gets it.
 if ! using_gmake; then
   case $MAKE in
-    *\ -j*) skip_ "doesn't with non-GNU concurrent make";;
+    *\ -j*) skip_ "doesn't work with non-GNU concurrent make";;
   esac
   # Prevent Sun Distributed Make from trying to run in parallel.
   DMAKE_MODE=serial; export DMAKE_MODE
