@@ -439,8 +439,6 @@ fetch_tap_driver ()
     || framework_failure_ "couldn't fetch $am_tap_implementation TAP driver"
   sed 10q tap-driver # For debugging.
 }
-# The shell/awk implementation of the TAP driver is still mostly dummy, so
-# use the perl implementation by default for the moment.
 am_tap_implementation=${am_tap_implementation-shell}
 
 # $PYTHON and support for PEP-3147.  Needed to check our python-related
