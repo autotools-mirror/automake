@@ -36,7 +36,7 @@ fetch_tap_driver
 if test -f Makefile.am~; then
   mv -f Makefile.am~ Makefile.am \
     || fatal_ "failed to restore Makefile.am"
-  echo 'TEST_LOG_DRIVER = $(PERL) $(srcdir)/tap-driver' >> Makefile.am \
+  echo 'TEST_LOG_DRIVER = $(srcdir)/tap-driver' >> Makefile.am \
     || fatal_ "failed to update Makefile.am"
   $AUTOMAKE Makefile \
     || fatal_ "failed to remake Makefile.in"
