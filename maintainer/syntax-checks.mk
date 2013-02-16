@@ -86,19 +86,22 @@ sc_at_in_texi
 automake_diff_no = 7
 aclocal_diff_no = 9
 sc_diff_automake sc_diff_aclocal: sc_diff_% :
-	@set +e; tmp=$*-diffs.tmp; \
-	 diff -u $(srcdir)/$*.in $* > $$tmp; test $$? -eq 1 || exit 1; \
-	 added=`grep -v '^+++ ' $$tmp | grep -c '^+'` || exit 1; \
-	 removed=`grep -v '^--- ' $$tmp | grep -c '^-'` || exit 1; \
-	 test $$added,$$removed = $($*_diff_no),$($*_diff_no) \
+	@set +e; \
+	in=$*-in.tmp out=$*-out.tmp diffs=$*-diffs.tmp \
+	  && sed '/^#!.*[pP]rototypes/d' $(srcdir)/$*.in > $$in \
+	  && sed '/^# BEGIN.* PROTO/,/^# END.* PROTO/d' $* > $$out \
+	  && { diff -u $$in $$out > $$diffs; test $$? -eq 1; } \
+	  && added=`grep -v '^+++ ' $$diffs | grep -c '^+'` \
+	  && removed=`grep -v '^--- ' $$diffs | grep -c '^-'` \
+	  && test $$added,$$removed = $($*_diff_no),$($*_diff_no) \
 	  || { \
 	    echo "Found unexpected diffs between $*.in and $*"; \
 	    echo "Lines added:   $$added"  ; \
 	    echo "Lines removed: $$removed"; \
-	    cat $$tmp >&2; \
+	    cat $$diffs; \
 	    exit 1; \
-	  } >&1; \
-	rm -f $$tmp
+	  } >&2; \
+	rm -f $$in $$out $$diffs
 
 ## Expect no instances of '${...}'.  However, $${...} is ok, since that
 ## is a shell construct, not a Makefile construct.

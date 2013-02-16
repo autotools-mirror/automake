@@ -88,14 +88,15 @@ dosubst ()
 dosubst automake-$APIVERSION/Automake/Config.in \
         automake-$APIVERSION/Automake/Config.pm
 
-# Create temporary replacement for aclocal.
-dosubst aclocal.in aclocal.tmp
-
 # Overwrite amversion.m4.
 dosubst m4/amversion.in m4/amversion.m4
 
-# Create temporary replacement for automake.
-dosubst automake.in automake.tmp
+# Create temporary replacement for aclocal and automake.
+for p in aclocal automake; do
+  dosubst $p.in $p.tmp
+  $PERL -w lib/gen-perl-protos $p.tmp > $p.tmp2
+  mv -f $p.tmp2 $p.tmp
+done
 
 # Create required makefile snippets.
 $PERL ./gen-testsuite-part > t/testsuite-part.tmp
