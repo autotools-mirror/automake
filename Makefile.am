@@ -96,13 +96,18 @@ uninstall-hook:
 # $(datadir) or other do_subst'ituted variables change.
 automake: automake.in
 aclocal: aclocal.in
-automake aclocal: Makefile
-	$(AM_V_at)rm -f $@ $@-t
-	$(AM_V_GEN)in=$@.in; $(do_subst) <$(srcdir)/$@.in >$@-t
+automake aclocal: Makefile lib/gen-perl-protos
+	$(AM_V_GEN)rm -f $@ $@-t $@-t2 \
+## Common substitutions.
+	  && in=$@.in && $(do_subst) <$(srcdir)/$$in >$@-t \
+## Auto-compute prototypes of perl subroutines.
+	  && $(PERL) -w $(srcdir)/lib/gen-perl-protos $@-t > $@-t2 \
+	  && mv -f $@-t2 $@-t \
 ## We can't use '$(generated_file_finalize)' here, because currently
 ## Automake contains occurrences of unexpanded @substitutions@ in
 ## comments, and that is perfectly legit.
-	$(AM_V_at)chmod a+x,a-w $@-t && mv -f $@-t $@
+	  && chmod a+x,a-w $@-t && mv -f $@-t $@
+EXTRA_DIST += lib/gen-perl-protos
 
 # The master location for INSTALL is lib/INSTALL.
 # This is where "make fetch" will install new versions.
@@ -188,6 +193,7 @@ dist_perllib_DATA = \
   lib/Automake/Getopt.pm \
   lib/Automake/Item.pm \
   lib/Automake/ItemDef.pm \
+  lib/Automake/Language.pm \
   lib/Automake/Location.pm \
   lib/Automake/Options.pm \
   lib/Automake/Rule.pm \
