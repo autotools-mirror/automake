@@ -18,15 +18,20 @@
 
 . test-init.sh
 
-plan_ 14
+plan_ 18
 
-if echo "all: ; @+printf %sbb%s aa cc" | $MAKE -n -f - | grep aabbcc; then
+if echo "all: ; +@printf %sbb%s aa cc" | $MAKE -n -f - | grep aabbcc; then
   make_plus_silence () { return 0; }
 else
   make_plus_silence () { return 1; }
 fi
 
-mkdir sub
+mkdir none
+if echo nil: | $MAKE -I none -f -; then
+  make_supports_option_I () { return 0; }
+else
+  make_supports_option_I () { return 1; }
+fi
 
 echo AC_OUTPUT >> configure.ac
 
@@ -35,13 +40,47 @@ all:
 	: Dummy, nothing to do.
 foo:
 	$(MAKE) all
-notdry:
+run:
 	@echo ":: $$MAKEFLAGS ::"; : For debugging.
-	$(am__make_dryrun) && exit 1; exit 0
+	$(am__make_dryrun) && exit 1; echo ok > from-run
 dry:
 	+@echo ":: $$MAKEFLAGS ::"; : For debugging.
-	+$(am__make_dryrun) || exit 1; echo ok > from-dry-mode
+	+$(am__make_dryrun) || exit 1; echo ok > from-dry
 END
+
+check_make ()
+{
+  r=ok msg= mode= condition=: directive= reason= skip_reason=
+  case $1 in
+    --dry) mode=dry;;
+    --run) mode=run;;
+    *) fatal_ "check_run: invalid usage";;
+  esac
+  shift
+  while test $# -gt 0; do
+    case $1 in
+      -C) condition=$2 skip_reason=$3; shift; shift;;
+      -M) msg=$2; shift;;
+      -X) directive=TODO;;
+      --) shift; break;;
+       *) break;;
+    esac
+    shift
+  done
+  msg=${mode}${msg:+" [$msg]"}
+  if $condition; then
+    $MAKE "$mode" ${1+"$@"} || r='not ok'
+    test -f from-$mode      || r='not ok'
+    test ! -e bad           || r='not ok'
+    rm -f bad from-*        || fatal_ "cleaning up"
+  else
+    directive=SKIP reason=$skip_reason
+  fi
+  result_ "$r" -D "$directive" -r "$reason" "$msg"
+  unset r msg mode condition directive reason skip_reason
+}
+
+# ----------------------------------------------------------------------
 
 $ACLOCAL    || fatal_ "aclocal failed"
 $AUTOCONF   || fatal_ "autoconf failed"
@@ -50,48 +89,40 @@ $AUTOMAKE   || fatal_ "automake failed"
 
 # ----------------------------------------------------------------------
 
-check_no_dryrun ()
-{
-  command_ok_ "dry-run ($cnt)" $MAKE notdry ${1+"$@"}
-  cnt=$(($cnt + 1))
-}
-cnt=1
-
-check_no_dryrun
+check_make --run
 
 # Test against a known regression.  This was especially heinous, since
 # make running in normal mode was sometimes mistaken for make running
 # in dry mode.
-check_no_dryrun TESTS="n1.test n2.test"
-check_no_dryrun TESTS="n1 n2" AM_MAKEFLAGS="TESTS='n1 n2'"
-check_no_dryrun TESTS="n1 n2" AM_MAKEFLAGS='TESTS="n1 n2"'
-check_no_dryrun FOOFLAGS="-n -n -knf2 n --none -n"
-check_no_dryrun MYFLAGS="-n --dryrun -n --dry-run -n"
+check_make --run TESTS="n1.test n2.test"
+check_make --run TESTS="n1 n2" AM_MAKEFLAGS="TESTS='n1 n2'"
+check_make --run TESTS="n1 n2" AM_MAKEFLAGS='TESTS="n1 n2"'
+check_make --run FOOFLAGS="-n -n -knf2 n --none -n"
+check_make --run MYFLAGS="-n --dryrun -n --dry-run -n"
 
 # ----------------------------------------------------------------------
 
-check_dryrun ()
-{
-  r=ok directive=
-  case $1 in
-    -C) condition=$2 reason=$3; shift; shift; shift;;
-     *) condition=: reason=;;
-  esac
-  if $condition; then
-    $MAKE dry ${1+"$@"}   || r='not ok'
-    test -f from-dry-mode || r='not ok'
-    rm -f from-dry-mode   || fatal_ "cleaning up"
-  else
-    directive=SKIP
-  fi
-  result_ "$r" -D "$directive" -r "$reason" "not dry-run ($cnt)"
-  unset r directive reason
-  cnt=$(($cnt + 1))
-}
-cnt=1
+check_make --dry -C make_plus_silence 'recipe prefix "+" unsupported' -n
+check_make --dry -C using_gmake "\$MAKE is not GNU make" --dry-run -k
 
-check_dryrun -C make_plus_silence 'recipe prefix "+" unsupported' -n
-check_dryrun -C using_gmake "\$MAKE is not GNU make" --dry-run -k
+# ----------------------------------------------------------------------
+
+# Automake bug#13760: the "n" in "none" used to confound am__make_dryrun
+# into thinking the '-n' option had been passed.
+
+pr='bug#13760'
+
+check_make --run -X -C make_supports_option_I "-I make option unsupported" \
+                 -M "$pr" -I none
+
+check_make --run -X -C using_gmake "\$MAKE is not GNU make" \
+                 -M "$pr" -I none --include dry-run 
+
+check_make --dry -C make_supports_option_I "-I make option unsupported" \
+                 -M "$pr" -I none -n
+
+check_make --dry -C using_gmake "\$MAKE is not GNU make" \
+                 -M "$pr" --dry-run -I none --include dry-run
 
 # ----------------------------------------------------------------------
 
@@ -99,18 +130,8 @@ check_dryrun -C using_gmake "\$MAKE is not GNU make" --dry-run -k
 
 check_metachars ()
 {
-  r=ok
-  $MAKE notdry ${1+"$@"} || r='not ok'
-  if test -f bad; then
-    r='not ok'
-  else
-    rm -f bad || fatal_ "cleaning up"
-  fi
-  result_ "$r" "dry-run, with shell metachars ($cnt)"
-  unset r
-  cnt=$(($cnt + 1))
+  check_make --run -M "metachars" "$@"
 }
-cnt=1
 
 check_metachars MYFLAGS="-n \"n\" '-n' --none -n"
 check_metachars MYFLAGS='-knf2\ n\ \\n'
