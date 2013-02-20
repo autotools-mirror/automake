@@ -18,12 +18,19 @@
 
 . test-init.sh
 
-plan_ 14
+plan_ 18
 
 if echo "all: ; +@printf %sbb%s aa cc" | $MAKE -n -f - | grep aabbcc; then
   make_plus_silence () { return 0; }
 else
   make_plus_silence () { return 1; }
+fi
+
+mkdir none
+if echo nil: | $MAKE -I none -f -; then
+  make_supports_option_I () { return 0; }
+else
+  make_supports_option_I () { return 1; }
 fi
 
 echo AC_OUTPUT >> configure.ac
@@ -97,6 +104,25 @@ check_make --run MYFLAGS="-n --dryrun -n --dry-run -n"
 
 check_make --dry -C make_plus_silence 'recipe prefix "+" unsupported' -n
 check_make --dry -C using_gmake "\$MAKE is not GNU make" --dry-run -k
+
+# ----------------------------------------------------------------------
+
+# Automake bug#13760: the "n" in "none" used to confound am__make_dryrun
+# into thinking the '-n' option had been passed.
+
+pr='bug#13760'
+
+check_make --run -X -C make_supports_option_I "-I make option unsupported" \
+                 -M "$pr" -I none
+
+check_make --run -X -C using_gmake "\$MAKE is not GNU make" \
+                 -M "$pr" -I none --include dry-run 
+
+check_make --dry -C make_supports_option_I "-I make option unsupported" \
+                 -M "$pr" -I none -n
+
+check_make --dry -C using_gmake "\$MAKE is not GNU make" \
+                 -M "$pr" --dry-run -I none --include dry-run
 
 # ----------------------------------------------------------------------
 
