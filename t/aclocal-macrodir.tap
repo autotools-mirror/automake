@@ -20,7 +20,7 @@
 am_create_testdir=empty
 . test-init.sh
 
-plan_ 6
+plan_ 7
 
 ocwd=$(pwd) || fatal_ "getting current working directory"
 ACLOCAL_PATH=; unset ACLOCAL_PATH
@@ -157,16 +157,44 @@ test_end
 
 #---------------------------------------------------------------------------
 
-test_begin "AC_CONFIG_MACRO_DIR([non-existent]) errors out (1)"
+test_begin "AC_CONFIG_MACRO_DIR([non-existent]) warns with -Wunsupported"
 
 cat > configure.ac << 'END'
 AC_INIT([oops], [1.0])
 AC_CONFIG_MACRO_DIR([non-existent])
+AM_INIT_AUTOMAKE
 END
 
-not $ACLOCAL -Wnone 2>stderr \
+$ACLOCAL -Wno-error 2>stderr \
   && cat stderr >&2 \
   && grep "couldn't open directory 'non-existent'" stderr \
+  && test -f aclocal.m4 \
+  || r='not ok'
+
+rm -rf aclocal.m4 autom4te*.cache
+
+$ACLOCAL -Werror -Wno-unsupported \
+  && test -f aclocal.m4 \
+  || r='not ok'
+
+test_end
+
+#---------------------------------------------------------------------------
+
+test_begin "AC_CONFIG_MACRO_DIR([not-exist]) and ACLOCAL_AMFLAGS = -I not-exist"
+
+cat > configure.ac << 'END'
+AC_INIT([oops], [1.0])
+AC_CONFIG_MACRO_DIR([not-exist])
+END
+
+cat > Makefile.am << 'END'
+ACLOCAL_AMFLAGS = -I not-exist
+END
+
+$ACLOCAL -Wno-error 2>stderr \
+  && cat stderr >&2 \
+  && test $(grep -c "couldn't open directory 'not-exist'" stderr) -eq 1 \
   || r='not ok'
 
 test_end
