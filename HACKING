@@ -95,6 +95,48 @@
   The use of & prevents prototypes from being checked.
 
 ============================================================================
+= Automake versioning and compatibility scheme
+
+* There are three kinds of automake releases:
+
+    - new major releases (e.g., 2.0, 5.0)
+    - new minor releases (e.g., 1.14, 2.1)
+    - micro a.k.a. "bug-fixing" releases (e.g., 1.13.2, 2.0.1, 3.5.17).
+
+  A new major release should have the major version number bumped, and
+  the minor and micro version numbers reset to zero.  A new minor release
+  should have the major version number unchanged, the minor version number
+  bumped, and the micro version number reset to zero.  Finally, a new
+  micro version should have the major and minor version numbers unchanged,
+  and the micro version number bumped.
+
+  For example, the first minor version after 1.13.2 will be 1.14; the
+  first bug-fixing version after 1.14 that will be 1.14.1; the first
+  new major version after all such releases will be 2.0; the first
+  bug-fixing version after 2.0 will be 2.0.1; and a further bug-fixing
+  version after 2.0.1 will be 2.0.2.
+
+* Micro releases should be just bug-fixing releases; no new features
+  should be added, and ideally, only trivial bugs, recent regressions,
+  or documentation issues should be addressed by them.
+
+* Minor releases can introduce new "safe" features, do non-trivial
+  but mostly safe code clean-ups, and even add new runtime warnings
+  (rigorously non-fatal); but they shouldn't include any backward
+  incompatible change, nor contain any potentially destabilizing
+  refactoring or sweeping change, nor introduce new features whose
+  implementation might be liable to cause bugs or regressions in
+  existing code.
+
+* Major releases can introduce backward-incompatibilities (albeit
+  such incompatibilities should be announced well in advance, and
+  a smooth transition plan prepared for them), and try more risking
+  and daring refactorings and code cleanups.
+
+* For more information, refer to the extensive discussion associated
+  with automake bug#13578.
+
+============================================================================
 = Working with git
 
 * To regenerate dependent files created by aclocal and automake,
@@ -105,22 +147,43 @@
   latest stable version of Autoconf installed and available early
   in your PATH.
 
-* The Automake git tree currently carries two basic branches: 'master' for
-  the current development, and 'maint' for maintenance and bug fixes.  The
-  maint branch should be kept regularly merged into the master branch.
-  It is advisable to merge only after a set of related commits have been
-  applied, to avoid introducing too much noise in the history.
+* The Automake git tree currently carries three basic branches: 'maint',
+  'master' and 'next'.
+
+* The 'maint' branch, reserved to changes that should go into the next
+  micro release; so it will just see fixes for regressions, trivial
+  bugs, or documentation issues, and no "active" development whatsoever.
+  Since emergency regression-fixing or security releases could be cut
+  from this branch at any time, it should always be kept in a releasable
+  state.
+
+* The 'master' branch is where the development of the next minor release
+  takes place.  It should be kept in a stable, almost-releasable state,
+  to simplify testing and deploying of new minor version.  Note that
+  this is not a hard rule, and such "stability" is not expected to be
+  absolute (emergency releases are cut from maint anyway).
+
+* The 'next' branch is reserved for the development of the next major
+  release.  Experimenting a little here is OK, but don't let the branch
+  grow too unstable; if you need to do exploratory programming
+  or over-arching change, you should use a dedicated topic branch, and
+  only merge that back once it is reasonably stable.
+
+* The 'maint' branch should be kept regularly merged into the 'master'
+  branch, and the 'master' branch into the 'next' branch.  It is advisable
+  to merge only after a set of related commits have been applied, to avoid
+  introducing too much noise in the history.
 
 * There may be a number of longer-lived feature branches for new
   developments.  They should be based off of a common ancestor of all
   active branches to which the feature should or might be merged later.
-  In the future, we might introduce a special branch named 'next' that
-  may serve as common ground for feature merging and testing, should
-  they not yet be ready for master.
 
-* After a major release is done, the master branch is to be merged into
-  the maint branch, and then a "new" master branch created stemming
-  from the resulting commit.
+* After a new minor release is done, the 'master' branch is to be merged
+  into the 'maint' branch, and then a "new" 'master' branch created
+  stemming from the resulting commit.
+  Similarly, after a new major release is done, the 'next' branch is to
+  be merged into both the 'master' and 'maint' branch, and then "new"
+  'master' and 'next' branches created stemming from the resulting commit.
 
 * When fixing a bug (especially a long-standing one), it may be useful
   to commit the fix to a new temporary branch based off the commit that

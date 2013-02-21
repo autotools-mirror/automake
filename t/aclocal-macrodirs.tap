@@ -20,7 +20,7 @@
 am_create_testdir=empty
 . test-init.sh
 
-plan_ 14
+plan_ 15
 
 ocwd=$(pwd) || fatal_ "getting current working directory"
 ACLOCAL_PATH=; unset ACLOCAL_PATH
@@ -317,23 +317,31 @@ test_end
 
 #---------------------------------------------------------------------------
 
-test_begin "AC_CONFIG_MACRO_DIRS([non-existent]) errors out (1)"
+test_begin "AC_CONFIG_MACRO_DIRS([non-existent]) warns (1)"
 
 cat > configure.ac << 'END'
 AC_INIT([oops], [1.0])
 AC_CONFIG_MACRO_DIRS([non-existent])
+AM_INIT_AUTOMAKE
 END
 
-not $ACLOCAL 2>stderr \
+$ACLOCAL -Wno-error 2>stderr \
   && cat stderr >&2 \
   && grep "couldn't open directory 'non-existent'" stderr \
+  && test -f aclocal.m4 \
+  || r='not ok'
+
+rm -rf aclocal.m4 autom4te*.cache
+
+$ACLOCAL -Werror -Wno-unsupported \
+  && test -f aclocal.m4 \
   || r='not ok'
 
 test_end
 
 #---------------------------------------------------------------------------
 
-test_begin "AC_CONFIG_MACRO_DIRS([non-existent]) errors out (2)"
+test_begin "AC_CONFIG_MACRO_DIRS([non-existent]) warns (2)"
 
 cat > configure.ac << 'END'
 AC_INIT([oops], [1.0])
@@ -346,13 +354,14 @@ not $ACLOCAL 2>stderr \
   && cat stderr >&2 \
   && grep "couldn't open directory 'dir-ko'" stderr \
   && not grep "dir-ok" stderr \
+  && test ! -e aclocal.m4 \
   || r='not ok'
 
 test_end
 
 #---------------------------------------------------------------------------
 
-test_begin "AC_CONFIG_MACRO_DIRS([non-existent]) errors out (tricky setup)"
+test_begin "AC_CONFIG_MACRO_DIRS([existent non-existent]) errors out"
 
 cat > configure.ac << 'END'
 AC_INIT([oops], [1.0])
@@ -372,8 +381,28 @@ test_end
 
 #---------------------------------------------------------------------------
 
+test_begin "AC_CONFIG_MACRO_DIRS([not-exist]) and ACLOCAL_AMFLAGS = -I not-exist"
+
+cat > configure.ac << 'END'
+AC_INIT([oops], [1.0])
+AC_CONFIG_MACRO_DIRS([not-exist])
+END
+
+cat > Makefile.am << 'END'
+ACLOCAL_AMFLAGS = -I not-exist
+END
+
+$ACLOCAL -Wno-error 2>stderr \
+  && cat stderr >&2 \
+  && test $(grep -c "couldn't open directory 'not-exist'" stderr) -eq 1 \
+  || r='not ok'
+
+test_end
+
+#---------------------------------------------------------------------------
+
 # Avoid spurious failures with pre-2.70 autoconf.
-# FIXME: remove this in automake 1.14, once we require Autoconf 2.70.
+# FIXME: remove this in automake 2.0, once we require Autoconf 2.70.
 if echo 'AC_INIT AC_CONFIG_MACRO_DIRS' | $AUTOCONF -o/dev/null -; then
 
   test_begin "AC_CONFIG_MACRO_DIRS interaction with AC_REQUIRE"

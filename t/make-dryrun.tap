@@ -18,22 +18,61 @@
 
 . test-init.sh
 
-plan_ 14
+plan_ 40
 
 echo AC_OUTPUT >> configure.ac
 
 cat > Makefile.am <<'END'
+# For debugging.
+$(warning MAKEFLAGS[make] => '$(MAKEFLAGS)')
+$(warning MFLAGS[make]    => '$(MFLAGS)')
+$(warning MAKEFLAGS[env]  => '$(shell printf "%s\\n" "$$MAKEFLAGS")')
+$(warning MFLAGS[env]     => '$(shell printf "%s\\n" "$$MFLAGS")')
+
 all:
 	@echo "Target '$@' should never run" >&2; exit 1;
-notdry-plain:
-	$(am.make.dry-run) && exit 1; exit 0
-notdry-recursive:
-	$(MAKE) notdry-plain
+
+run-plain:
+	$(am.make.dry-run) && exit 1; echo ok > from-run
+run-recursive:
+	$(MAKE) run-plain
 dry-plain:
-	+$(am.make.dry-run) || exit 1; echo ok > from-dry-mode
+	+$(am.make.dry-run) || exit 1; echo ok > from-dry
 dry-recursive:
 	$(MAKE) dry-plain
 END
+
+check_make ()
+{
+  msg= mode=
+  case $1 in
+    --dry) mode=dry;;
+    --run) mode=run;;
+    *) fatal_ "check_run: invalid usage";;
+  esac
+  shift
+  while test $# -gt 0; do
+    case $1 in
+      -M) msg=$2; shift;;
+      --) shift; break;;
+       *) break;;
+    esac
+    shift
+  done
+  for kind in plain recursive; do
+    r=ok
+    msg2=${msg:+"[$msg] "}"$mode, $kind"
+    $MAKE "$mode-$kind" ${1+"$@"} || r='not ok'
+    test -f from-$mode            || r='not ok'
+    test ! -e bad                 || r='not ok'
+    rm -f bad from-*              || fatal_ "cleaning up"
+    result_ "$r" "$msg2"
+    unset r msg2
+  done
+  unset msg kind mode condition
+}
+
+# ----------------------------------------------------------------------
 
 $ACLOCAL    || fatal_ "aclocal failed"
 $AUTOCONF   || fatal_ "autoconf failed"
@@ -42,44 +81,53 @@ $AUTOMAKE   || fatal_ "automake failed"
 
 # ----------------------------------------------------------------------
 
-check_no_dryrun ()
-{
-  for kind in plain recursive; do
-    command_ok_ "wet-run, $kind ($cnt)" $MAKE notdry-$kind ${1+"$@"}
-  done
-  cnt=$(($cnt + 1))
-}
-cnt=1
-
-check_no_dryrun
-check_no_dryrun -k
+check_make --run
+check_make --run -k
 
 # Test against a known regression.  This was especially heinous, since
 # make running in normal mode was sometimes mistaken for make running
 # in dry mode.
-mkdir n ./--dry-run
-check_no_dryrun -I n
-check_no_dryrun -I --dry-run
-check_no_dryrun -I n -I --dry-run
-rmdir n ./--dry-run
+check_make --run TESTS="n1.test n2.test"
+check_make --run TESTS="n1 n2" MAKEFLAGS="TESTS='n1 n2'"
+check_make --run TESTS="n1 n2" MAKEFLAGS='TESTS="n1 n2"'
+check_make --run FOOFLAGS="-n -n -knf2 n --none -n"
+check_make --run MYFLAGS="-n --dryrun -n --dry-run -n"
 
 # ----------------------------------------------------------------------
 
-check_dryrun ()
-{
-  for kind in plain recursive; do
-    r=ok
-    $MAKE dry-$kind ${1+"$@"} || r='not ok'
-    test -f from-dry-mode || r='not ok'
-    rm -f from-dry-mode || fatal_ "cleaning up"
-    result_ "$r" "dry-run, $kind ($cnt)"
-  done
-  cnt=$(($cnt + 1))
-}
-cnt=1
+check_make --dry -- -n
+check_make --dry -- --dry-run --keep-going
+check_make --dry -- --no-print-directory --dry-run -k
 
-check_dryrun -n
-check_dryrun --dry-run -k
+# ----------------------------------------------------------------------
+
+# Automake bug#13760: the "n" in "none" used to confound am__make_dryrun
+# into thinking the '-n' option had been passed.
+
+pr='bug#13760'
+
+mkdir none dry-run
+check_make --run -M "$pr" -- -I none
+check_make --run -M "$pr" -- -I none --include dry-run 
+check_make --dry -M "$pr" -- -I none -n
+check_make --dry -M "$pr" -- --dry-run -I none --include dry-run
+rmdir none dry-run
+
+# ----------------------------------------------------------------------
+
+# Test for when shell metacharacters or backslashes are in $(MAKEFLAGS).
+
+check_metachars ()
+{
+  check_make --run -M "metachars" "$@"
+}
+
+check_metachars MYFLAGS="-n \"n\" '-n' --none -n"
+check_metachars MYFLAGS='-knf2\ n\ \\n'
+check_metachars MYFLAGS="(&) | ; \" \` '"
+check_metachars MYFLAGS=" ' # ' "
+check_metachars MYFLAGS='$(foo)'
+check_metachars MYFLAGS='`touch bad`'
 
 # ----------------------------------------------------------------------
 
