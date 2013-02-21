@@ -46,7 +46,7 @@ use File::Path ();
 # Some globals.
 
 # Support AC_CONFIG_MACRO_DIRS also with older autoconf.
-# FIXME: To be removed in Automake 1.14, once we can assume autoconf
+# FIXME: To be removed in Automake 2.0, once we can assume autoconf
 #        2.70 or later.
 # FIXME: keep in sync with 'internal/ac-config-macro-dirs.m4'.
 my $ac_config_macro_dirs_fallback =
@@ -164,6 +164,11 @@ my @ac_config_macro_dirs;
 
 # If set, names a temporary file that must be erased on abnormal exit.
 my $erase_me;
+
+# Constants for the $ERR_LEVEL parameter of the 'scan_m4_dirs' function.
+use constant SCAN_M4_DIRS_SILENT => 0;
+use constant SCAN_M4_DIRS_WARN => 1;
+use constant SCAN_M4_DIRS_ERROR => 2;
 
 ################################################################
 
@@ -335,21 +340,42 @@ sub list_compare (\@\@)
 
 ################################################################
 
-# scan_m4_dirs($TYPE, $ERR_ON_NONEXISTING, @DIRS)
+# scan_m4_dirs($TYPE, $ERR_LEVEL, @DIRS)
 # -----------------------------------------------
 # Scan all M4 files installed in @DIRS for new macro definitions.
 # Register each file as of type $TYPE (one of the FT_* constants).
+# If a directory in @DIRS cannot be read:
+#  - fail hard                if $ERR_LEVEL == SCAN_M4_DIRS_ERROR
+#  - just print a warning     if $ERR_LEVEL == SCAN_M4_DIRS_WA
+#  - continue silently        if $ERR_LEVEL == SCAN_M4_DIRS_SILENT
 sub scan_m4_dirs ($$@)
 {
-  my ($type, $err_on_nonexisting, @dirlist) = @_;
+  my ($type, $err_level, @dirlist) = @_;
 
   foreach my $m4dir (@dirlist)
     {
       if (! opendir (DIR, $m4dir))
 	{
 	  # TODO: maybe avoid complaining only if errno == ENONENT?
-	  next unless $err_on_nonexisting;
-	  fatal "couldn't open directory '$m4dir': $!";
+          my $message = "couldn't open directory '$m4dir': $!";
+
+          if ($err_level == SCAN_M4_DIRS_ERROR)
+            {
+              fatal $message;
+            }
+          elsif ($err_level == SCAN_M4_DIRS_WARN)
+            {
+              msg ('unsupported', $message);
+              next;
+            }
+          elsif ($err_level == SCAN_M4_DIRS_SILENT)
+            {
+              next; # Silently ignore.
+            }
+          else
+            {
+               prog_error "invalid \$err_level value '$err_level'";
+            }
 	}
 
       # We reverse the directory contents so that foo2.m4 gets
@@ -386,13 +412,27 @@ sub scan_m4_files ()
 
   if (@user_includes)
     {
+      # Don't explore the same directory multiple times.  This is here not
+      # only for speedup purposes.  We need this when the user has e.g.
+      # specified 'ACLOCAL_AMFLAGS = -I m4' and has also set
+      # AC_CONFIG_MACRO_DIR[S]([m4]) in configure.ac.  This makes the 'm4'
+      # directory to occur twice here and fail on the second call to
+      # scan_m4_dirs([m4]) when the 'm4' directory doesn't exist.
+      # TODO: Shouldn't there be rather a check in scan_m4_dirs for
+      #       @user_includes[0]?
+      @user_includes = uniq @user_includes;
+
       # Don't complain if the first user directory doesn't exist, in case
       # we need to create it later (can happen if '--install' was given).
-      scan_m4_dirs (FT_USER, !$install, $user_includes[0]);
-      scan_m4_dirs (FT_USER, 1, @user_includes[1..$#user_includes]);
+      scan_m4_dirs (FT_USER,
+                    $install ? SCAN_M4_DIRS_SILENT : SCAN_M4_DIRS_WARN,
+                    $user_includes[0]);
+      scan_m4_dirs (FT_USER,
+                    SCAN_M4_DIRS_ERROR,
+		    @user_includes[1..$#user_includes]);
     }
-  scan_m4_dirs (FT_SYSTEM,   1, @system_includes);
-  scan_m4_dirs (FT_AUTOMAKE, 1, @automake_includes);
+  scan_m4_dirs (FT_SYSTEM, SCAN_M4_DIRS_ERROR, @system_includes);
+  scan_m4_dirs (FT_AUTOMAKE, SCAN_M4_DIRS_ERROR, @automake_includes);
 
   # Construct a new function that does the searching.  We use a
   # function (instead of just evaluating $search in the loop) so that
@@ -724,7 +764,7 @@ sub trace_used_macros ()
   # a bug in option parsing code of autom4te 2.68 and earlier will cause
   # it to read standard input last, even if the "-" argument is specified
   # early.
-  # FIXME: To be removed in Automake 1.14, once we can assume autoconf
+  # FIXME: To be removed in Automake 2.0, once we can assume autoconf
   #        2.70 or later.
   $traces .= "$automake_includes[0]/internal/ac-config-macro-dirs.m4 ";
 
@@ -743,7 +783,7 @@ sub trace_used_macros ()
 		     'AC_CONFIG_MACRO_DIR_TRACE',
                      # FIXME: Tracing the next two macros is a hack for
                      # compatibility with older autoconf.  Remove this in
-                     # Automake 1.14, when we can assume Autoconf 2.70 or
+                     # Automake 2.0, when we can assume Autoconf 2.70 or
                      # later.
 		     'AC_CONFIG_MACRO_DIR',
 		     '_AM_CONFIG_MACRO_DIRS')),
@@ -800,7 +840,7 @@ sub trace_used_macros ()
   # FIXME: in Autoconf >= 2.70, AC_CONFIG_MACRO_DIR calls
   # AC_CONFIG_MACRO_DIR_TRACE behind the scenes, which could
   # leave unwanted duplicates in @ac_config_macro_dirs.
-  # Remove this in Automake 1.14, when we'll stop tracing
+  # Remove this in Automake 2.0, when we'll stop tracing
   # AC_CONFIG_MACRO_DIR explicitly.
   @ac_config_macro_dirs = uniq @ac_config_macro_dirs;
 
