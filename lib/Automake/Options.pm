@@ -322,7 +322,7 @@ sub _process_option_list (\%@)
           error ($where,
                  "automatic de-ANSI-fication support has been removed");
         }
-      # TODO: Remove this special check in Automake 1.15.
+      # TODO: Remove this special check in Automake 3.0.
       elsif ($_ eq 'cygnus')
         {
           error $where, "support for Cygnus-style trees has been removed";
