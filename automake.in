@@ -6195,15 +6195,16 @@ sub check_trailing_slash ($\$)
 }
 
 
-# read_am_file ($AMFILE, $WHERE)
-# ------------------------------
+# read_am_file ($AMFILE, $WHERE, $RELDIR)
+# ---------------------------------------
 # Read Makefile.am and set up %contents.  Simultaneously copy lines
 # from Makefile.am into $output_trailer, or define variables as
 # appropriate.  NOTE we put rules in the trailer section.  We want
 # user rules to come after our generated stuff.
-sub read_am_file ($$)
+sub read_am_file ($$$)
 {
-    my ($amfile, $where) = @_;
+    my ($amfile, $where, $reldir) = @_;
+    my $canon_reldir = &canonicalize ($reldir);
 
     my $am_file = new Automake::XFile ("< $amfile");
     verb "reading $amfile";
@@ -6287,6 +6288,17 @@ sub read_am_file ($$)
 	    unless $seen_maint_mode;
 
 	my $new_saw_bk = check_trailing_slash ($where, $_);
+
+	if ($reldir eq '.')
+	  {
+	    # If present, eat the following '_' or '/', converting
+	    # "%reldir%/foo" and "%canon_reldir%_foo" into plain "foo"
+	    # when $reldir is '.'.
+	    $_ =~ s,%(D|reldir)%/,,g;
+	    $_ =~ s,%(C|canon_reldir)%_,,g;
+	  }
+	$_ =~ s/%(D|reldir)%/${reldir}/g;
+	$_ =~ s/%(C|canon_reldir)%/${canon_reldir}/g;
 
 	if (/$IGNORE_PATTERN/o)
 	{
@@ -6449,8 +6461,10 @@ sub read_am_file ($$)
 		push_dist_common ("\$\(srcdir\)/$path");
 		$path = $relative_dir . "/" . $path if $relative_dir ne '.';
 	      }
+	    my $new_reldir = File::Spec->abs2rel ($path, $relative_dir);
+	    $new_reldir = '.' if $new_reldir !~ s,/[^/]*$,,;
 	    $where->push_context ("'$path' included from here");
-	    read_am_file ($path, $where);
+	    read_am_file ($path, $where, $new_reldir);
 	    $where->pop_context;
 	}
 	else
@@ -6520,7 +6534,7 @@ sub read_main_am_file ($$)
     define_standard_variables;
 
     # Read user file, which might override some of our values.
-    read_am_file ($amfile, new Automake::Location);
+    read_am_file ($amfile, new Automake::Location, '.');
 }
 
 

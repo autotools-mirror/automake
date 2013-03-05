@@ -865,6 +865,10 @@ t/pr401.sh \
 t/pr401b.sh \
 t/pr401c.sh \
 t/prefix.sh \
+t/preproc-basics.sh \
+t/preproc-c-compile.sh \
+t/preproc-demo.sh \
+t/preproc-errmsg.sh \
 t/primary.sh \
 t/primary2.sh \
 t/primary3.sh \
