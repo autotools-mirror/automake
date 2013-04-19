@@ -65,10 +65,13 @@ sub/local.mk:4: library has 'sub_x2' as canonical name (possible typo)
 Makefile.am:2: 'sub/local.mk' included from here
 END
 
-sed -e '/warnings are treated as errors/d' \
-    -e 's/: warning:/:/' -e 's/: error:/:/' \
-    -e 's/  */ /g' \
-  <stderr >obtained
+# We need to break these substitutions into multiple sed invocations
+# to avoid spuriously triggering the 'sc_tests_logs_duplicate_prefixes'
+# maintainer check.
+sed -e '/warnings are treated as errors/d' stderr > t1
+sed -e 's/: warning:/:/' t1 > t2
+sed -e 's/: error:/:/' t2 > t3
+sed -e 's/  */ /g' t3 > obtained
 
 diff expected obtained
 
