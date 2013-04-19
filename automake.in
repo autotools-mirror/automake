@@ -604,6 +604,7 @@ my @cpplike_flags =
   qw{
     $(DEFS)
     $(DEFAULT_INCLUDES)
+    $(INCLUDES)
     $(AM_CPPFLAGS)
     $(CPPFLAGS)
   };
@@ -790,9 +791,9 @@ register_language ('name' => 'asm',
 		   'config_vars' => ['CCAS', 'CCASFLAGS'],
 
 		   'flags' => ['CCASFLAGS'],
-		   # Users can set AM_CCASFLAGS to include $(DEFS) or
-		   # or anything else required.  They can also set CCAS.
-		   # Or simply use Preprocessed Assembler.
+		   # Users can set AM_CCASFLAGS to include $(DEFS),
+                   # $(INCLUDES), or anything else required.  They can also
+                   # set CCAS.  Or simply use Preprocessed Assembler.
 		   'compile' => '$(CCAS) $(AM_CCASFLAGS) $(CCASFLAGS)',
 		   'ccer' => 'CCAS',
 		   'compiler' => 'CCASCOMPILE',
@@ -871,9 +872,9 @@ register_language ('name' => 'ppfc',
 # Preprocessed Fortran 77
 #
 # The current support for preprocessing Fortran 77 just involves
-# passing "$(DEFS) $(DEFAULT_INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS)"
-# as additional flags to the Fortran 77 compiler, since this is
-# how GNU Make does it; see the "GNU Make Manual, Edition 0.51
+# passing "$(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS)
+# $(CPPFLAGS)" as additional flags to the Fortran 77 compiler, since
+# this is how GNU Make does it; see the "GNU Make Manual, Edition 0.51
 # for 'make' Version 3.76 Beta" (specifically, from info file
 # '(make)Catalogue of Rules').
 #
@@ -7724,13 +7725,17 @@ sub generate_makefile
     }
 
   # Catch some obsolete variables.
-  reject_var 'INCLUDES', "'INCLUDES' is the obsolete name for " .
-                         "'AM_CPPFLAGS' (or '*_CPPFLAGS')";
-  if (my $amflags = var ('ACLOCAL_AMFLAGS'))
+  if (my $ovar = var ('ACLOCAL_AMFLAGS'))
     {
-      msg_var 'obsolete', $amflags,
+      msg_var 'obsolete', $ovar,
               "'ACLOCAL_AMFLAGS' is deprecated; use 'AC_CONFIG_MACRO_DIRS'"
               . " in configure.ac instead";
+    }
+  if (my $ovar = var ('INCLUDES'))
+    {
+      msg_var 'obsolete', $ovar,
+              "'INCLUDES' is deprecated; you should use 'AM_CPPFLAGS'"
+              . " (or '*_CPPFLAGS') instead"
     }
 
   # Must do this after reading .am file.

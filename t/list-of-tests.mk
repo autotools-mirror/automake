@@ -500,7 +500,7 @@ t/help-silent.sh \
 t/help-upc.sh \
 t/hfs.sh \
 t/implicit.sh \
-t/includes-no-more.sh \
+t/includes-deprecation.sh \
 t/init.sh \
 t/init2.sh \
 t/insh2.sh \

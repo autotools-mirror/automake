@@ -63,12 +63,8 @@ test $(grep -v 'warnings are treated as errors' stderr | wc -l) = 3
 rm -rf autom4te*.cache
 
 # If we add a global -Wnone, all warnings should disappear.
-cat >configure.ac <<END
-AC_INIT([warnopts], [1.0])
-AM_INIT_AUTOMAKE([-Wnone])
-AC_CONFIG_FILES([Makefile sub/Makefile])
-AC_OUTPUT
-END
+sed 's/^AM_INIT_AUTOMAKE/AM_INIT_AUTOMAKE([-Wnone])/' configure.ac > t
+mv -f t configure.ac
 $ACLOCAL
 $AUTOMAKE
 
