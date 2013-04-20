@@ -27,9 +27,9 @@ cat >Makefile.am <<'END'
 dist_bin_SCRIPTS = foo
 
 install-exec-hook:
-	cd "$(DESTDIR)$(bindir)" && \
-	mv -f foo foo-$(VERSION) && \
-	$(LN_S) foo-$(VERSION) foo
+	cd "$(DESTDIR)$(bindir)" \
+	  && mv -f foo foo-$(VERSION) \
+	  && $(LN_S) foo-$(VERSION) foo
 
 installcheck-local:
 	test -f "$(bindir)/foo"
@@ -40,7 +40,7 @@ uninstall-hook:
 	rm -f $(DESTDIR)$(bindir)/foo-$(VERSION)
 END
 
-echo 1 > foo
+echo a > foo
 
 $ACLOCAL
 $AUTOCONF
@@ -58,11 +58,11 @@ test -f ok
 # version.)
 ./configure "--bindir=$(pwd)/bin"
 $MAKE install
-echo 2 > foo
+echo b > foo
 VERSION=2.0 $MAKE -e install
-grep 1 bin/foo-1.0
-grep 2 bin/foo-2.0
-grep 2 bin/foo
+test $(cat bin/foo-1.0) = a
+test $(cat bin/foo-2.0) = b
+test $(cat bin/foo)     = b
 
 # install-hook is an error.
 cat >>Makefile.am <<EOF
