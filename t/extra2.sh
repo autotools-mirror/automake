@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Check to make sure EXTRA_foo_SOURCES not defined unnecessarily.
+# Check to make sure EXTRA_foo_SOURCES are not defined unnecessarily.
 
 . test-init.sh
 
