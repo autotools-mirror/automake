@@ -14,19 +14,28 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Support for $(INCLUDES) has been removed.
+# Support for $(INCLUDES) is deprecated.
 
 . test-init.sh
 
 echo AC_PROG_CC >> configure.ac
+
+$ACLOCAL
 
 cat > Makefile.am << 'END'
 bin_PROGRAMS = foo
 INCLUDES = -DFOO
 END
 
-$ACLOCAL
-AUTOMAKE_fails -Wnone -Wno-error
-grep "^Makefile\\.am:2:.* 'INCLUDES'.* obsolete.* 'AM_CPPFLAGS'" stderr
+AUTOMAKE_fails -Wnone -Wobsolete
+grep "^Makefile\\.am:2:.* 'INCLUDES'.* deprecated.* 'AM_CPPFLAGS'" stderr
+AUTOMAKE_run -Wall -Wno-obsolete
+test ! -s stderr
+
+echo 'AC_SUBST([INCLUDES])' >> configure.ac
+sed '/^INCLUDES/d' Makefile.am > t && mv -f t Makefile.am
+
+AUTOMAKE_run -Wno-error
+grep "^configure\\.ac:5:.* 'INCLUDES'.* deprecated.* 'AM_CPPFLAGS'" stderr
 
 :

@@ -16,8 +16,8 @@
 
 # Check that wildcards in EXTRA_DIST are honoured.
 # Suggested by observations from Braden McDaniel.
-# See also sister test 'extra11.sh', that checks a similar usage
-# with the involvement of the $(wildcard) GNU make builtin.
+# See also sister test 'extra-dist-wildcards-gnu.sh', that checks a
+# similar usage with the involvement of the $(wildcard) GNU make builtin.
 
 . test-init.sh
 
