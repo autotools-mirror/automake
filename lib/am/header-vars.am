@@ -39,23 +39,36 @@ am__is_gnu_make = test -n '$(MAKEFILE_LIST)' && test -n '$(MAKELEVEL)'
 am__make_dryrun = \
   { \
     am__dry=no; \
-    case $$MAKEFLAGS in \
-## If we run "make TESTS='snooze nap'", GNU make will export MAKEFLAGS
-## to "TESTS=foo\ nap", so that the simpler loop below (on word-splitted
+    if $(am__is_gnu_make); then \
+## GNU make: $(MAKEFLAGS) is quite tricky there, and the older
+## $(MFLAGS) variable behaves much better.
+      for am__flg in $$MFLAGS; do \
+        case $$am__flg in \
+          *=*|--*) ;; \
+          -*n*) am__dry=yes; break;; \
+        esac; \
+      done; \
+    else \
+## Non-GNU make: we must rely on $(MAKEFLAGS).  This is tricky and brittle,
+## but is the best we can do.
+      case $$MAKEFLAGS in \
+## If we run "make TESTS='snooze nap'", FreeBSD make will export MAKEFLAGS
+## to " TESTS=foo\ nap", so that the simpler loop below (on word-splitted
 ## $$MAKEFLAGS) would see a "make flag" equal to "nap", and would wrongly
 ## misinterpret that as and indication that make is running in dry mode.
-## This has already happened in practice.  So we need this hack.
-      *\\[\ \	]*) \
-        echo 'am--echo: ; @echo "AM"  OK' | $(MAKE) -f - 2>/dev/null \
-          | grep '^AM OK$$' >/dev/null || am__dry=yes;; \
-      *) \
-        for am__flg in $$MAKEFLAGS; do \
-          case $$am__flg in \
-            *=*|--*) ;; \
-            *n*) am__dry=yes; break;; \
-          esac; \
-        done;; \
-    esac; \
+## This has already happened in practice.  So we need this unpleasant hack.
+         *\\[\ \	]*) \
+           echo 'am--echo: ; @echo "AM"  OK' | $(MAKE) -f - 2>/dev/null \
+             | grep '^AM OK$$' >/dev/null || am__dry=yes ;; \
+         *) \
+           for am__flg in $$MAKEFLAGS; do \
+             case $$am__flg in \
+               *=*|--*) ;; \
+               *n*) am__dry=yes; break;; \
+             esac; \
+           done ;;\
+       esac; \
+    fi; \
     test $$am__dry = yes; \
   }
 
