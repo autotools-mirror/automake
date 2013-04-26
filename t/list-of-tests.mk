@@ -666,8 +666,9 @@ t/makej.sh \
 t/makej2.sh \
 t/maken.sh \
 t/maken3.sh \
-t/make-dryrun.tap \
 t/makevars.sh \
+t/make-dryrun.tap \
+t/make-is-gnu.sh \
 t/man.sh \
 t/man2.sh \
 t/man3.sh \
