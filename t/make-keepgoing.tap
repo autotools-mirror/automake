@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2012-2013 Free Software Foundation, Inc.
+# Copyright (C) 2013 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,20 +14,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Check that $(am__make_dryrun) works as expected.
+# Check that $(am__make_keepgoing) works as expected.
 
 . test-init.sh
 
 plan_ 20
 
-if echo "all: ; +@printf %sbb%s aa cc" | $MAKE -n -f - | grep aabbcc; then
-  make_plus_silence () { return 0; }
-else
-  make_plus_silence () { return 1; }
-fi
-
-mkdir none # Also used later.
-if echo nil: | $MAKE -I none -f -; then
+mkdir kool # Also used later.
+if echo nil: | $MAKE -I kool -f -; then
   make_supports_option_I () { return 0; }
 else
   make_supports_option_I () { return 1; }
@@ -37,21 +31,20 @@ echo AC_OUTPUT >> configure.ac
 
 cat > Makefile.am <<'END'
 all:
-	: Dummy, nothing to do.
-run:
-	@echo ":: $$MAKEFLAGS ::"; : For debugging.
-	$(am__make_dryrun) && exit 1; echo ok > from-run
-dry:
-	+@echo ":: $$MAKEFLAGS ::"; : For debugging.
-	+$(am__make_dryrun) || exit 1; echo ok > from-dry
+	@echo 'Default target $@ should not be called'>&2; exit 1;
+k-y:
+	@echo ":: $$MAKEFLAGS ::" ;: For debugging.
+	$(am__make_keepgoing)
+k-n:
+	@echo ":: $$MAKEFLAGS ::" ;: For debugging.
+	! $(am__make_keepgoing)
 END
 
 check_make ()
 {
   r=ok msg= mode= condition=: directive= reason= skip_reason=
   case $1 in
-    --dry) mode=dry;;
-    --run) mode=run;;
+    k-[yn]) mode=$1;;
     *) fatal_ "check_run: invalid usage";;
   esac
   shift
@@ -59,6 +52,7 @@ check_make ()
     case $1 in
       -C) condition=$2 skip_reason=$3; shift; shift;;
       -M) msg=$2; shift;;
+      -X) directive=TODO;;
       --) shift; break;;
        *) break;;
     esac
@@ -67,9 +61,6 @@ check_make ()
   msg=${mode}${msg:+" [$msg]"}
   if $condition; then
     $MAKE "$mode" ${1+"$@"} || r='not ok'
-    test -f from-$mode      || r='not ok'
-    test ! -e bad           || r='not ok'
-    rm -f bad from-*        || fatal_ "cleaning up"
   else
     directive=SKIP reason=$skip_reason
   fi
@@ -86,40 +77,39 @@ $AUTOMAKE   || fatal_ "automake failed"
 
 # ----------------------------------------------------------------------
 
-check_make --run
+check_make k-n
 
-# Test against a known regression.  This was especially heinous, since
-# make running in normal mode was sometimes mistaken for make running
-# in dry mode.
-check_make --run TESTS="n1.test n2.test"
-check_make --run TESTS="n1 n2" AM_MAKEFLAGS="TESTS='n1 n2'"
-check_make --run TESTS="n1 n2" AM_MAKEFLAGS='TESTS="n1 n2"'
-check_make --run FOOFLAGS="-n -n -knf2 n --none -n"
-check_make --run MYFLAGS="-n --dryrun -n --dry-run -n"
-
-# ----------------------------------------------------------------------
-
-check_make --dry -C make_plus_silence 'recipe prefix "+" unsupported' -n
-check_make --dry -C using_gmake "\$MAKE is not GNU make" --dry-run -k
+# Test against a possible regressions similar to those that affected
+# detection of dry mode ("make -n").
+check_make k-n TESTS="k.test k2.test"
+check_make k-n TESTS="k1 k k2" AM_MAKEFLAGS="TESTS='k1 k2'"
+check_make k-n TESTS="k1 k k2" AM_MAKEFLAGS='TESTS="k1 k k2"'
+check_make k-n FOOFLAGS="-k -k -nkf2 k -ks --keep -k"
+check_make k-n MYFLAGS="-k --keepgoing -k --keep-run -k"
 
 # ----------------------------------------------------------------------
 
-# Automake bug#13760: the "n" in "none" used to confound am__make_dryrun
-# into thinking the '-n' option had been passed.
+check_make k-y -k
+check_make k-y -C using_gmake "\$MAKE is not GNU make" --keep-going
 
-pr='bug#13760'
+# ----------------------------------------------------------------------
 
-check_make --run -C make_supports_option_I "-I make option unsupported" \
-                 -M "$pr" -I none
+# Related to automake bug#12554: the "k" in "kool" used to confound
+# am__make_keepgoing into thinking the '-k' option had been passed.
 
-check_make --run -C using_gmake "\$MAKE is not GNU make" \
-                 -M "$pr" -I none --include dry-run 
+pr='bug#12554'
 
-check_make --dry -C make_supports_option_I "-I make option unsupported" \
-                 -M "$pr" -I none -n
+check_make k-n -C make_supports_option_I "-I make option unsupported" \
+               -M "$pr" -I kool
 
-check_make --dry -C using_gmake "\$MAKE is not GNU make" \
-                 -M "$pr" --dry-run -I none --include dry-run
+check_make k-n -C using_gmake "\$MAKE is not GNU make" \
+               -M "$pr" -I kool --include keep-going
+
+check_make k-y -C make_supports_option_I "-I make option unsupported" \
+               -M "$pr" -I kool -k
+
+check_make k-y -C using_gmake "\$MAKE is not GNU make" \
+               -M "$pr" --keep-going -I kool --include keep-going
 
 # ----------------------------------------------------------------------
 
@@ -127,17 +117,17 @@ check_make --dry -C using_gmake "\$MAKE is not GNU make" \
 
 check_metachars ()
 {
-  check_make --run -M "metachars" "$@"
+  check_make k-n -M "metachars" "$@"
 }
 
-check_metachars MYFLAGS="-n \"n\" '-n' --none -n"
-check_metachars MYFLAGS='-knf2\ n\ \\n'
+check_metachars MYFLAGS="-k \"k\" '-k' --keep-going -k"
+check_metachars MYFLAGS='-knf2\ k\ \\k'
 check_metachars MYFLAGS="(&) | ; \" \` '"
 check_metachars MYFLAGS=" ' # ' "
 check_metachars MYFLAGS='$(foo)'
-check_metachars MYFLAGS='$(foo -n)'
+check_metachars MYFLAGS='$(foo -k)'
 check_metachars MYFLAGS='`touch bad`'
-check_metachars MYFLAGS='`touch --dry-run bad`'
+check_metachars MYFLAGS='`touch --keep-going bad`'
 
 # ----------------------------------------------------------------------
 
