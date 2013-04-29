@@ -372,13 +372,7 @@ sc_tests_overriding_macros_on_cmdline:
 # The first s/// tries to account for usages like "$MAKE || st=$?".
 # 'DISTCHECK_CONFIGURE_FLAGS' and 'exp' are allowed to contain whitespace in
 # their definitions, hence the more complex last three substitutions below.
-# Also, the 'make-dryrun.sh' is whitelisted, since there we need to
-# override variables from the command line in order to cover the expected
-# code paths.
-	@tests=`for t in $(xtests); do \
-	          case $$t in */make-dryrun.sh);; *) echo $$t;; esac; \
-	        done`; \
-	if sed -e 's/ || .*//' -e 's/ && .*//' \
+	@if sed -e 's/ || .*//' -e 's/ && .*//' \
 	        -e 's/ DESTDIR=[^ ]*/ /' -e 's/ SHELL=[^ ]*/ /' \
 	        -e 's/ V=[^ ]*/ /' -e 's/ DISABLE_HARD_ERRORS=[^ ]*/ /' \
 	        -e "s/ DISTCHECK_CONFIGURE_FLAGS='[^']*'/ /" \
@@ -387,7 +381,7 @@ sc_tests_overriding_macros_on_cmdline:
 	        -e "s/ exp='[^']*'/ /" \
 	        -e 's/ exp="[^"]*"/ /' \
 	        -e 's/ exp=[^ ]/ /' \
-	      $$tests | grep '\$$MAKE .*='; then \
+	      $(xtests) | grep '\$$MAKE .*='; then \
 	  echo 'Rewrite "$$MAKE foo=bar" as "foo=bar $$MAKE -e" in the above lines,' 1>&2; \
 	  echo 'it is more portable.' 1>&2; \
 	  exit 1; \
