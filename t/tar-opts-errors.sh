@@ -14,13 +14,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Check the tar-ustar option.
+# Check the tar options diagnostics.
 
 . test-init.sh
 
-cat > configure.ac << 'END'
-AC_INIT([tar], [1.0])
-AM_INIT_AUTOMAKE([tar-ustar])
+cat > configure.ac <<END
+AC_INIT([$me], [1.0])
+AM_INIT_AUTOMAKE([tar-pax tar-v7])
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT
 END
@@ -28,13 +28,25 @@ END
 : > Makefile.am
 
 $ACLOCAL
-$AUTOCONF
-$AUTOMAKE
-./configure
+AUTOMAKE_fails
+grep "^configure\.ac:2:.*mutually exclusive" stderr > tar-err
+cat tar-err
+test 1 -eq $(wc -l < tar-err)
+grep "'tar-pax'" tar-err
+grep "'tar-v7'"  tar-err
 
-if grep 'am__tar.*false' Makefile; then
-  skip_ "cannot find proper archiver program"
-fi
+rm -rf autom4te.cache
 
-$MAKE distcheck
-test -f tar-1.0.tar.gz
+cat > configure.ac <<END
+AC_INIT([$me], [1.0])
+AM_INIT_AUTOMAKE
+AC_CONFIG_FILES([Makefile])
+AC_OUTPUT
+END
+
+echo 'AUTOMAKE_OPTIONS = tar-pax' > Makefile.am
+
+AUTOMAKE_fails
+grep "^Makefile\.am:1:.*'tar-pax'.*AM_INIT_AUTOMAKE" stderr
+
+:

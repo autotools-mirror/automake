@@ -39,6 +39,8 @@ AUTOMAKE_fails
 
 grep 'requires.*AM_PROG_AR' stderr
 
+rm -rf autom4te*.cache
+
 cp X configure.ac
 
 cat >> configure.ac << 'END'
