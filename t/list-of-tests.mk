@@ -1160,6 +1160,7 @@ t/tags-pr12372.sh \
 t/tar-ustar.sh \
 t/tar-pax.sh \
 t/tar-opts-errors.sh \
+t/tar-ustar-id-too-high.sh \
 t/tar-override.sh \
 t/target-cflags.sh \
 t/targetclash.sh \

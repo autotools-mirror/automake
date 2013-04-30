@@ -18,8 +18,8 @@
 
 . test-init.sh
 
-cat > configure.ac << 'END'
-AC_INIT([tar2], [1.0])
+cat > configure.ac <<END
+AC_INIT([$me], [1.0])
 AM_INIT_AUTOMAKE([tar-pax])
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT
@@ -32,9 +32,12 @@ $AUTOCONF
 $AUTOMAKE
 ./configure
 
-if grep 'am__tar.*false' Makefile; then
+grep 'am__tar' Makefile # For debugging.
+if grep '^am__tar = false' Makefile; then
   skip_ "cannot find proper archiver program"
 fi
 
 $MAKE distcheck
-test -f tar2-1.0.tar.gz
+test -f "$distdir.tar.gz"
+
+:
