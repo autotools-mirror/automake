@@ -18,8 +18,8 @@
 
 . test-init.sh
 
-cat > configure.ac << 'END'
-AC_INIT([tar2], [1.0])
+cat > configure.ac <<END
+AC_INIT([$me], [1.0])
 AM_INIT_AUTOMAKE([tar-pax tar-v7])
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT
@@ -37,8 +37,8 @@ grep "'tar-v7'"  tar-err
 
 rm -rf autom4te.cache
 
-cat > configure.ac << 'END'
-AC_INIT([tar2], [1.0])
+cat > configure.ac <<END
+AC_INIT([$me], [1.0])
 AM_INIT_AUTOMAKE
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT
@@ -47,6 +47,6 @@ END
 echo 'AUTOMAKE_OPTIONS = tar-pax' > Makefile.am
 
 AUTOMAKE_fails
-grep '^Makefile\.am:1:.*tar-pax.*AM_INIT_AUTOMAKE' stderr
+grep "^Makefile\.am:1:.*'tar-pax'.*AM_INIT_AUTOMAKE" stderr
 
 :
