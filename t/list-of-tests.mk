@@ -667,8 +667,9 @@ t/makej.sh \
 t/makej2.sh \
 t/maken.sh \
 t/maken3.sh \
-t/make-dryrun.tap \
 t/makevars.sh \
+t/make-dryrun.tap \
+t/make-is-gnu.sh \
 t/man.sh \
 t/man2.sh \
 t/man3.sh \
@@ -1155,9 +1156,10 @@ t/tags.sh \
 t/tags2.sh \
 t/tagsub.sh \
 t/tags-pr12372.sh \
-t/tar.sh \
-t/tar2.sh \
-t/tar3.sh \
+t/tar-ustar.sh \
+t/tar-pax.sh \
+t/tar-opts-errors.sh \
+t/tar-ustar-id-too-high.sh \
 t/tar-override.sh \
 t/target-cflags.sh \
 t/targetclash.sh \

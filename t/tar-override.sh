@@ -16,8 +16,8 @@
 
 # Check that the user can override the tar program used by "make dist"
 # at runtime, by redefining the 'TAR' environment variable.
-# FIXME: currently this works only when the tar format used is 'v7'
-# FIXME: (which is the default one).
+# NOTE: currently this works only when the tar format used is 'v7'
+#       (which is the default one).
 
 . test-init.sh
 
@@ -35,6 +35,7 @@ chmod a+x am--tar
 
 cat > Makefile.am <<'END'
 check-local: dist
+	ls -l ;: For debugging.
 	test -f am--tar-has-run
 CLEANFILES = am--tar-has-run
 END
@@ -44,22 +45,24 @@ $AUTOCONF
 $AUTOMAKE
 ./configure
 
+clean_temp () { rm -f *.tar.* *has-run*; }
+
 $MAKE dist
-test -f $me-1.0.tar.gz
+test -f $distdir.tar.gz
 ls | grep has-run && exit 1
 
-rm -f *.tar.* *has-run*
+clean_temp
 
 TAR="$cwd/am--tar foo" $MAKE distcheck
-test -f $me-1.0.tar.gz
+test -f $distdir.tar.gz
 test "$(cat am--tar-has-run)" = foo
 
-rm -f *.tar.* *has-run*
+clean_temp
 
 TAR=; unset TAR
 # Creative use of eval to pacify maintainer checks.
 eval \$'MAKE dist "TAR=./am--tar mu"'
-test -f $me-1.0.tar.gz
+test -f $distdir.tar.gz
 test "$(cat am--tar-has-run)" = mu
 
 :
