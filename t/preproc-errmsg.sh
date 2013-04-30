@@ -30,7 +30,7 @@ END
 mkdir sub sub/sub2
 
 cat > Makefile.am <<'END'
-%canon_reldir%_x1_SOURCES = bar.c
+%canon_reldir%_UNDEFINED_0 +=
 include sub/local.mk
 END
 
@@ -38,7 +38,7 @@ cat > sub/local.mk <<'END'
 AUTOMAKE_OPTIONS = -Wno-extra-portability
 include %D%/sub2/more.mk
 noinst_LIBRARIES = %reldir%-one.a %D%-two.a
-%C%_x2_SOURCES = foo.c
+%C%_UNDEFINED_1 +=
 END
 
 cat > sub/sub2/more.mk <<'END'
@@ -49,19 +49,17 @@ $ACLOCAL
 AUTOMAKE_fails
 
 cat > expected << 'END'
+Makefile.am:1: UNDEFINED_0 must be set with '=' before using '+='
 sub/sub2/more.mk:1: sub_sub2_UNDEFINED must be set with '=' before using '+='
 Makefile.am:2: 'sub/local.mk' included from here
 sub/local.mk:2: 'sub/sub2/more.mk' included from here
+sub/local.mk:4: sub_UNDEFINED_1 must be set with '=' before using '+='
+Makefile.am:2: 'sub/local.mk' included from here
 sub/local.mk:3: 'sub-one.a' is not a standard library name
 sub/local.mk:3: did you mean 'libsub-one.a'?
 Makefile.am:2: 'sub/local.mk' included from here
 sub/local.mk:3: 'sub-two.a' is not a standard library name
 sub/local.mk:3: did you mean 'libsub-two.a'?
-Makefile.am:2: 'sub/local.mk' included from here
-Makefile.am:1: variable 'x1_SOURCES' is defined but no program or
-Makefile.am:1: library has 'x1' as canonical name (possible typo)
-sub/local.mk:4: variable 'sub_x2_SOURCES' is defined but no program or
-sub/local.mk:4: library has 'sub_x2' as canonical name (possible typo)
 Makefile.am:2: 'sub/local.mk' included from here
 END
 
