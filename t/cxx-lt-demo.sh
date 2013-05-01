@@ -122,7 +122,9 @@ std::string target (void)
 END
 
 ./configure
-CC=false $MAKE -e
+# Creative quoting and redundant use of eval to avoid spurious
+# 'maintainer-check' failures.
+eval \$'MAKE CC=false AM_MAKEFLAGS=CC=false'
 ls -l . src lib # For debugging.
 $MAKE test-objs
 VERBOSE=yes $MAKE check-TESTS
