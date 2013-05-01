@@ -18,7 +18,7 @@
 
 . test-init.sh
 
-plan_ 20
+plan_ 60
 
 if echo "all: ; +@printf %sbb%s aa cc" | $MAKE -n -f - | grep aabbcc; then
   make_plus_silence () { return 0; }
@@ -48,7 +48,7 @@ END
 
 check_make ()
 {
-  r=ok msg= mode= condition=: directive= reason= skip_reason=
+  msg= mode= condition=: directive= reason= skip_reason=
   case $1 in
     --dry) mode=dry;;
     --run) mode=run;;
@@ -64,17 +64,20 @@ check_make ()
     esac
     shift
   done
-  msg=${mode}${msg:+" [$msg]"}
-  if $condition; then
-    $MAKE "$mode" ${1+"$@"} || r='not ok'
-    test -f from-$mode      || r='not ok'
-    test ! -e bad           || r='not ok'
-    rm -f bad from-*        || fatal_ "cleaning up"
-  else
-    directive=SKIP reason=$skip_reason
-  fi
-  result_ "$r" -D "$directive" -r "$reason" "$msg"
-  unset r msg mode condition directive reason skip_reason
+  for opts in '' '-s'  '-s -r'; do
+    r=ok
+    pmsg=${mode}${msg:+" [$msg]"}${opts:+" ($opts)"}
+    if $condition; then
+      $MAKE $opts "$mode" ${1+"$@"} || r='not ok'
+      test -f from-$mode            || r='not ok'
+      test ! -e bad                 || r='not ok'
+      rm -f bad from-*              || fatal_ "cleaning up"
+    else
+      directive=SKIP reason=$skip_reason
+    fi
+    result_ "$r" -D "$directive" -r "$reason" "$pmsg"
+  done
+  unset r msg pmsg opts mode condition directive reason skip_reason
 }
 
 # ----------------------------------------------------------------------
