@@ -302,11 +302,14 @@ CLEANFILES += announcement
 # Program to use to fetch files.
 WGET = wget
 
+# Git repositories on Savannah.
+git-sv-host = git.savannah.gnu.org
+
 # Some repositories we sync files from.
 SV_CVS    = 'http://savannah.gnu.org/cgi-bin/viewcvs/~checkout~/'
-SV_GIT_CF = 'http://git.savannah.gnu.org/gitweb/?p=config.git;a=blob_plain;hb=HEAD;f='
-SV_GIT_AC = 'http://git.savannah.gnu.org/gitweb/?p=autoconf.git;a=blob_plain;hb=HEAD;f='
-SV_GIT_GL = 'http://git.savannah.gnu.org/gitweb/?p=gnulib.git;a=blob_plain;hb=HEAD;f='
+SV_GIT_CF = 'http://$(git-sv-host)/gitweb/?p=config.git;a=blob_plain;hb=HEAD;f='
+SV_GIT_AC = 'http://$(git-sv-host)/gitweb/?p=autoconf.git;a=blob_plain;hb=HEAD;f='
+SV_GIT_GL = 'http://$(git-sv-host)/gitweb/?p=gnulib.git;a=blob_plain;hb=HEAD;f='
 
 # Files that we fetch and which we compare against.
 # Note that the 'lib/COPYING' file must still be synced by hand.
@@ -465,3 +468,91 @@ update-copyright:
 	  | grep -Ev '(^|/)README$$' \
 	  | grep -Ev "^($$excluded_re)$$" \
 	  | $(update_copyright_env) xargs $(srcdir)/lib/$@
+
+# --------------------------------------------------------------- #
+#  Testing on real-world packages can help us avoid regressions.  #
+# --------------------------------------------------------------- #
+
+#
+# NOTE (from Stefano Lattarini):
+# 
+# This section is mostly hacky and ad-hoc, but works for me and
+# on my system.  And while far from clean, it should help catching
+# real regressions on real world packages, which is important.
+# Ideas about how to improve this and make it more generic, portable,
+# clean, etc., are welcome.
+#
+
+# Tiny sample package.
+FEW_PACKAGES += hello
+# Smallish package using recursive make setup.
+FEW_PACKAGES += make
+# Medium-size package using non-recursive make setup.
+FEW_PACKAGES += coreutils
+
+ALL_PACKAGES = \
+  $(FEW_PACKAGES) \
+  autoconf \
+  bison \
+  grep \
+  tar \
+  diffutils \
+  smalltalk
+
+pkg-targets = check dist
+
+# Note: "ttp" stays for "Third Party Package".
+
+ttp-check ttp-check-all: do-clone = $(GIT) clone --verbose
+ttp-check: ttp-packages = $(FEW_PACKAGES)
+ttp-check-all: ttp-packages = $(ALL_PACKAGES)
+
+# Note: some packages depend on pkg-config, and its provided macros.
+ttp-check ttp-check-all: t/pkg-config-macros.log
+	@set -e; \
+	$(setup_autotools_paths); \
+	skip_all_ () \
+	{ \
+	  echo "***" >&2; \
+	  echo "*** $@: WARNING: $$@" >&2; \
+	  echo "*** $@: WARNING: some packages might fail to bootstrap" >&2; \
+	  echo "***" >&2;  \
+	}; \
+	. t/pkg-config-macros.dir/get.sh || exit 1; \
+	mkdir $@.d && cd $@.d || exit 1; \
+	for p in $(ttp-packages); do \
+	    echo; \
+	    echo ========  BEGIN TTP $$p  =========; \
+	    echo; \
+	    set -x; \
+	    $(do-clone) git://$(git-sv-host)/$$p.git || exit 1; \
+	    ( \
+	      cd $$p \
+	        && ls -l \
+	        && if test -f bootstrap; then \
+	             ./bootstrap --no-git; \
+		   else \
+		     $$AUTORECONF -fvi; \
+		   fi \
+		&& ./configure \
+		&& if test $$p = make; then \
+		     $(MAKE) update; \
+		   else :; fi \
+	        && for t in $(pkg-targets); do \
+	             $(MAKE) $$t WERROR_CFLAGS= || exit 1; \
+		   done \
+	    ) || exit 1; \
+	    set +x; \
+	    echo; \
+	    echo ========  END TTP $$p  =========; \
+	    echo; \
+	 done
+ifndef keep-ttp-dir
+	rm -rf $@.d
+endif
+
+# Alias for lazy typists.
+ttp: ttp-check
+ttp-all: ttp-check-all
+
+.PHONY: ttp ttp-check ttp-all ttp-check-all
