@@ -619,20 +619,25 @@ amhello_configury = \
 dist_noinst_DATA += $(amhello_sources)
 dist_doc_DATA = $(srcdir)/doc/amhello-1.0.tar.gz
 
+setup_autotools_paths = { \
+  $(extend_PATH) \
+    && ACLOCAL=aclocal-$(APIVERSION) && export ACLOCAL \
+    && AUTOMAKE=automake-$(APIVERSION) && export AUTOMAKE \
+    && AUTOCONF='$(am_AUTOCONF)' && export AUTOCONF \
+    && AUTOM4TE='$(am_AUTOM4TE)' && export AUTOM4TE \
+    && AUTORECONF='$(am_AUTORECONF)' && export AUTORECONF \
+    && AUTOHEADER='$(am_AUTOHEADER)' && export AUTOHEADER \
+    && AUTOUPDATE='$(am_AUTOUPDATE)' && export AUTOUPDATE \
+    && true; \
+}
+
 # We depend on configure.ac so that we regenerate the tarball
 # whenever the Automake version changes.
 $(srcdir)/doc/amhello-1.0.tar.gz: $(amhello_sources) $(srcdir)/configure.ac
 	$(AM_V_GEN)tmp=amhello-output.tmp \
 	  && $(am__cd) $(srcdir)/doc/amhello \
-	  && : Make our	aclocal and automake avaiable before system ones; \
-	  && $(extend_PATH) \
-	  && ACLOCAL=aclocal-$(APIVERSION) && export ACLOCAL \
-	  && AUTOMAKE=automake-$(APIVERSION) && export AUTOMAKE \
-	  && AUTOCONF='$(am_AUTOCONF)' && export AUTOCONF \
-	  && AUTOM4TE='$(am_AUTOM4TE)' && export AUTOM4TE \
-	  && AUTORECONF='$(am_AUTORECONF)' && export AUTORECONF \
-	  && AUTOHEADER='$(am_AUTOHEADER)' && export AUTOHEADER \
-	  && AUTOUPDATE='$(am_AUTOUPDATE)' && export AUTOUPDATE \
+	  && : Make our	aclocal and automake avaiable before system ones. \
+	  && $(setup_autotools_paths) \
 	  && ( \
 	    { $(AM_V_P) || exec 5>&2 >$$tmp 2>&1; } \
 	      && $(am_AUTORECONF) -vfi \
