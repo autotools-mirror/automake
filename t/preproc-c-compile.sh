@@ -68,7 +68,7 @@ bin_PROGRAMS =
 include $(top_srcdir)/zot/local.mk
 
 test:
-	test '$(bin_PROGRAMS)' == mumble$(EXEEXT)
+	test '$(bin_PROGRAMS)' = mumble$(EXEEXT)
 	test '$(mumble_SOURCES)' = one.c
 check-local: test
 END
