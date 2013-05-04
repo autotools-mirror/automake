@@ -36,5 +36,7 @@ mkdir x
 $ACLOCAL
 $AUTOMAKE
 
-grep '%' Makefile.in && exit 1
-exit 0
+sed 's/printf .*%s//' Makefile.in > Makefile.tmp
+grep '%' Makefile.tmp && exit 1
+
+:

@@ -31,7 +31,7 @@ cat > Makefile.am <<'END'
 all: file
 	$(am__is_gnu_make)
 file:
-	if $(am__is_gnu_make); then : > ok; else : > ko; fi 
+	if $(am__is_gnu_make); then : > ok; else : > ko; fi
 END
 
 $ACLOCAL
