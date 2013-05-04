@@ -111,7 +111,7 @@ fi
 # GNU install refuses to override a just-installed file; since we
 # have plenty of 'mumble' dummy programs to install in the same
 # location, such "overridden installations" are not a problem for
-# us, so just force the use the 'install-sh' script
+# us; so just force the use the 'install-sh' script.
 ac_cv_path_install=$(pwd)/install-sh; export ac_cv_path_install
 $MAKE distcheck
 
