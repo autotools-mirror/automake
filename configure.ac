@@ -176,7 +176,6 @@ AC_MSG_RESULT([$result])
 # FIXME: for file systems with sub-second timestamp resolutions, this
 # FIXME: might be just one second (or even less if 'sleep' supports
 # FIXME: non-integer arguments); is it worth pursuing that road?
-# than another we wait at least 5 seconds between creations.
 AC_SUBST([MODIFICATION_DELAY], [2])
 
 ## ------------------------------------------- ##
