@@ -668,6 +668,7 @@ t/maken.sh \
 t/maken3.sh \
 t/makevars.sh \
 t/make-dryrun.tap \
+t/make-keepgoing.tap \
 t/make-is-gnu.sh \
 t/man.sh \
 t/man2.sh \
@@ -1023,6 +1024,7 @@ t/subdir-order.sh \
 t/subdir-with-slash.sh \
 t/subdir-subsub.sh \
 t/subdir-distclean.sh \
+t/subdir-keep-going-pr12554.sh \
 t/subobj.sh \
 t/subobj2.sh \
 t/subobj4.sh \
