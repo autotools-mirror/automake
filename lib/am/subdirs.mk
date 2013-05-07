@@ -44,7 +44,7 @@ $(am.recurs.all-targets): %-recursive:
 ## Using $failcom allows "-k" to keep its natural meaning when running a
 ## recursive rule.
 	@fail=; \
-	if $(am__make_keepgoing); then \
+	if $(am.make.keep-going); then \
 	  failcom='fail=yes'; \
 	else \
 	  failcom='exit 1'; \

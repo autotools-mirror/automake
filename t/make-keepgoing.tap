@@ -14,35 +14,36 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Check that $(am__make_keepgoing) works as expected.
+# Check that $(am.make.keep-going) works as expected.
 
 . test-init.sh
 
-plan_ 60
-
-mkdir kool # Also used later.
-if echo nil: | $MAKE -I kool -f -; then
-  make_supports_option_I () { return 0; }
-else
-  make_supports_option_I () { return 1; }
-fi
+plan_ 120
 
 echo AC_OUTPUT >> configure.ac
 
 cat > Makefile.am <<'END'
+# For debugging.
+$(warning MAKEFLAGS[make] => '$(MAKEFLAGS)')
+$(warning MFLAGS[make]    => '$(MFLAGS)')
+$(warning MAKEFLAGS[env]  => '$(shell printf "%s\\n" "$$MAKEFLAGS")')
+$(warning MFLAGS[env]     => '$(shell printf "%s\\n" "$$MFLAGS")')
+
 all:
 	@echo 'Default target $@ should not be called'>&2; exit 1;
-k-y:
-	@echo ":: $$MAKEFLAGS :: $$MFLAGS ::" ;: For debugging.
-	$(am__make_keepgoing)
-k-n:
-	@echo ":: $$MAKEFLAGS :: $$MFLAGS ::" ;: For debugging.
-	$(am__make_keepgoing) && exit 1; exit 0
+k-y-plain:
+	$(am.make.keep-going)
+k-n-plain:
+	$(am.make.keep-going) && exit 1; exit 0
+k-y-recursive:
+	$(MAKE) k-y-plain
+k-n-recursive:
+	$(MAKE) k-n-plain
 END
 
 check_make ()
 {
-  msg= mode= condition=: directive= reason= skip_reason=
+  msg= mode=
   case $1 in
     k-[yn]) mode=$1;;
     *) fatal_ "check_run: invalid usage";;
@@ -50,25 +51,22 @@ check_make ()
   shift
   while test $# -gt 0; do
     case $1 in
-      -C) condition=$2 skip_reason=$3; shift; shift;;
       -M) msg=$2; shift;;
-      -X) directive=TODO;;
       --) shift; break;;
        *) break;;
     esac
     shift
   done
-  for opts in '' '-s'  '-s -r'; do
-    r=ok
-    pmsg=${mode}${msg:+" [$msg]"}${opts:+" ($opts)"}
-    if $condition; then
-      $MAKE $opts "$mode" ${1+"$@"} || r='not ok'
-    else
-      directive=SKIP reason=$skip_reason
-    fi
-    result_ "$r" -D "$directive" -r "$reason" "$pmsg"
+  for kind in plain recursive; do
+    for opts in '' '-s'  '-s -r'; do
+      r=ok
+      msg2="${mode}, ${kind}"${msg:+" [$msg]"}${opts:+" ($opts)"}
+      $MAKE $opts "$mode-$kind" ${1+"$@"} || r='not ok'
+      result_ "$r" "$msg2"
+      unset r msg2
+    done
   done
-  unset r msg pmsg opts mode condition directive reason skip_reason
+  unset r msg msg2 opts mode
 }
 
 # ----------------------------------------------------------------------
@@ -93,26 +91,21 @@ check_make k-n MYFLAGS="-k --keepgoing -k --keep-run -k"
 # ----------------------------------------------------------------------
 
 check_make k-y -k
-check_make k-y -C using_gmake "\$MAKE is not GNU make" --keep-going
+check_make k-y --keep-going
 
 # ----------------------------------------------------------------------
 
 # Related to automake bug#12554: the "k" in "kool" used to confound
-# am__make_keepgoing into thinking the '-k' option had been passed.
+# am.make.keep-going into thinking the '-k' option had been passed.
 
 pr='bug#12554'
 
-check_make k-n -C make_supports_option_I "-I make option unsupported" \
-               -M "$pr" -I kool
-
-check_make k-n -C using_gmake "\$MAKE is not GNU make" \
-               -M "$pr" -I kool --include keep-going
-
-check_make k-y -C make_supports_option_I "-I make option unsupported" \
-               -M "$pr" -I kool -k
-
-check_make k-y -C using_gmake "\$MAKE is not GNU make" \
-               -M "$pr" --keep-going -I kool --include keep-going
+mkdir kool
+check_make k-n -M "$pr" -I kool
+check_make k-n -M "$pr" -I kool --include keep-going
+check_make k-y -M "$pr" -I kool -k
+check_make k-y -M "$pr" --keep-going -I kool --include keep-going
+rmdir kool
 
 # ----------------------------------------------------------------------
 
