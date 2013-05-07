@@ -18,7 +18,7 @@
 
 . test-init.sh
 
-plan_ 40
+plan_ 132
 
 echo AC_OUTPUT >> configure.ac
 
@@ -59,17 +59,20 @@ check_make ()
     esac
     shift
   done
+
   for kind in plain recursive; do
-    r=ok
-    msg2=${msg:+"[$msg] "}"$mode, $kind"
-    $MAKE "$mode-$kind" ${1+"$@"} || r='not ok'
-    test -f from-$mode            || r='not ok'
-    test ! -e bad                 || r='not ok'
-    rm -f bad from-*              || fatal_ "cleaning up"
-    result_ "$r" "$msg2"
-    unset r msg2
+    for opts in '' '-s'  '-s -rR'; do
+      r=ok
+      msg2="${mode}, ${kind}"${msg:+" [$msg]"}${opts:+" ($opts)"}
+      $MAKE $opts "$mode-$kind" ${1+"$@"} || r='not ok'
+      test -f from-$mode                  || r='not ok'
+      test ! -e bad                       || r='not ok'
+      rm -f bad from-*                    || fatal_ "cleaning up"
+      result_ "$r" "$msg2"
+      unset r msg2
+    done
   done
-  unset msg kind mode condition
+  unset msg opts mode
 }
 
 # ----------------------------------------------------------------------
@@ -127,7 +130,9 @@ check_metachars MYFLAGS='-knf2\ n\ \\n'
 check_metachars MYFLAGS="(&) | ; \" \` '"
 check_metachars MYFLAGS=" ' # ' "
 check_metachars MYFLAGS='$(foo)'
+check_metachars MYFLAGS='$(foo -n)'
 check_metachars MYFLAGS='`touch bad`'
+check_metachars MYFLAGS='`touch --dry-run bad`'
 
 # ----------------------------------------------------------------------
 

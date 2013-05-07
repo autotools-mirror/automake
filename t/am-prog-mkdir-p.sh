@@ -67,4 +67,24 @@ $AUTOMAKE
 $MAKE check-local
 $MAKE distcheck
 
+# Now try using AC_PROG_MKDIR_P, but keeping the occurrences of
+# $(mkdir_p) and @mkdir_p@.  This is to check against a regression
+# that hit us with Gettext 0.18.2.
+$MAKE maintainer-clean
+rm -rf autom4te*.cache
+
+sed 's/AM_PROG_MKDIR/AC_PROG_MKDIR/' configure.ac > t
+diff configure.ac t && fatal_ "failed to edit configure.ac"
+mv -f t configure.ac
+
+$ACLOCAL 2>stderr \
+  && $AUTOCONF -Wall -Werror 2>>stderr \
+  && test ! -s stderr \
+  || { cat stderr >&2; exit 1; }
+
+$AUTOMAKE
+./configure
+$MAKE check-local
+$MAKE distcheck
+
 :

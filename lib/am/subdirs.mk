@@ -43,13 +43,12 @@ AM_RECURSIVE_TARGETS += $(am.recurs.all-targets:-recursive=)
 $(am.recurs.all-targets): %-recursive:
 ## Using $failcom allows "-k" to keep its natural meaning when running a
 ## recursive rule.
-	@fail= failcom='exit 1'; \
-	for f in x $$MAKEFLAGS; do \
-	  case $$f in \
-	    *=* | --[!k]*);; \
-	    *k*) failcom='fail=yes';; \
-	  esac; \
-	done; \
+	@fail=; \
+	if $(am__make_keepgoing); then \
+	  failcom='fail=yes'; \
+	else \
+	  failcom='exit 1'; \
+	fi; \
 	dot_seen=no; \
 ## For distclean and maintainer-clean we make sure to use the full
 ## list of subdirectories.  We do this so that 'configure; make

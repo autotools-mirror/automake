@@ -16,7 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 AC_PREREQ([2.69])
-AC_INIT([GNU Automake-NG], [1.13a], [automake-ng@gnu.org])
+AC_INIT([GNU Automake], [1.99a], [automake-ng@gnu.org])
 
 AC_CONFIG_SRCDIR([automake.in])
 AC_CONFIG_AUX_DIR([lib])
@@ -176,7 +176,6 @@ AC_MSG_RESULT([$result])
 # FIXME: for file systems with sub-second timestamp resolutions, this
 # FIXME: might be just one second (or even less if 'sleep' supports
 # FIXME: non-integer arguments); is it worth pursuing that road?
-# than another we wait at least 5 seconds between creations.
 AC_SUBST([MODIFICATION_DELAY], [2])
 
 ## ------------------------------------------- ##

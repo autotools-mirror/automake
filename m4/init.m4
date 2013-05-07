@@ -22,6 +22,8 @@
 # release and drop the old call support.
 AC_DEFUN([AM_INIT_AUTOMAKE],
 [AC_PREREQ([2.65])dnl
+dnl Without this, packages using Gettext 0.18.2 might break horribly.
+AC_SUBST([mkdir_p], ['$(MKDIR_P)'])dnl
 dnl Autoconf wants to disallow AM_ names.  We explicitly allow
 dnl the ones we care about.
 m4_pattern_allow([^AM_[A-Z]+FLAGS$])dnl

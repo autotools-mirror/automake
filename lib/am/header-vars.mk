@@ -154,7 +154,7 @@ am.cmd.ensure-target-dir-exists = $(call am.cmd.ensure-dir-exists,$(@D))
 am.vpath.rewrite = \
   $(firstword $(wildcard $(strip $(1))) $(srcdir)/$(strip $(1)))
 
-# make this overridable from the environment, for better compatibility
+# Leave this overridable from the environment, for better compatibility
 # with mainline Automake.
 DESTDIR ?=
 
@@ -166,6 +166,91 @@ DESTDIR ?=
 # allow a simpler implementation.
 am.make.dry-run := \
   $(if $(findstring n,$(filter-out --%,$(MFLAGS))),true,false)
+
+## Shell code that determines whether we are running under GNU make.
+## This is somewhat of an hack, and might be improved, but is good
+## enough for now.
+## FIXME: copied over from mainline Automake.  This should be later
+##        discarder!
+am__is_gnu_make = test -n '$(MAKEFILE_LIST)' && test -n '$(MAKELEVEL)'
+
+## FIXME: copied over from mainline Automake.  Rewrite to be GNU make
+##	  specific, please!
+## Shell code that determines whether the current make instance is
+## running with a given one-letter option (e.g., -k, -n) that takes
+## no argument.  Actually, the only supported option at the moment
+## is '-n' (support for '-k' will be added soon).
+am__make_running_with_option = \
+  case $${target_option-} in \
+      ?) ;; \
+      *) echo "am__make_running_with_option: internal error: invalid" \
+              "target option '$${target_option-}' specified" >&2; \
+         exit 1;; \
+  esac; \
+  has_opt=no; \
+  sane_makeflags=$$MAKEFLAGS; \
+  if $(am__is_gnu_make); then \
+## The format of $(MAKEFLAGS) is quite tricky with GNU make; the
+## variable $(MFLAGS) behaves much better in that regard.  So use it.
+    sane_makeflags=$$MFLAGS; \
+  else \
+## Non-GNU make: we must rely on $(MAKEFLAGS).  This is tricker and more
+## brittle, but is the best we can do.
+    case $$MAKEFLAGS in \
+## If we run "make TESTS='snooze nap'", FreeBSD make will export MAKEFLAGS
+## to " TESTS=foo\ nap", so that the simpler loop below (on word-splitted
+## $$MAKEFLAGS) would see a "make flag" equal to "nap", and would wrongly
+## misinterpret that as and indication that make is running in dry mode.
+## This has already happened in practice.  So we need this hack.
+      *\\[\ \	]*) \
+## Extra indirection with ${bs} required by FreeBSD 8.x make.
+## Not sure why (so sorry for the cargo-cult programming here).
+        bs=\\; \
+        sane_makeflags=`printf '%s\n' "$$MAKEFLAGS" \
+          | sed "s/$$bs$$bs[$$bs $$bs	]*//g"`;; \
+    esac; \
+  fi; \
+  skip_next=no; \
+  strip_trailopt () \
+  { \
+    flg=`printf '%s\n' "$$flg" | sed "s/$$1.*$$//"`; \
+  }; \
+  for flg in $$sane_makeflags; do \
+    test $$skip_next = yes && { skip_next=no; continue; }; \
+    case $$flg in \
+      *=*|--*) continue;; \
+##
+## GNU make 3.83 has changed the format of $MFLAGS, and removed the space
+## between an option and its argument (e.g., from "-I dir" to "-Idir").
+## So we need to handle both formats, at least for options valid in GNU
+## make.  OTOH, BSD make formats $(MAKEFLAGS) by separating all options,
+## and separating any option from its argument, so things are easier
+## there.
+##
+## For GNU make and BSD make.
+        -*I) strip_trailopt 'I'; skip_next=yes;; \
+      -*I?*) strip_trailopt 'I';; \
+## For GNU make >= 3.83.
+        -*O) strip_trailopt 'O'; skip_next=yes;; \
+      -*O?*) strip_trailopt 'O';; \
+## For GNU make (possibly overkill, this one).
+        -*l) strip_trailopt 'l'; skip_next=yes;; \
+      -*l?*) strip_trailopt 'l';; \
+## For BSD make.
+      -[dEDm]) skip_next=yes;; \
+## For NetBSD make.
+      -[JT]) skip_next=yes;; \
+    esac; \
+    case $$flg in \
+      *$$target_option*) has_opt=yes; break;; \
+    esac; \
+  done; \
+  test $$has_opt = yes
+
+## Shell code that determines whether make is running in "keep-going mode"
+## ("make -k") or not.  Useful in rules that must recursively descend into
+## subdirectories, and decide whther to stop at the first error or not.
+am__make_keepgoing = (target_option=k; $(am__make_running_with_option))
 
 am.util.strip-first-word = $(wordlist 2,$(words $(1)),$(1))
 am.util.strip-last-word  = $(wordlist 2,$(words $(1)),dummy $(1))
