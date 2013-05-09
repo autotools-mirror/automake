@@ -43,11 +43,11 @@ liblex_a_SOURCES = 0.l
 
 # We need the output to always be named 'lex.yy.c', in order for
 # ylwrap to pick it up.
-liblex_foo_a_LFLAGS = -Pfoo --outfile=lex.yy.c
+liblex_foo_a_LFLAGS = -Pfoo -olex.yy.c
 liblex_foo_a_SOURCES = a.l
 
 # Ditto.
-liblex_bar_a_LFLAGS = -Pbar_ --outfile=lex.yy.c
+liblex_bar_a_LFLAGS = -Pbar_ -olex.yy.c
 liblex_bar_a_SOURCES = b.l
 END
 
