@@ -290,7 +290,11 @@ announcement: NEWS
 	  && X \
 	  && X "-*-*-*-" \
 	  && X \
-	  && sed -n -e '/^~~~/q' -e p $(srcdir)/NEWS >> $@-t \
+	  && $(AWK) '\
+	        ($$0 == "New in $(VERSION):") { wait_for_end=1; } \
+		(/^~~~/ && wait_for_end) { exit(0) } \
+		{ print } \
+	     ' <$(srcdir)/NEWS >> $@-t \
 	  && mv -f $@-t $@
 .PHONY: announcement
 CLEANFILES += announcement
