@@ -32,6 +32,12 @@ nodist_noinst_SCRIPTS =
 ##  Top level.  ##
 ## ------------ ##
 
+EXTRA_DIST += \
+  bootstrap.sh \
+  GNUmakefile \
+  HACKING \
+  PLANS
+
 # We want a handful of substitutions to be fully-expanded by make;
 # then use config.status to substitute the remainder where a single
 # expansion is sufficient.  We use a funny notation here to avoid
@@ -63,61 +69,10 @@ generated_file_finalize = $(AM_V_at) \
   fi; \
   chmod a-w $@-t && mv -f $@-t $@
 
-bin_SCRIPTS = automake aclocal
-
-CLEANFILES += $(bin_SCRIPTS)
-AUTOMAKESOURCES = automake.in aclocal.in
-
-TAGS_FILES += $(AUTOMAKESOURCES)
-
-EXTRA_DIST += \
-  $(AUTOMAKESOURCES) \
-  bootstrap.sh \
-  GNUmakefile \
-  HACKING \
-  PLANS
-
 # For some tests or targets, we need to have the just-build automake and
 # aclocal scripts avaiable on PATH.
 extend_PATH = \
   { PATH='$(abs_builddir)/t/wrap'$(PATH_SEPARATOR)$$PATH && export PATH; }
-
-# Make versioned links.  We only run the transform on the root name;
-# then we make a versioned link with the transformed base name.  This
-# seemed like the most reasonable approach.
-install-exec-hook:
-	@$(POST_INSTALL)
-	@for p in $(bin_SCRIPTS); do \
-	  f=`echo $$p | sed '$(transform)'`; \
-	  fv="$$f-$(APIVERSION)"; \
-	  rm -f "$(DESTDIR)$(bindir)/$$fv"; \
-	  echo " $(LN) '$(DESTDIR)$(bindir)/$$f' '$(DESTDIR)$(bindir)/$$fv'"; \
-	  $(LN) "$(DESTDIR)$(bindir)/$$f" "$(DESTDIR)$(bindir)/$$fv"; \
-	done
-
-uninstall-hook:
-	@for p in $(bin_SCRIPTS); do \
-	  f=`echo $$p | sed '$(transform)'`; \
-	  fv="$$f-$(APIVERSION)"; \
-	  rm -f "$(DESTDIR)$(bindir)/$$fv"; \
-	done
-
-# These files depend on Makefile so they are rebuilt if $(VERSION),
-# $(datadir) or other do_subst'ituted variables change.
-automake: automake.in
-aclocal: aclocal.in
-automake aclocal: Makefile lib/gen-perl-protos
-	$(AM_V_GEN)rm -f $@ $@-t $@-t2 \
-## Common substitutions.
-	  && in=$@.in && $(do_subst) <$(srcdir)/$$in >$@-t \
-## Auto-compute prototypes of perl subroutines.
-	  && $(PERL) -w $(srcdir)/lib/gen-perl-protos $@-t > $@-t2 \
-	  && mv -f $@-t2 $@-t \
-## We can't use '$(generated_file_finalize)' here, because currently
-## Automake contains occurrences of unexpanded @substitutions@ in
-## comments, and that is perfectly legit.
-	  && chmod a+x,a-w $@-t && mv -f $@-t $@
-EXTRA_DIST += lib/gen-perl-protos
 
 # The master location for INSTALL is lib/INSTALL.
 # This is where "make fetch" will install new versions.
@@ -168,6 +123,7 @@ EXTRA_DIST += \
   maintainer/syntax-checks.mk
 
 # Most work delegated to sub-dir makefile fragments.
+include $(srcdir)/bin/Makefile.inc
 include $(srcdir)/doc/Makefile.inc
 include $(srcdir)/lib/Makefile.inc
 include $(srcdir)/lib/Automake/Makefile.inc

@@ -46,9 +46,9 @@ update_mans = \
 	  && f=`echo $@ | sed 's|.*/||; s|\.1$$||; $(transform)'` \
 	  && echo ".so man1/$$f-$(APIVERSION).1" > $@
 
-%D%/aclocal-$(APIVERSION).1: aclocal.in aclocal lib/Automake/Config.pm
+%D%/aclocal-$(APIVERSION).1: $(aclocal_script) lib/Automake/Config.pm
 	$(update_mans) aclocal-$(APIVERSION)
-%D%/automake-$(APIVERSION).1: automake.in automake lib/Automake/Config.pm
+%D%/automake-$(APIVERSION).1: $(automake_script) lib/Automake/Config.pm
 	$(update_mans) automake-$(APIVERSION)
 
 ## ---------------------------- ##
