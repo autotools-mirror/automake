@@ -246,11 +246,11 @@ Return 1 on error, 0 otherwise.
 =cut
 
 # $BOOL
-# _option_must_be_from_configure ($OPTION, $WHERE)
+# _option_is_from_configure ($OPTION, $WHERE)
 # ----------------------------------------------
 # Check that the $OPTION given in location $WHERE is specified with
 # AM_INIT_AUTOMAKE, not with AUTOMAKE_OPTIONS.
-sub _option_must_be_from_configure ($$)
+sub _option_is_from_configure ($$)
 {
   my ($opt, $where)= @_;
   return 1
@@ -361,7 +361,7 @@ sub _process_option_list (\%@)
       elsif ($_ eq 'tar-v7' || $_ eq 'tar-ustar' || $_ eq 'tar-pax')
         {
           return 1
-            unless _option_must_be_from_configure ($_, $where);
+            unless _option_is_from_configure ($_, $where);
           for my $opt ('tar-v7', 'tar-ustar', 'tar-pax')
             {
               next
