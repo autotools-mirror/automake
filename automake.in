@@ -3366,23 +3366,61 @@ sub rewrite_inputs_into_dependencies
 sub handle_config_headers ()
 {
   my (@config_h_local, @config_h_nonlocal, @config_hin_local);
+  my $hdr_index = 0;
   foreach my $spec (@config_headers)
     {
-      my ($out, @ins) = split_config_file_spec ($spec);
-      if ($relative_dir eq dirname ($out))
-	{
-	  push @config_h_local, basename ($out);
-	}
+      $hdr_index += 1;
+      # $CONFIG_H_PATH: config.h from top level.
+      my ($config_h_path, @ins) = split_config_file_spec ($spec);
+      my $config_h_dir = dirname ($config_h_path);
+
+      my ($stamp_dir, $cn_sans_dir) = ('', undef);
+      if ($relative_dir eq $config_h_dir)
+        {
+          $cn_sans_dir = basename ($config_h_path);
+          push @config_h_local, $cn_sans_dir;
+        }
       else
-	{
-	  push @config_h_nonlocal, "\$(top_builddir)/$out";
-	}
+        {
+          $cn_sans_dir = $config_h_path;
+          $stamp_dir = $config_h_dir . '/' if $config_h_dir ne '.';
+          push @config_h_nonlocal, "\$(top_builddir)/$config_h_path";
+        }
+
       foreach my $in (@ins)
         {
 	  push @config_hin_local, '$(srcdir)/' . basename ($in)
             if $relative_dir eq dirname ($in);
         }
+
+      # If the header is in the current directory we want to build
+      # the header here.  Otherwise, if we're at the topmost
+      # directory and the header's directory doesn't have a
+      # Makefile, then we also want to build the header.
+      next unless ($relative_dir eq $config_h_dir or
+	           $relative_dir eq '.' && ! is_make_dir ($config_h_dir));
+
+      # This will also distribute all inputs.
+      @ins = rewrite_inputs_into_dependencies ($config_h_path, @ins);
+
+      # Cannot define rebuild rules for filenames with shell variables.
+      next if (substitute_ac_subst_variables $config_h_path) =~ /\$/;
+
+      my $stamp = "${stamp_dir}stamp-h${hdr_index}";
+      $output_rules .=
+        file_contents ('remake-hdr',
+                       new Automake::Location,
+                       'FIRST-HDR'      => ($hdr_index == 1),
+                       CONFIG_H         => $cn_sans_dir,
+                       CONFIG_HIN       => $ins[0],
+                       CONFIG_H_DEPS    => "@ins",
+                       CONFIG_H_PATH    => $config_h_path,
+                       STAMP            => $stamp);
+
+      $clean_files{$cn_sans_dir} = DIST_CLEAN;
+      $clean_files{$stamp} = DIST_CLEAN;
     }
+
   define_variable ('am.config-hdr.local', INTERNAL, @config_h_local);
   define_variable ('am.config-hdr.non-local', INTERNAL, @config_h_nonlocal);
   define_variable ('am.config-hdr.local.in',  INTERNAL, @config_hin_local);
@@ -3426,63 +3464,6 @@ sub handle_configure
      'MAKEFILE-AM-SOURCES' => "$makefile$colon_infile",
      'REGEN-ACLOCAL-M4'    => $regen_aclocal_m4,
      VERBOSE               => verbose_flag ('GEN'));
-
-  # If we have a configure header, require it.
-  my $hdr_index = 0;
-  foreach my $spec (@config_headers)
-    {
-      $hdr_index += 1;
-      # $CONFIG_H_PATH: config.h from top level.
-      my ($config_h_path, @ins) = split_config_file_spec ($spec);
-      my $config_h_dir = dirname ($config_h_path);
-
-      # If the header is in the current directory we want to build
-      # the header here.  Otherwise, if we're at the topmost
-      # directory and the header's directory doesn't have a
-      # Makefile, then we also want to build the header.
-      if ($relative_dir eq $config_h_dir
-	  || ($relative_dir eq '.' && ! is_make_dir ($config_h_dir)))
-	{
-	  my ($cn_sans_dir, $stamp_dir);
-	  if ($relative_dir eq $config_h_dir)
-	    {
-	      $cn_sans_dir = basename ($config_h_path);
-	      $stamp_dir = '';
-	    }
-	  else
-	    {
-	      $cn_sans_dir = $config_h_path;
-	      if ($config_h_dir eq '.')
-		{
-		  $stamp_dir = '';
-		}
-	      else
-		{
-		  $stamp_dir = $config_h_dir . '/';
-		}
-	    }
-
-	  # This will also distribute all inputs.
-	  @ins = rewrite_inputs_into_dependencies ($config_h_path, @ins);
-
-	  # Cannot define rebuild rules for filenames with shell variables.
-	  next if (substitute_ac_subst_variables $config_h_path) =~ /\$/;
-
-	  my $stamp = "${stamp_dir}stamp-h${hdr_index}";
-	  $output_rules .=
-	    file_contents ('remake-hdr',
-			   new Automake::Location,
-			   'FIRST-HDR'      => ($hdr_index == 1),
-			   CONFIG_H         => $cn_sans_dir,
-			   CONFIG_HIN       => $ins[0],
-			   CONFIG_H_DEPS    => "@ins",
-			   CONFIG_H_PATH    => $config_h_path,
-			   STAMP            => "$stamp");
-
-           $clean_files{$cn_sans_dir} = DIST_CLEAN;
-           $clean_files{$stamp} = DIST_CLEAN;
-	}
-    }
 
   # Now look for other files in this directory which must be remade
   # by config.status, and generate rules for them.
