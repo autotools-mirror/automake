@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2012 Free Software Foundation, Inc.
+# Copyright (C) 2012-2013 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -43,11 +43,11 @@ liblex_a_SOURCES = 0.l
 
 # We need the output to always be named 'lex.yy.c', in order for
 # ylwrap to pick it up.
-liblex_foo_a_LFLAGS = -Pfoo --outfile=lex.yy.c
+liblex_foo_a_LFLAGS = -Pfoo -olex.yy.c
 liblex_foo_a_SOURCES = a.l
 
 # Ditto.
-liblex_bar_a_LFLAGS = -Pbar_ --outfile=lex.yy.c
+liblex_bar_a_LFLAGS = -Pbar_ -olex.yy.c
 liblex_bar_a_SOURCES = b.l
 END
 
