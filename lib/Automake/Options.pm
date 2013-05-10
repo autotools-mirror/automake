@@ -241,24 +241,27 @@ These functions should be called at most once for each set of options
 having the same precedence; i.e., do not call it twice for two options
 from C<AM_INIT_AUTOMAKE>.
 
-Return 1 on error, 0 otherwise.
+Return 0 on error, 1 otherwise.
 
 =cut
 
-# _option_must_be_from_configure ($OPTION, $WHERE)
+# $BOOL
+# _option_is_from_configure ($OPTION, $WHERE)
 # ----------------------------------------------
 # Check that the $OPTION given in location $WHERE is specified with
 # AM_INIT_AUTOMAKE, not with AUTOMAKE_OPTIONS.
-sub _option_must_be_from_configure ($$)
+sub _option_is_from_configure ($$)
 {
   my ($opt, $where)= @_;
-  return
+  return 1
     if $where->get =~ /^configure\./;
   error $where,
         "option '$opt' can only be used as argument to AM_INIT_AUTOMAKE\n" .
         "but not in AUTOMAKE_OPTIONS makefile statements";
+  return 0;
 }
 
+# $BOOL
 # _is_valid_easy_option ($OPTION)
 # -------------------------------
 # Explicitly recognize valid automake options that require no
@@ -304,6 +307,7 @@ sub _process_option_list (\%@)
 {
   my ($options, @list) = @_;
   my @warnings = ();
+  my $ret = 1;
 
   foreach my $h (@list)
     {
@@ -320,17 +324,20 @@ sub _process_option_list (\%@)
           # Obsolete (and now removed) de-ANSI-fication support.
           error ($where,
                  "automatic de-ANSI-fication support has been removed");
+          $ret = 0;
         }
       # TODO: Remove this special check in Automake 3.0.
       elsif ($_ eq 'cygnus')
         {
           error $where, "support for Cygnus-style trees has been removed";
+          $ret = 0;
         }
       # TODO: Remove this special check in Automake 3.0.
       elsif ($_ eq 'dist-lzma')
         {
           error ($where, "support for lzma-compressed distribution " .
                          "archives has been removed");
+          $ret = 0;
         }
       # TODO: Remove this special check in Automake 3.0.
       elsif ($_ eq 'dist-shar')
@@ -352,14 +359,17 @@ sub _process_option_list (\%@)
         }
       elsif ($_ eq 'tar-v7' || $_ eq 'tar-ustar' || $_ eq 'tar-pax')
         {
-          _option_must_be_from_configure ($_, $where);
+          if (not _option_is_from_configure ($_, $where))
+            {
+              $ret = 0;
+            }
           for my $opt ('tar-v7', 'tar-ustar', 'tar-pax')
             {
               next
                 if $opt eq $_ or ! exists $options->{$opt};
               error ($where,
                      "options '$_' and '$opt' are mutually exclusive");
-              last;
+              $ret = 0;
             }
         }
       elsif (/^\d+\.\d+(?:\.\d+)?[a-z]?(?:-[A-Za-z0-9]+)?$/)
@@ -369,7 +379,7 @@ sub _process_option_list (\%@)
             {
               error ($where, "require Automake $_, but have $VERSION",
                      uniq_scope => US_GLOBAL);
-              return 1;
+              $ret = 0;
             }
         }
       elsif (/^(?:--warnings=|-W)(.*)$/)
@@ -379,11 +389,11 @@ sub _process_option_list (\%@)
         }
       elsif (! _is_valid_easy_option $_)
         {
-          error ($where, "option '$_' not recognized",
-                 uniq_scope => US_GLOBAL);
-          return 1;
+          error ($where, "option '$_' not recognized");
+          $ret = 0;
         }
     }
+
   # We process warnings here, so that any explicitly-given warning setting
   # will take precedence over warning settings defined implicitly by the
   # strictness.
@@ -393,23 +403,24 @@ sub _process_option_list (\%@)
           "unknown warning category '$w->{'cat'}'"
         if switch_warning $w->{cat};
     }
-  return 0;
+
+  return $ret;
 }
 
 sub process_option_list (@)
 {
   prog_error "local options already processed"
     if $_options_processed;
-  return _process_option_list (%_options, @_);
   $_options_processed = 1;
+  _process_option_list (%_options, @_);
 }
 
 sub process_global_option_list (@)
 {
   prog_error "global options already processed"
     if $_global_options_processed;
-  return _process_option_list (%_global_options, @_);
   $_global_options_processed = 1;
+  _process_option_list (%_global_options, @_);
 }
 
 =item C<set_strictness ($name)>
