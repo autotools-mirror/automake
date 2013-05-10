@@ -14,16 +14,17 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Check support for no-dist-gzip with dist-shar.
+# Trying to use removed option 'dist-shar' should trigger a clear
+# error message.
 
 required=shar
 . test-init.sh
 
-errmsg='support for shar .*deprecated'
+errmsg='support for shar .*removed'
 
 echo AUTOMAKE_OPTIONS = dist-shar > Makefile.am
 $ACLOCAL
-AUTOMAKE_fails -Wnone -Wobsolete
+AUTOMAKE_fails -Wnone -Wno-error
 grep "^Makefile\\.am:1:.*$errmsg" stderr
 
 cat > configure.ac <<END
@@ -36,12 +37,7 @@ END
 
 rm -rf autom4te*.cache
 $ACLOCAL
-AUTOMAKE_run -Wno-error
+AUTOMAKE_fails -Wnone -Wno-error
 grep "^configure\\.ac:2:.*$errmsg" stderr
-
-$AUTOCONF
-./configure
-$MAKE distcheck
-test -f $distdir.shar.gz
 
 :

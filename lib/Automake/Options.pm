@@ -332,20 +332,18 @@ sub _process_option_list (\%@)
           error ($where, "support for lzma-compressed distribution " .
                          "archives has been removed");
         }
-      # TODO: Make this a fatal error in Automake 2.0.
+      # TODO: Remove this special check in Automake 3.0.
       elsif ($_ eq 'dist-shar')
         {
-          msg ('obsolete', $where,
-               "support for shar distribution archives is deprecated.\n" .
-               "  It will be removed in Automake 2.0");
+          error ($where, "support for shar distribution archives has " .
+                         "been removed.");
         }
-      # TODO: Make this a fatal error in Automake 2.0.
+      # TODO: Remove this special check in Automake 3.0.
       elsif ($_ eq 'dist-tarZ')
         {
-          msg ('obsolete', $where,
-               "support for distribution archives compressed with " .
-               "legacy program 'compress' is deprecated.\n" .
-               "  It will be removed in Automake 2.0");
+          error ($where, "support for distribution archives compressed " .
+                         "with legacy program 'compress' has " .
+                         "been removed.");
         }
       elsif (/^filename-length-max=(\d+)$/)
         {
