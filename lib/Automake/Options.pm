@@ -272,8 +272,6 @@ sub _is_valid_easy_option ($)
     dejagnu
     dist-bzip2
     dist-lzip
-    dist-shar
-    dist-tarZ
     dist-xz
     dist-zip
     info-in-builddir
@@ -333,6 +331,21 @@ sub _process_option_list (\%@)
         {
           error ($where, "support for lzma-compressed distribution " .
                          "archives has been removed");
+        }
+      # TODO: Make this a fatal error in Automake 2.0.
+      elsif ($_ eq 'dist-shar')
+        {
+          msg ('obsolete', $where,
+               "support for shar distribution archives is deprecated.\n" .
+               "  It will be removed in Automake 2.0");
+        }
+      # TODO: Make this a fatal error in Automake 2.0.
+      elsif ($_ eq 'dist-tarZ')
+        {
+          msg ('obsolete', $where,
+               "support for distribution archives compressed with " .
+               "legacy program 'compress' is deprecated.\n" .
+               "  It will be removed in Automake 2.0");
         }
       elsif (/^filename-length-max=(\d+)$/)
         {

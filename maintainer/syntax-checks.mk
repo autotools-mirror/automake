@@ -504,11 +504,11 @@ sc_tests_PATH_SEPARATOR:
 ## Try to make sure all @...@ substitutions are covered by our
 ## substitution rule.
 sc_perl_at_substs:
-	@if test `grep -E '^[^#]*@[A-Za-z_0-9]+@' aclocal | wc -l` -ne 0; then \
+	@if test `grep -E '^[^#]*@[A-Za-z_0-9]+@' bin/aclocal | wc -l` -ne 0; then \
 	  echo "Unresolved @...@ substitution in aclocal" 1>&2; \
 	  exit 1; \
 	fi
-	@if test `grep -E '^[^#]*@[A-Za-z_0-9]+@' automake | wc -l` -ne 0; then \
+	@if test `grep -E '^[^#]*@[A-Za-z_0-9]+@' bin/automake | wc -l` -ne 0; then \
 	  echo "Unresolved @...@ substitution in automake" 1>&2; \
 	  exit 1; \
 	fi

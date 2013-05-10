@@ -20,7 +20,7 @@
 am_create_testdir=empty
 . test-init.sh
 
-plan_ 70
+plan_ 66
 
 # ---------------------------------------------------- #
 #  Common and/or auxiliary subroutines and variables.  #
@@ -56,12 +56,10 @@ setup_vars_for_compression_format ()
   suffix=NONE compressor=NONE
   case $1 in
     gzip) suffix=tar.gz  compressor=gzip     ;;
-    tarZ) suffix=tar.Z   compressor=compress ;;
     lzip) suffix=tar.lz  compressor=lzip     ;;
       xz) suffix=tar.xz  compressor=xz       ;;
    bzip2) suffix=tar.bz2 compressor=bzip2    ;;
      zip) suffix=zip     compressor=zip      ;;
-    shar) suffix=shar.gz compressor=shar     ;;
        *) fatal_ "invalid compression format '$1'";;
   esac
 }
@@ -73,20 +71,6 @@ have_compressor ()
     # Assume gzip(1) is available on every reasonable portability target.
     gzip)
       return 0;;
-    # On Cygwin, as of 9/2/2012, 'compress' is provided by sharutils
-    # and is just a dummy script that is not able to actually compress
-    # (it can only decompress).  So, check that the 'compress' program
-    # is actually able to compress input.
-    # Note that, at least on GNU/Linux, 'compress' does (and is
-    # documented to) exit with status 2 if the output is larger than
-    # the input after (attempted) compression; so we need to pass it
-    # an input that it can actually reduce in size when compressing.
-    compress)
-      for x in 1 2 3 4 5 6 7 8; do
-        echo aaaaaaaaaaaaaaaaaaaaa
-      done | compress -c >/dev/null && return 0
-      return 1
-      ;;
     *)
       case $1 in
         # Do not use --version, or older versions bzip2 would try to
@@ -113,7 +97,7 @@ have_compressor ()
   fatal_ "have_compressor(): dead code reached"
 }
 
-all_compression_formats='gzip tarZ lzip xz bzip2 zip shar'
+all_compression_formats='gzip lzip xz bzip2 zip'
 
 all_compressors=$(
   for x in $all_compression_formats; do
@@ -305,7 +289,7 @@ END
 nogzip in am  and  bzip2  in  am
 nogzip in ac  and  xz     in  am
 nogzip in am  and  lzip   in  ac
-nogzip in ac  and  tarZ   in  ac
+nogzip in ac  and  zip    in  ac
 
 
 # ----------------------------------------------------------- #
@@ -324,13 +308,13 @@ end_subtest
 #  Parallel compression.  #
 # ----------------------- #
 
-# We only use formats requiring 'gzip', 'bzip2' and 'compress' programs,
-# since there are the most likely to be all found on the great majority
+# We only use formats requiring 'gzip', 'bzip2' and 'xz' programs,
+# since there are the most likely to be all found on the majority
 # of systems.
 
-start_subtest parallel-compression ac_opts=dist-bzip2 am_opts=dist-tarZ
+start_subtest parallel-compression ac_opts=dist-bzip2 am_opts=dist-xz
 
-desc=gzip+bzip2+tarZ
+desc=gzip+bzip2+xz
 tarname=parallel-compression-1.0
 
 check_tarball ()
@@ -353,11 +337,17 @@ check_tarball ()
 
 command_ok_ "$desc [automake]" $AUTOMAKE
 
-skip_reason=
-have_compressor compress || skip_reason="'compress' not available"
-have_compressor bzip2 || skip_reason="'bzip2' not available"
+if ! have_compressor xz && ! have_compressor bzip2; then
+  skip_reason="both 'bzip2' and 'xz' are unavailable"
+elif ! have_compressor xz; then
+  skip_reason="'xz' not available"
+elif ! have_compressor bzip2; then
+  skip_reason="'bzip2' not available"
+else
+  skip_reason=
+fi
 if test "$MAKE_j4" = false; then
-  test -z "$skip_reason" || skip_reason="$skip_reason and "
+  test -z "$skip_reason" || skip_reason="$skip_reason, and "
   skip_reason="${skip_reason}make concurrency unavailable"
 fi
 
@@ -370,7 +360,7 @@ else
   ls -l # For debugging.
   command_ok_ "$desc [check .tar.gz tarball]"  check_tarball gzip
   command_ok_ "$desc [check .tar.bz2 tarball]" check_tarball bzip2
-  command_ok_ "$desc [check .tar.Z tarball]"   check_tarball tarZ
+  command_ok_ "$desc [check .tar.xz tarball]"  check_tarball xz
 fi
 
 unset tarname desc skip_reason
@@ -445,8 +435,8 @@ END
 chmod a+x check-distdir grep-distdir-error
 for prog in tar $all_compressors; do
   case $prog in
-    tar|shar|zip) cp check-distdir $prog;;
-               *) cp grep-distdir-error $prog;;
+    tar|zip) cp check-distdir $prog;;
+          *) cp grep-distdir-error $prog;;
   esac
 done
 unset prog

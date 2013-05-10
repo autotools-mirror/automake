@@ -384,6 +384,9 @@ t/destdir.sh \
 t/dir-named-obj-is-bad.sh \
 t/discover.sh \
 t/dist-formats.tap \
+t/dist-lzma.sh \
+t/dist-tarZ.sh \
+t/dist-shar.sh \
 t/dist-auxdir-many-subdirs.sh \
 t/dist-auxfile-2.sh \
 t/dist-auxfile.sh \
@@ -656,7 +659,6 @@ t/ltinstloc.sh \
 t/ltlibobjs.sh \
 t/ltlibsrc.sh \
 t/ltorder.sh \
-t/lzma.sh \
 t/m4-inclusion.sh \
 t/maintclean.sh \
 t/maintclean-vpath.sh \
