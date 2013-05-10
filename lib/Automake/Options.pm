@@ -320,17 +320,20 @@ sub _process_option_list (\%@)
           # Obsolete (and now removed) de-ANSI-fication support.
           error ($where,
                  "automatic de-ANSI-fication support has been removed");
+          return 1;
         }
       # TODO: Remove this special check in Automake 3.0.
       elsif ($_ eq 'cygnus')
         {
           error $where, "support for Cygnus-style trees has been removed";
+          return 1;
         }
       # TODO: Remove this special check in Automake 3.0.
       elsif ($_ eq 'dist-lzma')
         {
           error ($where, "support for lzma-compressed distribution " .
                          "archives has been removed");
+          return 1;
         }
       # TODO: Make this a fatal error in Automake 2.0.
       elsif ($_ eq 'dist-shar')
@@ -361,7 +364,7 @@ sub _process_option_list (\%@)
                 if $opt eq $_ or ! exists $options->{$opt};
               error ($where,
                      "options '$_' and '$opt' are mutually exclusive");
-              last;
+              return 1;
             }
         }
       elsif (/^\d+\.\d+(?:\.\d+)?[a-z]?(?:-[A-Za-z0-9]+)?$/)
@@ -403,7 +406,7 @@ sub process_option_list (@)
   prog_error "local options already processed"
     if $_options_processed;
   $_options_processed = 1;
-  return _process_option_list (%_options, @_);
+  _process_option_list (%_options, @_);
 }
 
 sub process_global_option_list (@)
@@ -411,7 +414,7 @@ sub process_global_option_list (@)
   prog_error "global options already processed"
     if $_global_options_processed;
   $_global_options_processed = 1;
-  return _process_option_list (%_global_options, @_);
+  _process_option_list (%_global_options, @_);
 }
 
 =item C<set_strictness ($name)>
