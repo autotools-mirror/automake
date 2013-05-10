@@ -1148,7 +1148,7 @@ sub handle_silent ()
 ################################################################
 
 
-# Handle AUTOMAKE_OPTIONS variable.  Return 1 on error, 0 otherwise.
+# Handle AUTOMAKE_OPTIONS variable.  Return 0 on error, 1 otherwise.
 sub handle_options ()
 {
   my $var = var ('AUTOMAKE_OPTIONS');
@@ -1162,7 +1162,7 @@ sub handle_options ()
       my @options = map { { option => $_->[1], where => $_->[0] } }
 			$var->value_as_list_recursive (cond_filter => TRUE,
 						       location => 1);
-      return 1 if process_option_list (@options);
+      return 0 unless process_option_list (@options);
     }
 
   if ($strictness == GNITS)
@@ -1172,7 +1172,7 @@ sub handle_options ()
       set_option ('check-news', INTERNAL);
     }
 
-  return 0;
+  return 1;
 }
 
 # shadow_unconditionally ($varname, $where)
@@ -5280,7 +5280,7 @@ EOF
 	    {
 	      my @opts = split (' ', $args[1]);
 	      @opts = map { { option => $_, where => $where } } @opts;
-	      exit $exit_code if process_global_option_list (@opts);
+	      exit $exit_code unless process_global_option_list (@opts);
 	    }
 	}
       elsif ($macro eq 'AM_MAINTAINER_MODE')
@@ -7731,7 +7731,7 @@ sub generate_makefile
   $relative_dir = dirname ($makefile);
 
   read_main_am_file ($makefile_am, $makefile_in);
-  if (handle_options)
+  if (not handle_options)
     {
       # Process buffered warnings.
       flush_messages;

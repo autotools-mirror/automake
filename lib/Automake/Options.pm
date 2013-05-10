@@ -241,7 +241,7 @@ These functions should be called at most once for each set of options
 having the same precedence; i.e., do not call it twice for two options
 from C<AM_INIT_AUTOMAKE>.
 
-Return 1 on error, 0 otherwise.
+Return 0 on error, 1 otherwise.
 
 =cut
 
@@ -323,20 +323,20 @@ sub _process_option_list (\%@)
           # Obsolete (and now removed) de-ANSI-fication support.
           error ($where,
                  "automatic de-ANSI-fication support has been removed");
-          return 1;
+          return 0;
         }
       # TODO: Remove this special check in Automake 3.0.
       elsif ($_ eq 'cygnus')
         {
           error $where, "support for Cygnus-style trees has been removed";
-          return 1;
+          return 0;
         }
       # TODO: Remove this special check in Automake 3.0.
       elsif ($_ eq 'dist-lzma')
         {
           error ($where, "support for lzma-compressed distribution " .
                          "archives has been removed");
-          return 1;
+          return 0;
         }
       # TODO: Make this a fatal error in Automake 2.0.
       elsif ($_ eq 'dist-shar')
@@ -360,15 +360,17 @@ sub _process_option_list (\%@)
         }
       elsif ($_ eq 'tar-v7' || $_ eq 'tar-ustar' || $_ eq 'tar-pax')
         {
-          return 1
-            unless _option_is_from_configure ($_, $where);
+          if (not _option_is_from_configure ($_, $where))
+            {
+              return 0;
+            }
           for my $opt ('tar-v7', 'tar-ustar', 'tar-pax')
             {
               next
                 if $opt eq $_ or ! exists $options->{$opt};
               error ($where,
                      "options '$_' and '$opt' are mutually exclusive");
-              return 1;
+              return 0;
             }
         }
       elsif (/^\d+\.\d+(?:\.\d+)?[a-z]?(?:-[A-Za-z0-9]+)?$/)
@@ -378,7 +380,7 @@ sub _process_option_list (\%@)
             {
               error ($where, "require Automake $_, but have $VERSION",
                      uniq_scope => US_GLOBAL);
-              return 1;
+              return 0;
             }
         }
       elsif (/^(?:--warnings=|-W)(.*)$/)
@@ -389,7 +391,7 @@ sub _process_option_list (\%@)
       elsif (! _is_valid_easy_option $_)
         {
           error ($where, "option '$_' not recognized");
-          return 1;
+          return 0;
         }
     }
   # We process warnings here, so that any explicitly-given warning setting
@@ -401,7 +403,7 @@ sub _process_option_list (\%@)
           "unknown warning category '$w->{'cat'}'"
         if switch_warning $w->{cat};
     }
-  return 0;
+  return 1;
 }
 
 sub process_option_list (@)
