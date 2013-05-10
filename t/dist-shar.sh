@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2003-2013 Free Software Foundation, Inc.
+# Copyright (C) 2013 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,20 +14,21 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Check support for no-dist-gzip with lzma.
+# Check support for no-dist-gzip with dist-shar.
 
+required=shar
 . test-init.sh
 
-errmsg='support for lzma.*removed'
+errmsg='support for shar .*deprecated'
 
-echo AUTOMAKE_OPTIONS = dist-lzma > Makefile.am
-$ACLOCAL --force
-AUTOMAKE_fails -Wnone -Wno-error
+echo AUTOMAKE_OPTIONS = dist-shar > Makefile.am
+$ACLOCAL
+AUTOMAKE_fails -Wnone -Wobsolete
 grep "^Makefile\\.am:1:.*$errmsg" stderr
 
-cat > configure.ac << 'END'
-AC_INIT([lzma], [1.0])
-AM_INIT_AUTOMAKE([no-dist-gzip dist-lzma])
+cat > configure.ac <<END
+AC_INIT([$me], [1.0])
+AM_INIT_AUTOMAKE([no-dist-gzip dist-shar])
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT
 END
@@ -35,7 +36,12 @@ END
 
 rm -rf autom4te*.cache
 $ACLOCAL
-AUTOMAKE_fails -Wnone -Wno-error
+AUTOMAKE_run -Wno-error
 grep "^configure\\.ac:2:.*$errmsg" stderr
+
+$AUTOCONF
+./configure
+$MAKE distcheck
+test -f $distdir.shar.gz
 
 :
