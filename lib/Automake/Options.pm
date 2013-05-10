@@ -384,8 +384,7 @@ sub _process_option_list (\%@)
         }
       elsif (! _is_valid_easy_option $_)
         {
-          error ($where, "option '$_' not recognized",
-                 uniq_scope => US_GLOBAL);
+          error ($where, "option '$_' not recognized");
           return 1;
         }
     }
