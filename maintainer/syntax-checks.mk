@@ -94,17 +94,19 @@ sc_at_in_texi
 ## aclocal.
 automake_diff_no = 7
 aclocal_diff_no = 9
+sc_diff_automake sc_diff_aclocal: in=$($*_in)
+sc_diff_automake sc_diff_aclocal: out=$($*_script)
 sc_diff_automake sc_diff_aclocal: sc_diff_% :
 	@set +e; \
 	in=$*-in.tmp out=$*-out.tmp diffs=$*-diffs.tmp \
-	  && sed '/^#!.*[pP]rototypes/d' $(srcdir)/$*.in > $$in \
-	  && sed '/^# BEGIN.* PROTO/,/^# END.* PROTO/d' $* > $$out \
+	  && sed '/^#!.*[pP]rototypes/d' $(in) > $$in \
+	  && sed '/^# BEGIN.* PROTO/,/^# END.* PROTO/d' $(out) > $$out \
 	  && { diff -u $$in $$out > $$diffs; test $$? -eq 1; } \
 	  && added=`grep -v '^+++ ' $$diffs | grep -c '^+'` \
 	  && removed=`grep -v '^--- ' $$diffs | grep -c '^-'` \
 	  && test $$added,$$removed = $($*_diff_no),$($*_diff_no) \
 	  || { \
-	    echo "Found unexpected diffs between $*.in and $*"; \
+	    echo "Found unexpected diffs between $(in) and $(out)"; \
 	    echo "Lines added:   $$added"  ; \
 	    echo "Lines removed: $$removed"; \
 	    cat $$diffs; \
@@ -168,15 +170,15 @@ sc_pre_normal_post_install_uninstall:
 
 ## We never want to use "undef", only "delete", but for $/.
 sc_perl_no_undef:
-	@if grep -n -w 'undef ' $(srcdir)/automake.in | \
+	@if grep -n -w 'undef ' $(automake_in) | \
 	      grep -F -v 'undef $$/'; then \
-	  echo "Found undef in automake.in; use delete instead" 1>&2; \
+	  echo "Found 'undef' in the lines above; use 'delete' instead" 1>&2; \
 	  exit 1; \
 	fi
 
 ## We never want split (/ /,...), only split (' ', ...).
 sc_perl_no_split_regex_space:
-	@if grep -n 'split (/ /' $(srcdir)/automake.in; then \
+	@if grep -n 'split (/ /' $(automake_in) $(acloca_in); then \
 	  echo "Found bad split in the lines above." 1>&2; \
 	  exit 1; \
 	fi
@@ -186,7 +188,7 @@ sc_no_am_cd:
 	  $(xtests) \
 	  $(pms) \
 	  $(ams) \
-	  $(srcdir)/automake.in \
+	  $(automake_in) \
 	  $(srcdir)/doc/*.texi \
 	"; \
 	if grep -F 'am__cd' $$files; then \
@@ -197,22 +199,24 @@ sc_no_am_cd:
 
 ## Using @_ in a scalar context is most probably a programming error.
 sc_perl_at_uscore_in_scalar_context:
-	@if grep -Hn '[^@_A-Za-z0-9][_A-Za-z0-9]*[^) ] *= *@_' $(srcdir)/automake.in; then \
+	@if grep -Hn '[^%@_A-Za-z0-9][_A-Za-z0-9]*[^) ] *= *@_' \
+	    $(automake_in) $(aclocal_in); then \
 	  echo "Using @_ in a scalar context in the lines above." 1>&2; \
 	  exit 1; \
 	fi
 
-## Allow only few variables to be localized in Automake.
+## Allow only few variables to be localized in automake and aclocal.
 sc_perl_local:
-	@if egrep -v '^[ \t]*local \$$[_~]( *=|;)' $(srcdir)/automake.in | \
-	        grep '^[ \t]*local [^*]'; then \
+	@if egrep -v '^[ \t]*local \$$[_~]( *=|;)' \
+	      $(automake_in) $(aclocal_in) | \
+	    grep '^[ \t]*local [^*]'; then \
 	  echo "Please avoid 'local'." 1>&2; \
 	  exit 1; \
 	fi
 
 ## Don't let AMDEP_TRUE substitution appear in automake.in.
 sc_AMDEP_TRUE_in_automake_in:
-	@if grep '@AMDEP''_TRUE@' $(srcdir)/automake.in; then \
+	@if grep '@AMDEP''_TRUE@' $(automake_in); then \
 	  echo "Don't put AMDEP_TRUE substitution in automake.in" 1>&2; \
 	  exit 1; \
 	fi
@@ -617,7 +621,7 @@ sc_at_in_texi:
 	  exit 1; \
 	fi
 
-$(syntax_check_rules): automake aclocal
+$(syntax_check_rules): bin/automake bin/aclocal
 maintainer-check: $(syntax_check_rules)
 .PHONY: maintainer-check $(syntax_check_rules)
 

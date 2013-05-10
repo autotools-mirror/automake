@@ -18,7 +18,7 @@
 AC_PREREQ([2.69])
 AC_INIT([GNU Automake], [1.99a], [automake-ng@gnu.org])
 
-AC_CONFIG_SRCDIR([automake.in])
+AC_CONFIG_SRCDIR([bin/automake.in])
 AC_CONFIG_AUX_DIR([lib])
 
 AM_SILENT_RULES([yes])
