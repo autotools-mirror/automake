@@ -33,7 +33,6 @@ dist_script_DATA = \
   %D%/install-sh \
   %D%/mdate-sh \
   %D%/missing \
-  %D%/mkinstalldirs \
   %D%/ylwrap \
   %D%/depcomp \
   %D%/compile \
@@ -45,24 +44,14 @@ dist_script_DATA = \
 
 install-data-hook:
 	@$(POST_INSTALL)
-	@for f in $(dist_script_DATA); do echo $$f; done \
-	  | sed 's,^%D%/,,' \
-	  | ( st=0; \
-	      while read f; do \
-	        echo " chmod +x '$(DESTDIR)$(scriptdir)/$$f'"; \
-	        chmod +x "$(DESTDIR)$(scriptdir)/$$f" || st=1; \
-	      done; \
-	      exit $$st )
+	chmod +x $(patsubst %D%/%,'$(DESTDIR)$(scriptdir)/%',$(dist_script_DATA))
 
 installcheck-local: installcheck-executable-scripts
 installcheck-executable-scripts:
-	@for f in $(dist_script_DATA); do echo $$f; done \
-	  | sed 's,^%D%/,,' \
-	  | while read f; do \
-	      path="$(pkgvdatadir)/$$f"; \
-	      test -x "$$path" || echo $$path; \
-	    done \
-	  | sed 's/$$/: not executable/' \
-	  | grep . 1>&2 && exit 1; exit 0
+	@st=0; \
+	 for f in $(patsubst %D%/%,'$(scriptdir)/%',$(dist_script_DATA)); do \
+	   test -x $$f || { echo "$@: $$f: not executable" >&2; st=1; }; \
+	 done; \
+	 exit $$st;
 
 # vim: ft=automake noet

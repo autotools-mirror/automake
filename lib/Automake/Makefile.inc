@@ -48,8 +48,7 @@ CLEANFILES += $(nodist_perllib_DATA)
 %D%/Config.pm: %D%/Config.in Makefile
 	$(AM_V_at)rm -f $@ $@-t
 	$(AM_V_at)$(MKDIR_P) %D%
-	$(AM_V_GEN)in=Config.in \
-	  && $(do_subst) <$(srcdir)/%D%/Config.in >$@-t
+	$(AM_V_GEN)$(do_subst)
 	$(generated_file_finalize)
 EXTRA_DIST += %D%/Config.in
 

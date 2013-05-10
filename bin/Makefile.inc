@@ -51,13 +51,11 @@ uninstall-hook:
 	done
 
 # These files depend on Makefile so they are rebuilt if $(VERSION),
-# $(datadir) or other do_subst'ituted variables change.
-%D%/automake: %D%/automake.in
-%D%/aclocal: %D%/aclocal.in
-%D%/automake %D%/aclocal: Makefile %D%/gen-perl-protos
+# $(datadir) or other do_subst'd variables change.
+%D%/automake %D%/aclocal: %: %.in Makefile %D%/gen-perl-protos
 	$(AM_V_GEN)rm -f $@ $@-t $@-t2 \
 ## Common substitutions.
-	  && in=$@.in && $(do_subst) <$(srcdir)/$$in >$@-t \
+	  && $(do_subst)  \
 ## Auto-compute prototypes of perl subroutines.
 	  && $(PERL) -w $(srcdir)/%D%/gen-perl-protos $@-t > $@-t2 \
 	  && mv -f $@-t2 $@-t \

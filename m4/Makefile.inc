@@ -30,7 +30,6 @@ dist_automake_ac_DATA = \
   %D%/cond.m4 \
   %D%/cond-if.m4 \
   %D%/depend.m4 \
-  %D%/depout.m4 \
   %D%/dmalloc.m4 \
   %D%/extra-recurs.m4 \
   %D%/gcj.m4 \
@@ -38,8 +37,6 @@ dist_automake_ac_DATA = \
   %D%/install-sh.m4 \
   %D%/lex.m4 \
   %D%/lispdir.m4 \
-  %D%/maintainer.m4 \
-  %D%/make.m4 \
   %D%/minuso.m4 \
   %D%/missing.m4 \
   %D%/obsolete.m4 \
@@ -64,13 +61,10 @@ dist_automake_internal_ac_DATA = %D%/internal/ac-config-macro-dirs.m4
 # dependencies change and amversion.m4 happens to be a configure
 # dependency.  configure and amversion.m4 would be rebuilt in
 # loop otherwise.
-# Use '$(top_srcdir)' for the benefit of non-GNU makes: this is
-# how amversion.m4 appears in our dependencies.
-$(top_srcdir)/%D%/amversion.m4: $(srcdir)/configure.ac \
-                                $(srcdir)/%D%/amversion.in
+$(srcdir)/%D%/amversion.m4: $(srcdir)/%D%/amversion.in \
+                            $(srcdir)/configure.ac
 	$(AM_V_at)rm -f $@-t $@
-	$(AM_V_GEN)in=amversion.in \
-	  && $(do_subst) <$(srcdir)/%D%/amversion.in >$@-t
+	$(AM_V_GEN)$(do_subst)
 	$(generated_file_finalize)
 EXTRA_DIST += %D%/amversion.in
 

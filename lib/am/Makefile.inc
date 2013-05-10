@@ -22,28 +22,32 @@
 amdir = @amdir@
 
 dist_am_DATA = \
-  %D%/check.am \
-  %D%/check2.am \
-  %D%/clean-hdr.am \
-  %D%/clean.am \
+  %D%/am-dir.mk \
+  %D%/common-targets.mk \
+  %D%/color-tests.mk \
+  %D%/serial-tests.mk \
+  %D%/parallel-tests.mk \
+  %D%/check-typos.mk \
+  %D%/clean.mk \
+  %D%/header-vars.mk \
+  %D%/tags.mk \
+  %D%/dejagnu.mk \
+  %D%/distcheck.mk \
+  %D%/distdir.mk \
+  %D%/subdirs.mk \
+  %D%/texibuild.mk \
+  %D%/texinfos.mk \
   %D%/compile.am \
   %D%/configure.am \
   %D%/data.am \
-  %D%/dejagnu.am \
-  %D%/depend.am \
   %D%/depend2.am \
-  %D%/distdir.am \
   %D%/footer.am \
-  %D%/header-vars.am \
   %D%/header.am \
-  %D%/install.am \
-  %D%/inst-vars.am \
   %D%/java.am \
   %D%/lang-compile.am \
   %D%/lex.am \
   %D%/library.am \
   %D%/libs.am \
-  %D%/libtool.am \
   %D%/lisp.am \
   %D%/ltlib.am \
   %D%/ltlibrary.am \
@@ -54,11 +58,8 @@ dist_am_DATA = \
   %D%/python.am \
   %D%/remake-hdr.am \
   %D%/scripts.am \
-  %D%/subdirs.am \
-  %D%/tags.am \
   %D%/texi-vers.am \
-  %D%/texibuild.am \
-  %D%/texinfos.am \
+  %D%/texi-spec.am \
   %D%/vala.am \
   %D%/yacc.am
 

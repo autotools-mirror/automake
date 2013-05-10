@@ -21,6 +21,4 @@
 
 contrib_TESTS = \
   %D%/parallel-tests-html.sh \
-  %D%/parallel-tests-html-recursive.sh \
-  %D%/help-multilib.sh \
-  %D%/multilib.sh
+  %D%/parallel-tests-html-recursive.sh

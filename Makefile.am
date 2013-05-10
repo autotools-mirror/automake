@@ -32,32 +32,26 @@ nodist_noinst_SCRIPTS =
 ##  Top level.  ##
 ## ------------ ##
 
+# Distribution formats.
+AM_DIST_FORMATS = gzip xz
+
 EXTRA_DIST += \
   bootstrap.sh \
   GNUmakefile \
   HACKING \
-  PLANS
+  NG-NEWS \
+  PLANS \
+  $(gitlog_to_changelog_fixes)
 
 # We want a handful of substitutions to be fully-expanded by make;
 # then use config.status to substitute the remainder where a single
 # expansion is sufficient.  We use a funny notation here to avoid
 # configure substitutions in our text.
-do_subst = ( sed \
-  -e "s,[@]configure_input[@],Generated from $$in; do not edit by hand.,g" \
-  -e 's,[@]datadir[@],$(datadir),g' \
-  -e 's,[@]amdir[@],$(amdir),g' \
-  -e 's,[@]bindir[@],$(bindir),g' \
-  -e 's,[@]docdir[@],$(docdir),g' \
-  -e 's,[@]pkgvdatadir[@],$(pkgvdatadir),g' \
-  -e 's,[@]scriptdir[@],$(scriptdir),g' \
-  -e 's,[@]automake_acdir[@],$(automake_acdir),g' \
-  -e 's,[@]system_acdir[@],$(system_acdir),g' \
-## Hack to avoid a spurious substitution in the Automake script (part 1).
-  -e 's,[@]am__isrc[@],!!@!!am__isrc!!@!!,g' \
-  | $(SHELL) ./config.status --file=- \
-## Hack to avoid a spurious substitution in the Automake script (part 2).
-  | sed -e 's,!!@!!am__isrc!!@!!,@''am__isrc@,g' \
-  )
+do_subst = sed $(strip \
+  $(foreach x, data am bin doc pkgvdata script automake_ac system_ac, \
+              -e 's,@$(x)dir@,$($(x)dir),g')) \
+  -e "s,[@]configure_input@,Generated from $(<F) do not edit by hand.,g" \
+  <"$<" | $(SHELL) ./config.status --file=- >"$@-t"
 
 # Generated  files shouldn't contain unexpanded '@substitutions@', and
 # should be made read-only, to prevent them from being edited by mistake
@@ -93,26 +87,12 @@ ChangeLog:
 # Third-party, obsolescent or experimental stuff.
 EXTRA_DIST += \
   contrib/check-html.am \
-  contrib/multilib/README \
-  contrib/multilib/config-ml.in \
-  contrib/multilib/symlink-tree \
-  contrib/multilib/multilib.am \
-  contrib/multilib/multi.m4 \
   contrib/README
 
 # Older files, kept mostly for historical interest.
 EXTRA_DIST += \
-  old/ChangeLog-tests \
-  old/ChangeLog.96 \
-  old/ChangeLog.98 \
-  old/ChangeLog.00 \
-  old/ChangeLog.01 \
-  old/ChangeLog.02 \
-  old/ChangeLog.03 \
-  old/ChangeLog.04 \
-  old/ChangeLog.09 \
-  old/ChangeLog.11 \
-  old/TODO
+  $(addprefix old/ChangeLog., 96 98 00 01 02 03 04 09 11) \
+  old/ChangeLog-tests old/TODO
 
 # Maintainer-specific files and scripts.
 EXTRA_DIST += \

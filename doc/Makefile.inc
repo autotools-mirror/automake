@@ -19,37 +19,31 @@
 ##  Documentation.  ##
 ## ---------------- ##
 
-info_TEXINFOS = %D%/automake.texi %D%/automake-history.texi
-doc_automake_TEXINFOS = %D%/fdl.texi
-doc_automake_history_TEXINFOS = %D%/fdl.texi
+## ---------------- ##
+##  Documentation.  ##
+## ---------------- ##
 
-man1_MANS = \
-  %D%/aclocal.1 \
-  %D%/automake.1 \
-  %D%/aclocal-$(APIVERSION).1 \
-  %D%/automake-$(APIVERSION).1
-
-$(man1_MANS): $(top_srcdir)/configure.ac
+info_TEXINFOS = %D%/automake-ng.texi
+doc_automake_ng_TEXINFOS = %D%/fdl.texi
 
 CLEANFILES += $(man1_MANS)
 EXTRA_DIST += %D%/help2man
 
-update_mans = \
-  $(AM_V_GEN): \
-    && $(MKDIR_P) %D% \
-    && $(extend_PATH) \
-    && $(PERL) $(srcdir)/%D%/help2man --output=$@
+man1_MANS = $(versioned_mans) $(unversioned_mans)
 
-%D%/aclocal.1 %D%/automake.1:
-	$(AM_V_GEN): \
-	  && $(MKDIR_P) %D% \
-	  && f=`echo $@ | sed 's|.*/||; s|\.1$$||; $(transform)'` \
+unversioned_mans = %D%/aclocal.1 %D%/automake.1
+versioned_mans = %D%/aclocal-$(APIVERSION).1 %D%/automake-$(APIVERSION).1
+
+$(unversioned_mans): Makefile
+	$(AM_V_GEN)$(MKDIR_P) %D% \
+	  && f=`echo $(@D) | sed 's|.*/||; s|\.1$$||; $(transform)'` \
 	  && echo ".so man1/$$f-$(APIVERSION).1" > $@
 
-%D%/aclocal-$(APIVERSION).1: $(aclocal_script) lib/Automake/Config.pm
-	$(update_mans) aclocal-$(APIVERSION)
-%D%/automake-$(APIVERSION).1: $(automake_script) lib/Automake/Config.pm
-	$(update_mans) automake-$(APIVERSION)
+$(versioned_mans): %D%/%-$(APIVERSION).1: bin/% lib/Automake/Config.pm
+	 $(AM_V_GEN)$(MKDIR_P) %D% \
+	    && $(extend_PATH) \
+	    && $(PERL) $(srcdir)/%D%/help2man --output=$@ $*-$(APIVERSION)
+
 
 ## ---------------------------- ##
 ##  Example package "amhello".  ##
@@ -71,6 +65,7 @@ amhello_configury = \
   depcomp \
   install-sh \
   missing \
+  am-ng \
   src/Makefile.in
 
 dist_noinst_DATA += $(amhello_sources)
@@ -92,15 +87,15 @@ setup_autotools_paths = { \
 # whenever the Automake version changes.
 $(srcdir)/%D%/amhello-1.0.tar.gz: $(amhello_sources) $(srcdir)/configure.ac
 	$(AM_V_GEN)tmp=amhello-output.tmp \
-	  && $(am__cd) $(srcdir)/%D%/amhello \
+	  && cd $(srcdir)/%D%/amhello \
 	  && : Make our	aclocal and automake avaiable before system ones. \
 	  && $(setup_autotools_paths) \
 	  && ( \
 	    { $(AM_V_P) || exec 5>&2 >$$tmp 2>&1; } \
 	      && $(am_AUTORECONF) -vfi \
 	      && ./configure \
-	      && $(MAKE) $(AM_MAKEFLAGS) distcheck \
-	      && $(MAKE) $(AM_MAKEFLAGS) distclean \
+	      && $(MAKE) distcheck \
+	      && $(MAKE) distclean \
 	      || { \
 	        if $(AM_V_P); then :; else \
 	          echo "$@: recipe failed." >&5; \
