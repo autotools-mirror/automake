@@ -245,6 +245,7 @@ Return 1 on error, 0 otherwise.
 
 =cut
 
+# $BOOL
 # _option_must_be_from_configure ($OPTION, $WHERE)
 # ----------------------------------------------
 # Check that the $OPTION given in location $WHERE is specified with
@@ -252,13 +253,15 @@ Return 1 on error, 0 otherwise.
 sub _option_must_be_from_configure ($$)
 {
   my ($opt, $where)= @_;
-  return
+  return 1
     if $where->get =~ /^configure\./;
   error $where,
         "option '$opt' can only be used as argument to AM_INIT_AUTOMAKE\n" .
         "but not in AUTOMAKE_OPTIONS makefile statements";
+  return 0;
 }
 
+# $BOOL
 # _is_valid_easy_option ($OPTION)
 # -------------------------------
 # Explicitly recognize valid automake options that require no
@@ -357,7 +360,8 @@ sub _process_option_list (\%@)
         }
       elsif ($_ eq 'tar-v7' || $_ eq 'tar-ustar' || $_ eq 'tar-pax')
         {
-          _option_must_be_from_configure ($_, $where);
+          return 1
+            unless _option_must_be_from_configure ($_, $where);
           for my $opt ('tar-v7', 'tar-ustar', 'tar-pax')
             {
               next
