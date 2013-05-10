@@ -344,6 +344,7 @@ sub _process_option_list (\%@)
         {
           error ($where, "support for shar distribution archives has " .
                          "been removed.");
+          $ret = 0;
         }
       # TODO: Remove this special check in Automake 3.0.
       elsif ($_ eq 'dist-tarZ')
@@ -351,6 +352,7 @@ sub _process_option_list (\%@)
           error ($where, "support for distribution archives compressed " .
                          "with legacy program 'compress' has " .
                          "been removed.");
+          $ret = 0;
         }
       elsif (/^filename-length-max=(\d+)$/)
         {
