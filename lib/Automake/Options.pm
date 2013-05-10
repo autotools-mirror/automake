@@ -402,16 +402,16 @@ sub process_option_list (@)
 {
   prog_error "local options already processed"
     if $_options_processed;
-  return _process_option_list (%_options, @_);
   $_options_processed = 1;
+  return _process_option_list (%_options, @_);
 }
 
 sub process_global_option_list (@)
 {
   prog_error "global options already processed"
     if $_global_options_processed;
-  return _process_option_list (%_global_options, @_);
   $_global_options_processed = 1;
+  return _process_option_list (%_global_options, @_);
 }
 
 =item C<set_strictness ($name)>
