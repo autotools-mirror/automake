@@ -92,9 +92,9 @@ dosubst automake-$APIVERSION/Automake/Config.in \
 dosubst m4/amversion.in m4/amversion.m4
 
 # Create temporary replacement for aclocal and automake.
-for p in aclocal automake; do
+for p in bin/aclocal bin/automake; do
   dosubst $p.in $p.tmp
-  $PERL -w lib/gen-perl-protos $p.tmp > $p.tmp2
+  $PERL -w bin/gen-perl-protos $p.tmp > $p.tmp2
   mv -f $p.tmp2 $p.tmp
 done
 
@@ -106,11 +106,11 @@ mv -f testsuite-autodeps.tmp testsuite-autodeps.am
 # Run the autotools.  Bail out if any warning is triggered.
 # Use '-I' here so that our own *.m4 files in m4/ gets included,
 # not copied, in aclocal.m4.
-$PERL ./aclocal.tmp -Wall -Werror -I m4 \
-                    --automake-acdir=m4 --system-acdir=m4/acdir
+$PERL ./bin/aclocal.tmp -Wall -Werror -I m4 \
+                        --automake-acdir=m4 --system-acdir=m4/acdir
 $AUTOCONF -Wall -Werror
-$PERL ./automake.tmp -Wall -Werror
+$PERL ./bin/automake.tmp -Wall -Werror
 
 # Remove temporary files and directories.
 rm -rf aclocal-$APIVERSION automake-$APIVERSION
-rm -f aclocal.tmp automake.tmp
+rm -f bin/aclocal.tmp bin/automake.tmp
