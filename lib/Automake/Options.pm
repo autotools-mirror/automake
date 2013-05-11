@@ -379,8 +379,7 @@ sub _process_option_list (\%@)
           # Got a version number.
           if (Automake::Version::check ($VERSION, $&))
             {
-              error ($where, "require Automake $_, but have $VERSION",
-                     uniq_scope => US_GLOBAL);
+              error ($where, "require Automake $_, but have $VERSION");
               $ret = 0;
             }
         }
