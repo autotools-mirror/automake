@@ -106,6 +106,12 @@ AC_PROVIDE_IFELSE([AC_PROG_OBJCXX],
 		  [m4_define([AC_PROG_OBJCXX],
 			     m4_defn([AC_PROG_OBJCXX])[_AM_DEPENDENCIES([OBJCXX])])])dnl
 ])
+dnl Automatically invoke AM_PROG_CC_C_O as necessary.  Since AC_PROG_CC is
+dnl usually called after AM_INIT_AUTOMAKE, we arrange for the test to be
+dnl done later by AC_CONFIG_COMMANDS_PRE.
+AC_CONFIG_COMMANDS_PRE([AC_PROVIDE_IFELSE(
+    [AC_PROG_CC],
+    [AC_LANG_PUSH([C]) AM_PROG_CC_C_O AC_LANG_POP([C])])])dnl
 AC_REQUIRE([AM_SILENT_RULES])dnl
 dnl The testsuite driver may need to know about EXEEXT, so add the
 dnl 'am__EXEEXT' conditional if _AM_COMPILER_EXEEXT was seen.  This
@@ -161,52 +167,6 @@ dnl add the conditional right here, as _AC_COMPILER_EXEEXT may be further
 dnl mangled by Autoconf and run in a shell conditional statement.
 m4_define([_AC_COMPILER_EXEEXT],
 m4_defn([_AC_COMPILER_EXEEXT])[m4_provide([_AM_COMPILER_EXEEXT])])
-
-dnl We have to redefine AC_PROG_CC to allow our compile rules to use
-dnl "-c -o" together also with losing compilers.
-dnl FIXME: Add references to the original discussion and bug report.
-dnl FIXME: Shameless copy & paste from Autoconf internals, since trying to
-dnl        play smart among tangles of AC_REQUIRE, m4_defn, m4_provide and
-dnl        other tricks was proving too difficult, and in the end, likely
-dnl        more brittle too.  And this should anyway be just a temporary
-dnl        band-aid, until Autoconf provides the semantics and/or hooks we
-dnl        need (hint hint, nudge nudge) ...
-AC_DEFUN([AC_PROG_CC],
-m4_defn([AC_PROG_CC])
-[AC_REQUIRE([AM_AUX_DIR_EXPAND])dnl
-AC_REQUIRE_AUX_FILE([compile])dnl
-dnl FIXME The following abomination is expected to disappear in
-dnl       Automake 1.14.
-AC_MSG_CHECKING([whether $CC understands -c and -o together])
-set dummy $CC; am__cc=`AS_ECHO(["$[2]"]) | \
-                       sed 's/[[^a-zA-Z0-9_]]/_/g;s/^[[0-9]]/_/'`
-AC_CACHE_VAL([am_cv_prog_cc_${am__cc}_c_o],
-[AC_LANG_CONFTEST([AC_LANG_PROGRAM([])])
-# Make sure it works both with $CC and with simple cc.
-# We do the test twice because some compilers refuse to overwrite an
-# existing .o file with -o, though they will create one.
-ac_try='$CC -c conftest.$ac_ext -o conftest2.$ac_objext >&AS_MESSAGE_LOG_FD'
-rm -f conftest2.*
-if _AC_DO_VAR(ac_try) && test -f conftest2.$ac_objext
-then
-  eval am_cv_prog_cc_${am__cc}_c_o=yes
-else
-  eval am_cv_prog_cc_${am__cc}_c_o=no
-fi
-rm -f core conftest*
-])dnl
-if eval test \"\$am_cv_prog_cc_${am__cc}_c_o\" = yes; then
-  AC_MSG_RESULT([yes])
-else
-  AC_MSG_RESULT([no])
-  # Losing compiler, so wrap it with the 'compile' script.
-  # FIXME: It is wrong to rewrite CC.
-  # But if we don't then we get into trouble of one sort or another.
-  # A longer-term fix would be to have automake use am__CC in this case,
-  # and then we could set am__CC="\$(top_srcdir)/compile \$(CC)"
-  CC="$am_aux_dir/compile $CC"
-fi
-])
 
 # When config.status generates a header, we must update the stamp-h file.
 # This file resides in the same directory as the config header

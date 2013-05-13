@@ -23,6 +23,7 @@ AC_PROG_CC
 AC_PROG_CXX
 AC_PROG_YACC
 AC_CONFIG_FILES([sub/Makefile])
+AC_OUTPUT
 END
 
 $ACLOCAL
@@ -75,7 +76,7 @@ rm -f compile
 $AUTOMAKE --add-missing 2>stderr || { cat stderr >&2; exit 1; }
 cat stderr >&2
 # Make sure compile is installed, and that Automake says so.
-grep '^configure\.ac:4:.*install.*compile' stderr
+grep '^configure\.ac:[48]:.*install.*compile' stderr
 test -f compile
 
 grep '^generic/a\.\$(OBJEXT):' Makefile.in
