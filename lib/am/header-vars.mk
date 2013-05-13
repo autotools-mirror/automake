@@ -38,7 +38,7 @@ MAKEFLAGS += --no-builtin-rules
 	@:
 
 # Declare an error, without immediately terminating the execution (proper
-# code will take care later of that).  This will allow us to diagnose more
+# code will take care of that later).  This will allow us to diagnose more
 # issues at once, rather than stopping at the first one.
 am.error.seen :=
 define am.error
@@ -158,27 +158,27 @@ am.vpath.rewrite = \
 # with mainline Automake.
 DESTDIR ?=
 
-# Shell code that determines whether the current make instance is
-# running with a given letter option (e.g., -k, -n) that takes
-# no argument.  It is either 'true' or 'false', so that it can be
-# easily used in shell code as well as in GNU make conditionals.
+# Determine whether the current make instance is running with a given
+# single-character option (e.g., -k, -n) that takes no argument.
+# It is either 'true' or 'false', so that it can be easily used in
+# shell code as well as in GNU make conditionals.
 # Use $(MFLAGS), not $(MAKEFLAGS), since the former doesn't contain
 # the command line variable definitions, and it always begins with
 # a hyphen unless it is empty, assumptions that allow a simpler
 # implementation.  It is worthwhile to note that, when expanded
 # from the top-level make, $(MFLAGS) doesn't contain references to
 # options that take an argument, either mandatory (e.g., '-I') or
-# optional (e.g., '-O').  This *vastly* semplifies the implementation
+# optional (e.g., '-O').  This *vastly* simplifies the implementation
 # of this macro.
 am.make.is-running-with-option = \
   $(if $(findstring $(strip $1),filter-out --%,$(MFLAGS)),true,false)
 
-# Tell whether make is running in "dry mode".
+# Tell whether make is running in dry mode ("make -n") or not.
 am.make.dry-run := $(call am.make.is-running-with-option, n)
 
-# Shell code that determines whether make is running in "keep-going mode"
-# ("make -k") or not.  Useful in rules that must recursively descend into
-# subdirectories, and decide whether to stop at the first error or not.
+# Tell whether make is running in "keep-going mode" ("make -k") or not.
+# Useful in rules that must recursively descend into subdirectories,
+# and decide whether to stop at the first error or not.
 am.make.keep-going := $(call am.make.is-running-with-option, k)
 
 am.util.strip-first-word = $(wordlist 2,$(words $(1)),$(1))
