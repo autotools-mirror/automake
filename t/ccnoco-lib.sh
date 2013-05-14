@@ -24,26 +24,27 @@ cat >> configure.ac << 'END'
 AC_PROG_CC
 $CC --version || exit 1
 $CC -v || exit 1
+AC_PROG_RANLIB
+AM_PROG_AR
 AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
-bin_PROGRAMS = wish
-wish_SOURCES = a.c
+mylibsdir = $(libdir)/my-libs
+mylibs_LIBRARIES = libwish.a
+libwish_a_SOURCES = a.c
 # Make sure we need something strange.
-wish_CFLAGS = -g
+libwish_CFLAGS = -O0
 END
 
 cat > a.c << 'END'
-#include <stdio.h>
-
-int main ()
+int wish_granted (void)
 {
-   printf ("hi\n");
+   return 0;
 }
 END
 
-# Make sure the compiler doesn't understand '-c -o'.
+# Make sure the compiler doesn't understand '-c -o'
 CC=$am_testaux_builddir/cc-no-c-o; export CC
 
 $ACLOCAL

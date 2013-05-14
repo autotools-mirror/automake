@@ -14,38 +14,36 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Test to make sure we can compile when the compiler doesn't
-# understand '-c -o'.
+# Test to make sure we can compile libtool libraries when the compiler
+# doesn't understand '-c -o'.
 
-required=gcc # For cc-no-c-o.
+required='gcc libtoolize' # For cc-no-c-o.
 . test-init.sh
 
 cat >> configure.ac << 'END'
 AC_PROG_CC
-$CC --version || exit 1
-$CC -v || exit 1
+AM_PROG_AR
+LT_INIT
+$CC --version
+$CC -v
 AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
-bin_PROGRAMS = wish
-wish_SOURCES = a.c
-# Make sure we need something strange.
-wish_CFLAGS = -g
+lib_LTLIBRARIES = libwish.la
 END
 
-cat > a.c << 'END'
-#include <stdio.h>
-
-int main ()
+cat > libwish.c << 'END'
+int wish_granted (void)
 {
-   printf ("hi\n");
+   return 0;
 }
 END
 
 # Make sure the compiler doesn't understand '-c -o'.
 CC=$am_testaux_builddir/cc-no-c-o; export CC
 
+libtoolize --verbose --install
 $ACLOCAL
 $AUTOCONF
 $AUTOMAKE --copy --add-missing
@@ -62,7 +60,13 @@ for vpath in : false; do
   cat stdout
   $EGREP 'understands? -c and -o together.* no$' stdout
   # No repeated checks please.
-  test $(grep -c ".*-c['\" ].*-o['\" ]" stdout) -eq 1
+  test $(grep ".*-c['\" ].*-o['\" ]" stdout \
+          | $FGREP -v ' -c -o file.o' | wc -l) -eq 1
+  # Once we have rewritten $CC to use our 'compile' wrapper script,
+  # libtool should pick it up correctly, and not mess with the
+  # redefinition.
+  grep '^checking if .*/compile .*supports -c -o file\.o\.\.\. yes' stdout
+  # And of course, we should be able to build our package.
   $MAKE
   cd $srcdir
 done

@@ -22,9 +22,9 @@ required=cc
 
 cat >>configure.ac <<EOF
 AC_CONFIG_MACRO_DIR([m4])
+AC_PROG_CC
 AC_PROG_RANLIB
 AM_PROG_AR
-AC_PROG_CC
 MY_MACRO
 AC_CONFIG_FILES([lib/Makefile])
 AC_OUTPUT

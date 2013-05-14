@@ -13,13 +13,15 @@
 AC_DEFUN([AM_PROG_AR],
 [AC_BEFORE([$0], [LT_INIT])dnl
 AC_BEFORE([$0], [AC_PROG_LIBTOOL])dnl
+AC_BEFORE([AC_PROG_CC])
 AC_REQUIRE([AM_AUX_DIR_EXPAND])dnl
 AC_REQUIRE_AUX_FILE([ar-lib])dnl
 AC_CHECK_TOOLS([AR], [ar lib "link -lib"], [false])
 : ${AR=ar}
 
 AC_CACHE_CHECK([the archiver ($AR) interface], [am_cv_ar_interface],
-  [am_cv_ar_interface=ar
+  [AC_LANG_PUSH([C])
+   am_cv_ar_interface=ar
    AC_COMPILE_IFELSE([AC_LANG_SOURCE([[int some_variable = 0;]])],
      [am_ar_try='$AR cru libconftest.a conftest.$ac_objext >&AS_MESSAGE_LOG_FD'
       AC_TRY_EVAL([am_ar_try])
@@ -36,7 +38,7 @@ AC_CACHE_CHECK([the archiver ($AR) interface], [am_cv_ar_interface],
       fi
       rm -f conftest.lib libconftest.a
      ])
-   ])
+   AC_LANG_POP([C])])
 
 case $am_cv_ar_interface in
 ar)

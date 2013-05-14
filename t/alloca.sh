@@ -19,8 +19,8 @@
 . test-init.sh
 
 cat >> configure.ac <<'END'
-AM_PROG_AR
 AC_PROG_CC
+AM_PROG_AR
 END
 
 cat > Makefile.am << 'END'

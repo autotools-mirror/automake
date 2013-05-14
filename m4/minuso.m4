@@ -9,7 +9,8 @@
 # --------------
 # Like AC_PROG_CC_C_O, but changed for automake.
 AC_DEFUN_ONCE([AM_PROG_CC_C_O],
-[AC_REQUIRE([AC_PROG_CC_C_O])dnl
+[AC_LANG_PUSH([C])
+AC_REQUIRE([AC_PROG_CC_C_O])dnl
 AC_REQUIRE([AM_AUX_DIR_EXPAND])dnl
 AC_REQUIRE_AUX_FILE([compile])dnl
 # FIXME: we rely on the cache variable name because
@@ -25,6 +26,7 @@ if test "$am_t" != yes; then
    # and then we could set am__CC="\$(top_srcdir)/compile \$(CC)"
    CC="$am_aux_dir/compile $CC"
 fi
+AC_LANG_POP([C])
 dnl Make sure AC_PROG_CC is never called again, or it will override our
 dnl setting of CC.
 m4_define([AC_PROG_CC],

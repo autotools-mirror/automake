@@ -208,8 +208,11 @@ t/canon7.sh \
 t/canon8.sh \
 t/canon-name.sh \
 t/ccnoco.sh \
+t/ccnoco-lib.sh \
+t/ccnoco-lt.sh \
 t/ccnoco3.sh \
 t/ccnoco4.sh \
+t/ccnoco-deps.sh \
 t/check.sh \
 t/check2.sh \
 t/check4.sh \

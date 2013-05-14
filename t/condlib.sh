@@ -22,8 +22,8 @@
 cat >> configure.ac << 'END'
 AC_PROG_RANLIB
 AM_MAINTAINER_MODE
-AM_PROG_AR
 AC_PROG_CC
+AM_PROG_AR
 END
 
 cat > Makefile.am << 'END'
