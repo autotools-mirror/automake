@@ -56,6 +56,7 @@ uninstall-hook:
 %D%/aclocal: %D%/aclocal.in
 %D%/automake %D%/aclocal: Makefile %D%/gen-perl-protos
 	$(AM_V_GEN)rm -f $@ $@-t $@-t2 \
+	  && $(MKDIR_P) $(@D) \
 ## Common substitutions.
 	  && in=$@.in && $(do_subst) <$(srcdir)/$$in >$@-t \
 ## Auto-compute prototypes of perl subroutines.
