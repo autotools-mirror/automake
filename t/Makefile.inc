@@ -235,9 +235,7 @@ check-no-trailing-backslash-in-recipes:
 # long discussion about automake bug#13378.
 check-cc-no-c-o:
 	$(AM_V_at)$(MAKE) $(AM_MAKEFLAGS) check \
-	  AM_TESTSUITE_SIMULATING_NO_CC_C_O=yes \
-	  CC='$(abs_top_builddir)/%D%/ax/cc-no-c-o' \
-	  GNU_CC='$(abs_top_builddir)/%D%/ax/cc-no-c-o'
+	  AM_TESTSUITE_SIMULATING_NO_CC_C_O=yes
 .PHONY: check-cc-no-c-o
 
 ## Checking the list of tests.
