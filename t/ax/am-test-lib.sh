@@ -765,6 +765,11 @@ require_tool ()
   case $1 in
     cc|c++|fortran|fortran77)
       require_compiler_ $1;;
+    -c-o)
+      if test x"$AM_TESTSUITE_SIMULATING_NO_CC_C_O" = x"yes"; then
+        skip_all_ "need a C compiler that grasps -c and -o together"
+      fi
+      ;;
     xsi-lib-shell)
       if test x"$am_test_prefer_config_shell" = x"yes"; then
         require_xsi "$SHELL"
