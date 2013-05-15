@@ -224,7 +224,7 @@ check-local: check-tests-syntax
 # that helps catching such problems in Automake-generated recipes.
 # See automake bug#10436.
 check-no-trailing-backslash-in-recipes:
-	$(AM_V_at)$(MAKE) $(AM_MAKEFLAGS) check \
+	$(AM_V_GEN)$(MAKE) $(AM_MAKEFLAGS) check \
 	  CONFIG_SHELL='$(abs_top_builddir)/%D%/ax/shell-no-trail-bslash'
 .PHONY: check-no-trailing-backslash-in-recipes
 
@@ -234,9 +234,8 @@ check-no-trailing-backslash-in-recipes:
 # otherwise only present themselves later "in the wild".  See also the
 # long discussion about automake bug#13378.
 check-cc-no-c-o:
-	$(AM_V_at)$(MAKE) $(AM_MAKEFLAGS) check \
-	  CC='$(abs_top_builddir)/%D%/ax/cc-no-c-o' \
-	  GNU_CC='$(abs_top_builddir)/%D%/ax/cc-no-c-o'
+	$(AM_V_GEN)$(MAKE) $(AM_MAKEFLAGS) check \
+	  AM_TESTSUITE_SIMULATING_NO_CC_C_O=yes
 .PHONY: check-cc-no-c-o
 
 ## Checking the list of tests.
@@ -246,13 +245,14 @@ include %D%/CheckListOfTests.am
 # Run the testsuite with the installed aclocal and automake.
 installcheck-local: installcheck-testsuite
 installcheck-testsuite:
-	am_running_installcheck=yes $(MAKE) $(AM_MAKEFLAGS) check
+	$(AM_V_GEN)$(MAKE) $(AM_MAKEFLAGS) check \
+	  am_running_installcheck=yes
 
 # Performance tests.
 .PHONY: perf
 perf: all
-	$(MAKE) $(AM_MAKEFLAGS) TEST_SUITE_LOG='$(PERF_TEST_SUITE_LOG)'	\
-	                        TESTS='$(perf_TESTS)' check
+	$(AM_V_GEN)$(MAKE) $(AM_MAKEFLAGS) check \
+	  TEST_SUITE_LOG='$(PERF_TEST_SUITE_LOG)' TESTS='$(perf_TESTS)'
 PERF_TEST_SUITE_LOG = %D%/perf/test-suite.log
 CLEANFILES += $(PERF_TEST_SUITE_LOG)
 EXTRA_DIST += $(perf_TESTS)
