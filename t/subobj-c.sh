@@ -74,7 +74,7 @@ $AUTOMAKE --add-missing 2>stderr || { cat stderr >&2; exit 1; }
 cat stderr >&2
 
 # Make sure compile is installed, and that Automake says so.
-grep '^configure\.ac:4:.*install.*compile' stderr
+grep '^configure\.ac:7:.*install.*compile' stderr
 test -f compile
 
 $EGREP '[^/](a|b|foo)\.\$(OBJEXT)' Makefile.in && exit 1
