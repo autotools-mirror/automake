@@ -25,9 +25,9 @@ required='cc libtoolize'
 . test-init.sh
 
 cat >> configure.ac << 'END'
-AC_PROG_CC
 AM_PROG_AR
 AC_PROG_LIBTOOL
+AC_PROG_CC
 AC_OUTPUT
 END
 

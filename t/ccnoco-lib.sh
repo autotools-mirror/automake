@@ -44,11 +44,11 @@ int wish_granted (void)
 }
 END
 
-# Make sure the compiler doesn't understand '-c -o'
+# Make sure the compiler doesn't understand '-c -o'.
 CC=$am_testaux_builddir/cc-no-c-o; export CC
 
 $ACLOCAL
-$AUTOCONF
+$AUTOCONF -Wall -Werror
 $AUTOMAKE --copy --add-missing
 
 for vpath in : false; do

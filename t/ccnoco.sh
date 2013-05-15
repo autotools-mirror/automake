@@ -47,7 +47,7 @@ END
 CC=$am_testaux_builddir/cc-no-c-o; export CC
 
 $ACLOCAL
-$AUTOCONF
+$AUTOCONF -Wall -Werror
 $AUTOMAKE --copy --add-missing
 
 for vpath in : false; do

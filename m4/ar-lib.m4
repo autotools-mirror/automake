@@ -13,7 +13,6 @@
 AC_DEFUN([AM_PROG_AR],
 [AC_BEFORE([$0], [LT_INIT])dnl
 AC_BEFORE([$0], [AC_PROG_LIBTOOL])dnl
-AC_BEFORE([AC_PROG_CC])
 AC_REQUIRE([AM_AUX_DIR_EXPAND])dnl
 AC_REQUIRE_AUX_FILE([ar-lib])dnl
 AC_CHECK_TOOLS([AR], [ar lib "link -lib"], [false])

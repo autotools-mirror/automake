@@ -9,8 +9,10 @@
 # This macro actually does too much.  Some checks are only needed if
 # your package does certain things.  But this isn't really a big deal.
 
-dnl Redefine AC_PROG_CC to automatically invoke AM_PROG_CC_C_O.
-m4_define([AC_PROG_CC], m4_defn([AC_PROG_CC])[AM_PROG_CC_C_O
+dnl Redefine AC_PROG_CC to automatically invoke _AM_PROG_CC_C_O.
+m4_define([AC_PROG_CC],
+m4_defn([AC_PROG_CC])
+[_AM_PROG_CC_C_O
 ])
 
 # AM_INIT_AUTOMAKE(PACKAGE, VERSION, [NO-DEFINE])

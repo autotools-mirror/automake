@@ -387,11 +387,6 @@ AC_ARG_VAR([AM_TEST_RUNNER_SHELL],
 
 # Look for C, C++ and fortran compilers to be used in the testsuite.
 
-dnl We don't care whether the C Compiler supports "-c -o" together
-dnl or not.  OTOH, we don't want $CC to be rewritten, so we must
-dnl redefine AM_PROG_CC_C_O to be a no-op.
-m4_define([AM_PROG_CC_C_O], [])
-
 dnl We don't want to abort our configuration script if no C compiler is
 dnl available, as such a compiler is only required to run part of the
 dnl testsuite, not to build or install Automake.  Ditto for C++, Fortran

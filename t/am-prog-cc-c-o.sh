@@ -29,25 +29,28 @@ echo 'int main (void) { return 0; }' > foo.c
 
 cp configure.ac configure.bak
 
-cat >> configure.ac << 'END'
-# Since AM_PROG_CC_C_O rewrites $CC, it's an error to call AC_PROG_CC
-# after it.
-AM_PROG_CC_C_O
-AC_PROG_CC
+cat > acinclude.m4 <<'END'
+AC_DEFUN([AM_TWEAKED_OUTPUT], [
+# For debugging.
+printf "CC = '%s'\\n" "$CC"
+# Make sure that $CC can be used after AM_PROG_CC_C_O.
+$CC --version || exit 1
+$CC -v || exit 1
+# $CC rewrite should only take place on time.
+case " $CC " in
+  *" compile"*" compile"*) AC_MSG_ERROR([CC rewritten twice]);;
+esac
+AC_OUTPUT
+])
 END
 
-$ACLOCAL -Wnone 2>stderr && { cat stderr >&2; exit 1; }
-cat stderr >&2
-grep '^configure\.ac:7:.* AC_PROG_CC .*called after AM_PROG_CC_C_O' stderr
+# ---
 
 cat configure.bak - > configure.ac << 'END'
 dnl It's OK to call AM_PROG_CC_C_O after AC_PROG_CC.
 AC_PROG_CC
 AM_PROG_CC_C_O
-# Make sure that $CC can be used after AM_PROG_CC_C_O.
-$CC --version || exit 1
-$CC -v || exit 1
-AC_OUTPUT
+AM_TWEAKED_OUTPUT
 END
 
 $ACLOCAL
@@ -61,21 +64,49 @@ if test "$AM_TESTSUITE_SIMULATING_NO_CC_C_O" != no; then
 else
   $EGREP 'understands? -c and -o together.* yes$' stdout
 fi
+
 # No repeated checks please.
 test $(grep -c ".*-c['\" ].*-o['\" ]" stdout) -eq 1
+
 $MAKE
-
 $MAKE maintainer-clean
-
 rm -rf autom4te*.cache
+
+# ---
+
+cat configure.bak - > configure.ac << 'END'
+dnl It's also OK to call AM_PROG_CC_C_O *before* AC_PROG_CC.
+AM_PROG_CC_C_O
+AC_PROG_CC
+AM_TWEAKED_OUTPUT
+END
+
+$ACLOCAL
+$AUTOCONF
+$AUTOMAKE --add-missing
+
+./configure >stdout || { cat stdout; exit 1; }
+cat stdout
+if test "$AM_TESTSUITE_SIMULATING_NO_CC_C_O" != no; then
+  $EGREP 'understands? -c and -o together.* no$' stdout
+else
+  $EGREP 'understands? -c and -o together.* yes$' stdout
+fi
+
+# Repeated checks are OK in this case, but should be cached.
+test $(grep ".*-c['\" ].*-o['\" ]" stdout \
+        | $FGREP -v ' (cached) ' | wc -l) -eq 1
+
+$MAKE
+$MAKE maintainer-clean
+rm -rf autom4te*.cache
+
+# ---
 
 cat configure.bak - > configure.ac << 'END'
 dnl It's also OK to call AM_PROG_CC_C_O *without* AC_PROG_CC.
 AM_PROG_CC_C_O
-# Make sure that $CC can be used after AM_PROG_CC_C_O.
-$CC --version || exit 1
-$CC -v || exit 1
-AC_OUTPUT
+AM_TWEAKED_OUTPUT
 END
 
 $ACLOCAL
