@@ -637,6 +637,19 @@ require_tool ()
       echo "$me: running bison --version"
       bison --version || skip_all_ "required program 'bison' not available"
       ;;
+    valac)
+      echo "$me: running valac --version"
+      if ! valac --version; then
+        skip_all_ "required program 'valac' not available"
+      elif cross_compiling; then
+        skip_all_ "cross-compiling valac-generated C files is brittle"
+      fi
+      # TODO: We also know we need GNU make, the C compiler, and pkg-config
+      # here, but there is no easy way to express this with the current
+      # code organization.  We should improve the situation, sooner or
+      # later.  At which point the tests requiring 'valac' can drop the
+      # explicit requirements for those tools.
+      ;;
     *)
       # Generic case: the tool must support --version.
       echo "$me: running $1 --version"

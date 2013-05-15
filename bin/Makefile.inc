@@ -54,6 +54,7 @@ uninstall-hook:
 # $(datadir) or other do_subst'd variables change.
 %D%/automake %D%/aclocal: %: %.in Makefile %D%/gen-perl-protos
 	$(AM_V_GEN)rm -f $@ $@-t $@-t2 \
+	  && $(MKDIR_P) $(@D) \
 ## Common substitutions.
 	  && $(do_subst)  \
 ## Auto-compute prototypes of perl subroutines.

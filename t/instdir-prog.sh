@@ -64,11 +64,11 @@ cd build
 ../configure --prefix="$instdir" PYTHON="echo" \
              am_cv_python_pythondir="$instdir/python" \
              am_cv_python_pyexecdir="$instdir/pyexec"
+
 $MAKE
 
 xMAKE () { $MAKE bindir= libdir= pyexecdir= "$@"; }
 
-export bindir libdir pyexecdir
 xMAKE install
 test ! -e "$instdir"
 xMAKE install DESTDIR="$destdir"

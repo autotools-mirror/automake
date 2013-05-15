@@ -56,7 +56,11 @@ $AUTOMAKE --add-missing
 
 ./configure >stdout || { cat stdout; exit 1; }
 cat stdout
-grep 'understands -c and -o together.* yes$' stdout
+if test "$AM_TESTSUITE_SIMULATING_NO_CC_C_O" != no; then
+  $EGREP 'understands? -c and -o together.* no$' stdout
+else
+  $EGREP 'understands? -c and -o together.* yes$' stdout
+fi
 # No repeated checks please.
 test $(grep -c ".*-c['\" ].*-o['\" ]" stdout) -eq 1
 $MAKE
@@ -83,7 +87,7 @@ CC=$am_testaux_builddir/cc-no-c-o; export CC
 
 ./configure >stdout || { cat stdout; exit 1; }
 cat stdout
-grep 'understands -c and -o together.* no$' stdout
+$EGREP 'understands? -c and -o together.* no$' stdout
 # No repeated checks please.
 test $(grep -c ".*-c['\" ].*-o['\" ]" stdout) -eq 1
 $MAKE
