@@ -174,10 +174,7 @@ seq_ ()
 rm_rf_ ()
 {
   test $# -gt 0 || return 0
-  # Ignore failures in find, we are only interested in failures of the
-  # final rm.
-  find "$@" -type d ! -perm -700 -exec chmod u+rwx {} \; || :
-  rm -rf "$@"
+  $PERL "$am_testaux_srcdir"/deltree.pl "$@"
 }
 
 commented_sed_unindent_prog='

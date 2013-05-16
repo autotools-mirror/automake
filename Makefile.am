@@ -337,7 +337,7 @@ TAP_LOG_DRIVER = AM_TAP_AWK='$(AWK)' $(SHELL) $(srcdir)/lib/tap-driver.sh
 
 AM_TAP_LOG_DRIVER_FLAGS = --merge
 
-EXTRA_DIST += t/README t/ax/is t/ax/is_newest
+EXTRA_DIST += t/README t/ax/is t/ax/is_newest t/ax/deltree.pl
 
 ## Will be updated later.
 TESTS =
@@ -545,16 +545,7 @@ EXTRA_DIST += $(perf_TESTS)
 clean-local: clean-local-check
 .PHONY: clean-local-check
 clean-local-check:
-## Directories candidate to be test directories match this wildcard.
-	@globs='t/*.dir t/*/*.dir */t/*.dir */t/*/*.dir'; \
-## The 'nullglob' bash option is not portable, so use perl.
-	dirs=`$(PERL) -e "print join(' ', glob('$$globs'));"` || exit 1; \
-	if test -n "$$dirs"; then \
-## Errors in find are acceptable, errors in rm are not.
-	    find $$dirs -type d ! -perm -700 -exec chmod u+rwx {} ';'; \
-	    echo " rm -rf $$dirs"; \
-	    rm -rf $$dirs || exit 1; \
-	fi
+	$(AM_V_GEN)$(PERL) $(srcdir)/t/ax/deltree.pl t/*.dir t/*/*.dir */t/*.dir
 
 
 ## ---------------- ##
