@@ -60,7 +60,7 @@ $ACLOCAL
 # Thus we install the auxiliary files in a prior step.
 
 # Generate expected output using non-threaded code.
-unset AUTOMAKE_JOBS || :
+unset AUTOMAKE_JOBS
 rm -f install-sh missing depcomp
 AUTOMAKE_fails --add-missing
 mv stderr expected

@@ -34,11 +34,6 @@ distdir=$me-1.0
 ##  Environment cleanup.  ##
 ## ---------------------- ##
 
-# Temporarily disable this, since some shells (e.g., older version
-# of Bash) can return a non-zero exit status upon the when a non-set
-# variable is unset.
-set +e
-
 # Unset some make-related variables that may cause $MAKE to act like
 # a recursively invoked sub-make.  Any $MAKE invocation in a test is
 # conceptually an independent invocation, not part of the main
@@ -84,9 +79,6 @@ for pfx in TEST_ SH_ TAP_ ''; do
   unset AM_${pfx}LOG_DRIVER_FLAGS
 done
 unset pfx
-
-# Re-enable, it had been temporarily disabled above.
-set -e
 
 # cross_compiling
 # ---------------
@@ -805,7 +797,7 @@ process_requirements ()
       *" $am_tool"*) . ./t/$am_tool-macros.dir/get.sh;;
     esac
   done
-  am_tool=; unset am_tool
+  unset am_tool
 }
 
 ## ---------------------------------------------------------------- ##

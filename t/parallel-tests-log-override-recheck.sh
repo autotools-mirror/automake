@@ -47,7 +47,7 @@ END
 
 chmod a+x *.test
 
-unset BAZ_EXIT_STATUS || :
+unset BAZ_EXIT_STATUS
 
 $ACLOCAL
 $AUTOCONF

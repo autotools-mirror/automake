@@ -30,7 +30,7 @@ chmod a+x fake-lex
 
 # Remove Lex from the environment, so that it won't interfere
 # with 'make -e' below.
-unset LEX || :
+unset LEX
 
 cat >> configure.ac <<'END'
 AC_SUBST([CXX], [false])

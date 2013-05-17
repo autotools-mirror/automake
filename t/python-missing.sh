@@ -22,7 +22,7 @@ am_create_testdir=empty
 # An actual python is *not* required in this test.
 . test-init.sh
 
-PYTHON=; unset PYTHON
+unset PYTHON
 
 cat > configure.ac <<END
 AC_INIT([$me], [1.0])
