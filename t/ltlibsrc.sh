@@ -39,6 +39,13 @@ zoo_d_old2_la.c: $(srcdir)/old_la.c
 AUTOMAKE_OPTIONS = -Wno-unsupported
 END
 
+if useless_vpath_rebuild; then
+  unindent >> Makefile.am <<'END'
+    # Work around a known FreeBSD make issues in VPATH builds.
+    DISTCLEANFILES = zoo_d_old2_la.c
+END
+fi
+
 cat > foo.c << 'END'
 int foo (void)
 {
