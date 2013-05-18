@@ -74,7 +74,7 @@ $AUTOCONF
 $AUTOMAKE
 ./configure
 
-unset CLASSPATH || :
+unset CLASSPATH
 $MAKE
 $MAKE clean
 
@@ -82,7 +82,7 @@ CLASSPATH=''; export CLASSPATH
 $MAKE
 $MAKE clean
 
-unset CLASSPATH || :
+unset CLASSPATH
 $MAKE distcheck
 
 :

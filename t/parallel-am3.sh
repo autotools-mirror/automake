@@ -56,7 +56,7 @@ mkdir build-aux
 $ACLOCAL
 
 # Generate expected output using the non-threaded code.
-unset AUTOMAKE_JOBS || :
+unset AUTOMAKE_JOBS
 AUTOMAKE_run --add-missing
 mv stderr expected
 mv Makefile.in Makefile.in.exp

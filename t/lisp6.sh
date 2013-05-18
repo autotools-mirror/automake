@@ -39,7 +39,7 @@ AC_OUTPUT
 EOF
 
 # Avoid possible spurious influences from the environment.
-want_two=; unset want_two
+unset want_two
 
 echo "(provide 'am-one)" > am-one.el
 echo "(require 'am-one)" > am-two.el

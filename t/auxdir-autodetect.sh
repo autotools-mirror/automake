@@ -21,7 +21,7 @@
 
 nil=__no_such_program
 
-unset NONESUCH || :
+unset NONESUCH
 
 cat >>configure.ac << END
 AM_MISSING_PROG([NONESUCH],[$nil])
