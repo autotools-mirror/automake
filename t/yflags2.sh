@@ -30,7 +30,7 @@ chmod a+x fake-yacc
 
 # Remove Yacc from the environment, so that it won't interfere
 # with 'make -e' below.
-unset YACC || :
+unset YACC
 
 cat >> configure.ac <<'END'
 AC_SUBST([CXX], [false])

@@ -31,7 +31,7 @@ AC_SUBST([OBJEXT])
 AC_OUTPUT
 END
 
-unset OBJEXT || :
+unset OBJEXT
 
 cat > Makefile.am << 'END'
 SUFFIXES = .zoo .o .obj .@OBJEXT@

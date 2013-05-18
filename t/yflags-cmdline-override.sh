@@ -20,7 +20,7 @@
 required='cc yacc'
 . test-init.sh
 
-unset YFLAGS || :
+unset YFLAGS
 
 cat >> configure.ac <<'END'
 AC_PROG_CC

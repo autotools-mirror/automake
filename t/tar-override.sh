@@ -59,7 +59,7 @@ test "$(cat am--tar-has-run)" = foo
 
 clean_temp
 
-TAR=; unset TAR
+unset TAR
 # Creative use of eval to pacify maintainer checks.
 eval \$'MAKE dist "TAR=./am--tar mu"'
 test -f $distdir.tar.gz

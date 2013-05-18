@@ -80,7 +80,7 @@ $ACLOCAL
 # Further, automake output should be stable.
 
 # Generate expected output using the non-threaded code.
-unset AUTOMAKE_JOBS || :
+unset AUTOMAKE_JOBS
 AUTOMAKE_run --add-missing
 mv stderr expected
 Makefile_ins=$(find . -name Makefile.in)

@@ -26,7 +26,7 @@ chmod a+x fake-javac
 
 # Remove JAVAC from the environment, so that it won't interfere
 # with 'make -e' below.
-unset JAVAC || :
+unset JAVAC
 
 cat >> configure.ac <<'END'
 AC_PROG_CC

@@ -35,7 +35,7 @@ py_too_old ()
 }
 
 saved_PYTHON=$PYTHON; export saved_PYTHON
-PYTHON=; unset PYTHON
+unset PYTHON
 
 cat > configure.ac <<END
 AC_INIT([$me], [1.0])

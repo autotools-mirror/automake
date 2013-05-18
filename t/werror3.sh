@@ -36,7 +36,7 @@ END
 $ACLOCAL
 
 # The issue would not manifest with threaded execution.
-unset AUTOMAKE_JOBS || :
+unset AUTOMAKE_JOBS
 AUTOMAKE_run -Wno-error
 grep 'VAR multiply defined' stderr
 

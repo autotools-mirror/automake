@@ -35,7 +35,7 @@ exit ${FOO_EXIT_STATUS-0}
 END
 chmod a+x foo.test
 
-unset FOO_EXIT_STATUS || :
+unset FOO_EXIT_STATUS
 
 $ACLOCAL
 $AUTOCONF

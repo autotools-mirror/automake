@@ -36,7 +36,7 @@ done
 
 $ACLOCAL
 
-unset AUTOMAKE_JOBS || :
+unset AUTOMAKE_JOBS
 
 AUTOMAKE_fails
 ls -l Makefile.in */Makefile.in || : # For debugging.

@@ -33,7 +33,7 @@ test-nosilent:
 	test x'$(AM_DEFAULT_VERBOSITY)' = x'1'
 EOF
 
-unset enable_silent_rules || :
+unset enable_silent_rules
 
 : 'No explicit default in configure.ac, enable by default in config.site'
 

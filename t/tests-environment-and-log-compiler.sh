@@ -24,7 +24,7 @@ cat >> configure.ac << 'END'
 AC_OUTPUT
 END
 
-unset v0 v1 v2 v3 v4 || :
+unset v0 v1 v2 v3 v4
 
 cat > Makefile.am << 'END'
 TESTS_ENVIRONMENT = am__f3 () { echo 3; }; v0='$(srcdir)' v1=1; :;

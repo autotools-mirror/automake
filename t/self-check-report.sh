@@ -18,7 +18,7 @@
 # Test subroutines to report warnings, and to signal failures, skips
 # and hard errors.
 
-unset stderr_fileno_ || :
+unset stderr_fileno_
 
 am_create_testdir=empty
 . test-init.sh
