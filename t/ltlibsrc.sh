@@ -33,7 +33,7 @@ AM_LDFLAGS = -module
 pkglib_LTLIBRARIES = zoo.d/bar.la old.la
 noinst_LTLIBRARIES = foo.la zoo.d/old2.la
 
-$(srcdir)/zoo_d_old2_la.c: $(srcdir)/old_la.c
+zoo_d_old2_la.c: $(srcdir)/old_la.c
 	cp $(srcdir)/old_la.c $@
 
 AUTOMAKE_OPTIONS = -Wno-unsupported

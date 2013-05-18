@@ -20,13 +20,17 @@
 required='cc yacc'
 . test-init.sh
 
-cat >>configure.ac <<'END'
+cat > configure.ac <<'END'
+AC_INIT([suya], [0.5a], [automake-bug@gnu.org])
+AM_INIT_AUTOMAKE([foreign -Wall])
 AC_PROG_CC
+AC_CONFIG_FILES([Makefile])
 AC_CONFIG_SUBDIRS([lib])
 AC_OUTPUT
 END
 
 cat >Makefile.am <<'EOF'
+AUTOMAKE_OPTIONS = -Wno-override
 SUBDIRS = lib
 bin_PROGRAMS = MU
 MU_LDADD = lib/liblib.a
@@ -106,14 +110,18 @@ EOF
 
 $ACLOCAL
 $AUTOCONF
-$AUTOMAKE -Wno-override
+$AUTOMAKE
 
+test ! -e ylwrap
+test ! -e ar-lib
 cd lib
 $ACLOCAL
 $AUTOCONF
 $AUTOHEADER
-$AUTOMAKE -Wno-override --add-missing
+$AUTOMAKE --add-missing
 cd ..
+test -f ylwrap
+test -f ar-lib
 
 ./configure
 

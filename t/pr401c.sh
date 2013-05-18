@@ -104,16 +104,6 @@ $AUTOMAKE
 test ! -e lib/lib
 $MAKE distcheck
 
-## -------------------------------------------- ##
-## Error message with usage in wrong directory. ##
-## -------------------------------------------- ##
-
-mv -f src/Makefile.am src/t
-sed 's/LDADD = .*/LDADD = @ALLOCA@/' src/t > src/Makefile.am
-AUTOMAKE_fails
-grep 'cannot be used outside.*lib' stderr
-mv -f src/t src/Makefile.am
-
 
 ## ------------------------------------------- ##
 ## Test using ALLOCA from a sibling directory. ##

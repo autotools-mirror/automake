@@ -67,7 +67,7 @@ case $1 in
     done ;;
 esac
 
-nested_var_pat='^[^#].*\$([^)]*\$'
+nested_var_pat='^[^#].*[^$]\$([^)]*\$'
 if
   case $makefile in
     -) printf '%s\n' "$makerules" | grep "$nested_var_pat";;

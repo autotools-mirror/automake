@@ -39,8 +39,6 @@ Class::Struct::struct (
 	'compiler'  => "\$",
 	# Content of the compiling variable.
 	'compile'  => "\$",
-	# Flag to require compilation without linking (-c).
-	'compile_flag' => "\$",
 	'extensions' => '@',
 	# A subroutine to compute a list of possible extensions of
 	# the product given the input extensions.
@@ -70,8 +68,6 @@ Class::Struct::struct (
 	# Content of the linker variable ($(CC)).
 	'ld' => "\$",
 
-	# Flag to specify the output file (-o).
-	'output_flag' => "\$",
 	'_finish' => "\$",
 
 	# This is a subroutine which is called whenever we finally

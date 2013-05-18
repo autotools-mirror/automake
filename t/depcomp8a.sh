@@ -53,24 +53,7 @@ $ACLOCAL
 $AUTOMAKE -a -Wno-unsupported
 grep include Makefile.in # For debugging.
 grep 'include.*\./\$(DEPDIR)/foo\.P' Makefile.in
-grep 'include.*\./\$(DEPDIR)/bar\.P' Makefile.in
-grep 'include.*/\./\$(DEPDIR)' Makefile.in && exit 1
-
-$AUTOCONF
-# Don't reject slower dependency extractors, for better coverage.
-./configure --enable-dependency-tracking
-$MAKE
-cross_compiling || ./zardoz
-DISTCHECK_CONFIGURE_FLAGS='--enable-dependency-tracking' $MAKE distcheck
-
-# Try again with subdir-objects option.
-
-echo AUTOMAKE_OPTIONS = subdir-objects >> Makefile.am
-
-$AUTOMAKE
-grep include Makefile.in # For debugging.
-grep 'include.*\./\$(DEPDIR)/foo\.P' Makefile.in
-grep 'include.*[^a-zA-Z0-9_/]sub/\$(DEPDIR)/bar\.P' Makefile.in
+LC_ALL=C grep 'include.*[^a-zA-Z0-9_/]sub/\$(DEPDIR)/bar\.P' Makefile.in
 $EGREP 'include.*/(\.|sub)/\$\(DEPDIR\)' Makefile.in && exit 1
 
 $AUTOCONF

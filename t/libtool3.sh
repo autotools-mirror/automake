@@ -28,10 +28,6 @@ AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
-# FIXME: stop disabling the warnings in the 'unsupported' category
-# FIXME: once the 'subdir-objects' option has been mandatory.
-AUTOMAKE_OPTIONS = -Wno-unsupported
-
 lib_LTLIBRARIES = lib0.la liba/liba.la
 lib0_la_SOURCES = 0.c
 liba_liba_la_SOURCES = liba/a.c
@@ -79,12 +75,10 @@ $ACLOCAL
 $AUTOCONF
 $AUTOMAKE --add-missing --copy
 
-# We need explicit rules to build 1.o and a.lo.  Make sure
-# Automake did not output additional rules for 1.lo and and a.lo.
-$FGREP '1.o:' Makefile.in
-$FGREP '1.lo:' Makefile.in && exit 1
-$FGREP 'a.o:' Makefile.in && exit 1
-$FGREP 'a.lo:' Makefile.in
+# We shouldn't need explicit rules.
+grep -v '^\.c' Makefile.in \
+  | $FGREP -v '$(am__dirstamp)' \
+  | $EGREP '\.(o|obj|lo).*:' && exit 1
 
 ./configure
 

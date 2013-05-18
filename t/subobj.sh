@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Test of subdir objects with C and C++.
+# Grepping checks on subdir objects with C and C++.
 
 . test-init.sh
 
@@ -41,36 +41,6 @@ cat > sub/Makefile.am << 'END'
 dream_SOURCES = generic/b.c more/r.y
 bin_PROGRAMS = dream
 END
-
-AUTOMAKE_fails
-grep "^Makefile\.am:3:.*'generic/a\.c'.* in a subdirectory" stderr
-grep "^Makefile\.am:[34]:.*'another/z\.cxx'.* in a subdirectory" stderr
-grep "^sub/Makefile\.am:1:.*'generic/b\.c'.* in a subdirectory" stderr
-grep "option 'subdir-objects' is disabled" stderr
-# Verbose tips should be given, but not too many times.
-for msg in \
-  "possible forward-incompatibility" \
-  "advi[sc]e.* 'subdir-objects' option throughout" \
-  "unconditionally.* object file.* same subdirectory" \
-; do
-  test $(grep -c "$msg" stderr) -eq 1
-done
-
-# Guard against stupid typos.
-grep 'subdir-object([^s]|$)' stderr && exit 1
-
-$AUTOMAKE -Wno-unsupported
-
-echo AUTOMAKE_OPTIONS = subdir-objects >> Makefile.am
-AUTOMAKE_fails
-grep "^Makefile\.am" stderr && exit 1
-grep "^sub/Makefile\.am:.*'generic/b\.c'.* in a subdirectory" stderr
-grep "option 'subdir-objects' is disabled" stderr
-
-sed 's/^AM_INIT_AUTOMAKE/&([subdir-objects])/' configure.ac > configure.tmp
-mv -f configure.tmp configure.ac
-$ACLOCAL --force
-$AUTOMAKE
 
 rm -f compile
 $AUTOMAKE --add-missing 2>stderr || { cat stderr >&2; exit 1; }

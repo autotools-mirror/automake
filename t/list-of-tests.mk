@@ -604,7 +604,6 @@ t/libobj16b.sh \
 t/libobj17.sh \
 t/libobj18.sh \
 t/libobj19.sh \
-t/libobj20a.sh \
 t/libobj20b.sh \
 t/libobj20c.sh \
 t/library.sh \
@@ -991,7 +990,6 @@ t/silent-configsite.sh \
 t/silent-nested-vars.sh \
 t/silent-custom.sh \
 t/src-acsubst.sh \
-t/sourcefile-in-subdir.sh \
 t/space.sh \
 t/specflg6.sh \
 t/specflg7.sh \
@@ -1028,7 +1026,6 @@ t/subdir-distclean.sh \
 t/subdir-keep-going-pr12554.sh \
 t/subobj.sh \
 t/subobj2.sh \
-t/subobj4.sh \
 t/subobj5.sh \
 t/subobj6.sh \
 t/subobj7.sh \

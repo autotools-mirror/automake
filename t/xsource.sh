@@ -21,18 +21,22 @@
 
 cat > Makefile.am << 'END'
 bin_PROGRAMS = zardoz
-zardoz_SOURCES = z.c x/z.c
+lib_LTLIBRARIES = libfoo.la
+zardoz_SOURCES = z.c
+libfoo_la_SOURCES = z.c
 END
+
+: > ltmain.sh
+: > config.guess
+: > config.sub
 
 cat >> configure.ac << 'END'
 AC_PROG_CC
+AC_SUBST([LIBTOOL], [unused])
 END
-
-mkdir x
-
-: > z.c
-: > x/z.c
 
 $ACLOCAL
 AUTOMAKE_fails
-$FGREP 'z.$(OBJEXT)' stderr
+$FGREP "object 'z.\$(OBJEXT)' created both with libtool and without" stderr
+
+:
