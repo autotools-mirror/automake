@@ -16,7 +16,7 @@
 
 # Check support for no-dist-gzip with dist-shar.
 
-required=shar
+required='shar unshar'
 . test-init.sh
 
 errmsg='support for shar .*deprecated'
