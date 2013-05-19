@@ -102,6 +102,6 @@ if ! cross_compiling; then
   : For shells with busted 'set -e'.
 fi
 
-$MAKE distcheck
+yl_distcheck
 
 :

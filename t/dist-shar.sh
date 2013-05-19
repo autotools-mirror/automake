@@ -17,7 +17,7 @@
 # Trying to use removed option 'dist-shar' should trigger a clear
 # error message.
 
-required=shar
+required='shar unshar'
 . test-init.sh
 
 errmsg='support for shar .*removed'

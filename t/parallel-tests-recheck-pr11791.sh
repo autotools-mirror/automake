@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# parallel-tests: "make recheck" "make -k recheck" in the face of build
+# parallel-tests: "make -k recheck" in the face of build
 # failures for the test cases.  See automake bug#11791.
 
 required='cc native'
@@ -45,7 +45,7 @@ count_test_results total=1 pass=0 fail=1 xpass=0 xfail=0 skip=0 error=0
 st=0; $MAKE -k recheck >stdout || st=$?
 cat stdout
 # Don't trust the exit status of "make -k" for non-GNU makes.
-if using_gmake && test $st -eq 0; then exit 1; fi
+if using_gmake && test $st -eq 0; then exit 1; else :; fi
 count_test_results total=1 pass=0 fail=1 xpass=0 xfail=0 skip=0 error=0
 
 # Introduce an error in foo.c, that should cause a compilation failure.
@@ -64,7 +64,7 @@ test -f foo.trs
 st=0; $MAKE -k recheck >stdout || st=$?
 cat stdout
 # Don't trust the exit status of "make -k" for non-GNU makes.
-if using_gmake && test $st -eq 0; then exit 1; fi
+if using_gmake && test $st -eq 0; then exit 1; else :; fi
 # We don't get a change to run the testsuite.
 $EGREP '(X?PASS|X?FAIL|SKIP|ERROR):' stdout && exit 1
 test -f foo.log
