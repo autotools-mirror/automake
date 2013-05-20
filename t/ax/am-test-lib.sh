@@ -587,16 +587,17 @@ require_tool ()
         || skip_all_ "required program 'etags' not available"
       ;;
     GNUmake)
-      for make_ in "$MAKE" gmake gnumake :; do
-        MAKE=$make_ am__using_gmake=''
-        test "$MAKE" =  : && break
+      for am_make in "$MAKE" gmake gnumake :; do
+        MAKE=$am_make
+        am__using_gmake= # Invalidate cache used by 'using_gmake()'.
+        test "$MAKE" = : && break
         echo "$me: determine whether $MAKE is GNU make"
         using_gmake && break
         : For shells with busted 'set -e'.
       done
       test "$MAKE" = : && skip_all_ "this test requires GNU make"
       export MAKE
-      unset make_
+      unset am_make
       ;;
     gcj)
       GCJ=$GNU_GCJ GCJFLAGS=$GNU_GCJFLAGS; export GCJ GCJFLAGS
@@ -652,8 +653,7 @@ require_tool ()
       java -version -help || skip_all_ "Sun Java interpreter not found"
       ;;
     lib)
-      AR=lib
-      export AR
+      AR=lib; export AR
       # Attempting to create an empty archive will actually not
       # create the archive, but lib will output its version.
       echo "$me: running $AR -out:defstest.lib"
@@ -677,7 +677,7 @@ require_tool ()
     non-root)
       # Skip this test case if the user is root.
       # We try to append to a read-only file to detect this.
-      priv_check_temp=priv-check.$$
+      priv_check_temp=am--priv-check.$$
       touch $priv_check_temp && chmod a-w $priv_check_temp \
         || framework_failure_ "creating unwritable file $priv_check_temp"
       # Not a useless use of subshell: lesser shells might bail
