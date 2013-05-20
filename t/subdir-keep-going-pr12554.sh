@@ -22,8 +22,6 @@
 
 . test-init.sh
 
-echo nil: | $MAKE -I . -f - || skip_ "$MAKE doesn't support the -I option"
-
 cat >> configure.ac <<'END'
 AC_CONFIG_FILES([sub1/Makefile sub2/Makefile])
 AC_OUTPUT
@@ -51,20 +49,10 @@ $AUTOCONF
 $AUTOMAKE
 ./configure
 
-st=0
-$MAKE -I k -I --keep-going \
-  TESTS='k --keep-going -k' AM_MAKEFLAGS="TESTS='k --keep-going -k'" \
-  || st=$?
-# Don't trust the exit status of "make -k" for non-GNU make.
-if using_gmake; then
-  test $st -gt 0 || exit 1
-fi
+$MAKE -I k -I --keep-going TESTS='k --keep-going -k' && exit 1
 test ! -r sub2/ok
 
 # Sanity check.
-st=0; $MAKE -k || st=$?
-if { using_gmake && test $st -eq 0; } || test ! -f sub2/ok; then
-  fatal_ '"make -k" not working as expected'
-fi
+! $MAKE -k && test -f sub2/ok || fatal_ '"make -k" not working as expected'
 
 :

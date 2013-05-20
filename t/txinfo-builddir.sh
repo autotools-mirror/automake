@@ -22,10 +22,6 @@
 required='makeinfo tex texi2dvi'
 . test-init.sh
 
-if useless_vpath_rebuild; then
-  skip_ "$MAKE has brittle VPATH support"
-fi
-
 echo AC_OUTPUT >> configure.ac
 
 cat > Makefile.am << 'END'
