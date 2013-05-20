@@ -323,7 +323,7 @@ END
     yes) return 0;;
      no) return 1;;
      "") ;;
-      *) fatal_ "no_useless_builddir_remake: internal error";;
+      *) fatal_ "useless_vpath_rebuild: internal error";;
   esac
 }
 am__useless_vpath_rebuild=""
