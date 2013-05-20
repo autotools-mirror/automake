@@ -72,7 +72,7 @@ $AUTOCONF
 $MAKE
 
 $MAKE distcheck
-infodir="$(pwd)/_info" $MAKE -e distcheck
+run_make infodir="$(pwd)/_info" distcheck
 test -f _info/dir || exit 99 # Sanity check.
 
 :

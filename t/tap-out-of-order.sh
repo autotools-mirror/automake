@@ -57,7 +57,7 @@ ok 16
 ok 17
 END
 
-TESTS='a.test b.test c.test d.test' $MAKE -e check >stdout \
+run_make TESTS='a.test b.test c.test d.test' check >stdout \
   && { cat stdout; exit 1; }
 cat stdout
 

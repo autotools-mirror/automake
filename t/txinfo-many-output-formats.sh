@@ -118,7 +118,7 @@ test ! -e sub/main2.html
 test ! -e rec/main3.html
 
 # Test production of a single HTML file.
-MAKEINFOFLAGS=--no-split $MAKE -e html
+run_make MAKEINFOFLAGS=--no-split html
 test -f main.html
 test -f sub/main2.html
 test -f rec/main3.html

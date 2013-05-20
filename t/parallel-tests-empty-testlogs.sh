@@ -80,9 +80,9 @@ for vpath in : false; do
   VERBOSE=yes $MAKE check
   no_test_has_run
   cd ../sub2
-  VERBOSE=yes TESTS='' $MAKE -e check
+  run_make VERBOSE=yes TESTS= check
   no_test_has_run
-  VERBOSE=yes TEST_LOGS='' $MAKE -e check
+  run_make VERBOSE=yes TEST_LOGS= check
   no_test_has_run
   cd ..
   $MAKE check

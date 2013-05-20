@@ -158,11 +158,10 @@ $sleep
 
 echo 'int main (void) { return 0; }' > none.c
 
-st=0
-RECHECK_LOGS= $MAKE -e check >stdout || st=$?
+run_make -e IGNORE RECHECK_LOGS= check >stdout
 cat stdout
-ls -l
-test $st -eq 0 || exit 1
+ls -l # For debugging.
+test $am_make_rc_got -eq 0 || exit 1
 
 # For debugging.
 stat stamp foo.log bar.log baz.log || :

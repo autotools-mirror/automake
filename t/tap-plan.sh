@@ -41,8 +41,8 @@ ok
 END
 
 for tap_flags in "" "--comments"; do
-  env TEST_LOG_DRIVER_FLAGS="$tap_flags" TESTS='top.test bot.test' \
-    $MAKE -e check >stdout || { cat stdout; exit 1; }
+  run_make TEST_LOG_DRIVER_FLAGS="$tap_flags" TESTS='top.test bot.test' \
+    check >stdout || { cat stdout; exit 1; }
   cat stdout
   count_test_results total=7 pass=5 xfail=1 skip=1 fail=0 xpass=0 error=0
 done

@@ -67,7 +67,7 @@ cat stdout
 using_gmake || $sleep # Required by BSD make.
 
 chmod a-rw test-suite.log
-TEST_SUITE_LOG=my.log $MAKE -e recheck >stdout \
+run_make TEST_SUITE_LOG=my.log recheck >stdout \
   && { cat stdout; exit 1; }
 cat stdout
 ls -l
@@ -82,7 +82,7 @@ done
 using_gmake || $sleep # Required by BSD make.
 
 chmod a-rw my.log
-BAZ_EXIT_STATUS=0 TEST_SUITE_LOG=my2.log $MAKE -e recheck >stdout \
+run_make BAZ_EXIT_STATUS=0 TEST_SUITE_LOG=my2.log recheck >stdout \
   && { cat stdout; exit 1; }
 cat stdout
 ls -l

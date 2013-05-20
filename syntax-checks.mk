@@ -66,6 +66,7 @@ sc_tests_exit_not_Exit \
 sc_tests_automake_fails \
 sc_tests_required_after_defs \
 sc_tests_overriding_macros_on_cmdline \
+sc_tests_no_make_e \
 sc_tests_plain_sleep \
 sc_tests_ls_t \
 sc_m4_am_plain_egrep_fgrep \
@@ -354,6 +355,17 @@ sc_tests_required_after_defs:
 	  fi; \
 	done
 
+# "make -e" is brittle and unsafe, since it let *all* the environment
+# win over the macro definitions in the Makefiles.  Since we offer
+# AM_MAKEFLAGS to allow the user to portably override macro definitions
+# from the command line in a safe way, we should encourage users to use
+# it.
+sc_tests_no_make_e:
+	@if grep -E '\$$MAKE\b.* -[a-zA-Z0-9]*e' $(xtests); then \
+	  echo '"make -e" is brittle, use "run_make" instead.' 1>&2; \
+	  exit 1; \
+	fi
+
 ## Overriding a Makefile macro on the command line is not portable when
 ## recursive targets are used.  Better use an envvar.  SHELL is an
 ## exception, POSIX says it can't come from the environment.  V, DESTDIR,
@@ -362,11 +374,6 @@ sc_tests_required_after_defs:
 ## Finally, 'exp' is used by some ad-hoc checks, where we ensure it's
 ## ok to override it from the command line.
 sc_tests_overriding_macros_on_cmdline:
-	@if grep -E '\$$MAKE .*(SHELL=.*=|=.*SHELL=)' $(xtests); then \
-	  echo 'Rewrite "$$MAKE foo=bar SHELL=$$SHELL" as "foo=bar $$MAKE -e SHELL=$$SHELL"' 1>&2; \
-	  echo ' in the above lines, it is more portable.' 1>&2; \
-	  exit 1; \
-	fi
 # The first s/// tries to account for usages like "$MAKE || st=$?".
 # 'DISTCHECK_CONFIGURE_FLAGS' and 'exp' are allowed to contain whitespace in
 # their definitions, hence the more complex last three substitutions below.
@@ -379,16 +386,17 @@ sc_tests_overriding_macros_on_cmdline:
 	        -e "s/ exp='[^']*'/ /" \
 	        -e 's/ exp="[^"]*"/ /' \
 	        -e 's/ exp=[^ ]/ /' \
-	      $(xtests) | grep '\$$MAKE .*='; then \
-	  echo 'Rewrite "$$MAKE foo=bar" as "foo=bar $$MAKE -e" in the above lines,' 1>&2; \
-	  echo 'it is more portable.' 1>&2; \
+	      $(filter-out %/am-test-lib.sh,$(xtests)) \
+	        | grep '\$$MAKE .*='; then \
+	  echo 'Rewrite "$$MAKE foo=bar" as "run_make foo=bar" in the lines above,'; \
+	  echo 'it is more portable.'; \
 	  exit 1; \
-	fi
+	fi >&2
 	@if grep 'SHELL=.*\$$MAKE' $(xtests); then \
-	  echo '$$MAKE ignores the SHELL envvar, use "$$MAKE SHELL=$$SHELL" in' 1>&2; \
-	  echo 'the above lines.' 1>&2; \
+	  echo '$$MAKE ignores the SHELL envvar, use "run_make SHELL=$$SHELL"'; \
+	  echo 'in the above lines.'; \
 	  exit 1; \
-	fi
+	fi >&2
 
 ## Prefer use of our 'is_newest' auxiliary script over the more hacky
 ## idiom "test $(ls -1t new old | sed 1q) = new", which is both more
@@ -521,3 +529,8 @@ maintainer-check: $(syntax_check_rules)
 ## Check that the list of tests given in the Makefile is equal to the
 ## list of all test scripts in the Automake testsuite.
 maintainer-check: maintainer-check-list-of-tests
+
+# I'm a lazy typist.
+lint: maintainer-check
+.PHONY: lint
+

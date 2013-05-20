@@ -95,14 +95,14 @@ grep '^PASS: baz\.test' stdout
 
 : Recreate with a "make check" with redefined TESTS.
 rm -f foo.trs bar.trs baz.trs
-TESTS=foo.test $MAKE -e check
+run_make TESTS=foo.test check
 test -f foo.trs
 test ! -e bar.trs
 test ! -e baz.trs
 
 : Recreate with a "make check" with redefined TEST_LOGS.
 rm -f foo.trs bar.trs baz.trs
-TEST_LOGS=bar.log $MAKE -e check
+run_make TEST_LOGS=bar.log check
 test ! -e foo.trs
 test -f bar.trs
 test ! -e baz.trs
@@ -152,7 +152,7 @@ test -f baz.trs
 rm -f foo.trs
 update_stamp
 touch bar.test
-RECHECK_LOGS= $MAKE -e check >stdout || { cat stdout; exit 1; }
+run_make RECHECK_LOGS= check >stdout || { cat stdout; exit 1; }
 cat stdout
 # Check that make has updated what it needed to, but no more.
 test -f foo.trs

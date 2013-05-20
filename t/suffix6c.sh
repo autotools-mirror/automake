@@ -70,7 +70,7 @@ cat > foo.exp <<'END'
 %TWO%
 END
 echo %TWO% > foo.zoo
-OBJEXT=o $MAKE -e
+run_make OBJEXT=o
 cat foo.o
 cat foo.XxX
 diff foo.XxX foo.exp
@@ -82,7 +82,7 @@ cat > foo.exp <<'END'
 %THREE%
 END
 echo %THREE% > foo.zoo
-OBJEXT=obj $MAKE -e
+run_make OBJEXT=obj
 cat foo.obj
 cat foo.XxX
 diff foo.XxX foo.exp

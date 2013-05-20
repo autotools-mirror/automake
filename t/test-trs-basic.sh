@@ -71,7 +71,7 @@ for vpath in : false; do
   test x"$(cat tb)" = x"foo bar sub/zardoz"
   rm -f tb
   # Please don't change the order of the stuff in TESTS, below.
-  TESTS='foo.test foo2.sh foo-log foolog.test a.log.b.sh 0.exe' $MAKE -e tb
+  run_make TESTS='foo.test foo2.sh foo-log foolog.test a.log.b.sh 0.exe' tb
   test x"$(cat tb)" = x"foo foo2 foo-log foolog a.log.b 0.exe"
   rm -f tb
 
@@ -116,18 +116,18 @@ test -f sub/foo.trs
 # Try with a subset of TESTS.
 #
 
-TESTS=foo.test $MAKE -e check
+run_make TESTS=foo.test check
 test -f foo.trs
 test ! -e bar.trs
 test ! -e sub/zardoz.trs
 $MAKE clean
 test ! -e foo.trs
-TESTS='foo.test bar.sh' $MAKE -e check
+run_make TESTS='foo.test bar.sh' check
 test -f foo.trs
 test -f bar.trs
 test ! -e sub/zardoz.trs
 # "make clean" shouldn't remove '.trs' files for tests not in $(TESTS).
-TESTS=bar.sh $MAKE -e clean
+run_make TESTS=bar.sh clean
 test -f foo.trs
 test ! -e bar.trs
 
@@ -137,19 +137,19 @@ $MAKE clean
 # Try with a subset of TEST_LOGS.
 #
 
-TEST_LOGS=sub/zardoz.log $MAKE -e check
+run_make TEST_LOGS=sub/zardoz.log check
 test ! -e foo.trs
 test ! -e bar.trs
 test -f sub/zardoz.trs
 $MAKE clean
 test ! -e sub/zardoz.trs
-TEST_LOGS='foo.log bar.log' $MAKE -e check
+run_make TEST_LOGS='foo.log bar.log' check
 test -f foo.trs
 test -f bar.trs
 test ! -e sub/zardoz.trs
 # "make clean" shouldn't remove '.trs' files for tests whose log
 # is not in $(TEST_LOGS).
-TEST_LOGS=foo.log $MAKE -e clean
+run_make TEST_LOGS=foo.log clean
 test ! -e foo.trs
 test -f bar.trs
 test ! -e sub/zardoz.trs

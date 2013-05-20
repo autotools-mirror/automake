@@ -53,7 +53,7 @@ $AUTOMAKE -a
 
 ./configure
 
-OBJEXT=quux $MAKE -e test-fake
+run_make OBJEXT=quux test-fake
 $MAKE test-real
 
 :

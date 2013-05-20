@@ -98,9 +98,8 @@ END
 
 chmod a+x aclocal-wrap automake-wrap autoconf-wrap
 
-env \
-  ACLOCAL=./aclocal-wrap AUTOMAKE=./automake-wrap AUTOCONF=./autoconf-wrap \
-  $MAKE -e Makefile
+run_make Makefile \
+  ACLOCAL=./aclocal-wrap AUTOMAKE=./automake-wrap AUTOCONF=./autoconf-wrap
 grep '^FOOBAR =' Makefile.in
 grep '^FOOBAR *= *zardoz *$' Makefile
 

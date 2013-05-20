@@ -42,17 +42,16 @@ cd build
 ../configure --prefix="$instdir"
 $MAKE
 
-lispdir=
-export lispdir
+nukedirs='lispdir='
 
-$MAKE -e install
+run_make $nukedirs install
 test ! -e "$instdir"
-$MAKE -e install DESTDIR="$destdir"
+run_make $nukedirs install DESTDIR="$destdir"
 test ! -e "$instdir"
 test ! -e "$destdir"
-$MAKE -e uninstall > stdout || { cat stdout; exit 1; }
+run_make $nukedirs uninstall > stdout || { cat stdout; exit 1; }
 cat stdout
 grep 'rm -f' stdout && exit 1
-$MAKE -e uninstall DESTDIR="$destdir"
+run_make $nukedirs uninstall DESTDIR="$destdir"
 
 :

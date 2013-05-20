@@ -121,6 +121,127 @@ is_blocked_signal ()
   fi
 }
 
+# single_quote STRING
+# -------------------
+# Single-quote STRING for the shell, also dealing with embedded single
+# quotes. Place the result in the '$am_result', that is thus to be
+# considered public.
+single_quote ()
+{
+  am_result=$1
+  case $am_result in
+    *\'*) am_result=$(printf '%s\n' "$*" | sed -e "s/'/'\\\\''/g");;
+  esac
+  am_result="'$am_result'"
+}
+
+# append_single_quoted VARIABLE STRING
+# ------------------------------------
+append_single_quoted ()
+{
+  am__var=$1; shift
+  single_quote "$1" # Sets 'am_result'.
+  eval "${am__var}=\${$am__var:+\"\${$am__var} \"}\$am_result"
+  unset am__var am_result
+}
+
+# is_valid_varname STRING
+# -----------------------
+# Tell whether STRING is a valid name for a shell variable.  Return 0
+# if yes, return 1 if not.
+is_valid_varname ()
+{
+  # FIXME: is the below truly portable even for LC_COLLATE != "C" ?
+  case $1 in
+    [0-9]*) return 1;;
+    *[!a-zA-Z0-9_]*) return 1;;
+  esac
+  return 0
+}
+
+# run_make [-e STATUS] [--] [VAR=VAL ...] [MAKE-ARGS...]
+# ------------------------------------------------------
+# Run $MAKE with the given command-line, and fail if it doesn't exit with
+# STATUS (default: 0).  If STATUS is "FAIL", then any exit status > 0 is
+# acceptable.  If STATUS is "IGNORE", any exit value is acceptable.
+# This function also handle command-line override of variable definition
+# in a smart way, using AM_MAKEFLAGS if a non-GNU make implementation
+# is in use.
+run_make ()
+{
+  # Follow-up code might want to analyse these, so don't make them as
+  # private, nor unset them later.
+  am_make_rc_exp=0
+  am_make_rc_got=0
+  # Parse options for this function.
+  while test $# -gt 0; do
+    case $1 in
+      -e) am_make_rc_exp=$2; shift;;
+      --) shift; break;;
+       *) break;;
+    esac
+    shift
+  done
+  am__make_flags=
+  if using_gmake; then
+    # We can trust GNU make to correctly pass macro definitions given
+    # on the command line down to sub-make invocations, and this allow
+    # us to have a vary simple implementation: delegate all the work
+    # to GNU make.
+    :
+  else
+    # We have to explicitly parse arguments passed to make.  Not 100%
+    # safe w.r.t. options like '-I' that can have an argument, but
+    # should be good enough for our usages so far.
+    for am__x
+    do
+      case $am__x in
+        *=*)
+        am__maybe_var=${am__x%%=*}
+        am__maybe_val=${am__x#*=}
+        am__maybe_def="${am__maybe_var}=${am__maybe_val}"
+        # Some variables should be portably overridable from the command
+        # line, even when using non-GNU make.
+        case $am__maybe_var in
+          V|\
+          DESTDIR|\
+          SHELL|\
+          VERBOSE|\
+          DISABLE_HARD_ERRORS|\
+          DISTCHECK_CONFIGURE_FLAGS)
+            ;;
+          *)
+            if is_valid_varname "$am__maybe_var"; then
+              append_single_quoted am__make_flags "$am__maybe_def"
+            fi
+        esac
+        unset am__maybe_var am__maybe_val am__maybe_def
+        ;;
+      esac
+    done
+    unset am__x
+  fi
+  if test x"$am__make_flags" != x; then
+    $MAKE AM_MAKEFLAGS="$am__make_flags" ${1+"$@"} || am_make_rc_got=$?
+  else
+    $MAKE ${1+"$@"} || am_make_rc_got=$?
+  fi
+  unset am__make_flags
+  case $am_make_rc_exp in
+    IGNORE)
+      : Ignore exit status
+      ;;
+    FAIL)
+      test $am_make_rc_got -gt 0 || return 1
+      ;;
+    *)
+     test $am_make_rc_exp -ge 0 && test $am_make_rc_exp -le 255 \
+       || fatal_ "invalid expected exit status: '$am_make_rc_exp'"
+     test $am_make_rc_exp -eq $am_make_rc_got || return 1
+     ;;
+  esac
+}
+
 # AUTOMAKE_run [-e STATUS] [-d DESCRIPTION] [--] [AUTOMAKE-ARGS...]
 # -----------------------------------------------------------------
 # Run automake with AUTOMAKE-ARGS, and fail if it doesn't exit with
@@ -311,7 +432,7 @@ useless_vpath_rebuild ()
         .a.b: ; cp $< $@
         baz: bar ; cp ../baz bar
 END
-    if $MAKE all && test ! -e foo.b && test ! -e bar; then
+    if run_make all && test ! -e foo.b && test ! -e bar; then
       am__useless_vpath_rebuild=no
     else
       am__useless_vpath_rebuild=yes
@@ -328,7 +449,7 @@ END
 }
 am__useless_vpath_rebuild=""
 
-yl_distcheck () { useless_vpath_rebuild || $MAKE distcheck ${1+"$@"}; }
+yl_distcheck () { useless_vpath_rebuild || run_make distcheck ${1+"$@"}; }
 
 # count_test_results total=N pass=N fail=N xpass=N xfail=N skip=N error=N
 # -----------------------------------------------------------------------

@@ -34,7 +34,7 @@ cat > baz.test <<END
 1..0 #  SKIP${tab}  Strip${tab}external  preserve ${tab}middle  ${tab}${sp}
 END
 
-TESTS='foo.test bar.test baz.test' $MAKE -e check > stdout \
+run_make TESTS='foo.test bar.test baz.test' check > stdout \
   || { cat stdout; exit 1; }
 cat stdout
 

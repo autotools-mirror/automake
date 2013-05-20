@@ -52,7 +52,7 @@ ok 2
 ok 3
 END
 
-TESTS='foo.test bar.test baz.test' $MAKE -e check >stdout \
+run_make TESTS='foo.test bar.test baz.test' check >stdout \
   && { cat stdout; exit 1; }
 cat stdout
 

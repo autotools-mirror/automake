@@ -44,13 +44,15 @@ grep '^PASS: ok\.test' output
 $FGREP 'zardoz.log' output
 test ! -e test-suite.log
 
-TESTS='zardoz2.test' $MAKE -e check >output 2>&1 \
+# FIXME: this redirection is fishy... run_make needs to be enhanced
+run_make TESTS='zardoz2.test' check >output 2>&1 \
   && { cat output; exit 1; }
 cat output
 $FGREP 'zardoz2.log' output
 test ! -e test-suite.log
 
-TEST_LOGS='zardoz3.log' $MAKE -e check >output 2>&1 \
+# FIXME: this redirection is fishy... run_make needs to be enhanced
+run_make TEST_LOGS='zardoz3.log' check >output 2>&1 \
   && { cat output; exit 1; }
 cat output
 $FGREP 'zardoz3.log' output
