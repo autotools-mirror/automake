@@ -78,7 +78,7 @@ else
    echo "skip_all_ \"pkg-config m4 macros not found\"" >> get.sh
 fi
 
-ACLOCAL_PATH=; unset ACLOCAL_PATH
+unset ACLOCAL_PATH
 . ./get.sh
 
 $ACLOCAL --force -I m4 || cat >> get.sh <<'END'

@@ -38,9 +38,18 @@ END
 $ACLOCAL
 $AUTOMAKE
 
+$FGREP COMPILE Makefile.in # For debugging.
+
 # Look for the macros at the beginning of rules.
-$FGREP "$tab\$(AM_V_CC)\$(COMPILE)"     Makefile.in
-$FGREP "$tab\$(AM_V_CXX)\$(CXXCOMPILE)" Makefile.in
-$FGREP "$tab\$(AM_V_F77)\$(F77COMPILE)" Makefile.in
+
+sed -e "s|$tab *&& *|$tab|" \
+    -e 's|$(AM_V_CC)||g' \
+    -e 's|$(AM_V_CXX)||g' \
+    -e 's|$(AM_V_F77)||g' \
+  Makefile.in >mk
+diff -u Makefile.in mk || : # For debugging.
+$FGREP "$tab\$(COMPILE)"    mk
+$FGREP "$tab\$(CXXCOMPILE)" mk
+$FGREP "$tab\$(F77COMPILE)" mk
 
 :

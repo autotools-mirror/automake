@@ -22,6 +22,10 @@
 required='makeinfo tex texi2dvi'
 . test-init.sh
 
+if useless_vpath_rebuild; then
+  skip_ "$MAKE has brittle VPATH support"
+fi
+
 echo AC_OUTPUT >> configure.ac
 
 cat > Makefile.am << 'END'
@@ -86,38 +90,38 @@ $MAKE info
 test -f foo.info
 test -f subdir/bar.info
 test -f mu.info
-test -f stamp-vti
-test -f version.texi
+test -f ../stamp-vti
+test -f ../version.texi
 test ! -e ../foo.info
 test ! -e ../subdir/bar.info
 test ! -e ../mu.info
-test ! -e ../stamp-vti
-test ! -e ../version.texi
 $MAKE clean
 test -f foo.info
 test -f subdir/bar.info
 test ! -e mu.info
-test -f stamp-vti
-test -f version.texi
+test -f ../stamp-vti
+test -f ../version.texi
 
 # Make sure stamp-vti is older that version.texi.
 # (A common situation in a real tree).
 $sleep
-touch stamp-vti
+touch ../stamp-vti
 
 $MAKE distcheck
 # Being distributed, this file should have been rebuilt.
 test -f mu.info
 
 $MAKE distclean
-test -f stamp-vti
-test -f version.texi
+test -f ../stamp-vti
+test -f ../version.texi
 test -f foo.info
 test -f subdir/bar.info
 test ! -e mu.info
 
 ../configure
 $MAKE maintainer-clean
+test ! -e ../stamp-vti
+test ! -e ../version.texi
 test ! -e stamp-vti
 test ! -e version.texi
 test ! -e foo.info

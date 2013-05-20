@@ -20,7 +20,7 @@
 
 # Don't get fooled when running as an Emacs subprocess.  This is
 # for the benefit of the "make -e" invocation below.
-EMACS=; unset EMACS
+unset EMACS
 
 cat > Makefile.am << 'EOF'
 lisp_LISP = foo.el

@@ -33,7 +33,7 @@ test-nosilent:
 	$(AM_V_P); test $$? -eq 0
 EOF
 
-unset enable_silent_rules || :
+unset enable_silent_rules
 
 : 'No explicit default in configure.ac, enable by default in config.site'
 

@@ -70,8 +70,17 @@ $MAKE -n \
   FCFLAGS_f90=--@90 FCFLAGS_f95=--@95 FCFLAGS_f03=--@03 FCFLAGS_f08=--@08 \
   > stdout || { cat stdout; exit 1; }
 cat stdout
-# To make it easier to have  stricter grepping below.
-sed -e 's/[ 	][ 	]*/  /g' -e 's/^/ /' -e 's/$/ /' stdout > out
+# To make it easier to have stricter grepping below.
+$PERL -e '
+  undef $/;
+  $_ = <>;
+  s/[^\\]\\\n/ /g;
+  s/^/ /;
+  s/\n/ \n /g;
+  s/[ \t]+/  /g;
+  s/\n\s*\z/\n/;
+  print;
+' <stdout >out
 cat out
 
 grep ' fake-fc .* --@90 .* hello\.f90 ' out

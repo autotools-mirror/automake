@@ -30,9 +30,6 @@ AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
-## FIXME: stop disabling the warnings in the 'unsupported' category
-## FIXME: once the 'subdir-objects' option has been mandatory.
-AUTOMAKE_OPTIONS = -Wno-unsupported
 lib_LTLIBRARIES = libzardoz.la
 libzardoz_la_SOURCES = foo.c sub/bar.c
 END
@@ -46,7 +43,7 @@ $ACLOCAL
 $AUTOMAKE -a
 
 grep include Makefile.in # For debugging.
-grep 'include.*\./\$(DEPDIR)/foo\.P' Makefile.in
+LC_ALL=C grep 'include.*\./\$(DEPDIR)/foo\.P' Makefile.in
 LC_ALL=C grep 'include.*[^a-zA-Z0-9_/]sub/\$(DEPDIR)/bar\.P' Makefile.in
 $EGREP 'include.*/(\.|sub)/\$\(DEPDIR\)' Makefile.in && exit 1
 

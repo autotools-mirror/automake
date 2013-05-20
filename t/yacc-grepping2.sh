@@ -32,7 +32,6 @@ maude_SOURCES = sub/maude.y
 END
 
 $AUTOMAKE -a
-
 # No rule needed, the default .y.c: inference rule is enough
 # (but there may be an additional dependency on a dirstamp file).
 grep '^sub/maude\.c:.*maude\.y' Makefile.in && exit 1

@@ -114,7 +114,9 @@ $ACLOCAL
 $AUTOCONF
 $AUTOMAKE -a
 
-test ! -f ylwrap
+test ! -e ylwrap
+test ! -e ar-lib
+
 cd lib
 $ACLOCAL
 $AUTOCONF
@@ -122,6 +124,7 @@ $AUTOHEADER
 $AUTOMAKE --add-missing
 cd ..
 test -f ylwrap
+test -f ar-lib
 
 ./configure
 

@@ -20,7 +20,7 @@
 . test-init.sh
 
 # We don't want to allow user overrides in this test.
-PYTHON=; unset PYTHON
+unset PYTHON
 
 cat >>configure.ac <<'EOF'
 m4_define([_AM_PYTHON_INTERPRETER_LIST], [IShouldNotExist1 IShouldNotExist2])

@@ -27,7 +27,7 @@ AS_IF([test $success = yes && test "$sentence" = 'it works :-)'],
 AC_OUTPUT
 END
 
-unset sentence || :
+unset sentence
 
 cat > Makefile.am << 'END'
 AM_DISTCHECK_CONFIGURE_FLAGS = $(dc_flags1) $(dc_flags2)

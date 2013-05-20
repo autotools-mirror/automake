@@ -16,7 +16,6 @@
 
 # Check that automake lex support ensures that lex-generated C
 # files use correct "#line" directives.
-# 'subdir-object' option enabled.
 # See also sister test 'yacc-line.sh'.
 
 required='cc lex'
