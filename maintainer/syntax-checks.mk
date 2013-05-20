@@ -150,7 +150,7 @@ sc_mkinstalldirs:
 	  $(xtests) \
 	  $(pms) \
 	  $(ams) \
-	  $(srcdir)/automake.in \
+	  $(automake_in) \
 	  $(srcdir)/doc/*.texi \
 	  $(srcdir)/maintainer/maint.mk \
 	"; \
@@ -273,7 +273,7 @@ sc_make_simple_include:
 	   $(xtests) \
 	   $(ams) \
 	   $(srcdir)/m4/*.m4 \
-	   $(srcdir)/automake.in \
+	   $(automake_in) \
 	   $(srcdir)/doc/*.texi \
 	   aclocal.m4 \
 	   configure \
@@ -285,7 +285,7 @@ sc_make_simple_include:
 sc_no_dotmake_target:
 	@files="\
 	  $(ams) \
-	  $(srcdir)/automake.in \
+	  $(automake_in) \
 	  $(srcdir)/doc/*.texi \
 	 "; \
 	if grep '\.MAKE' $$files; then \
@@ -302,7 +302,7 @@ sc_no_am_makeflags:
 	@files="\
 	  $(xtests) \
 	  $(ams) \
-	  $(srcdir)/automake.in \
+	  $(automake_in) \
 	  $(srcdir)/doc/*.texi \
 	 "; \
 	if grep '\bAM_MAKEFLAGS\b' $$files; then \
@@ -328,7 +328,7 @@ $(sc_renamed_variables_rules): sc_no_% :
 	  $(xtests) \
 	  $(pms) \
 	  $(ams) \
-	  $(srcdir)/automake.in \
+	  $(automake_in) \
 	  $(srcdir)/doc/*.texi \
 	"; \
 	if grep -E '\b$*\b' $$files; then \
@@ -343,7 +343,7 @@ sc_no_RECHECK_LOGS:
 	  $(pms) \
 	  $(ams) \
 	  $(srcdir)/doc/*.texi \
-	  $(srcdir)/automake.in \
+	  $(automake_in) \
 	  README t/README \
 	"; \
 	if grep -F 'RECHECK_LOGS' $$files; then \
