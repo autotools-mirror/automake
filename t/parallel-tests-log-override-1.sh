@@ -76,19 +76,19 @@ $MAKE clean
 test -f test-suite.log && exit 99 # Sanity check.
 
 # Check that we can override the testsuite log file at runtime.
-TEST_SUITE_LOG=zardoz.log $MAKE -e check
+run_make TEST_SUITE_LOG=zardoz.log check
 ls -l
 test ! -e test-suite.log
 cat zardoz.log
 test_log_expected zardoz.log
 # Sanity check the distribution too (this also does minimal checks on
 # VPATH support).
-TEST_SUITE_LOG=zardoz.log $MAKE -e distcheck
+run_make TEST_SUITE_LOG=zardoz.log distcheck
 
 # Check that cleanup rules remove the correct file even when
 # user overrides are in place.
 cp orig test-suite.log
-TEST_SUITE_LOG=zardoz.log $MAKE -e clean
+run_make TEST_SUITE_LOG=zardoz.log clean
 ls -l
 test ! -e zardoz.log
 diff orig test-suite.log
@@ -97,11 +97,11 @@ diff orig test-suite.log
 # Also check that the testsuite log file doesn't need to be named
 # accordingly to the '*.log' pattern.
 chmod a-w test-suite.log
-TEST_SUITE_LOG=TheLogFile $MAKE -e check
+run_make TEST_SUITE_LOG=TheLogFile check
 ls -l
 diff orig test-suite.log
 test_log_expected TheLogFile
-TEST_SUITE_LOG=TheLogFile $MAKE -e clean
+run_make TEST_SUITE_LOG=TheLogFile clean
 ls -l
 test ! -e TheLogFile
 diff orig test-suite.log

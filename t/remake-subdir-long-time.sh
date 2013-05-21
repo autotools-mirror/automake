@@ -93,14 +93,14 @@ rm -f automake-has-run aclocal-has-run
 
 ./configure
 # Sanity check: Makefile doesn't get updated uselessly.
-ACLOCAL=false AUTOMAKE=false AUTOCONF=false $MAKE -e
+run_make ACLOCAL=false AUTOMAKE=false AUTOCONF=false
 
 $sleep
 sed "s|magic|magic2|" configure.ac > t
 mv -f t configure.ac
 
 cd sub
-AUTOMAKE="$AUTOMAKE" ACLOCAL="$ACLOCAL" $MAKE -e Makefile
+run_make Makefile AUTOMAKE="$AUTOMAKE" ACLOCAL="$ACLOCAL"
 cd ..
 
 # For debugging.

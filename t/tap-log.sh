@@ -85,7 +85,7 @@ END
 
 chmod a+x *.test
 
-TEST_SUITE_LOG=my.log $MAKE -e check && exit 1
+run_make -e FAIL TEST_SUITE_LOG=my.log check
 ls -l # For debugging.
 test ! -e test-suite.log
 test ! -e global.log
@@ -116,7 +116,7 @@ $FGREP 'xpass.test' my.log
 $FGREP 'error.test' my.log
 
 touch error2.log test-suite.log global.log
-TEST_SUITE_LOG=my.log $MAKE -e mostlyclean
+run_make TEST_SUITE_LOG=my.log mostlyclean
 ls -l # For debugging.
 test ! -e my.log
 test ! -e pass.log

@@ -55,22 +55,19 @@ $AUTOCONF
 $AUTOMAKE -a
 
 ./configure
-(
-  # Do not check for failure in this subshell
-  set +e
-  env TESTS=pass $MAKE -e check
-  env TESTS=fail $MAKE -e check
-  env TESTS=skip $MAKE -e check
-  env TESTS=xfail $MAKE -e check
-  env TESTS=xpass $MAKE -e check
-  env TESTS="pass pass2" $MAKE -e check
-  env TESTS="fail fail2" $MAKE -e check
-  env TESTS="skip skip2" $MAKE -e check
-  env TESTS="xfail xfail2" $MAKE -e check
-  env TESTS="xpass xpass2" $MAKE -e check
-  env TESTS='pass skip xfail' $MAKE -e check
-  $MAKE check
-  :
+( 
+  run_make -e IGNORE TESTS=pass check
+  run_make -e IGNORE TESTS=fail check
+  run_make -e IGNORE TESTS=skip check
+  run_make -e IGNORE TESTS=xfail check
+  run_make -e IGNORE TESTS=xpass check
+  run_make -e IGNORE TESTS="pass pass2" check
+  run_make -e IGNORE TESTS="fail fail2" check
+  run_make -e IGNORE TESTS="skip skip2" check
+  run_make -e IGNORE TESTS="xfail xfail2" check
+  run_make -e IGNORE TESTS="xpass xpass2" check
+  run_make -e IGNORE TESTS='pass skip xfail' check
+  run_make -e IGNORE check
 ) >stdout || { cat stdout; exit 1; }
 cat stdout
 

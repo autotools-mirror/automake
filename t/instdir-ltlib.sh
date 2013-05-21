@@ -66,31 +66,17 @@ cd build
 ../configure --prefix="$instdir" PYTHON="echo" \
              am_cv_python_pythondir="$instdir/python" \
              am_cv_python_pyexecdir="$instdir/pyexec"
-xMAKE ()
-{
-  # Early line break here to please maintainer-check.
-  $MAKE \
-    bindir= libdir= pyexecdir= \
-    AM_MAKEFLAGS='bindir= libdir= pyexecdir=' \
-    "$@"
-}
 
-xMAKE
+nukedirs='bindir= libdir= pyexecdir='
 
-xMAKE install
+run_make $nukedirs install
 test ! -e "$instdir"
-xMAKE install DESTDIR="$destdir"
+run_make $nukedirs install DESTDIR="$destdir"
 test ! -e "$instdir"
 test ! -e "$destdir"
-xMAKE uninstall > stdout || { cat stdout; exit 1; }
+run_make $nukedirs uninstall > stdout || { cat stdout; exit 1; }
 cat stdout
-# Creative quoting below to please maintainer-check.
-grep 'rm'' ' stdout && exit 1
-xMAKE uninstall DESTDIR="$destdir" > stdout || { cat stdout; exit 1; }
-cat stdout
-# Creative quoting below to please maintainer-check.
-grep 'rm'' ' stdout && exit 1
-
-$MAKE
+grep 'rm -f' stdout && exit 1
+run_make $nukedirs uninstall DESTDIR="$destdir"
 
 :

@@ -50,7 +50,7 @@ grep '\$(JAVACFLAGS).*\$(AM_JAVACFLAGS)' Makefile.in && exit 1
 
 $AUTOCONF
 ./configure
-env JAVACFLAGS=__user_flags__ $MAKE -e
+run_make JAVACFLAGS=__user_flags__
 
 ls -l
 

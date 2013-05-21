@@ -47,8 +47,8 @@ done >> d.test
 echo 1..00 > e.test
 echo '1..000 # SKIP' > f.test
 
-env TESTS='a.test b.test c.test d.test e.test f.test' \
-  $MAKE -e check >stdout || { cat stdout; exit 1; }
+run_make TESTS='a.test b.test c.test d.test e.test f.test' check >stdout \
+  || { cat stdout; exit 1; }
 cat stdout
 
 count_test_results total=115 pass=113 xfail=0 skip=2 fail=0 xpass=0 error=0

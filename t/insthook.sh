@@ -59,7 +59,7 @@ test -f ok
 ./configure "--bindir=$(pwd)/bin"
 $MAKE install
 echo b > foo
-VERSION=2.0 $MAKE -e install
+run_make VERSION=2.0 install
 test $(cat bin/foo-1.0) = a
 test $(cat bin/foo-2.0) = b
 test $(cat bin/foo)     = b

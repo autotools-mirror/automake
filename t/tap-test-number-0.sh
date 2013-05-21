@@ -70,7 +70,7 @@ cat > e.test <<END
 ok 0 # TODO
 END
 
-TESTS='a.test b.test c.test d.test e.test' $MAKE -e check >stdout \
+run_make TESTS='a.test b.test c.test d.test e.test' check >stdout \
   && { cat stdout; exit 1; }
 cat stdout
 

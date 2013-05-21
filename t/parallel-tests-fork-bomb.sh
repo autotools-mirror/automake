@@ -100,7 +100,7 @@ do_check ()
 {
   st=0
   log=$1; shift
-  env "$@" $MAKE -e check >output 2>&1 || st=$?
+  run_make "$@" check >output 2>&1 || st=$?
   cat output
   $FGREP '::OOPS::' output && exit 1 # Possible infinite recursion.
   # Check that at least we don't create a botched global log file.

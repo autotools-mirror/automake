@@ -52,7 +52,7 @@ cp one.c two.c
 ./configure
 $MAKE check
 test -f ok
-EXEEXT=.bin $MAKE -e print-tests >stdout || { cat stdout; exit 1; }
+run_make EXEEXT=.bin print-tests >stdout || { cat stdout; exit 1; }
 cat stdout
 $FGREP 'BEG: one.bin two.bin :END' stdout
 # No am__EXEEXT_* variable is needed.

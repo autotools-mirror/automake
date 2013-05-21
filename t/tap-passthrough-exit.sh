@@ -52,7 +52,7 @@ for e in $exit_statuses; do
   done
 done
 
-env TEST_LOG_DRIVER_FLAGS='--ignore-exit' $MAKE -e check
+run_make check TEST_LOG_DRIVER_FLAGS='--ignore-exit'
 $FGREP ".test - exited with status" *.log && exit 1
 
 :

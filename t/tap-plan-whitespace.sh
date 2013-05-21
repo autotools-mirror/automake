@@ -32,7 +32,7 @@ cat > bar.test <<END
 ok 1
 END
 
-TESTS='foo.test bar.test' $MAKE -e check >stdout || { cat stdout; exit 1; }
+run_make TESTS='foo.test bar.test' check >stdout || { cat stdout; exit 1; }
 cat stdout
 
 count_test_results total=3 pass=3 fail=0 error=0 xpass=0 xfail=0 skip=0

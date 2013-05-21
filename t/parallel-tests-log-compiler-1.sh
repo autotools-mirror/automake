@@ -111,7 +111,7 @@ test -f bla.log
 test -f bli.suff.log
 test -f sub/test.log
 
-T_LOG_FLAGS=--bad $MAKE -e check && exit 1
+run_make -e FAIL T_LOG_FLAGS=--bad check
 cat test-suite.log
 cat bla.log
 # With the above flag overridden, bla.t should fail ...

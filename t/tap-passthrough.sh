@@ -46,7 +46,7 @@ ok # SKIP who cares?
 $weirdchars
 END
 
-TESTS=ok.test $MAKE -e check || { cat ok.log; exit 1; }
+run_make TESTS=ok.test check || { cat ok.log; exit 1; }
 cat ok.log
 
 for rx in \
@@ -115,8 +115,8 @@ Last line
 END
 
 st=0
-env TESTS='tiny.test ok.test ko.test bail.test skip.test err.test' \
-  $MAKE -e check || st=$?
+run_make check \
+  TESTS='tiny.test ok.test ko.test bail.test skip.test err.test' || st=$?
 cat tiny.log
 cat ok.log
 cat ko.log

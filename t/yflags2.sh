@@ -28,10 +28,6 @@ echo 'extern int dummy;' >> y.tab.c
 END
 chmod a+x fake-yacc
 
-# Remove Yacc from the environment, so that it won't interfere
-# with 'make -e' below.
-unset YACC
-
 cat >> configure.ac <<'END'
 AC_SUBST([CXX], [false])
 # Simulate presence of Yacc using our fake-yacc script.
@@ -59,7 +55,7 @@ grep '\$(YFLAGS).*\$(AM_YFLAGS)' Makefile.in && exit 1
 
 $AUTOCONF
 ./configure
-env YFLAGS=__user_flags__ $MAKE -e foo.cc bar-bar.c++
+run_make YFLAGS=__user_flags__ foo.cc bar-bar.c++
 
 cat foo.cc
 cat bar-bar.c++
