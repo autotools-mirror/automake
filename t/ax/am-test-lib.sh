@@ -159,16 +159,33 @@ is_valid_varname ()
   return 0
 }
 
-# run_make [-e STATUS] [--] [VAR=VAL ...] [MAKE-ARGS...]
-# ------------------------------------------------------
+# run_make [-e STATUS] [-O] [-E] [-M] [--] [VAR=VAL ...] [MAKE-ARGS...]
+# ---------------------------------------------------------------------
+#
 # Run $MAKE with the given command-line, and fail if it doesn't exit with
 # STATUS (default: 0).  If STATUS is "FAIL", then any exit status > 0 is
 # acceptable.  If STATUS is "IGNORE", any exit value is acceptable.
+#
+# Other options:
+#
+#  -O   save the standard output from make on disk, in a regular file
+#       named 'stdout'.
+#
+#  -E   save the standard error from make on disk, in a regular file
+#       named 'stderr'.
+#
+#  -M   save both the standard output and standard error from make on
+#       disk, in a regular file named 'output'. This option supersedes
+#       both the '-O' and '-E' options.
+#
 # This function also handle command-line override of variable definition
 # in a smart way, using AM_MAKEFLAGS if a non-GNU make implementation
 # is in use.
+#
 run_make ()
 {
+  am__make_redirect=
+  am__make_flags=
   # Follow-up code might want to analyse these, so don't make them as
   # private, nor unset them later.
   am_make_rc_exp=0
@@ -177,12 +194,15 @@ run_make ()
   while test $# -gt 0; do
     case $1 in
       -e) am_make_rc_exp=$2; shift;;
+      -O) am__make_redirect="$am__make_redirect >stdout";;
+      -E) am__make_redirect="$am__make_redirect 2>stderr";;
+      -M) am__make_redirect=">output 2>&1";;
       --) shift; break;;
        *) break;;
     esac
     shift
   done
-  am__make_flags=
+
   if using_gmake; then
     # We can trust GNU make to correctly pass macro definitions given
     # on the command line down to sub-make invocations, and this allow
@@ -221,12 +241,23 @@ run_make ()
     done
     unset am__x
   fi
+
   if test x"$am__make_flags" != x; then
-    $MAKE AM_MAKEFLAGS="$am__make_flags" ${1+"$@"} || am_make_rc_got=$?
-  else
-    $MAKE ${1+"$@"} || am_make_rc_got=$?
+     set AM_MAKEFLAGS="$am__make_flags" ${1+"$@"}
+     unset am__make_flags
   fi
-  unset am__make_flags
+
+  eval "\$MAKE${am__make_redirect}"' ${1+"$@"}' || am_make_rc_got=$?
+
+  case $am__make_redirect in
+           *output*) cat output;;
+    *stderr*stdout*) cat stdout && cat stderr >&2;;
+    *stdout*stderr*) cat stdout && cat stderr >&2;;
+           *stdout*) cat stdout;;
+           *stderr*) cat stderr >&2;;
+  esac \
+    || fatal_ "displaying make output"
+
   case $am_make_rc_exp in
     IGNORE)
       : Ignore exit status
@@ -240,6 +271,7 @@ run_make ()
      test $am_make_rc_exp -eq $am_make_rc_got || return 1
      ;;
   esac
+  unset am__make_redirect
 }
 
 # AUTOMAKE_run [-e STATUS] [-d DESCRIPTION] [--] [AUTOMAKE-ARGS...]

@@ -36,9 +36,7 @@ not ok 6 # SKIP
 Bail out!
 END
 
-$MAKE check >stdout && { cat stdout; exit 1; }
-cat stdout
-
+run_make -O -e FAIL check
 count_test_results total=7 pass=0 fail=0 xpass=2 xfail=3 skip=1 error=1
 
 grep '^XPASS: all\.test 1$' stdout
@@ -59,9 +57,7 @@ ok 2 # SKIP
 not ok 3 # TODO
 END
 
-$MAKE check >stdout || { cat stdout; exit 1; }
-cat stdout
-
+run_make -O check
 count_test_results total=3 pass=0 fail=0 xpass=0 xfail=2 skip=1 error=0
 
 :
