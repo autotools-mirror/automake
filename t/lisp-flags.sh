@@ -18,10 +18,6 @@
 
 . test-init.sh
 
-# Don't get fooled when running as an Emacs subprocess.  This is
-# for the benefit of the "make -e" invocation below.
-unset EMACS
-
 cat > Makefile.am << 'EOF'
 lisp_LISP = foo.el
 AM_ELCFLAGS = __am_elcflags__
@@ -39,7 +35,7 @@ $AUTOMAKE --add-missing
 ./configure EMACS='echo >$@' --with-lispdir="$(pwd)/unused"
 
 : > foo.el
-ELCFLAGS='__usr_elcflags__' $MAKE -e
+run_make ELCFLAGS='__usr_elcflags__'
 grep '__am_elcflags__.*__usr_elcflags__' foo.elc
 
 :

@@ -39,6 +39,6 @@ $ACLOCAL
 $AUTOMAKE
 $AUTOCONF
 ./configure
-DISTCHECK_CONFIGURE_FLAGS=foo=bar $MAKE -e distcheck
+run_make DISTCHECK_CONFIGURE_FLAGS='foo=bar' distcheck
 
 :

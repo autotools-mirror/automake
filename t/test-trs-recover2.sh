@@ -107,7 +107,7 @@ $sleep
 touch stamp
 $sleep
 touch bar.test
-RECHECK_LOGS= $MAKE -e check >stdout || { cat stdout; exit 1; }
+run_make RECHECK_LOGS= check >stdout || { cat stdout; exit 1; }
 cat stdout
 test -r foo.trs
 is_newest bar.trs bar.test

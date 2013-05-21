@@ -57,11 +57,11 @@ do_check ()
   if test $use_colors = yes; then
     # Forced colorization should take place also with non-ANSI terminals;
     # hence the "TERM=dumb" definition.
-    make_cmd="env TERM=dumb AM_COLOR_TESTS=always $MAKE -e"
+    make_args='TERM=dumb AM_COLOR_TESTS=always'
   else
-    make_cmd=$MAKE
+    make_args=
   fi
-  $make_cmd check > stdout || st=$?
+  run_make $make_args check > stdout || st=$?
   cat stdout
   if test $expect_failure = yes; then
     test $st -gt 0 || exit 1

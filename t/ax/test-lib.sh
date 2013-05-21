@@ -105,18 +105,24 @@ alias exit=_am_exit
 # "unset VAR" returns a non-zero exit status in case the VAR variable
 # is already unset.  This doesn't interact well with our usage of
 # "set -e" in the testsuite.  This function and the alias below help
-# to work around the issue.
-_am_unset ()
-{
-  for _am_v
-  do
-    # Extra escaping (here and below) to ensure we do not call our
-    # 'unset' alias.
-    eval ${_am_v}=dummy && \unset ${_am_v} || exit 1
-  done
-  \unset _am_v
-}
-alias unset=_am_unset
+# to work around the issue.  But be sure to use them only if actually
+# needed.  The repeated unset in the check below cater to the very
+# unlikely case where the '_am_v' variable is set in the environment.
+if unset _am_v && unset _am_v; then
+  : Nothing needs to be done.
+else
+  _am_unset ()
+  {
+    for _am_v
+    do
+      # Extra escaping (here and below) to ensure we do not call our
+      # 'unset' alias.
+      eval ${_am_v}=dummy && \unset ${_am_v} || return 1
+    done
+    \unset _am_v
+  }
+  alias unset=_am_unset
+fi
 
 ## ------------------------------------ ##
 ##  General testsuite shell functions.  ##

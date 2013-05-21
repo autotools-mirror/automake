@@ -68,7 +68,7 @@ test -d foo && exit 1
 
 rm -rf $me-1.0
 # Remove the dot from VERSION for the next grep.
-VERSION=10 MKDIR_P='echo MKDIR_P' $MAKE -e distdir >stdout || :
+run_make -e IGNORE VERSION=10 MKDIR_P='echo MKDIR_P' distdir >stdout
 cat stdout
 
 # Make sure no './' appear in the directory names.  srcdir is '..', so

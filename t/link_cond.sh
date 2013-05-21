@@ -60,11 +60,11 @@ main ()
 END
 
 ./configure have_cxx=no
-CXX=false $MAKE -e
+run_make CXX=false
 
 # Sanity check.
 rm -f foo foo.exe
-CC=false $MAKE -e && exit 99
+run_make CC=false && exit 99
 
 $MAKE distclean
 
@@ -79,10 +79,10 @@ int main (void)
 END
 
 ./configure have_cxx=yes
-CC=false $MAKE -e
+run_make CC=false
 
 # Sanity check.
 rm -f foo foo.exe
-CXX=false $MAKE -e && exit 99
+run_make CXX=false && exit 99
 
 :

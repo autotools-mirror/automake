@@ -87,8 +87,7 @@ PATH=$(pwd)$PATH_SEPARATOR$PATH; export PATH
 # per GNU Standard.
 $MAKE maintainer-clean
 ./configure
-YACC="myyacc.sh" LEX="mylex.sh" \
-   LEX_OUTPUT_ROOT='lex.yy' $MAKE -e zardoz.c joe.c
+run_make YACC=myyacc.sh LEX=mylex.sh LEX_OUTPUT_ROOT=lex.yy zardoz.c joe.c
 $FGREP zardoz.y zardoz.c
 $FGREP joe.l joe.c
 

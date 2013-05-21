@@ -83,8 +83,7 @@ chmod a-w $distdir
 mkdir build2
 cd build2
 ../$distdir/configure
-$MAKE >out 2>&1 && { cat out; exit 1; }
-cat out
-$FGREP parse.c out
+run_make -e FAIL -M
+$FGREP parse.c output
 
 :

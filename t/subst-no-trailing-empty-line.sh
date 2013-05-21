@@ -82,13 +82,13 @@ test $($EGREP -c "^[ $tab]*@$v2@ @$v3@[ $tab]*$bs?$" Makefile.in) -eq 3
 cat t-programs
 grep '^ *$' t-programs && exit 1
 
-$MAKE print-programs >stdout || { cat stdout; exit 1; }
+run_make print-programs >stdout || { cat stdout; exit 1; }
 cat stdout
 grep '^BEG1: x :END1$' stdout
 grep '^BEG2: :END2$' stdout
 grep '^BEG3: zardoz x :END3$' stdout
 
-am__empty=X $MAKE -e print-programs >stdout || { cat stdout; exit 1; }
+run_make am__empty=X print-programs >stdout || { cat stdout; exit 1; }
 cat stdout
 grep '^BEG1: x X :END1$' stdout
 grep '^BEG2: X :END2$' stdout

@@ -14,8 +14,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# parallel-tests: "make -k recheck" in the face of build
-# failures for the test cases.  See automake bug#11791.
+# parallel-tests: "make recheck" and "make -k recheck" in the face of
+# build failures for the test cases.  See automake bug#11791.
 
 required='cc native'
 . test-init.sh
@@ -42,6 +42,7 @@ $MAKE check >stdout && { cat stdout; exit 1; }
 cat stdout
 count_test_results total=1 pass=0 fail=1 xpass=0 xfail=0 skip=0 error=0
 
+$sleep # Required to avoid a spurious failure with some FreeBSD makes.
 st=0; $MAKE -k recheck >stdout || st=$?
 cat stdout
 # Don't trust the exit status of "make -k" for non-GNU makes.
@@ -61,6 +62,7 @@ $EGREP '(X?PASS|X?FAIL|SKIP|ERROR):' stdout && exit 1
 test -f foo.log
 test -f foo.trs
 
+$sleep # Required to avoid a spurious failure with some FreeBSD makes.
 st=0; $MAKE -k recheck >stdout || st=$?
 cat stdout
 # Don't trust the exit status of "make -k" for non-GNU makes.

@@ -62,7 +62,7 @@ grep '\$(LFLAGS).*\$(AM_LFLAGS)' Makefile.in && exit 1
 
 $AUTOCONF
 ./configure
-env LFLAGS=__user_flags__ $MAKE -e foo.c bar-bar.c
+run_make LFLAGS=__user_flags__ foo.c bar-bar.c
 
 cat foo.c
 cat bar-bar.c

@@ -50,7 +50,7 @@ ERROR: b.test - Bail out!
 ERROR: c.test - Bail out! FUBAR!
 END
 
-TESTS='a.test b.test c.test' $MAKE -e check >stdout \
+run_make TESTS='a.test b.test c.test' check >stdout \
   && { cat stdout; exit 1; }
 cat stdout
 

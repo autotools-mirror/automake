@@ -127,7 +127,7 @@ Bail out!
 ok 1
 END
 
-TESTS=bail.test $MAKE -e check >stdout && { cat stdout; exit 1; }
+run_make check TESTS=bail.test >stdout && { cat stdout; exit 1; }
 cat stdout
 
 count_test_results total=1 pass=0 fail=0 xpass=0 xfail=0 skip=0 error=1
@@ -146,7 +146,7 @@ $FGREP 'success.test' stdout && exit 1
 
 rm -f *.log *.test
 
-TEST_LOGS=ok.log $MAKE -e check >stdout || { cat stdout; exit 1; }
+run_make check TEST_LOGS=ok.log >stdout || { cat stdout; exit 1; }
 cat stdout
 
 count_test_results total=3 pass=1 fail=0 xpass=0 xfail=1 skip=1 error=0
