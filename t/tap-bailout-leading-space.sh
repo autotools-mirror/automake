@@ -50,10 +50,7 @@ ERROR: b.test - Bail out!
 ERROR: c.test - Bail out! FUBAR!
 END
 
-run_make TESTS='a.test b.test c.test' check >stdout \
-  && { cat stdout; exit 1; }
-cat stdout
-
+run_make -O -e FAIL TESTS='a.test b.test c.test' check
 count_test_results total=5 pass=1 fail=0 xpass=0 xfail=0 skip=1 error=3
 
 LC_ALL=C sort exp > t

@@ -107,8 +107,7 @@ $sleep
 touch stamp
 $sleep
 touch bar.test
-run_make RECHECK_LOGS= check >stdout || { cat stdout; exit 1; }
-cat stdout
+run_make -O RECHECK_LOGS= check
 test -r foo.trs
 is_newest bar.trs bar.test
 grep '^PASS: foo\.test' stdout

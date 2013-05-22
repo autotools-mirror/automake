@@ -53,8 +53,7 @@ ok 3
 not ok 4
 ok 5 # SKIP
 END
-run_make XFAIL_TESTS=all.test check >stdout && { cat stdout; exit 1; }
-cat stdout
+run_make -O -e FAIL XFAIL_TESTS=all.test check
 count_test_results total=6 pass=0 fail=0 xpass=0 xfail=1 skip=1 error=4
 grep '^ERROR: all\.test - too many tests run (expected 2, got 5)$' stdout
 grep '^ERROR: all\.test 3 # UNPLANNED$' stdout

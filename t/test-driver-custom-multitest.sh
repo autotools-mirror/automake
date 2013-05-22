@@ -158,10 +158,8 @@ for vpath in : false; do
   grep '%% pass-xpass-fail-xfail-skip-error %%' test-suite.log
   test $(grep -c '%% ' test-suite.log) -eq 4
 
-  run_make TESTS='pass.t pass3-skip2-xfail.t' check >stdout \
-    || { cat stdout; cat test-suite.log; exit 1; }
+  run_make -O TESTS='pass.t pass3-skip2-xfail.t' check
   cat test-suite.log
-  cat stdout
   count_test_results total=7 pass=4 fail=0 skip=2 xfail=1 xpass=0 error=0
 
   cd $srcdir

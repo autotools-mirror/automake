@@ -60,10 +60,7 @@ count_test_results total=2 pass=1 fail=0 xpass=0 xfail=0 skip=0 error=1
 
 # See that the option '--no-merge' can override the effect of '--merge'.
 
-run_make TEST_LOG_DRIVER_FLAGS=--no-merge check >stdout \
-  || { cat stdout; exit 1; }
-cat stdout
-
+run_make -O TEST_LOG_DRIVER_FLAGS=--no-merge check
 count_test_results total=1 pass=1 fail=0 xpass=0 xfail=0 skip=0 error=0
 
 

@@ -152,8 +152,7 @@ test -f baz.trs
 rm -f foo.trs
 update_stamp
 touch bar.test
-run_make RECHECK_LOGS= check >stdout || { cat stdout; exit 1; }
-cat stdout
+run_make -O RECHECK_LOGS= check
 # Check that make has updated what it needed to, but no more.
 test -f foo.trs
 is_newest bar.trs bar.test

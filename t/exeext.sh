@@ -69,8 +69,7 @@ grep 'maude3__EXEEXT__OBJECTS' Makefile.in && exit 1
 
 ./configure
 
-run_make EXEEXT=.foo print > stdout
-cat stdout
+run_make -O EXEEXT=.foo print
 
 grep '1BEG: maude.foo mt.foo :END1' stdout
 grep '2BEG: maude.static.foo :END2' stdout
@@ -79,8 +78,7 @@ grep '4BEG: rmt.foo :END4' stdout
 
 ./configure revert=yes
 
-run_make EXEEXT=.foo print > stdout
-cat stdout
+run_make -O EXEEXT=.foo print
 
 grep '1BEG: maude.foo :END1' stdout
 grep '2BEG: maude.static.foo :END2' stdout

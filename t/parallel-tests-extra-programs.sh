@@ -158,8 +158,7 @@ $sleep
 
 echo 'int main (void) { return 0; }' > none.c
 
-run_make -e IGNORE RECHECK_LOGS= check >stdout
-cat stdout
+run_make -O -e IGNORE check RECHECK_LOGS=
 ls -l # For debugging.
 test $am_make_rc_got -eq 0 || exit 1
 

@@ -85,15 +85,14 @@ $AUTOCONF
 $AUTOMAKE --add-missing --copy
 
 ./configure
-run_make \
+run_make -M -- print \
   LDFLAGS=ldflags \
   AM_LDFLAGS=am_ldflags \
   libmod1_la_LDFLAGS=lm1_la_ldflags \
   CFLAGS=cflags \
   AM_CFLAGS=am_cflags \
-  prg2_CFLAGS=prg2_cflags \
-  print >output 2>&1 || { cat output; exit 1; }
-cat output
+  prg2_CFLAGS=prg2_cflags
+
 grep '1BEG: libmod1.la mod2.la :END1' output
 grep '2BEG: mod2.la :END2' output
 grep '3BEG:.* am_cflags cflags .*lm1_la_ldflags ldflags.* :END3' output
@@ -102,6 +101,7 @@ grep '4BEG: :END4' output
 grep '5BEG: :END5' output
 grep '6BEG:.* prg2_cflags cflags .*am_ldflags ldflags.* :END6' output
 grep '6BEG: .*am_cflags.* :END6' output && exit 1
+
 $MAKE
 
 :

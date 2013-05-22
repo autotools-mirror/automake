@@ -32,9 +32,7 @@ for c4 in p P; do
   echo "1..0 # $c1$c2$c3$c4 foobar" > $j.test
 done; done; done; done
 
-run_make TESTS="$(echo *.test)" check >stdout || { cat stdout; exit 1; }
-cat stdout
-
+run_make -O TESTS="$(echo *.test)" check
 count_test_results total=16 pass=0 fail=0 xpass=0 xfail=0 skip=16 error=0
 
 for tst in *.test; do

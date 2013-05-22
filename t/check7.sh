@@ -60,8 +60,7 @@ $AUTOMAKE -a
 
 ./configure
 $MAKE check
-run_make EXEEXT=.bin print-xfail-tests >stdout || {  cat stdout; exit 1; }
-cat stdout
+run_make -O EXEEXT=.bin print-xfail-tests
 $FGREP 'BEG: a.bin b c.bin d.bin :END' stdout
 
 $MAKE distcheck

@@ -32,9 +32,7 @@ ok 1 # SKIP
 1..0 # SKIP
 END
 
-run_make TESTS='foo.test bar.test' check >stdout && { cat stdout; exit 1; }
-cat stdout
-
+run_make -O -e FAIL TESTS='foo.test bar.test' check
 count_test_results total=5 pass=0 fail=0 xpass=0 xfail=0 skip=2 error=3
 
 # Don't be too strict w.r.t. the format of the "skip whole test" message.

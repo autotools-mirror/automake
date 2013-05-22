@@ -73,8 +73,7 @@ mk_ ()
 {
   n=$1; shift
   unset am_make_rc_got
-  run_make -e IGNORE ${1+"$@"} check > stdout
-  cat stdout
+  run_make -e IGNORE -O -- ${1+"$@"} check
   cat test-suite.log
   LC_ALL=C grep '^[A-Z][A-Z]*:' stdout | LC_ALL=C sort > got-$n
   cat exp-$n

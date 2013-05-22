@@ -47,9 +47,7 @@ END
 
 tests_list=$(echo *.test)
 
-run_make TESTS="$tests_list" check >stdout && { cat stdout; exit 1; }
-cat stdout
-
+run_make -O -e FAIL TESTS="$tests_list" check
 count_test_results total=9 pass=2 fail=0 xpass=0 xfail=2 skip=0 error=5
 
 for tst in $tests_list; do

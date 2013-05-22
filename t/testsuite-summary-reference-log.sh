@@ -50,8 +50,7 @@ cat stdout
 grep '^See \./my_test_suite\.log$' stdout
 
 mkdir bar
-run_make TEST_SUITE_LOG=bar/bar.log check >stdout && { cat stdout; exit 1; }
-cat stdout
+run_make -O -e FAIL TEST_SUITE_LOG=bar/bar.log check
 grep '^See \./bar/bar\.log$' stdout
 
 cd ..
@@ -80,8 +79,7 @@ cat stdout
 grep '^See sub/test-suite\.log$' stdout
 cd ..
 
-run_make TEST_SUITE_LOG=foo.log check >stdout && { cat stdout; exit 1; }
-cat stdout
+run_make -O -e FAIL TEST_SUITE_LOG=foo.log check
 grep '^See sub/foo\.log$' stdout
 
 :

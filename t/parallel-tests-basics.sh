@@ -87,8 +87,7 @@ test ! -e test-suite.log
 # Note that this usage has a problem: the summary will only
 # take bar.log into account, because the $(TEST_SUITE_LOG) rule
 # does not "see" baz.log.  Hmm.
-run_make TESTS='bar.test' check >stdout && { cat stdout; exit 1; }
-cat stdout
+run_make -O -e FAIL TESTS='bar.test' check
 grep '^FAIL: baz\.test$' stdout
 grep '^ERROR: bar\.test$' stdout
 
@@ -103,8 +102,7 @@ test -f test-suite.log
 # Note that the previous test and this one taken together expose the timing
 # issue that requires the check-TESTS rule to always remove TEST_SUITE_LOG
 # before running the tests lazily.
-run_make RECHECK_LOGS= check > stdout && { cat stdout; exit 1; }
-cat stdout
+run_make -O -e FAIL check RECHECK_LOGS=
 test -f foo.log
 grep '^PASS: foo\.test$' stdout
 grep bar.test stdout && exit 1
@@ -115,8 +113,7 @@ grep '^# ERROR: *1$' stdout
 
 # Now, explicitly retry with all test logs already updated, and ensure
 # that the summary is still displayed.
-run_make RECHECK_LOGS= check > stdout && { cat stdout; exit 1; }
-cat stdout
+run_make -O -e FAIL check RECHECK_LOGS=
 grep foo.test stdout && exit 1
 grep bar.test stdout && exit 1
 grep baz.test stdout && exit 1
@@ -125,8 +122,7 @@ grep '^# FAIL: *1$' stdout
 grep '^# ERROR: *1$' stdout
 
 # Lazily rerunning only foo should only rerun this one test.
-run_make RECHECK_LOGS=foo.log check > stdout && { cat stdout; exit 1; }
-cat stdout
+run_make -O -e FAIL check RECHECK_LOGS=foo.log
 grep foo.test stdout
 grep bar.test stdout && exit 1
 grep baz.test stdout && exit 1
@@ -135,15 +131,13 @@ grep '^# FAIL: *1$' stdout
 grep '^# ERROR: *1$' stdout
 
 $MAKE clean
-run_make TEST_LOGS=baz.log check > stdout && { cat stdout; exit 1; }
-cat stdout
+run_make -O -e FAIL TEST_LOGS=baz.log check
 grep foo.test stdout && exit 1
 grep bar.test stdout && exit 1
 grep baz.test stdout
 
 $MAKE clean
-run_make TESTS=baz.test check > stdout && { cat stdout; exit 1; }
-cat stdout
+run_make -O -e FAIL TESTS=baz.test check
 grep foo.test stdout && exit 1
 grep bar.test stdout && exit 1
 grep baz.test stdout

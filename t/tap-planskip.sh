@@ -56,10 +56,8 @@ cat > mu.test <<END
 1..0 # SKIP $weirdchars
 END
 
-run_make TESTS='foo.test bar.test baz.test wget.test curl.test mu.test' \
-  check >stdout || { cat stdout; exit 1; }
-cat stdout
-
+run_make -O check \
+  TESTS='foo.test bar.test baz.test wget.test curl.test mu.test'
 count_test_results total=6 pass=0 fail=0 xpass=0 xfail=0 skip=6 error=0
 
 # Look for a regression where the "1..0" wasn't being stripped from the
