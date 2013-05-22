@@ -69,16 +69,7 @@ cd build
              am_cv_python_pyexecdir="$instdir/pyexec"
 $MAKE
 
-nukedirs='bindir= libdir= pyexecdir='
-
-run_make $nukedirs install
-test ! -e "$instdir"
-run_make $nukedirs install DESTDIR="$destdir"
-test ! -e "$instdir"
-test ! -e "$destdir"
-run_make $nukedirs uninstall > stdout || { cat stdout; exit 1; }
-cat stdout
-grep 'rm -f' stdout && exit 1
-run_make $nukedirs uninstall DESTDIR="$destdir"
+nulldirs='bindir= libdir= pyexecdir='
+null_install
 
 :
