@@ -55,7 +55,7 @@ cd build
 ../configure --prefix="$instdir"
 $MAKE
 
-nukedirs='bindir= datadir= includedir= foodir= bardir= man1dir=  man2dir='
+nukedirs='bindir= datadir= includedir= foodir= bardir= man1dir= man2dir='
 
 run_make $nukedirs install
 test ! -e "$instdir"
