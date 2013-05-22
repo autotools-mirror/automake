@@ -56,17 +56,7 @@ cd build
 $MAKE all dvi ps pdf html
 ls -l
 
-nukedirs='infodir= htmldir= dvidir= psdir= pdfdir='
-
-run_make $nukedirs install install-html install-dvi install-ps install-pdf
-test ! -e "$instdir"
-run_make $nukedirs install install-html install-dvi install-ps install-pdf \
-                   DESTDIR="$destdir"
-test ! -e "$instdir"
-test ! -e "$destdir"
-run_make $nukedirs uninstall > stdout || { cat stdout; exit 1; }
-cat stdout
-grep 'rm -f' stdout && exit 1
-run_make $nukedirs uninstall DESTDIR="$destdir"
+nulldirs='infodir= htmldir= dvidir= psdir= pdfdir='
+null_install --texi
 
 :
