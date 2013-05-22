@@ -373,6 +373,7 @@ grep_configure_help ()
   $EGREP "$2" am--our-help || exit 1
 }
 
+
 # using_gmake
 # -----------
 # Return success if $MAKE is GNU make, return failure otherwise.
@@ -482,6 +483,37 @@ END
 am__useless_vpath_rebuild=""
 
 yl_distcheck () { useless_vpath_rebuild || run_make distcheck ${1+"$@"}; }
+
+
+null_install ()
+{
+  for am__v in nulldirs destdir instdir; do
+    if ! eval 'test -n "$'$am__v'"'; then
+      fatal_ "null_install() invoked with \$$am__v unset"
+    fi
+  done
+  unset am__v
+  case $#,$1 in
+    0,)
+      am__inst='install';;
+    1,-t|1,--texi)
+      am__inst='install install-html install-dvi install-ps install-pdf';;
+    *)
+      fatal_ "null_install(): invalid usage";;
+  esac
+  run_make $nulldirs $am__inst
+  test ! -e "$instdir"
+  run_make $nulldirs $am__inst DESTDIR="$destdir"
+  test ! -e "$instdir"
+  test ! -e "$destdir"
+  run_make -M $nulldirs uninstall
+  # Creative quoting below to please maintainer-check.
+  grep 'rm'' ' output && exit 1
+  run_make -M $nulldirs uninstall DESTDIR="$destdir"
+  # Creative quoting below to please maintainer-check.
+  grep 'rm'' ' output && exit 1
+  : # For 'set -e'.
+}
 
 # count_test_results total=N pass=N fail=N xpass=N xfail=N skip=N error=N
 # -----------------------------------------------------------------------

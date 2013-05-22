@@ -67,10 +67,6 @@ $AUTOMAKE -a
 sed 's/^FAIL:/XFAIL:/' exp-0 | LC_ALL=C sort > exp-1
 sed '/^ERROR:/d' exp-1 > exp-2
 
-sort exp-0
-sort exp-1
-sort exp-2
-
 ./configure
 
 mk_ ()
@@ -81,6 +77,8 @@ mk_ ()
   cat stdout
   cat test-suite.log
   LC_ALL=C grep '^[A-Z][A-Z]*:' stdout | LC_ALL=C sort > got-$n
+  cat exp-$n
+  cat got-$n
   diff exp-$n got-$n
 }
 
