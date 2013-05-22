@@ -25,7 +25,7 @@
 echo '1..0 # SKIP 0' > a.test
 echo '1..0 # SKIP 0.0' > b.test
 
-$MAKE TESTS='a.test b.test' check >stdout || { cat stdout; exit 1; }
+run_make TESTS='a.test b.test' check >stdout || { cat stdout; exit 1; }
 cat stdout
 
 count_test_results total=2 pass=0 fail=0 xpass=0 xfail=0 skip=2 error=0

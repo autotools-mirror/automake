@@ -20,8 +20,6 @@
 required='cc yacc'
 . test-init.sh
 
-unset YFLAGS
-
 cat >> configure.ac <<'END'
 AC_PROG_CC
 AC_PROG_YACC
@@ -36,8 +34,9 @@ foo_SOURCES = foo.y
 # would be useful in general, so it's probably better to be
 # conservative).
 CLEANFILES = foo.output
-# Another automake wart: '-d' flag won't be given at automake time,
-# so automake won't be able to generate code to clean 'foo.h' :-(
+# As the '-d' flag won't be given at automake time, automake won't
+# be able to generate code to clean 'foo.h'.  We can't really blame
+# automake for that.
 MAINTAINERCLEANFILES = foo.h
 END
 

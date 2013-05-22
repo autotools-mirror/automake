@@ -500,11 +500,11 @@ sc_tests_automake_fails:
 	  exit 1; \
 	fi
 
-## Setting 'required' after sourcing './defs' is a bug.
+## Setting 'required' after sourcing 'test-init.sh' is a bug.
 sc_tests_required_after_defs:
 	@for file in $(xtests); do \
-	  if out=`sed -n '/defs/,$${/required=/p;}' $$file`; test -n "$$out"; then \
-	    echo 'Do not set "required" after sourcing "defs" in '"$$file: $$out" 1>&2; \
+	  if out=`sed -n '/test-init\.sh/,$${/required=/p;}' $$file`; test -n "$$out"; then \
+	    echo 'Do not set "required" after sourcing "test-init.sh" in '"$$file: $$out" 1>&2; \
 	    exit 1; \
 	  fi; \
 	done
@@ -520,7 +520,7 @@ sc_tests_ls_t:
 	fi
 
 ## Never use 'sleep 1' to create files with different timestamps.
-## Use '$sleep' instead.  Some filesystems (e.g., Windows) have only
+## Use '$sleep' instead.  Some file systems (e.g., Windows) have only
 ## a 2sec resolution.
 sc_tests_plain_sleep:
 	@if grep -E '\bsleep +[12345]\b' $(xtests); then \

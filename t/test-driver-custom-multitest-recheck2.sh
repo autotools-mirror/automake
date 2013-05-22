@@ -82,7 +82,7 @@ for vpath in : false; do
   $srcdir/configure
 
   : Run the tests for the first time.
-  $MAKE check >stdout && { cat stdout; exit 1; }
+  run_make check >stdout && { cat stdout; exit 1; }
   cat stdout
   # All the test scripts should have run.
   test -f a.run
@@ -93,7 +93,7 @@ for vpath in : false; do
   rm -f *.run
 
   : An empty '$(TESTS)' means that no test should be run.
-  $MAKE TESTS= recheck >stdout || { cat stdout; exit 1; }
+  run_make TESTS= recheck >stdout || { cat stdout; exit 1; }
   cat stdout
   count_test_results total=0 pass=0 fail=0 xpass=0 xfail=0 skip=0 error=0
   test ! -e a.run
@@ -101,7 +101,8 @@ for vpath in : false; do
   test ! -e c.run
 
   : a.test was successful the first time, no need to re-run it.
-  $MAKE TESTS=a.test recheck >stdout || { cat stdout; exit 1; }
+  run_make TESTS=a.test recheck >stdout || { cat stdout; exit 1; }
+
   cat stdout
   count_test_results total=0 pass=0 fail=0 xpass=0 xfail=0 skip=0 error=0
   test ! -e a.run
@@ -110,7 +111,8 @@ for vpath in : false; do
 
   : b.test failed, it should be re-run.  And make it pass this time.
   echo OK > b.ok
-  $MAKE TESTS=b recheck >stdout || { cat stdout; exit 1; }
+  run_make TESTS=b recheck >stdout \
+    || { cat stdout; exit 1; }
   cat stdout
   test ! -e a.run
   test -f b.run
@@ -120,13 +122,15 @@ for vpath in : false; do
   rm -f *.run
 
   : No need to re-run a.test or b.test anymore.
-  $MAKE TESTS=b recheck >stdout || { cat stdout; exit 1; }
+  run_make TESTS=b recheck >stdout \
+    || { cat stdout; exit 1; }
   cat stdout
   count_test_results total=0 pass=0 fail=0 xpass=0 xfail=0 skip=0 error=0
   test ! -e a.run
   test ! -e b.run
   test ! -e c.run
-  $MAKE TESTS='a.test b.test' recheck >stdout || { cat stdout; exit 1; }
+  run_make TESTS='a.test b.test' recheck >stdout \
+    || { cat stdout; exit 1; }
   cat stdout
   count_test_results total=0 pass=0 fail=0 xpass=0 xfail=0 skip=0 error=0
   test ! -e a.run
@@ -137,7 +141,7 @@ for vpath in : false; do
   : as it contained an XPASS.  And this time, make it fail with
   : an hard error.
   echo dummy > c.err
-  $MAKE TESTS='a.test c' recheck >stdout && { cat stdout; exit 1; }
+  run_make TESTS='a.test c' recheck >stdout && { cat stdout; exit 1; }
   cat stdout
   count_test_results total=1 pass=0 fail=0 xpass=0 xfail=0 skip=0 error=1
   test ! -e a.run
@@ -150,7 +154,8 @@ for vpath in : false; do
   : This time, make it pass
   # Use 'echo', not ':'; see comments above for why.
   echo dummy > c.ok
-  $MAKE TESTS='c.test a.test' recheck >stdout || { cat stdout; exit 1; }
+  run_make TESTS='c.test a.test' recheck >stdout \
+    || { cat stdout; exit 1; }
   cat stdout
   count_test_results total=1 pass=1 fail=0 xpass=0 xfail=0 skip=0 error=0
   test ! -e a.run
@@ -161,7 +166,7 @@ for vpath in : false; do
 
   : Nothing should be rerun anymore, as all tests have been eventually
   : successful.
-  $MAKE recheck >stdout || { cat stdout; exit 1; }
+  run_make recheck >stdout || { cat stdout; exit 1; }
   cat stdout
   count_test_results total=0 pass=0 fail=0 xpass=0 xfail=0 skip=0 error=0
   test ! -e a.run

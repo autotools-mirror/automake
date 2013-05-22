@@ -62,7 +62,7 @@ do_check ()
 {
   st=0
   log=$1; shift
-  $MAKE "$@" check >output 2>&1 || st=$?
+  run_make "$@" check >output 2>&1 || st=$?
   cat output
   $FGREP '::OOPS::' output && exit 1 # Possible infinite recursion.
   grep "[Cc]ircular.*dependency" output | $FGREP "$log"

@@ -26,26 +26,35 @@ subdir=long_subdir_name_with_many_characters
 nfiles=81
 list=$(seq_ 1 $nfiles)
 
-sed "s|@limit@|$limit|g" >myinstall.in <<'END'
+oPATH=$PATH; export oPATH
+nPATH=$(pwd)/x-bin$PATH_SEPARATOR$PATH; export nPATH
+
+mkdir x-bin
+
+sed "s|@limit@|$limit|g" >x-bin/my-install <<'END'
 #! /bin/sh
 # Fake install script.  This doesn't really install
 # (the INSTALL path below would be wrong outside this directory).
 limit=@limit@
-INSTALL='@INSTALL@'
-len=`expr "$INSTALL $*" : ".*" 2>/dev/null || echo $limit`
+PATH=$oPATH; export PATH
+if test -z "$orig_INSTALL"; then
+  echo "$0: \$orig_INSTALL variable not set" >&2
+  exit 1
+fi
+len=`expr "$orig_INSTALL $*" : ".*" 2>/dev/null || echo $limit`
 if test $len -ge $limit; then
   echo "$0: safe command line limit of $limit characters exceeded" >&2
   exit 1
 fi
-exit 0
+exec $orig_INSTALL "$@"
+exit 1
 END
 
 # Creative quoting in the next line to please maintainer-check.
-sed "s|@limit@|$limit|g" >'rm' <<'END'
+sed "s|@limit@|$limit|g" >x-bin/'rm' <<'END'
 #! /bin/sh
 limit=@limit@
-PATH=$save_PATH
-export PATH
+PATH=$oPATH; export PATH
 RM='rm -f'
 len=`expr "$RM $*" : ".*" 2>/dev/null || echo $limit`
 if test $len -ge $limit; then
@@ -56,11 +65,16 @@ exec $RM "$@"
 exit 1
 END
 
-chmod +x rm
+# Creative quoting in the next line to please maintainer-check.
+chmod +x x-bin/'rm' x-bin/my-install
+
+cat > setenv.in <<'END'
+orig_INSTALL='@INSTALL@'; export orig_INSTALL
+END
 
 cat >>configure.ac <<END
 AM_PATH_PYTHON
-AC_CONFIG_FILES([myinstall], [chmod +x ./myinstall])
+AC_CONFIG_FILES([setenv.sh:setenv.in])
 AC_CONFIG_FILES([$subdir/Makefile])
 AC_OUTPUT
 END
@@ -95,17 +109,24 @@ instdir=$(pwd)/inst
 mkdir build
 cd build
 ../configure --prefix="$instdir"
+. ./setenv.sh
+test -n "$orig_INSTALL"
 $MAKE
 # Try whether native install (or install-sh) works.
 $MAKE install
+test -n "$(find "$instdir" -name python1.py)"
 # Multiple uninstall should work, too.
 $MAKE uninstall
 $MAKE uninstall
 test $(find "$instdir" -type f -print | wc -l) -eq 0
 
 # Try whether we don't exceed the low limit.
-$MAKE install INSTALL='$(SHELL) $(top_builddir)/myinstall'
-env save_PATH="$PATH" PATH="$(pwd)/..$PATH_SEPARATOR$PATH" $MAKE uninstall
+PATH=$nPATH; export PATH
+run_make INSTALL=my-install install
+test -n "$(find "$instdir" -name python1.py)"
+run_make INSTALL=my-install uninstall
+test $(find "$instdir" -type f -print | wc -l) -eq 0
+PATH=$oPATH; export PATH
 
 cd $subdir
 srcdir=../../$subdir

@@ -45,7 +45,7 @@ $AUTOMAKE --add-missing
 
 ./configure
 mv config.log config-log # Avoid possible false positives below.
-$MAKE check AM_COLOR_TESTS=always && exit 1
+run_make -e FAIL AM_COLOR_TESTS=always check
 # Not a useless use of cat; see above comments "grep-nonprinting"
 # requirement in 'test-init.sh'.
 cat *.log | grep "$esc" && exit 1

@@ -140,7 +140,7 @@ END
 
 tests=$(echo *.test) # Also required later.
 
-$MAKE TESTS="$tests" check >stdout && { cat stdout; exit 1; }
+run_make TESTS="$tests" check >stdout && { cat stdout; exit 1; }
 cat stdout
 
 # Dirty trick required here.
@@ -149,7 +149,7 @@ for tst in $(echo " $tests " | sed 's/\.test / /'); do
 done
 
 rm -f test-suite.log
-$MAKE TESTS="$tests" test-suite.log && exit 1
+run_make -e FAIL TESTS="$tests" test-suite.log
 cat test-suite.log
 
 have_rst_section ()

@@ -62,12 +62,12 @@ DISABLE_HARD_ERRORS=x $MAKE check
 # But an empty values for DISABLE_HARD_ERRORS means that hard errors
 # are not to be counted like normal failures.
 
-$MAKE check DISABLE_HARD_ERRORS='' && exit 1
+$MAKE check DISABLE_HARD_ERRORS= && exit 1
 cat test-suite.log
 grep '^ERROR: foo$' test-suite.log
 
 cd sub
-$MAKE DISABLE_HARD_ERRORS='' check && exit 1
+$MAKE check DISABLE_HARD_ERRORS= && exit 1
 cat test-suite.log
 grep '^ERROR: bar$' test-suite.log
 cd ..

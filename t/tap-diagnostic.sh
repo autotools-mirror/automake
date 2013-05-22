@@ -66,7 +66,7 @@ cat got
 diff exp got
 count_test_results total=4 pass=2 fail=0 xpass=0 xfail=1 skip=1 error=0
 
-$MAKE check TEST_LOG_DRIVER_FLAGS="--no-comments" >stdout \
+run_make TEST_LOG_DRIVER_FLAGS="--no-comments" check >stdout \
   || { cat stdout; exit 1; }
 cat stdout
 $EGREP "#.*all\\.test|a comment|(Tests|Shell) " stdout && exit 1

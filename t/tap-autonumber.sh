@@ -44,7 +44,7 @@ not ok
 ok
 END
 
-$MAKE check TESTS=all.test >stdout && { cat stdout; exit 1; }
+run_make TESTS=all.test check >stdout && { cat stdout; exit 1; }
 cat stdout
 count_test_results total=14 pass=6 fail=5 xpass=1 xfail=1 skip=1 error=0
 

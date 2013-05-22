@@ -99,7 +99,7 @@ cwd=$(pwd) || fatal_ "getting current working directory"
 
 doinst ()
 {
-  $MAKE install install-pdf install-ps install-dvi ${1+"$@"}
+  run_make install install-pdf install-ps install-dvi ${1+"$@"}
 }
 
 : > foo.sh

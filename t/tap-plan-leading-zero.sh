@@ -47,7 +47,7 @@ done >> d.test
 echo 1..00 > e.test
 echo '1..000 # SKIP' > f.test
 
-$MAKE TESTS='a.test b.test c.test d.test e.test f.test' check >stdout \
+run_make TESTS='a.test b.test c.test d.test e.test f.test' check >stdout \
   || { cat stdout; exit 1; }
 cat stdout
 

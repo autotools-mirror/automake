@@ -56,16 +56,17 @@ cd build
 $MAKE all dvi ps pdf html
 ls -l
 
-xMAKE () { $MAKE infodir= htmldir= dvidir= psdir= pdfdir= "$@"; }
+nukedirs='infodir= htmldir= dvidir= psdir= pdfdir='
 
-xMAKE install install-html install-dvi install-ps install-pdf
+run_make $nukedirs install install-html install-dvi install-ps install-pdf
 test ! -e "$instdir"
-xMAKE install install-html install-dvi install-ps install-pdf DESTDIR="$destdir"
+run_make $nukedirs install install-html install-dvi install-ps install-pdf \
+                   DESTDIR="$destdir"
 test ! -e "$instdir"
 test ! -e "$destdir"
-xMAKE uninstall > stdout || { cat stdout; exit 1; }
+run_make $nukedirs uninstall > stdout || { cat stdout; exit 1; }
 cat stdout
 grep 'rm -f' stdout && exit 1
-xMAKE uninstall DESTDIR="$destdir"
+run_make $nukedirs uninstall DESTDIR="$destdir"
 
 :

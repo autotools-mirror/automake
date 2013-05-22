@@ -62,43 +62,33 @@ $AUTOMAKE -a
   for st in $failure_statuses; do
     echo "FAIL: $st"
   done
-} | LC_ALL=C sort > exp-fail
+} | LC_ALL=C sort > exp-0
 
-sed 's/^FAIL:/XFAIL:/' exp-fail | LC_ALL=C sort > exp-xfail-1
-sed '/^ERROR:/d' exp-xfail-1 > exp-xfail-2
+sed 's/^FAIL:/XFAIL:/' exp-0 | LC_ALL=C sort > exp-1
+sed '/^ERROR:/d' exp-1 > exp-2
 
-# For debugging.
-cat exp-fail
-cat exp-xfail-1
-cat exp-xfail-2
+sort exp-0
+sort exp-1
+sort exp-2
 
 ./configure
 
-st=1
-$MAKE check >stdout && st=0
-cat stdout
-cat test-suite.log
-test $st -gt 0 || exit 1
-LC_ALL=C grep '^[A-Z][A-Z]*:' stdout | LC_ALL=C sort > got-fail
-diff exp-fail got-fail
+mk_ ()
+{
+  n=$1; shift
+  unset am_make_rc_got
+  run_make -e IGNORE ${1+"$@"} check > stdout
+  cat stdout
+  cat test-suite.log
+  LC_ALL=C grep '^[A-Z][A-Z]*:' stdout | LC_ALL=C sort > got-$n
+  diff exp-$n got-$n
+}
 
-st=1
-$MAKE check XFAIL_TESTS="$failure_statuses 99" >stdout && st=0
-cat stdout
-cat test-suite.log
-test $st -gt 0 || exit 1
-LC_ALL=C grep '^[A-Z][A-Z]*:' stdout | LC_ALL=C sort > got-xfail-1
-diff exp-xfail-1 got-xfail-1
-
-st=0
-$MAKE check \
-  XFAIL_TESTS="$failure_statuses" \
-  TESTS="0 77 $failure_statuses" \
-  > stdout || st=$?
-cat stdout
-cat test-suite.log
-test $st -eq 0 || exit 1
-LC_ALL=C grep '^[A-Z][A-Z]*:' stdout | LC_ALL=C sort > got-xfail-2
-diff exp-xfail-2 got-xfail-2
+mk_ 0
+test $am_make_rc_got -gt 0
+mk_ 1 XFAIL_TESTS="$failure_statuses 99"
+test $am_make_rc_got -gt 0
+mk_ 2 XFAIL_TESTS="$failure_statuses" TESTS="0 77 $failure_statuses"
+test $am_make_rc_got -eq 0
 
 :

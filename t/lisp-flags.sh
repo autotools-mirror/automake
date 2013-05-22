@@ -18,10 +18,6 @@
 
 . test-init.sh
 
-# Don't get fooled when running as an Emacs subprocess.  This is
-# for the benefit of the "make -e" invocation below.
-unset EMACS
-
 cat > Makefile.am << 'EOF'
 lisp_LISP = foo.el
 AM_ELCFLAGS = __am_elcflags__

@@ -68,8 +68,7 @@ mkdir $inst $inst/share
 : > $inst/share/foobar.txt
 
 chmod a-w $inst/share
-$MAKE uninstall 2>stderr && { cat stderr >&2; exit 1; }
-cat stderr >&2
+run_make -E -e FAIL uninstall
 if test $rm_f_is_silent_on_error = yes; then
   : "rm -f" is silent on errors, skip the grepping of make output
 else
@@ -79,8 +78,8 @@ fi
 chmod a-rwx $inst/share
 (cd $inst/share) && skip_ "cannot make directories fully unreadable"
 
-$MAKE uninstall 2>stderr && { cat stderr >&2; exit 1; }
-#
+run_make -E -e FAIL uninstall
+
 # Some shells, like Solaris 10 /bin/ksh and /usr/xpg4/bin/sh, do not
 # report the name of the 'cd' builtin upon a chdir error:
 #
@@ -96,7 +95,7 @@ $MAKE uninstall 2>stderr && { cat stderr >&2; exit 1; }
 #   > \
 #   > cd unreadable'
 #   /bin/ksh[3]: unreadable: permission denied
-#
+
 $EGREP "(cd|sh)(\[[0-9]*[0-9]\])?: .*$inst/share" stderr
 
 :

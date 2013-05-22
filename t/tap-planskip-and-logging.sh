@@ -45,7 +45,7 @@ an early non-TAP line
 a later non-TAP line
 END
 
-$MAKE TESTS='foo.test foo2.test bar.test' check >stdout \
+run_make TESTS='foo.test foo2.test bar.test' check >stdout \
   || { cat stdout; exit 1; }
 cat stdout
 

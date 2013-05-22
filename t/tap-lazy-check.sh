@@ -57,14 +57,14 @@ grep_summary ()
   grep '^# ERROR: *1$' stdout
 }
 
-$MAKE check && exit 1
+run_make -e FAIL check
 test -f foo.log
 test -f bar.log
 test -f baz.log
 
 rm -f foo.log bar.log
 
-$MAKE AM_LAZY_CHECK=yes check > stdout && { cat stdout; exit 1; }
+run_make AM_LAZY_CHECK=yes check > stdout && { cat stdout; exit 1; }
 cat stdout
 test -f foo.log
 test -f bar.log
@@ -79,7 +79,7 @@ touch foo.test
 # We re-run only a successful test, but the tests that failed in the
 # previous run should still be taken into account, and cause an overall
 # failure.
-$MAKE AM_LAZY_CHECK=yes check > stdout && { cat stdout; exit 1; }
+run_make AM_LAZY_CHECK=yes check > stdout && { cat stdout; exit 1; }
 cat stdout
 grep '^PASS: foo\.test 1$' stdout
 grep '^PASS: foo\.test 2$' stdout
@@ -89,7 +89,7 @@ grep_summary
 
 $sleep
 touch zardoz
-$MAKE AM_LAZY_CHECK=yes check > stdout && { cat stdout; exit 1; }
+run_make AM_LAZY_CHECK=yes check > stdout && { cat stdout; exit 1; }
 cat stdout
 grep '^ERROR: baz\.test' stdout
 $EGREP '(foo|bar)\.test' stdout && exit 1
@@ -98,7 +98,7 @@ grep_summary
 
 # Now, explicitly retry with all test logs already updated, and ensure
 # that the summary is still displayed.
-$MAKE AM_LAZY_CHECK=yes check > stdout && { cat stdout; exit 1; }
+run_make AM_LAZY_CHECK=yes check > stdout && { cat stdout; exit 1; }
 cat stdout
 $EGREP '(foo|bar|baz)\.test' stdout && exit 1
 grep_summary

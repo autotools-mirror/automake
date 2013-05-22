@@ -167,7 +167,7 @@ for vpath in : false; do
   grep '%% pass-xpass-fail-xfail-skip-error %%' test-suite.log
   test $(grep -c '%% ' test-suite.log) -eq 4
 
-  $MAKE TESTS='pass.t pass3-skip2-xfail.t' check >stdout \
+  run_make TESTS='pass.t pass3-skip2-xfail.t' check >stdout \
     || { cat stdout; cat test-suite.log; exit 1; }
   cat test-suite.log
   cat stdout

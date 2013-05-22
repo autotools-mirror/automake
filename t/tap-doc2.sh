@@ -101,10 +101,10 @@ diff exp got
 
 grep '^Please report to bug-automake@gnu\.org$' stdout
 
-$MAKE check \
+run_make >stdout check \
   TESTS='foo.test baz.test' \
   TEST_LOG_DRIVER_FLAGS='--comments --ignore-exit' \
-    > stdout || { cat stdout; exit 1; }
+  || { cat stdout; exit 1; }
 
 cat > exp <<'END'
 PASS: foo.test 1 - Swallows fly

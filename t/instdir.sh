@@ -55,19 +55,16 @@ cd build
 ../configure --prefix="$instdir"
 $MAKE
 
-xMAKE ()
-{
-  $MAKE bindir= datadir= includedir= foodir= bardir= man1dir= man2dir= "$@"
-}
+nukedirs='bindir= datadir= includedir= foodir= bardir= man1dir=  man2dir='
 
-xMAKE install
+run_make $nukedirs install
 test ! -e "$instdir"
-xMAKE install DESTDIR="$destdir"
+run_make $nukedirs install DESTDIR="$destdir"
 test ! -e "$instdir"
 test ! -e "$destdir"
-xMAKE uninstall > stdout || { cat stdout; exit 1; }
+run_make $nukedirs uninstall > stdout || { cat stdout; exit 1; }
 cat stdout
 grep 'rm -f' stdout && exit 1
-xMAKE uninstall DESTDIR="$destdir"
+run_make $nukedirs uninstall DESTDIR="$destdir"
 
 :

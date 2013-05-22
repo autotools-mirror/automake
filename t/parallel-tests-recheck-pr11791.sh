@@ -14,8 +14,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# parallel-tests: "make -k recheck" in the face of build
-# failures for the test cases.  See automake bug#11791.
+# parallel-tests: "make recheck" and "make -k recheck" in the face of
+# build failures for the test cases.  See automake bug#11791.
 
 required='cc native'
 . test-init.sh
