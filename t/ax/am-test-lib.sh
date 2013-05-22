@@ -178,10 +178,6 @@ is_valid_varname ()
 #       disk, in a regular file named 'output'. This option supersedes
 #       both the '-O' and '-E' options.
 #
-# This function also handle command-line override of variable definition
-# in a smart way, using AM_MAKEFLAGS if a non-GNU make implementation
-# is in use.
-#
 run_make ()
 {
   am__make_redirect=
@@ -202,50 +198,6 @@ run_make ()
     esac
     shift
   done
-
-  if using_gmake; then
-    # We can trust GNU make to correctly pass macro definitions given
-    # on the command line down to sub-make invocations, and this allow
-    # us to have a vary simple implementation: delegate all the work
-    # to GNU make.
-    :
-  else
-    # We have to explicitly parse arguments passed to make.  Not 100%
-    # safe w.r.t. options like '-I' that can have an argument, but
-    # should be good enough for our usages so far.
-    for am__x
-    do
-      case $am__x in
-        *=*)
-        am__maybe_var=${am__x%%=*}
-        am__maybe_val=${am__x#*=}
-        am__maybe_def="${am__maybe_var}=${am__maybe_val}"
-        # Some variables should be portably overridable from the command
-        # line, even when using non-GNU make.
-        case $am__maybe_var in
-          V|\
-          DESTDIR|\
-          SHELL|\
-          VERBOSE|\
-          DISABLE_HARD_ERRORS|\
-          DISTCHECK_CONFIGURE_FLAGS)
-            ;;
-          *)
-            if is_valid_varname "$am__maybe_var"; then
-              append_single_quoted am__make_flags "$am__maybe_def"
-            fi
-        esac
-        unset am__maybe_var am__maybe_val am__maybe_def
-        ;;
-      esac
-    done
-    unset am__x
-  fi
-
-  if test x"$am__make_flags" != x; then
-     set AM_MAKEFLAGS="$am__make_flags" ${1+"$@"}
-     unset am__make_flags
-  fi
 
   eval "\$MAKE${am__make_redirect}"' ${1+"$@"}' || am_make_rc_got=$?
 
