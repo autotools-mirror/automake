@@ -342,9 +342,11 @@ sc_tests_no_source_defs:
 
 ## Invocation of 'run_make' should not have output redirections.
 sc_tests_no_run_make_redirect:
-	@if grep -Pzo '.*\brun_make\b(.*(\\\n))*.*>.*' $(xtests); then \
-	  echo 'Do not redirect "run_make" invocations, use' \
-	       '"run_make {-E|-O|-M}" instead.' 1>&2; \
+	@if grep -Pzo '.*(\$$MAKE|\brun_make)\b(.*(\\\n))*.*>.*' $(xtests); \
+	then \
+	  echo 'Do not redirect stdout/stderr in "run_make" or "$$MAKE"' \
+	       'invocations,' >&2; \
+	  echo 'use "run_make {-E|-O|-M}" instead.' >&2; \
 	  exit 1; \
 	fi
 

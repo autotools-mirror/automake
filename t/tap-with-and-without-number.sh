@@ -34,8 +34,7 @@ ok 6 # SKIP
 ok zardoz
 END
 
-$MAKE check >stdout || { cat stdout; exit 1; }
-cat stdout
+run_make -O check
 count_test_results total=7 pass=4 fail=0 xpass=0 xfail=2 skip=1 error=0
 
 grep '^PASS: all\.test 1 foo$' stdout

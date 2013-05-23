@@ -62,9 +62,8 @@ $MAKE distcheck
 
 # Ensure that the envvar RUNTESTFLAGS is used.
 # Report from Mark Mitchell.
-RUNTESTFLAGS=--unknown-runtest-option $MAKE check >output 2>&1 \
-  && { cat output; exit 1; }
-cat output
+RUNTESTFLAGS=--unknown-runtest-option; export RUNTESTFLAGS
+run_make -M -e FAIL check
 $FGREP 'unknown-runtest-option' output
 
 :

@@ -53,8 +53,7 @@ cwd=$(pwd) || fatal_ "getting current working directory"
 
 # A rule in the Makefile should create subdir.
 test ! -e subdir
-$MAKE >stdout || { cat stdout; exit 1; }
-cat stdout
+run_make -O
 test -d subdir
 
 grep 'liba.la .*-rpath .*lib' stdout
@@ -64,8 +63,7 @@ grep 'libb.la .*-rpath .*lib/subdir' stdout
 test -f subdir/liba.la
 test -f subdir/libb.la
 
-$MAKE install 2>stderr || { cat stderr >&2; exit 1; }
-cat stderr >&2
+run_make -E install
 grep 'remember.*--finish' stderr && exit 1
 
 test -f inst/lib/liba.la

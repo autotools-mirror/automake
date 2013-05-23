@@ -58,8 +58,7 @@ $AUTOCONF
 $AUTOMAKE -a
 ./configure --prefix "$(pwd)/inst"
 
-$MAKE check >stdout || { cat stdout; exit 1; }
-cat stdout
+run_make -O check
 grep '^PASS: subrun\.sh *$' stdout
 grep 'PASS.*echo\.sh' stdout && exit 1
 

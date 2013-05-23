@@ -45,8 +45,7 @@ END
 
 for input in empty blank white white2; do
   cp $input.test all.test
-  $MAKE check >stdout && { cat stdout; exit 1; }
-  cat stdout
+  run_make -O -e FAIL check
   count_test_results total=1 pass=0 fail=0 xpass=0 xfail=0 skip=0 error=1
   grep '^ERROR: all\.test - missing test plan$' stdout
 done

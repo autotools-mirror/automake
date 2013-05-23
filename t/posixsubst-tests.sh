@@ -54,13 +54,12 @@ $AUTOCONF
 $AUTOMAKE -a
 
 ./configure
-$MAKE check >out 2>&1 && { cat out; exit 1; }
-cat out
+run_make -M -e FAIL check
 ls -l
-grep '^FAIL: foo1\.test *$' out
-grep '^PASS: foo2\.test *$' out
-grep '^FAIL: bary *$' out
-grep '^PASS: barz *$' out
+grep '^FAIL: foo1\.test *$' output
+grep '^PASS: foo2\.test *$' output
+grep '^FAIL: bary *$' output
+grep '^PASS: barz *$' output
 test -f foo1.out
 test -f bary.out
 

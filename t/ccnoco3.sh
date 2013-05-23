@@ -71,8 +71,7 @@ mkdir build
 cd build
 
 ../configure
-$MAKE 2>stderr || { cat stderr >&2; exit 1; }
-cat stderr >&2
+run_make -E
 grep 'mv.*the same file' stderr && exit 1
 
 :

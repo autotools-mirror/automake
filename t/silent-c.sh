@@ -64,8 +64,7 @@ for config_args in \
 
   ./configure --enable-silent-rules $config_args
 
-  $MAKE >stdout || { cat stdout; exit 1; }
-  cat stdout
+  run_make -O
   $EGREP ' (-c|-o)' stdout && exit 1
   grep 'mv ' stdout && exit 1
   grep 'CC .*foo\.' stdout
@@ -78,8 +77,7 @@ for config_args in \
   grep 'CCLD .*bla' stdout
 
   $MAKE clean
-  $MAKE V=1 >stdout || { cat stdout; exit 1; }
-  cat stdout
+  run_make -O V=1
   grep ' -c' stdout
   grep ' -o foo' stdout
   $EGREP '(CC|LD) ' stdout && exit 1

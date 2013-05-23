@@ -45,9 +45,7 @@ ok 14 0.0 # SKIP 0.0
 
 END
 
-$MAKE check >stdout && { cat stdout; exit 1; }
-cat stdout
-
+run_make -O -e FAIL check
 count_test_results total=14 pass=2 fail=0 xpass=4 xfail=4 skip=4 error=0
 
 sed '/^ *$/d' > exp << 'END'

@@ -42,22 +42,19 @@ $AUTOCONF
 # Silent rules are disabled by default, since we haven't called
 # "AM_SILENT_RULES([yes])" explicitly.
 ./configure
-$MAKE >stdout || { cat stdout; exit 1; }
-cat stdout
+run_make -O
 grep 'GEN ' stdout && exit 1
 grep 'cp ' stdout
 grep 'echo ' stdout
 
 $MAKE clean
-$MAKE V=1 >stdout || { cat stdout; exit 1; }
-cat stdout
+run_make -O V=1
 grep 'GEN ' stdout && exit 1
 grep 'cp ' stdout
 grep 'echo ' stdout
 
 $MAKE clean
-$MAKE V=0 >stdout || { cat stdout; exit 1; }
-cat stdout
+run_make -O V=0
 grep 'GEN .*foo' stdout
 grep 'cp ' stdout && exit 1
 grep 'echo ' stdout && exit 1
@@ -65,22 +62,19 @@ grep 'echo ' stdout && exit 1
 $MAKE distclean
 
 ./configure --enable-silent-rules
-$MAKE >stdout || { cat stdout; exit 1; }
-cat stdout
+run_make -O
 grep 'GEN .*foo' stdout
 grep 'cp ' stdout && exit 1
 grep 'echo ' stdout && exit 1
 
 $MAKE clean
-$MAKE V=0 >stdout || { cat stdout; exit 1; }
-cat stdout
+run_make -O V=0
 grep 'GEN .*foo' stdout
 grep 'cp ' stdout && exit 1
 grep 'echo ' stdout && exit 1
 
 $MAKE clean
-$MAKE V=1 >stdout || { cat stdout; exit 1; }
-cat stdout
+run_make -O V=1
 grep 'GEN ' stdout && exit 1
 grep 'cp ' stdout
 grep 'echo ' stdout

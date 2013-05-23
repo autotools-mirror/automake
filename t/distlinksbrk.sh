@@ -60,9 +60,8 @@ for lnk in $lnk1 $lnk2 $lnka $lnkb; do
   $AUTOMAKE
   ./configure
   # Distribution must fail, with a decent error message.
-  $MAKE distdir >out 2>&1 && { cat out; exit 1; }
-  cat out
-  $FGREP $lnk out
+  run_make -M -e FAIL distdir
+  $FGREP $lnk output
 done
 
 :

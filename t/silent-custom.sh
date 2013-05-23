@@ -69,8 +69,7 @@ do_check ()
   esac
   shift
   $MAKE clean
-  $MAKE ${1+"$@"} >output 2>&1 || { cat output; exit 1; }
-  sed 's/^/  /' output
+  run_make -M -- ${1+"$@"}
   if $silent; then
     $FGREP 'cp ' output && exit 1
     $FGREP 'generate-header' output && exit 1

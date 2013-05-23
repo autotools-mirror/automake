@@ -61,8 +61,7 @@ filter_stdout ()
 }
 
 ./configure
-$MAKE check >stdout && { cat stdout; exit 1; }
-cat stdout
+run_make -O -e FAIL check
 
 using_gmake || $sleep # Required by BSD make.
 

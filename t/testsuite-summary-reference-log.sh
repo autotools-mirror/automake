@@ -45,8 +45,7 @@ cd build
 
 ../configure
 
-$MAKE check >stdout && { cat stdout; exit 1; }
-cat stdout
+run_make -O -e FAIL check
 grep '^See \./my_test_suite\.log$' stdout
 
 mkdir bar
@@ -70,12 +69,10 @@ $AUTOCONF --force
 $AUTOMAKE
 
 ./configure
-$MAKE check >stdout && { cat stdout; exit 1; }
-cat stdout
+run_make -O -e FAIL check
 grep '^See sub/test-suite\.log$' stdout
 cd sub
-$MAKE check >stdout && { cat stdout; exit 1; }
-cat stdout
+run_make -O -e FAIL check
 grep '^See sub/test-suite\.log$' stdout
 cd ..
 

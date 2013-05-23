@@ -142,8 +142,7 @@ check_targets ()
     install-info install-html install-dvi install-pdf install-ps \
     installcheck installdirs tags mostlyclean maintainer-clean
   do
-    $MAKE -n $target >stdout || { cat stdout; exit 1; }
-    cat stdout
+    run_make -O -- -n $target
     case $target in
     install-* | installdirs | tags ) ;;
     *)

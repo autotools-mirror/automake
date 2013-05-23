@@ -119,8 +119,7 @@ for vpath in : false; do
 
   $srcdir/configure
 
-  $MAKE check >stdout && { cat stdout; cat test-suite.log; exit 1; }
-  cat stdout
+  run_make -O -e FAIL check || { cat test-suite.log; exit 1; }
   cat test-suite.log
   # Couple of sanity checks.  These might need to be updated if the
   # 'trivial-test-driver' script is changed.

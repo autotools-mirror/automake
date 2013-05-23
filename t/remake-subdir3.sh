@@ -37,8 +37,7 @@ $MAKE
 
 do_check ()
 {
-  $MAKE >stdout || { cat stdout; exit 1; }
-  cat stdout
+  run_make -O
   test $(grep -c "/missing " stdout) -eq 1
 }
 

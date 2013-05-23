@@ -49,13 +49,11 @@ $AUTOMAKE -a
 
 ./configure
 
-st=0
-$MAKE check >stdout || st=$?
-cat stdout
+run_make -O -e IGNORE check
 cat test-suite.log
 cat foo.log
 cat bar.log
-test $st -eq 0 || exit $st
+test $am_make_rc_got -eq 0
 
 grep '^:test-result:XFAIL$'  foo.log
 grep '^:test-result: SKIP$'  foo.log

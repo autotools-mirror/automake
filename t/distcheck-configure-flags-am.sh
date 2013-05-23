@@ -59,8 +59,7 @@ END
 $AUTOMAKE Makefile
 ./config.status Makefile
 
-$MAKE distcheck >output 2>&1 && { cat output; exit 1; }
-cat output
+run_make -e FAIL -M distcheck
 grep "^configure:.* success='no', sentence='it works :-)'" output
 
 $MAKE distcheck DISTCHECK_CONFIGURE_FLAGS="--enable-success=yes"

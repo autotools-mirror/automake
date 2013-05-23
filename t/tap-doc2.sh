@@ -83,8 +83,7 @@ case $MAKE in *\ -j*) skip_ "can't work easily with concurrent make";; esac
 # Prevent Sun Distributed Make from trying to run in parallel.
 DMAKE_MODE=serial; export DMAKE_MODE
 
-$MAKE check >stdout && { cat stdout; exit 1; }
-cat stdout
+run_make -O -e FAIL check
 
 cat > exp <<'END'
 PASS: foo.test 1 - Swallows fly

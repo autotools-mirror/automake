@@ -80,9 +80,7 @@ $AUTOMAKE
 
 # Basilar usage and testsuite progress output.
 
-$MAKE check >stdout && { cat stdout; exit 1; }
-cat stdout
-
+run_make -O -e FAIL check
 count_test_results total=20 pass=4 fail=4 xpass=4 xfail=4 skip=4 error=0
 
 test -f success.log

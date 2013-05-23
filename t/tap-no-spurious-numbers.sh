@@ -91,9 +91,7 @@ grep '#.*#' all.test \
 test $(wc -l <all.test) -lt $highno \
   || framework_failure_ "creating all.test"
 
-$MAKE check >stdout || :
-cat stdout
-
+run_make -O -e IGNORE check
 count_test_results total=$total pass=$pass fail=$fail skip=$skip \
                    xpass=$xpass xfail=$xfail error=$error
 

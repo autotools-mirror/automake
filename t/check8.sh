@@ -65,10 +65,7 @@ $AUTOCONF
 $AUTOMAKE -a
 
 ./configure
-AM_COLOR_TESTS=always $MAKE check >stdout 2>stderr &&
-  { cat stdout; cat stderr >&2; exit 1; }
-cat stdout
-cat stderr >&2
+run_make -E -O -e FAIL check
 grep 'XPASS.* foo$' stdout
 grep '^[^X]*PASS.* sub/foo$' stdout
 grep '^[^X]*PASS.* bar' stdout
@@ -85,8 +82,7 @@ $MAKE distclean
 mkdir build
 cd build
 ../configure
-$MAKE check >stdout && { cat stdout; exit 1; }
-cat stdout
+run_make -O -e FAIL check
 # Note: we are not grepping for the space in the lines from the 'foo'
 # tests, due to the Solaris make VPATH rewriting (if we fix that, we
 # can still write a separate test for it).

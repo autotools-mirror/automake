@@ -74,8 +74,7 @@ $FGREP 'bar2-bar.c' sub/Makefile.in || exit 99
 
 ./configure --enable-silent-rules
 
-$MAKE >stdout || { cat stdout; exit 1; }
-cat stdout
+run_make -O
 
 $EGREP ' (-c|-o)' stdout && exit 1
 $EGREP '(mv|ylwrap) ' stdout && exit 1
@@ -94,8 +93,7 @@ grep 'CCLD .*bar2' stdout
 # different set of rules.
 $MAKE clean
 
-$MAKE >stdout || { cat stdout; exit 1; }
-cat stdout
+run_make -O
 
 $EGREP ' (-c|-o)' stdout && exit 1
 $EGREP '(mv|ylwrap) ' stdout && exit 1
@@ -112,8 +110,7 @@ grep 'CCLD .*bar2' stdout
 $MAKE clean
 rm -f *foo.c sub/*bar.c
 
-$MAKE V=1 >stdout || { cat stdout; exit 1; }
-cat stdout
+run_make -O V=1
 
 grep ' -c ' stdout
 grep ' -o ' stdout
@@ -126,8 +123,7 @@ $EGREP '(LEX|CC|CCLD) ' stdout && exit 1
 # different set of rules.
 $MAKE clean
 
-$MAKE V=1 >stdout || { cat stdout; exit 1; }
-cat stdout
+run_make -O V=1
 
 # Don't look for ylwrap, as probably lex hasn't been re-run.
 grep ' -c ' stdout

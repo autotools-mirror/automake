@@ -87,8 +87,7 @@ for vpath in : false; do
 
   # version.good should depend on version.gin.
   rm -f version.good
-  $MAKE version.good >output 2>&1 && { cat output; exit 1; }
-  cat output
+  run_make -M -e FAIL version.good
   # Try to verify that we errored out for the right reason.
   $FGREP version.gin output
 

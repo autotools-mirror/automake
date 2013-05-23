@@ -52,14 +52,12 @@ PASS: all.test 4 - zardoz
 # all.test: Shell metacharacters here: $metacharacters
 END
 
-$MAKE check >stdout || { cat stdout; exit 1; }
-cat stdout
+run_make -O check
 $EGREP -i "#.*all\\.test|a comment|(Tests|Shell) " stdout && exit 1
 count_test_results total=4 pass=2 fail=0 xpass=0 xfail=1 skip=1 error=0
 
 echo 'AM_TEST_LOG_DRIVER_FLAGS = --comments' >> Makefile
-$MAKE check >stdout || { cat stdout; exit 1; }
-cat stdout
+run_make -O check
 $FGREP ' all.test' stdout > got
 cat exp
 cat got
@@ -86,8 +84,7 @@ ok
 #TODO
 END
 
-$MAKE check >stdout || { cat stdout; exit 1; }
-cat stdout
+run_make -O check
 count_test_results total=1 pass=1 fail=0 xpass=0 xfail=0 skip=0 error=0
 
 # Diagnostic without leading whitespace, or with extra leading whitespace,
@@ -107,8 +104,7 @@ ok 1
 #  ${tab} ${tab}${tab}foo  bar${tab}baz  ${tab}
 END
 
-$MAKE check >stdout || { cat stdout; exit 1; }
-cat stdout
+run_make -O check
 count_test_results total=1 pass=1 fail=0 xpass=0 xfail=0 skip=0 error=0
 
 grep "^# all.test:${ws0p}foo$" stdout
