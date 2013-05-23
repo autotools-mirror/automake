@@ -54,8 +54,7 @@ for vpath in false :; do
     cd $distdir
     ./configure
   fi
-  $MAKE 2>stderr && { cat stderr >&2; exit 1; }
-  cat stderr >&2
+  run_make -e FAIL -E
   # This error comes from automake, not make, so we can be stricter
   # in our grepping of it.
   grep 'cannot open.*zardoz\.am' stderr

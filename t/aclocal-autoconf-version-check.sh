@@ -43,8 +43,7 @@ sed 's/^dnl!! //' < configure.ac > configure.tmp
 cmp configure.ac configure.tmp && fatal_ 'failed to edit configure.ac'
 mv -f configure.tmp configure.ac
 
-$MAKE 2>stderr || { cat stderr >&2; exit 1; }
-cat stderr >&2
+run_make -E
 grep 'You have another version of autoconf' stderr
 grep 'aclocal.m4:.*this file was generated for autoconf 9999a' stderr
 

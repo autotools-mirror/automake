@@ -213,8 +213,7 @@ test -f build-aux/compile
 
 $MAKE
 
-VERBOSE=x $MAKE check >stdout || { cat stdout; exit 1; }
-cat stdout
+run_make -O check VERBOSE=x
 cat tests/built.log
 cat tests/hello.log
 cat tests/goodbye.log

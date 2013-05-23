@@ -30,9 +30,7 @@ a non-TAP line
 1..1
 END
 
-$MAKE check >stdout && { cat stdout; exit 1; }
-cat stdout
-
+run_make -O -e FAIL check
 count_test_results total=4 pass=0 fail=0 xpass=0 xfail=0 skip=1 error=3
 test $(grep -c '^ERROR: all\.test - multiple test plans' stdout) -eq 3
 

@@ -97,12 +97,10 @@ else
   fatal_ "unexpected error in ./configure"
 fi
 
-st=0
-$MAKE check >stdout || st=1
-cat stdout
+run_make -O -e IGNORE check
 cat baz.log
 cat qux.log
-test $st -eq 0
+test $am_make_rc_got -eq 0
 grep "^ bazbazbaz$" stdout
 grep "^ quxquxqux$" stdout
 $EGREP '(bazbazbaz|quxquxqux)' *.log && exit 1

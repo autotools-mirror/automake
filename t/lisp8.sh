@@ -38,9 +38,10 @@ $AUTOMAKE --add-missing
 ./configure
 
 # Use append mode here to avoid dropping output.  See automake bug#11413.
+# TODO: port this to to run_make(), and rewrite this hunk to use that
+#       function ...
 : >stdout
 $MAKE -j >>stdout || { cat stdout; exit 1; }
-
 cat stdout
 
 test -f am-one.elc
@@ -50,10 +51,12 @@ test -f am-three.elc
 rm -f am-*.elc
 
 # Use append mode here to avoid dropping output.  See automake bug#11413.
+# TODO: port this to to run_make(), and rewrite this hunk to use that
+#       function ...
 : >stdout
 $MAKE -j >>stdout || { cat stdout; exit 1; }
-
 cat stdout
+
 test -f am-one.elc
 test -f am-two.elc
 test -f am-three.elc

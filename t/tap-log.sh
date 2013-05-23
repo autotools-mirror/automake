@@ -132,8 +132,7 @@ test -f global.log
 
 rm -f *.log
 
-VERBOSE=yes $MAKE check >stdout && { cat stdout; exit 1; }
-cat stdout
+run_make -O -e FAIL check VERBOSE=yes
 cat global.log
 test ! -e my.log
 test ! -e test-suite.log

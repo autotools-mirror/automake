@@ -73,8 +73,7 @@ do_check ()
     case $t in fail*|xpass*|error*) expect_failure=:;; esac
     case $t in xfail*|xpass*) xfail_tests="$xfail_tests $t";; esac
   done
-  run_make -e IGNORE check TESTS="$tests" XFAIL_TESTS="$xfail_tests" >stdout
-  cat stdout
+  run_make -O -e IGNORE check TESTS="$tests" XFAIL_TESTS="$xfail_tests"
   if $expect_failure; then
     test $am_make_rc_got -gt 0 || exit 1
   else

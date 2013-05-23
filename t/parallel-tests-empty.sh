@@ -55,8 +55,7 @@ $AUTOMAKE -a
 
 no_test_run ()
 {
-  $MAKE check ${1+"$@"} >stdout || { cat stdout; exit 1; }
-  cat stdout
+  run_make -O -- check ${1+"$@"}
   ls *.log | grep -v '^test-suite\.log$' | grep . && exit 1
   grep '^# TOTAL: *0$' test-suite.log || exit 1
   for x in TOTAL PASS FAIL XPASS FAIL SKIP ERROR; do

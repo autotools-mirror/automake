@@ -54,8 +54,7 @@ for config_args in \
 
   ./configure --enable-silent-rules $config_args
 
-  $MAKE >stdout || { cat stdout; exit 1; }
-  cat stdout
+  run_make -O
   $EGREP ' (-c|-o)|(mv|mkdir) '             stdout && exit 1
   grep ' CC  *libfoo\.lo'                   stdout
   grep ' CC  *libbar_la-libbar\.lo'         stdout
@@ -67,8 +66,7 @@ for config_args in \
   grep ' CCLD  *sub/libbla\.la'             stdout
 
   $MAKE clean
-  $MAKE V=1 >stdout || { cat stdout; exit 1; }
-  cat stdout
+  run_make -O V=1
   grep ' -c' stdout
   grep ' -o libfoo' stdout
   grep ' -o sub/libbaz' stdout

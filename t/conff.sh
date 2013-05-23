@@ -47,11 +47,9 @@ $AUTOMAKE
 $MAKE
 
 cd bar
-$MAKE top-rule >stdout || { cat stdout; exit 1; }
-cat stdout
+run_make -O top-rule
 grep 'top rule' stdout
-$MAKE bot-rule >stdout || { cat stdout; exit 1; }
-cat stdout
+run_make -O bot-rule
 grep 'bot rule' stdout
 cd ..
 
@@ -64,11 +62,9 @@ END
 $MAKE
 
 cd bar
-$MAKE top-rule >stdout || { cat stdout; exit 1; }
-cat stdout
+run_make -O top-rule
 grep 'top2 rule' stdout
-$MAKE bot-rule >stdout || { cat stdout; exit 1; }
-cat stdout
+run_make -O bot-rule
 grep 'bot rule' stdout
 cd ..
 
@@ -81,11 +77,9 @@ END
 $MAKE
 
 cd bar
-$MAKE top-rule >stdout || { cat stdout; exit 1; }
-cat stdout
+run_make -O top-rule
 grep 'top2 rule' stdout
-$MAKE bot-rule >stdout || { cat stdout; exit 1; }
-cat stdout
+run_make -O bot-rule
 grep 'bot2 rule' stdout
 cd ..
 

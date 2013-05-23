@@ -81,13 +81,11 @@ $AUTOMAKE -a
 
 ./configure
 
-$MAKE check >stdout || { cat stdout; exit 1; }
-cat stdout
+run_make -O check
 count_test_results total=$i pass=$i fail=0 xpass=0 xfail=0 skip=0 error=0
 
 cat later.mk >> Makefile
-$MAKE check >stdout || { cat stdout; exit 1; }
-cat stdout
+run_make -O check
 $FGREP 'blah blah' stdout && exit 1
 
 :

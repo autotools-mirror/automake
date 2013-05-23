@@ -111,8 +111,9 @@ $MAKE uninstall
 doinst bin_SCRIPTS=foo.sh
 test -f inst/bin/foo.sh
 
-./configure
-doinst DESTDIR="$cwd/dest"
+# Explicitly pass prefix to avoid spurious influences from
+# global config.site scripts.
+./configure --prefix="/usr/local"
 test ! -e dest || { find dest; exit 1; }
 $MAKE uninstall
 doinst DESTDIR="$cwd/dest" bin_SCRIPTS=foo.sh

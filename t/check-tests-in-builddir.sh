@@ -52,41 +52,38 @@ exit 0
 END
 chmod a+x bar.test
 
-$MAKE check >out 2>&1 || { cat out; exit 1; }
-cat out
+run_make -M check
 # The serial test driver does not strip VPATH components from
 # the name of the test, but the parallel driver should.
 if test x"$am_serial_tests" = x"yes"; then
-  grep '^PASS: .*foo\.test *$' out
+  grep '^PASS: .*foo\.test *$' output
 else
-  grep '\.\./foo' out && exit 1
-  grep '^PASS: foo\.test *$' out
+  grep '\.\./foo' output && exit 1
+  grep '^PASS: foo\.test *$' output
 fi
-grep '^PASS: bar\.test *$' out
+grep '^PASS: bar\.test *$' output
 
 rm -f test-suite.log foo.log bar.log
 
-FOO_EXIT_STATUS=1 $MAKE check >out 2>&1 && { cat out; exit 1; }
-cat out
+run_make -M -e FAIL FOO_EXIT_STATUS=1 check
 # The serial test driver does not strip VPATH components from
 # the name of the test, but the parallel driver should.
 if test x"$am_serial_tests" = x"yes"; then
-  grep '^FAIL: .*foo\.test *$' out
+  grep '^FAIL: .*foo\.test *$' output
 else
-  grep '\.\./foo' out && exit 1
-  grep '^FAIL: foo\.test *$' out
+  grep '\.\./foo' output && exit 1
+  grep '^FAIL: foo\.test *$' output
 fi
-grep '^PASS: bar\.test *$' out
+grep '^PASS: bar\.test *$' output
 
 rm -f test-suite.log foo.log bar.log
 
 # Check that if the same test is present in srcdir and builddir,
 # the one in builddir is preferred.
 cp bar.test foo.test
-FOO_EXIT_STATUS=1 $MAKE check >out 2>&1 || { cat out; exit 1; }
-cat out
-grep '^PASS: foo\.test *$' out
-grep '^PASS: bar\.test *$' out
+run_make -M FOO_EXIT_STATUS=1 check
+grep '^PASS: foo\.test *$' output
+grep '^PASS: bar\.test *$' output
 
 # The tests in the builddir must be preferred also by "make dist".
 FOO_EXIT_STATUS=1 $MAKE distcheck

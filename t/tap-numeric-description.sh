@@ -53,9 +53,7 @@ XPASS: all.test 9 ${x9} # TODO
 XPASS: all.test 10 - ${x10} # TODO
 END
 
-$MAKE check >stdout && { cat stdout; exit 1; }
-cat stdout
-
+run_make -O -e FAIL check
 count_test_results total=10 pass=2 fail=2 xpass=2 xfail=2 skip=2 error=0
 
 $FGREP ': all.test' stdout > got

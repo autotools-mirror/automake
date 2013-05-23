@@ -54,8 +54,7 @@ END
 $AUTOMAKE Makefile
 ./config.status Makefile
 
-$MAKE distcheck 2>stderr && { cat stderr >&2; exit 1; }
-cat stderr >&2
+run_make -E -e FAIL distcheck
 grep "^configure:.* success='no', sentence='it works :-)'" stderr
 
 $MAKE distcheck DISTCHECK_CONFIGURE_FLAGS="--enable-success=yes"

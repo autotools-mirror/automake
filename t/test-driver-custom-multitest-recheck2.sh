@@ -81,9 +81,9 @@ for vpath in : false; do
 
   $srcdir/configure
 
+
   : Run the tests for the first time.
-  run_make check >stdout && { cat stdout; exit 1; }
-  cat stdout
+  run_make -O -e FAIL check
   # All the test scripts should have run.
   test -f a.run
   test -f b.run
@@ -101,9 +101,7 @@ for vpath in : false; do
   test ! -e c.run
 
   : a.test was successful the first time, no need to re-run it.
-  run_make TESTS=a.test recheck >stdout || { cat stdout; exit 1; }
-
-  cat stdout
+  run_make -O TESTS=a.test recheck
   count_test_results total=0 pass=0 fail=0 xpass=0 xfail=0 skip=0 error=0
   test ! -e a.run
   test ! -e b.run
@@ -111,9 +109,7 @@ for vpath in : false; do
 
   : b.test failed, it should be re-run.  And make it pass this time.
   echo OK > b.ok
-  run_make TESTS=b recheck >stdout \
-    || { cat stdout; exit 1; }
-  cat stdout
+  run_make -O TESTS=b recheck
   test ! -e a.run
   test -f b.run
   test ! -e c.run
@@ -122,16 +118,12 @@ for vpath in : false; do
   rm -f *.run
 
   : No need to re-run a.test or b.test anymore.
-  run_make TESTS=b recheck >stdout \
-    || { cat stdout; exit 1; }
-  cat stdout
+  run_make -O TESTS=b recheck
   count_test_results total=0 pass=0 fail=0 xpass=0 xfail=0 skip=0 error=0
   test ! -e a.run
   test ! -e b.run
   test ! -e c.run
-  run_make TESTS='a.test b.test' recheck >stdout \
-    || { cat stdout; exit 1; }
-  cat stdout
+  run_make -O TESTS='a.test b.test' recheck
   count_test_results total=0 pass=0 fail=0 xpass=0 xfail=0 skip=0 error=0
   test ! -e a.run
   test ! -e b.run
@@ -141,8 +133,7 @@ for vpath in : false; do
   : as it contained an XPASS.  And this time, make it fail with
   : an hard error.
   echo dummy > c.err
-  run_make TESTS='a.test c' recheck >stdout && { cat stdout; exit 1; }
-  cat stdout
+  run_make -O -e FAIL TESTS='a.test c' recheck
   count_test_results total=1 pass=0 fail=0 xpass=0 xfail=0 skip=0 error=1
   test ! -e a.run
   test ! -e b.run
@@ -154,9 +145,7 @@ for vpath in : false; do
   : This time, make it pass
   # Use 'echo', not ':'; see comments above for why.
   echo dummy > c.ok
-  run_make TESTS='c.test a.test' recheck >stdout \
-    || { cat stdout; exit 1; }
-  cat stdout
+  run_make -O TESTS='c.test a.test' recheck
   count_test_results total=1 pass=1 fail=0 xpass=0 xfail=0 skip=0 error=0
   test ! -e a.run
   test ! -e b.run
@@ -166,8 +155,7 @@ for vpath in : false; do
 
   : Nothing should be rerun anymore, as all tests have been eventually
   : successful.
-  run_make recheck >stdout || { cat stdout; exit 1; }
-  cat stdout
+  run_make -O recheck
   count_test_results total=0 pass=0 fail=0 xpass=0 xfail=0 skip=0 error=0
   test ! -e a.run
   test ! -e b.run

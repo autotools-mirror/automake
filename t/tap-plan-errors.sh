@@ -32,8 +32,7 @@ my_check ()
   cat > all.test
   test -n "$err" || fatal_ "\$err not set before calling my_check"
   cat all.test # For debugging.
-  $MAKE check >stdout && { cat stdout; exit 1; }
-  cat stdout
+  run_make -O -e FAIL check
   count_test_results "$@"
   grep "^ERROR: all\\.test $err$" stdout
   unset err

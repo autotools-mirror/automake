@@ -107,8 +107,7 @@ cd build
 ../configure "--prefix=$(pwd)/../inst-dir" --program-prefix=p
 $MAKE all
 $MAKE test-install
-$MAKE -k installcheck 2>stderr && { cat stderr >&2; exit 1; }
-cat stderr >&2
+run_make -E -e FAIL -- installcheck -k
 $MAKE grep-stderr
 
 :

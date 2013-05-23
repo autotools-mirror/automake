@@ -54,10 +54,9 @@ END
 
 chmod a+x $tests
 
-$MAKE check >stdout && { cat stdout; exit 1; }
-cat stdout
-
+run_make -O -e FAIL check
 count_test_results total=4 pass=0 fail=0 xpass=0 xfail=0 skip=0 error=4
+
 for tst in $tests; do grep "^ERROR: $tst - Bail out!" stdout; done
 $EGREP "ERROR: .*(exit.*status|terminat.*signal)" stdout && exit 1
 

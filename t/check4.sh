@@ -51,27 +51,23 @@ $AUTOMAKE --add-missing
 
 ./configure --prefix "$(pwd)/inst"
 
-$MAKE check >stdout && { cat stdout; exit 1; }
-cat stdout
+run_make -O -e FAIL -- check
 grep '^FAIL: fail\.sh *$' stdout
 grep '^PASS: ok\.sh *$' stdout && exit 1
 
-$MAKE -k check >stdout && { cat stdout; exit 1; }
-cat stdout
+run_make -O -e FAIL -- -k check
 grep '^FAIL: fail\.sh *$' stdout
 grep '^PASS: ok\.sh *$' stdout
 
 # Should also works when -k is not in first position.
-$MAKE -s -k check >stdout && { cat stdout; exit 1; }
-cat stdout
+run_make -O -e FAIL -- -s -k check
 grep '^FAIL: fail\.sh *' stdout
 grep '^PASS: ok\.sh *' stdout
 
 # Try with a long-option that do not have a short option equivalent
 # (here, --no-print-directory).  That should cause all options to
 # appear verbatim in MAKEFLAGS.
-$MAKE --no-print-directory -k check >stdout && { cat stdout; exit 1; }
-cat stdout
+run_make -O -e FAIL -- --no-print-directory -k check
 grep '^FAIL: fail\.sh *$' stdout
 grep '^PASS: ok\.sh *$' stdout
 

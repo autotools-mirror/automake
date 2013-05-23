@@ -48,8 +48,7 @@ $AUTOCONF
 $AUTOMAKE
 
 ./configure
-$MAKE print >stdout || { cat stdout; exit 1; }
-cat stdout
+run_make -O print
 $FGREP 'BEG: 0.h a0.h a1.h a2.h a3.h :END' stdout
 
 :

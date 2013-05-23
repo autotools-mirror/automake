@@ -146,10 +146,9 @@ chmod a+x *.test
 
 . tap-setup.sh
 
-# Don't care about exit status or number of test results, they should be
-# checked for in many other tests.
-$MAKE check >stdout || :
-cat stdout
+# We don't care about exit status or number of test results, they
+# should be checked for in many other tests.
+run_make -O -e FAIL check
 
 LC_ALL=C sort exp > t
 mv -f t exp

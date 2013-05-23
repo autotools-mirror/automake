@@ -23,8 +23,7 @@
 
 do_checks ()
 {
-  $MAKE check >stdout && { cat stdout; exit 1; }
-  cat stdout
+  run_make -O -e FAIL check
   count_test_results "$@"
   # Allow some normalization of leading zeros, without forcing it.
   LC_ALL=C sed -n 's/: all\.test 0*\([0-9]\)/: all.test \1/p' stdout > got

@@ -28,9 +28,7 @@ not ok 2 # TODO 0
 ok 3 # SKIP 0
 END
 
-$MAKE check >stdout && { cat stdout; exit 1; }
-cat stdout
-
+run_make -O -e FAIL check
 count_test_results total=3 pass=0 fail=0 xpass=1 xfail=1 skip=1 error=0
 
 grep '^XPASS: all\.test 1 # TODO 0$' stdout

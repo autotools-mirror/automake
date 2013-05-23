@@ -63,10 +63,9 @@ $ACLOCAL
 $AUTOCONF
 $AUTOMAKE
 ./configure
-$MAKE >output
-cat output
-grep in--mk output
-grep in--sub output
-grep at--toplevel output
+run_make -O
+grep in--mk stdout
+grep in--sub stdout
+grep at--toplevel stdout
 
 $MAKE distcheck

@@ -60,14 +60,12 @@ $AUTOMAKE -a
 
 do_check ()
 {
-  st=0
   log=$1; shift
-  run_make "$@" check >output 2>&1 || st=$?
-  cat output
+  run_make -M -e IGNORE -- "$@" check
   $FGREP '::OOPS::' output && exit 1 # Possible infinite recursion.
   grep "[Cc]ircular.*dependency" output | $FGREP "$log"
   grep "$log:.*depends on itself" output
-  test $st -gt 0
+  test $am_make_rc_got -gt 0
 }
 
 : > test-suite.test

@@ -82,8 +82,7 @@ for vpath in : false; do
 
   # version.good should depend on version.gin.
   rm -f version.good
-  $MAKE version.good 2>stderr && { cat stderr >&2; exit 1; }
-  cat stderr >&2
+  run_make -E -e FAIL version.good
   # Try to verify that we errored out for the right reason.
   $FGREP version.gin stderr
 

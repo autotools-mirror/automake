@@ -30,9 +30,7 @@ not ok #    TOD${tab}
 ok 5 # ${tab}${tab}TOOD${tab}${sp}${sp}
 END
 
-$MAKE check >stdout && { cat stdout; exit 1; }
-cat stdout
-
+run_make -O -e FAIL check
 count_test_results total=5 pass=3 fail=2 xpass=0 xfail=0 skip=0 error=0
 
 # Don't be too strict about trailing white space.

@@ -45,10 +45,7 @@ an early non-TAP line
 a later non-TAP line
 END
 
-run_make TESTS='foo.test foo2.test bar.test' check >stdout \
-  || { cat stdout; exit 1; }
-cat stdout
-
+run_make -O TESTS='foo.test foo2.test bar.test' check
 count_test_results total=3 pass=0 fail=0 xpass=0 xfail=0 skip=3 error=0
 
 grep '^# foo\.test: a comment$' stdout

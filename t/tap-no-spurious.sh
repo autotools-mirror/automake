@@ -105,9 +105,7 @@ cat all.test \
   && test $(grep -c '^not ok1$' all.test) -eq 1 \
   || framework_failure_ "creating all.test"
 
-$MAKE check >stdout || { cat stdout; exit 1; }
-cat stdout
-
+run_make -O check
 count_test_results total=5 pass=5 fail=0 xpass=0 xfail=0 skip=0 error=0
 
 :

@@ -35,20 +35,17 @@ $AUTOMAKE -a
 
 ./configure
 
-$MAKE check >stdout 2>stderr && { cat stdout; cat stderr >&2; exit 1; }
-cat stdout; cat stderr >&2
+run_make -O -E -e FAIL check
 test -f ok.log
 grep '^PASS: ok\.test' stdout
 $FGREP 'zardoz.log' stderr
 test ! -e test-suite.log
 
-$MAKE TESTS='zardoz2.test' check 2>stderr && { cat stderr >&2; exit 1; }
-cat stderr
+run_make -E -e FAIL TESTS=zardoz2.test check
 $FGREP 'zardoz2.log' stderr
 test ! -e test-suite.log
 
-$MAKE TESTS='zardoz3' check 2>stderr && { cat stderr >&2; exit 1; }
-cat stderr >&2
+run_make -E -e FAIL TESTS=zardoz3 check
 $FGREP 'zardoz3.log' stderr
 test ! -e test-suite.log
 
@@ -59,8 +56,7 @@ test ! -e test-suite.log
 $MAKE check
 rm -f zardoz.test
 
-$MAKE check 2>stderr && { cat stderr >&2; exit 1; }
-cat stderr >&2
+run_make -E -e FAIL check
 $FGREP 'zardoz.log' stderr
 test ! -e test-suite.log
 

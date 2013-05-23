@@ -39,8 +39,7 @@ $AUTOMAKE
 $MAKE
 
 rm -f zardoz.m4
-$MAKE 2>stderr && { cat stderr >&2; exit 1; }
-cat stderr >&2
+run_make -e FAIL -E
 # This error will come from aclocal, not make, so we can be stricter
 # in our grepping of it.
 grep ' foobar\.m4:1:.*zardoz\.m4.*does not exist' stderr
@@ -54,8 +53,7 @@ $AUTOCONF
 ./configure
 $MAKE # Sanity check.
 rm -f foobar.m4
-$MAKE 2>stderr && { cat stderr >&2; exit 1; }
-cat stderr >&2
+run_make -e FAIL -E
 # This error will come from aclocal, not make, so we can be stricter
 # in our grepping of it.
 grep 'foobar\.m4.*does not exist' stderr

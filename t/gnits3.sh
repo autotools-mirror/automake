@@ -87,8 +87,7 @@ cd build
 $MAKE
 $MAKE install
 $MAKE installcheck && exit 1
-$MAKE -k installcheck 2>stderr && { cat stderr >&2; exit 1; }
-cat stderr >&2
+run_make -E -e FAIL -- installcheck -k
 $MAKE grep-stderr
 
 # Make sure there is no more error when all targets are exempted.

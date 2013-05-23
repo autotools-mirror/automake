@@ -49,8 +49,7 @@ $AUTOMAKE
 ./configure
 
 # We can build the distribution.
-$MAKE distcheck 2>stderr || { cat stderr >&2; exit 1; }
-cat stderr >&2
+run_make -E -e FAIL distcheck
 # Sanity check: verify that our code has hit a problem removing
 # the distdir, but has recovered from it.
 grep "rm:.*$destdir" stderr || fatal_ "expected code path not covered"

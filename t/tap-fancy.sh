@@ -68,9 +68,7 @@ not ok!#TODO?
 ok~#TODO
 END
 
-$MAKE check >stdout && { cat stdout; exit 1; }
-cat stdout
-
+run_make -O -e FAIL check
 count_test_results total=21 pass=6 fail=6 xfail=4 xpass=1 skip=4 error=0
 
 #
@@ -91,9 +89,7 @@ ok $weirdchars # SKIP
 Bail out! $weirdchars
 END
 
-$MAKE check >stdout && { cat stdout; exit 1; }
-cat stdout
-
+run_make -O -e FAIL check
 count_test_results total=6 pass=1 fail=1 xfail=1 xpass=1 skip=1 error=1
 $FGREP "PASS: all.test 1 $weirdchars" stdout
 $FGREP "FAIL: all.test 2 $weirdchars" stdout
@@ -118,10 +114,9 @@ ok # SKIP $bs
 Bail out! $bs
 END
 
-$MAKE check >stdout && { cat stdout; exit 1; }
-cat stdout
-
+run_make -O -e FAIL check
 count_test_results total=6 pass=1 fail=1 xfail=1 xpass=1 skip=1 error=1
+
 grep '^PASS: all\.test 1 \\$' stdout
 grep '^FAIL: all\.test 2 \\$' stdout
 grep '^XPASS: all\.test 3 # TODO \\$' stdout

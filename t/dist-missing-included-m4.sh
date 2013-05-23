@@ -56,8 +56,7 @@ for vpath in false :; do
     cd $distdir
     ./configure
   fi
-  $MAKE 2>stderr && { cat stderr >&2; exit 1; }
-  cat stderr
+  run_make -e FAIL -E
   # This error will come from automake, not make, so we can be stricter
   # in our grepping of it.
   grep 'zardoz\.m4.*does not exist' stderr

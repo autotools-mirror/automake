@@ -37,8 +37,7 @@ $AUTOCONF
 make_n_ ()
 {
   st=0
-  $MAKE -n "$@" >output 2>&1 || { cat output; ls -l; exit 1; }
-  cat output
+  run_make -M -- -n "$@" || { ls -l; exit 1; }
   # Look out for possible errors from common tools used by recipes.
   $EGREP -i ' (exist|permission|denied|no .*(such|file))' output && exit 1
   $EGREP '(mv|cp|rm|cat|grep|sed|awk): ' output && exit 1

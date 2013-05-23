@@ -50,8 +50,7 @@ $AUTOMAKE --add-missing
 $AUTOCONF
 
 ./configure --enable-silent-rules
-$MAKE >stdout || { cat stdout; exit 1; }
-cat stdout
+run_make -O
 # Avoid spurious failures with SunStudio Fortran compilers.
 sed '/^NOTICE:/d' stdout > t
 mv -f t stdout
@@ -74,8 +73,7 @@ $EGREP '(FC|FCLD) ' stdout && exit 1
 # Ensure a clean rebuild.
 $MAKE clean
 
-$MAKE V=1 >stdout || { cat stdout; exit 1; }
-cat stdout
+run_make -O V=1
 
 grep ' -c ' stdout
 grep ' -o ' stdout

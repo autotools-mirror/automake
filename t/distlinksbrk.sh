@@ -63,8 +63,7 @@ ls -l # For debugging.
 $MAKE distdir && exit 1
 
 # Names of distributed broken symlinks should be reported in make output.
-$MAKE -k distdir 2>stderr && { cat stderr >&2; exit 1; }
-cat stderr >&2
+run_make -E -e FAIL -- -k distdir
 $FGREP $lnk1 stderr
 $FGREP $lnk2 stderr
 $FGREP $lnka stderr

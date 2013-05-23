@@ -70,8 +70,7 @@ $AUTOMAKE -a
 
 ./configure
 
-$MAKE check >stdout || { cat stdout; exit 1; }
-cat stdout
+run_make -O check
 
 cat > exp <<'END'
 PASS: foo.sh

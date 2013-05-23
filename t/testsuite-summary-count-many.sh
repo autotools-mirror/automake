@@ -93,7 +93,7 @@ $AUTOCONF
 
 ./configure
 
-($MAKE check || : > make.fail) | tee stdout
+($MAKE check || touch make.fail) | tee stdout
 test -f make.fail
 
 $PERL extract-testsuite-summary.pl stdout > summary.got

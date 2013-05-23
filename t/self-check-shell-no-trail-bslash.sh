@@ -36,8 +36,7 @@ test "$($SHELL -c 'echo is  o\k')" = "is ok"
 
 $MAKE good
 
-$MAKE bad SHELL="$SHELL" 2>stderr && { cat stderr >&2; exit 1; }
-cat stderr >&2
+run_make -E -e FAIL bad SHELL="$SHELL"
 $FGREP "recipe ends with backslash character" stderr
 
 :

@@ -115,12 +115,9 @@ $AUTOMAKE -a
 #    'test-suite.log' file shouldn't be created (as it depends
 #     on *all* the test logs).
 
-st=0
-$MAKE -k check >stdout 2>stderr || st=$?
-cat stdout
-cat stderr >&2
+run_make -E -O -e IGNORE -- -k check
 ls -l
-test $st -gt 0
+test $am_make_rc_got -gt 0
 
 # Files that should have been created, with the expected content.
 cat bar.c
@@ -150,8 +147,7 @@ $sleep
 
 echo 'int main (void) { return 0; }' > none.c
 
-run_make -e IGNORE AM_LAZY_CHECK=yes check >stdout
-cat stdout
+run_make -O -e IGNORE AM_LAZY_CHECK=yes check
 ls -l # For debugging.
 test $am_make_rc_got -eq 0 || exit 1
 

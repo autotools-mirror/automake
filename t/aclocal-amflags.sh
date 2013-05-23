@@ -66,8 +66,7 @@ $sleep
 sed 's/MACRO_FOO/MACRO_BAR/' configure.ac > t
 mv -f t configure.ac
 
-$MAKE Makefile >output 2>&1 || { cat output; exit 1; }
-cat output
+run_make -M Makefile
 grep "^aclocal.*:.*found macro.*MACRO_BAR.*m4_2/bar\.m4" output
 grep "macro.*MACRO_FOO" output && exit 1
 test ! -r foo

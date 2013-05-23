@@ -35,8 +35,7 @@ $AUTOMAKE
 $MAKE
 
 rm -f zardoz.am
-$MAKE 2>stderr && { cat stderr >&2; exit 1; }
-cat stderr >&2
+run_make -e FAIL -E
 # This error will come from automake, not make, so we can be stricter
 # in our grepping of it.
 grep 'cannot open.*zardoz\.am' stderr
@@ -48,8 +47,8 @@ $AUTOMAKE Makefile
 ./config.status Makefile
 $MAKE # Sanity check.
 rm -f foobar.am
-$MAKE 2>stderr && { cat stderr >&2; exit 1; }
-cat stderr >&2
+$sleep # Required to avoid racy failures with FreeBSD make.
+run_make -e FAIL -E
 # This error will come from automake, not make, so we can be stricter
 # in our grepping of it.
 grep 'cannot open.*foobar\.am' stderr

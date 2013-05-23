@@ -59,8 +59,7 @@ for vpath in false :; do
     cd $distdir
     ./configure
   fi
-  $MAKE 2>stderr && { cat stderr; exit 1; }
-  cat stderr
+  run_make -e FAIL -E
   # This error will come from autoconf, not make, so we can be stricter
   # in our grepping of it.
   grep 'possibly undefined .*MY_ZARDOZ' stderr
