@@ -66,10 +66,8 @@ $AUTOCONF
 touch hello.f90 foo.f95 sub/bar.f95 hi.f03 sub/howdy.f03 greets.f08 \
       sub/bonjour.f08 bye.f95 sub/baz.f90
 
-$MAKE -n \
-  FCFLAGS_f90=--@90 FCFLAGS_f95=--@95 FCFLAGS_f03=--@03 FCFLAGS_f08=--@08 \
-  > stdout || { cat stdout; exit 1; }
-cat stdout
+run_make -O -- -n \
+  FCFLAGS_f90=--@90 FCFLAGS_f95=--@95 FCFLAGS_f03=--@03 FCFLAGS_f08=--@08
 # To make it easier to have  stricter grepping below.
 sed -e 's/[ 	][ 	]*/  /g' -e 's/^/ /' -e 's/$/ /' stdout > out
 cat out
