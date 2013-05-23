@@ -524,6 +524,12 @@ check-no-trailing-backslash-in-recipes:
 	  CONFIG_SHELL='$(abs_top_builddir)/t/ax/shell-no-trail-bslash'
 .PHONY: check-no-trailing-backslash-in-recipes
 
+# Automake-generated Makefiles should work when run with parallel make.
+check-parallel:
+	$(AM_V_GEN)$(MAKE) $(AM_MAKEFLAGS) check \
+	  AM_TESTSUITE_MAKE="$${AM_TESTSUITE_MAKE-$${MAKE-make}} -j4"
+.PHONY: check-parallel
+
 ## Checking the list of tests.
 test_subdirs = t t/pm contrib/t
 include $(srcdir)/t/CheckListOfTests.am
