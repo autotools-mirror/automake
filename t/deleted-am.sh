@@ -36,8 +36,7 @@ $MAKE
 
 rm -f zardoz.am
 $sleep # Required to avoid racy failures with FreeBSD make.
-$MAKE >output 2>&1 && { cat output; exit 1; }
-cat output
+run_make -e FAIL -M
 # This error will come from automake, not make, so we can be stricter
 # in our grepping of it.
 grep 'cannot open.*zardoz\.am' output
@@ -50,8 +49,7 @@ $AUTOMAKE Makefile
 $MAKE # Sanity check.
 rm -f foobar.am
 $sleep # Required to avoid racy failures with FreeBSD make.
-$MAKE >output 2>&1 && { cat output; exit 1; }
-cat output
+run_make -e FAIL -M
 # This error will come from automake, not make, so we can be stricter
 # in our grepping of it.
 grep 'cannot open.*foobar\.am' output

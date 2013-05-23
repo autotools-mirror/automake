@@ -55,7 +55,7 @@ $AUTOCONF
 $AUTOMAKE -a
 
 ./configure
-( 
+(
   run_make -e IGNORE TESTS=pass check
   run_make -e IGNORE TESTS=fail check
   run_make -e IGNORE TESTS=skip check

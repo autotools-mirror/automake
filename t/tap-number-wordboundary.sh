@@ -31,9 +31,7 @@ not ok 4?&%$ foo4 # TODO
 ok 5"`!! foo5 # TODO
 END
 
-$MAKE check >stdout && { cat stdout; exit 1; }
-cat stdout
-
+run_make -O -e FAIL check
 count_test_results total=5 pass=1 fail=1 skip=1 xpass=1 xfail=1 error=0
 
 $EGREP '^PASS: all\.test 1 ?: foo1$' stdout
@@ -49,9 +47,7 @@ not ok 1!
 ok 476$ # SKIP
 END
 
-$MAKE check >stdout && { cat stdout; exit 1; }
-cat stdout
-
+run_make -O -e FAIL check
 count_test_results total=3 pass=0 fail=0 skip=0 xpass=0 xfail=0 error=3
 
 $EGREP '^ERROR: all\.test 2 ?: quux # OUT-OF-ORDER \(expecting 1\)$' stdout
@@ -102,9 +98,7 @@ cat all.test
 # Sanity check.
 grep "^ok 1'$" all.test || framework_failure_ "creating all.test"
 
-$MAKE check >stdout || { cat stdout; exit 1; }
-cat stdout
-
+run_make -O check
 count_test_results total=$planned pass=$planned \
                    fail=0 skip=0 xpass=0 xfail=0 error=0
 

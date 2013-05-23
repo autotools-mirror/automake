@@ -54,9 +54,7 @@ $MAKE uninstall
 test -f inst/share/dir
 rm -rf inst
 
-$MAKE distcheck >output 2>&1 && { cat output; exit 1; }
-cat output
-
+run_make -M -e FAIL distcheck
 $FGREP 'ERROR: files left after uninstall:' output
 grep '/share/dir *$' output
 
@@ -86,9 +84,7 @@ test -f inst/mu/share/info/dir
 test -f inst/share/info/more/dir
 rm -rf inst
 
-$MAKE distcheck >output 2>&1 && { cat output; exit 1; }
-cat output
-
+run_make -M -e FAIL distcheck
 $FGREP 'ERROR: files left after uninstall:' output
 grep '/mu/share/info/dir *$' output
 grep '/share/info/more/dir *$' output

@@ -79,9 +79,7 @@ AC_DEFUN([MY_ZARDOZ], [:])
 END
 
 $MAKE # Rebuild configure and makefiles.
-$MAKE distcheck >output 2>&1 && { cat output; exit 1; }
-cat output
-
+run_make -M -e FAIL distcheck
 $EGREP "required m4 file.* outdated.* baz.m4( |$)" output
 check_no_spurious_error
 # Check that we don't complain for files that aren't outdated.
@@ -121,8 +119,7 @@ AC_DEFUN([MY_FNORD], [:])
 END
 
 $MAKE # Rebuild configure and makefiles.
-$MAKE distcheck >output 2>&1 && { cat output; exit 1; }
-cat output
+run_make -M -e FAIL distcheck
 $EGREP "required m4 file.* outdated.* fnord.m4( |$)" output
 check_no_spurious_error
 # Check that we don't complain for files that aren't outdated.

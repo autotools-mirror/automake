@@ -152,6 +152,13 @@ test_no_color ()
   fi
 }
 
+our_make ()
+{
+  set "MAKE=$MAKE" ${1+"$@"}
+  env "$@" expect -f $srcdir/expect-make >stdout || { cat stdout; exit 1; }
+  cat stdout
+}
+
 cat >expect-make <<'END'
 eval spawn $env(MAKE) -e check
 expect eof
@@ -169,31 +176,21 @@ for vpath in false :; do
 
   $srcdir/configure
 
-  TERM=ansi MAKE=$MAKE expect -f $srcdir/expect-make >stdout \
-    || { cat stdout; exit 1; }
-  cat stdout
+  our_make TERM=ansi
   test_color
 
-  TERM=dumb MAKE=$MAKE expect -f $srcdir/expect-make >stdout \
-    || { cat stdout; exit 1; }
-  cat stdout
+  our_make TERM=dumb
   test_no_color
 
-  AM_COLOR_TESTS=no MAKE=$MAKE expect -f $srcdir/expect-make >stdout \
-    || { cat stdout; exit 1; }
-  cat stdout
+  our_make AM_COLOR_TESTS=no
   test_no_color
 
   $srcdir/configure testsuite_colorized=false
 
-  TERM=ansi MAKE=$MAKE expect -f $srcdir/expect-make >stdout \
-    || { cat stdout; exit 1; }
-  cat stdout
+  our_make TERM=ansi
   test_no_color
 
-  TERM=ansi MAKE="env AM_COLOR_TESTS=always $MAKE" \
-    expect -f $srcdir/expect-make >stdout || { cat stdout; exit 1; }
-  cat stdout
+  our_make TERM=ansi MAKE="env AM_COLOR_TESTS=always $MAKE"
   test_color
 
   $MAKE distclean

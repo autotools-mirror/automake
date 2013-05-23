@@ -27,8 +27,7 @@ cat > all.test <<END
 Bail out!
 END
 
-$MAKE check >stdout && { cat stdout; exit 1; }
-cat stdout
+run_make -O -e FAIL check
 count_test_results total=2 pass=0 fail=0 xpass=0 xfail=0 skip=1 error=1
 grep '^ERROR: all\.test - Bail out!' stdout
 

@@ -60,8 +60,7 @@ $FGREP '$(bar_YFLAGS)' Makefile.in
 
 ./configure --enable-silent-rules
 
-$MAKE >stdout || { cat stdout; exit 1; }
-cat stdout
+run_make -O
 
 $EGREP ' (-c|-d|-o)' stdout && exit 1
 $EGREP '(mv|ylwrap) ' stdout && exit 1
@@ -78,8 +77,7 @@ grep 'CCLD  *bar' stdout
 
 # Check recovering from header removal.
 rm -f parse.h bar-parse.h
-$MAKE parse.h bar-parse.h >stdout || { cat stdout; exit 1; }
-cat stdout
+run_make -O parse.h bar-parse.h
 
 $EGREP ' (-c|-d|-o)' stdout && exit 1
 $EGREP '(mv|ylwrap) ' stdout && exit 1
@@ -94,8 +92,7 @@ grep 'updating  *bar-parse\.h' stdout
 # different set of rules.
 $MAKE clean
 
-$MAKE >stdout || { cat stdout; exit 1; }
-cat stdout
+run_make -O
 
 $EGREP ' (-c|-d|-o)' stdout && exit 1
 $EGREP '(mv|ylwrap) ' stdout && exit 1
@@ -109,8 +106,7 @@ grep 'CCLD  *bar' stdout
 
 # Check recovering from header removal.
 rm -f parse.h bar-parse.h
-$MAKE parse.h bar-parse.h >stdout || { cat stdout; exit 1; }
-cat stdout
+run_make -O parse.h bar-parse.h
 
 $EGREP ' (-c|-d|-o)' stdout && exit 1
 $EGREP '(mv|ylwrap) ' stdout && exit 1
@@ -125,8 +121,7 @@ $MAKE maintainer-clean
 
 ./configure --enable-silent-rules
 
-$MAKE V=1 >stdout || { cat stdout; exit 1; }
-cat stdout
+run_make -O V=1
 
 grep ' -c ' stdout
 grep ' -o ' stdout
@@ -137,8 +132,7 @@ $EGREP '(YACC|CC|CCLD) ' stdout && exit 1
 
 # Check recovering from header removal.
 rm -f parse.h bar-parse.h
-$MAKE V=1 parse.h bar-parse.h >stdout || { cat stdout; exit 1; }
-cat stdout
+run_make -O V=1 parse.h bar-parse.h
 
 grep ' -d ' stdout
 grep 'ylwrap ' stdout
@@ -150,8 +144,7 @@ grep 'YACC' stdout && exit 1
 # different set of rules.
 $MAKE clean
 
-$MAKE V=1 >stdout || { cat stdout; exit 1; }
-cat stdout
+run_make -O V=1
 
 # Don't look for ylwrap, as probably lex hasn't been re-run.
 grep ' -c ' stdout
@@ -161,8 +154,7 @@ $EGREP '(YACC|CC|CCLD) ' stdout && exit 1
 
 # Check recovering from header removal.
 rm -f parse.h bar-parse.h
-$MAKE V=1 parse.h bar-parse.h >stdout || { cat stdout; exit 1; }
-cat stdout
+run_make -O V=1 parse.h bar-parse.h
 
 grep ' -d ' stdout
 grep 'ylwrap ' stdout

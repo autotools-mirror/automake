@@ -63,8 +63,7 @@ $AUTOCONF
 $AUTOMAKE -a
 ./configure
 
-$MAKE check >stdout && { cat stdout; exit 1; }
-cat stdout
+run_make -O -e FAIL check
 count_test_results total=3 pass=1 fail=2 skip=0 xfail=0 xpass=0 error=0
 test ! -e status
 
@@ -79,14 +78,12 @@ int main (void)
 }
 END
 
-$MAKE recheck >stdout || { cat stdout; exit 1; }
-cat stdout
+run_make -O recheck
 count_test_results total=2 pass=2 fail=0 skip=0 xfail=0 xpass=0 error=0
 grep '^PASS: b\.test$' stdout
 grep '^PASS: c\.test$' stdout
 
-$MAKE recheck >stdout || { cat stdout; exit 1; }
-cat stdout
+run_make -O recheck
 count_test_results total=0 pass=0 fail=0 skip=0 xfail=0 xpass=0 error=0
 
 :

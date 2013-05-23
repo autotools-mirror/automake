@@ -42,10 +42,9 @@ END
 
 chmod a+x all.test
 
-$MAKE check >stdout || { cat stdout; exit 1; }
-cat stdout
-
+run_make -O check
 count_test_results total=2 pass=1 fail=0 xpass=0 xfail=0 skip=1 error=0
+
 $FGREP 'foo foo foo' stdout
 $FGREP 'bar bar bar' stdout && exit 1
 

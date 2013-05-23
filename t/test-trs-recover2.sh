@@ -69,8 +69,7 @@ test -r bar.trs
 : Again, but using "make recheck" this time.
 rm -f foo.trs
 chmod a-r bar.trs
-$MAKE recheck >stdout || { cat stdout; exit 1; }
-cat stdout
+run_make -O recheck
 test -f foo.trs
 test -r foo.trs
 test -f bar.trs
@@ -81,8 +80,7 @@ grep '^PASS: bar\.test' stdout
 : Recreate by remaking the global test log.
 chmod a-r foo.trs
 rm -f test-suite.log
-$MAKE test-suite.log >stdout || { cat stdout; exit 1; }
-cat stdout
+run_make -O test-suite.log
 test -f foo.trs
 test -r foo.trs
 grep '^PASS: foo\.test' stdout
@@ -107,8 +105,7 @@ $sleep
 touch stamp
 $sleep
 touch bar.test
-run_make RECHECK_LOGS= check >stdout || { cat stdout; exit 1; }
-cat stdout
+run_make -O RECHECK_LOGS= check
 test -r foo.trs
 is_newest bar.trs bar.test
 grep '^PASS: foo\.test' stdout

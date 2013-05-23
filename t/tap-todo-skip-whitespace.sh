@@ -68,8 +68,8 @@ my_make_check ()
     *) fatal_ "bad argument '$1' for my_make_check";;
   esac
   cat all.test
-  $MAKE check >stdout || : # Don't care about the exit status in this test.
-  cat stdout
+  # We don't care about the exit status in this test.
+  run_make -O -e IGNORE check
   count_test_results total=15 pass=0 fail=0 error=0 \
                      xpass=$xpass xfail=$xfail skip=$skip
   # Don't be too strict w.r.t. possible normalization of "TODO: foo" into

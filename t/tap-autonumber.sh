@@ -44,8 +44,7 @@ not ok
 ok
 END
 
-run_make TESTS=all.test check >stdout && { cat stdout; exit 1; }
-cat stdout
+run_make -O -e FAIL TESTS=all.test check
 count_test_results total=14 pass=6 fail=5 xpass=1 xfail=1 skip=1 error=0
 
 cat > exp <<'END'

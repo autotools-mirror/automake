@@ -55,15 +55,12 @@ $AUTOCONF
 
 ./configure
 
-$MAKE -n foo >output 2>&1 || { cat output; exit 1; }
-cat output
+run_make -M -- -n foo
 test ! -f foo
 # Guard against possible infinite recursion.
 $FGREP '::OOPS::' output && exit 1
 
-$MAKE foo >output 2>&1 || { cat output; exit 1; }
-cat output
-$MAKE foo
+run_make -M -- foo
 # Guard against possible infinite recursion.
 $FGREP '::OOPS::' output && exit 1
 

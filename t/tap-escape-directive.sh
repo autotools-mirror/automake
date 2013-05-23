@@ -27,9 +27,7 @@ ok \# TODO
 ok \# SKIP
 END
 
-$MAKE check >stdout || { cat stdout; exit 1; }
-cat stdout
-
+run_make -O check
 count_test_results total=2 pass=2 fail=0 xpass=0 xfail=0 skip=0 error=0
 
 grep '^PASS: all\.test 1 .*# TODO' stdout

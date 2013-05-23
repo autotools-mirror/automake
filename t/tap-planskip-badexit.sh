@@ -38,8 +38,7 @@ END
 
 chmod a+x one.test two.test
 
-$MAKE check >stdout && { cat stdout; exit 1; }
-cat stdout
+run_make -O -e FAIL check
 
 # The 'prove' utility reports both the skip and the non-zero exit status,
 # so we do the same.

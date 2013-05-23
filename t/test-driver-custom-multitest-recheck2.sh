@@ -83,8 +83,7 @@ for vpath in : false; do
   $srcdir/configure
 
   : Run the tests for the first time.
-  run_make check >stdout && { cat stdout; exit 1; }
-  cat stdout
+  run_make -O -e FAIL check
   # All the test scripts should have run.
   test -f a.run
   test -f b.run
@@ -95,8 +94,7 @@ for vpath in : false; do
 
   : An empty '$(TESTS)' or '$(TEST_LOGS)' means that no test should be run.
   for var in TESTS TEST_LOGS; do
-    run_make "$var=" recheck >stdout || { cat stdout; exit 1; }
-    cat stdout
+    run_make -O "$var=" recheck
     count_test_results total=0 pass=0 fail=0 xpass=0 xfail=0 skip=0 error=0
     test ! -e a.run
     test ! -e b.run
@@ -106,9 +104,7 @@ for vpath in : false; do
 
   : a.test was successful the first time, no need to re-run it.
   using_gmake || $sleep # Required by BSD make.
-  run_make TESTS=a.test recheck >stdout \
-    || { cat stdout; exit 1; }
-  cat stdout
+  run_make -O TESTS=a.test recheck
   count_test_results total=0 pass=0 fail=0 xpass=0 xfail=0 skip=0 error=0
   test ! -e a.run
   test ! -e b.run
@@ -117,9 +113,7 @@ for vpath in : false; do
   : b.test failed, it should be re-run.  And make it pass this time.
   using_gmake || $sleep # Required by BSD make.
   echo OK > b.ok
-  run_make TEST_LOGS=b.log recheck >stdout \
-    || { cat stdout; exit 1; }
-  cat stdout
+  run_make -O TEST_LOGS=b.log recheck
   test ! -e a.run
   test -f b.run
   test ! -e c.run
@@ -129,17 +123,13 @@ for vpath in : false; do
 
   : No need to re-run a.test or b.test anymore.
   using_gmake || $sleep # Required by BSD make.
-  run_make TEST_LOGS=b.log recheck >stdout \
-    || { cat stdout; exit 1; }
-  cat stdout
+  run_make -O TEST_LOGS=b.log recheck
   count_test_results total=0 pass=0 fail=0 xpass=0 xfail=0 skip=0 error=0
   test ! -e a.run
   test ! -e b.run
   test ! -e c.run
   using_gmake || $sleep # Required by BSD make.
-  run_make TESTS='a.test b.test' recheck >stdout \
-    || { cat stdout; exit 1; }
-  cat stdout
+  run_make -O TESTS='a.test b.test' recheck
   count_test_results total=0 pass=0 fail=0 xpass=0 xfail=0 skip=0 error=0
   test ! -e a.run
   test ! -e b.run
@@ -149,9 +139,7 @@ for vpath in : false; do
   : as it contained an XPASS.  And this time, make it fail with
   : an hard error.
   echo dummy > c.err
-  run_make TEST_LOGS='a.log c.log' recheck >stdout \
-    && { cat stdout; exit 1; }
-  cat stdout
+  run_make -e FAIL -O TEST_LOGS='a.log c.log' recheck
   count_test_results total=1 pass=0 fail=0 xpass=0 xfail=0 skip=0 error=1
   test ! -e a.run
   test ! -e b.run
@@ -164,9 +152,7 @@ for vpath in : false; do
   # Use 'echo', not ':'; see comments above for why.
   using_gmake || $sleep # Required by BSD make.
   echo dummy > c.ok
-  run_make TESTS='c.test a.test' recheck >stdout \
-    || { cat stdout; exit 1; }
-  cat stdout
+  run_make -O TESTS='c.test a.test' recheck
   count_test_results total=1 pass=1 fail=0 xpass=0 xfail=0 skip=0 error=0
   test ! -e a.run
   test ! -e b.run
@@ -177,8 +163,7 @@ for vpath in : false; do
   : Nothing should be rerun anymore, as all tests have been eventually
   : successful.
   using_gmake || $sleep # Required by BSD make.
-  run_make recheck >stdout || { cat stdout; exit 1; }
-  cat stdout
+  run_make -O recheck
   count_test_results total=0 pass=0 fail=0 xpass=0 xfail=0 skip=0 error=0
   test ! -e a.run
   test ! -e b.run

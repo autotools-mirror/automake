@@ -118,8 +118,7 @@ echo error from install-info >&2
 exit 127
 END
 chmod a+x bin/install-info
-$MAKE install-info >output 2>&1 || { cat output; exit 1; }
-cat output
+run_make -M install-info
 test -f $instdir/info/foo.info
 test ! -e $instdir/info/dir
 grep 'error from install-info' output && exit 1

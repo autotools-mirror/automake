@@ -52,8 +52,7 @@ fi
 
 rm -f ok ko
 
-$MAKE -s file >output 2>&1
-cat output
+run_make -M -- -s file
 if using_gmake; then
  test -f ok
  test ! -e ko

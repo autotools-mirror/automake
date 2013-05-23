@@ -49,15 +49,17 @@ chmod a+x dummy-driver
 
 mk_check ()
 {
-  st=0
-  $MAKE check >stdout || st=$?
-  cat stdout
+  stat=0
+  case $1 in
+    -e) stat=$2; shift 2;;
+  esac
+  run_make -O -e $stat -- check
   # Our dummy driver make no testsuite progress report.
   grep ': .*\.test' stdout && exit 1
   # Nor it writes to the log files.
   test -s foo.log && exit 1
   test -s bar.log && exit 1
-  return $st
+  : For 'set -e'.
 }
 
 # This must be different from the one defined in 'test/defs', as that
@@ -99,7 +101,7 @@ cat > bar.test <<END
 :test-result: SKIP
 :test-global-result: ERROR
 END
-mk_check && exit 1
+mk_check -e FAIL
 count_test_results total=2 pass=0 fail=1 xpass=0 xfail=0 skip=1 error=0
 
 cat > foo.test <<END
@@ -118,7 +120,7 @@ END
 cat > bar.test <<END
 :test-global-result: PASS
 END
-mk_check && exit 1
+mk_check -e FAIL
 count_test_results total=1 pass=0 fail=1 xpass=0 xfail=0 skip=0 error=0
 
 cat > foo.test <<END
@@ -147,11 +149,11 @@ cat > foo.test <<END
 :test-result: ERROR
 END
 : > bar.test
-mk_check && exit 1
+mk_check -e FAIL
 count_test_results total=6 pass=1 fail=1 xpass=1 xfail=1 skip=1 error=1
 
 cp foo.test bar.test
-mk_check && exit 1
+mk_check -e FAIL
 count_test_results total=12 pass=2 fail=2 xpass=2 xfail=2 skip=2 error=2
 
 # Check that we are liberal w.r.t. whitespace use.
@@ -169,7 +171,7 @@ END
 done
 cat foo.test # For debugging.
 cat bar.test # Likewise.
-mk_check && exit 1
+mk_check -e FAIL
 count_test_results total=30 pass=5 fail=5 xpass=5 xfail=5 skip=5 error=5
 
 :

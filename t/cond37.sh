@@ -39,19 +39,15 @@ $AUTOCONF
 $AUTOMAKE
 
 ./configure
-$MAKE check >stdout || { cat stdout; exit 1; }
-cat stdout
+run_make -O check
 grep GrepMe1 stdout && exit 1
-$MAKE install >stdout || { cat stdout; exit 1; }
-cat stdout
+run_make -O install
 grep GrepMe2 stdout
 
 ./configure case_A=1
-$MAKE check >stdout || { cat stdout; exit 1; }
-cat stdout
+run_make -O check
 grep GrepMe1 stdout
-$MAKE install >stdout || { cat stdout; exit 1; }
-cat stdout
+run_make -O install
 grep GrepMe2 stdout && exit 1
 
 :

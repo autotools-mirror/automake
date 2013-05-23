@@ -118,10 +118,7 @@ echo "ERROR: e.test - Bail out!" >> exp
 # Doing the sums above, we have:
 test_counts='total=12 pass=3 fail=1 xpass=1 xfail=1 skip=1 error=5'
 
-run_make TESTS='a.test b.test c.test d.test e.test' check >stdout \
-  && { cat stdout; exit 1; }
-cat stdout
-
+run_make -O -e FAIL TESTS='a.test b.test c.test d.test e.test' check
 count_test_results $test_counts
 
 LC_ALL=C sort exp > t

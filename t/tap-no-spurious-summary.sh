@@ -34,9 +34,7 @@ cat > all.test <<'END'
 ok 1
 END
 
-$MAKE check >stdout || { cat stdout; exit 1; }
-cat stdout
-
+run_make -O check
 count_test_results total=1 pass=1 fail=0 xpass=0 xfail=0 skip=0 error=0
 
 for result in PASS FAIL XPASS XFAIL SKIP ERROR UNKNOWN; do

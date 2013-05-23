@@ -32,9 +32,7 @@ ok 5 # SKIP SKIP
 not ok 6 # TODO TODO
 END
 
-$MAKE check >stdout && { cat stdout; exit 1; }
-cat stdout
-
+run_make -O -e FAIL check
 count_test_results total=6 pass=2 fail=2 xpass=0 xfail=1 skip=1 error=0
 
 cat > exp << 'END'

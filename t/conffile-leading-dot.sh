@@ -54,8 +54,7 @@ $sleep
 touch Makefile.am
 # Check that remake rules do truly break -- otherwise automake is
 # giving a bogus warning.
-$MAKE 2>stderr && { cat stderr >&2; exit 1; }
-cat stderr >&2
+run_make -e FAIL -E
 grep "config\\.status:.*invalid argument.*Makefile" stderr
 
 :

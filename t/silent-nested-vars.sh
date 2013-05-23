@@ -115,8 +115,7 @@ grep '^checking whether \./mymake supports nested variables\.\.\. no *$' \
 $EGREP 'CC|AM_V|GEN' Makefile # For debugging.
 grep '^AM_V_CC =  *\$(am__v_CC_0) *$' Makefile
 grep '^AM_V_GEN =  *\$(am__v_GEN_0) *$' Makefile
-$MAKE >stdout || { cat stdout; exit 1; }
-cat stdout
+run_make -O
 $EGREP ' (-c|-o)' stdout && exit 1
 grep 'mv ' stdout && exit 1
 grep 'echo .*oop' stdout && exit 1
@@ -135,8 +134,7 @@ $EGREP 'CC|AM_V|GEN' Makefile # For debugging.
 grep '^AM_V_CC =  *\$(am__v_CC_1) *$' Makefile
 grep '^AM_V_GEN =  *\$(am__v_GEN_1) *$' Makefile
 
-$MAKE >stdout || { cat stdout; exit 1; }
-cat stdout
+run_make -O
 grep ' -c' stdout
 grep ' -o foo' stdout
 grep ' -o bar' stdout

@@ -17,6 +17,9 @@
 # Check parallel-tests features:
 # - concurrent parallel execution
 
+# FIXME: we should factorize the code to determine how to run
+#        make in parallel out in am-test-lib.sh ...
+
 . test-init.sh
 
 case $MAKE in
@@ -90,6 +93,8 @@ $MAKE ${j}1 check &
 cd ../parallel
 $sleep
 # Use append mode here to avoid dropping output.  See automake bug#11413.
+# TODO: port this to to run_make(), and rewrite this hunk to use that
+#       function ...
 : > stdout
 $MAKE ${j}4 check >> stdout
 cd ..

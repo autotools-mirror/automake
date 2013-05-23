@@ -67,8 +67,7 @@ ocwd=$(pwd)
 for x in b c; do
   test $x = b || cd sub
   rm -f $x.h.in
-  $MAKE $x.h.in 2>stderr && { cat stderr >&2; exit 1; }
-  cat stderr >&2
+  run_make -E -e FAIL $x.h.in
   test ! -f $x.h.in
   if using_gmake; then
     grep "No rule to make target [\`\"']$x\.h\.in[\`\"']" stderr
