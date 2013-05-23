@@ -33,9 +33,7 @@ ok -121
 not ok -50000
 END
 
-$MAKE check >stdout && { cat stdout; exit 1; }
-cat stdout
-
+run_make -O -e FAIL check
 count_test_results total=7 pass=2 fail=2 xpass=1 xfail=1 skip=1 error=0
 
 cat > exp <<'END'

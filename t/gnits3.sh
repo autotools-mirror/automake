@@ -87,8 +87,9 @@ cd build
 $MAKE
 $MAKE install
 $MAKE installcheck && exit 1
-$MAKE -k installcheck 2>stderr || : # Never trust the exit status of make -k.
-cat stderr >&2
+# Don't trust th exit status of "make -k" for non-GNU makes.
+if using_gmake; then status=FAIL; else status=IGNORE; fi
+run_make -e $status -E -- -k installcheck
 $MAKE grep-stderr
 
 # Make sure there is no more error when all targets are exempted.

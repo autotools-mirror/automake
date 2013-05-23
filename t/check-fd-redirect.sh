@@ -46,10 +46,7 @@ do_check ()
   cat foo.test # For debugging.
   echo 'this line will be removed' > four
   echo 'this line will not be removed' > five
-  st=0
-  echo 'ok ok ok' | $MAKE check >stdout 2>stderr || st=1
-  cat stdout
-  cat stderr >&2
+  st=0; echo 'ok ok ok' | run_make -O -E -e IGNORE check || st=$?
   cat four
   test x"$am_serial_tests" = x"yes" || cat foo.log
   test $st -eq 0

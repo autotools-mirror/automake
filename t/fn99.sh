@@ -43,8 +43,7 @@ $MAKE distcheck
   mkdir -p 12345678 && cd 12345678 && touch x || exit 1
 done) || skip_ "failed to create deeper directory hierarchy"
 
-$MAKE dist 2>stderr && { cat stderr >&2; exit 1; }
-cat stderr >&2
+run_make -E -e FAIL dist
 grep 'filenames are too long' stderr
 test 2 -eq $(grep -c 12345678 stderr)
 

@@ -20,6 +20,7 @@
 # See 'parallel-tests-trailing-whitespace.sh' for a similar issue.
 
 . test-init.sh
+
 cat >> configure.ac << 'END'
 AC_OUTPUT
 END
@@ -33,10 +34,9 @@ $AUTOCONF
 $AUTOMAKE -a
 
 ./configure
-$MAKE check >stdout || { cat stdout; exit 1; }
-cat stdout
+run_make -O check
 for x in TOTAL PASS FAIL XPASS FAIL SKIP ERROR; do
   grep "^# $x: *0$" stdout
 done
 
-exit 0
+:

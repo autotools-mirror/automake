@@ -65,8 +65,7 @@ test -f baz.log
 
 rm -f foo.log bar.log
 
-run_make RECHECK_LOGS= check > stdout && { cat stdout; exit 1; }
-cat stdout
+run_make -O -e FAIL check RECHECK_LOGS=
 test -f foo.log
 test -f bar.log
 grep '^PASS: foo\.test 1$' stdout
@@ -80,8 +79,7 @@ touch foo.test
 # We re-run only a successful test, but the tests that failed in the
 # previous run should still be taken into account, and cause an overall
 # failure.
-run_make RECHECK_LOGS= check > stdout && { cat stdout; exit 1; }
-cat stdout
+run_make -O -e FAIL check RECHECK_LOGS=
 grep '^PASS: foo\.test 1$' stdout
 grep '^PASS: foo\.test 2$' stdout
 grep 'ba[rz]\.test' stdout && exit 1
@@ -90,8 +88,7 @@ grep_summary
 
 $sleep
 touch zardoz
-run_make RECHECK_LOGS= check > stdout && { cat stdout; exit 1; }
-cat stdout
+run_make -O -e FAIL check RECHECK_LOGS=
 grep '^ERROR: baz\.test' stdout
 $EGREP '(foo|bar)\.test' stdout && exit 1
 is_newest baz.log zardoz
@@ -99,16 +96,14 @@ grep_summary
 
 # Now, explicitly retry with all test logs already updated, and ensure
 # that the summary is still displayed.
-run_make RECHECK_LOGS= check > stdout && { cat stdout; exit 1; }
-cat stdout
+run_make -O -e FAIL check RECHECK_LOGS=
 $EGREP '(foo|bar|baz)\.test' stdout && exit 1
 grep_summary
 
 # The following should re-run foo.test (and only foo.test), even if its
 # log file is up-to-date.
 : > older
-run_make RECHECK_LOGS=foo.log check > stdout && { cat stdout; exit 1; }
-cat stdout
+run_make -O -e FAIL check RECHECK_LOGS=foo.log
 grep '^PASS: foo\.test 1$' stdout
 grep '^PASS: foo\.test 2$' stdout
 grep 'ba[rz]\.test' stdout && exit 1

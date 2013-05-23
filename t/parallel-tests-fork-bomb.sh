@@ -98,16 +98,14 @@ $AUTOMAKE -a -Wno-portability
 
 do_check ()
 {
-  st=0
   log=$1; shift
-  run_make "$@" check >output 2>&1 || st=$?
-  cat output
+  run_make -M -e IGNORE -- "$@" check
   $FGREP '::OOPS::' output && exit 1 # Possible infinite recursion.
   # Check that at least we don't create a botched global log file.
   test ! -e "$log"
   if using_gmake; then
     grep "[Cc]ircular.*dependency" output | $FGREP "$log"
-    test $st -gt 0
+    test $am_make_rc_got -gt 0
   else
     # Look for possible error messages about circular dependencies from
     # either make or our own recipes.  At least one such a message must

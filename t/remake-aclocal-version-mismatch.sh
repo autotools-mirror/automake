@@ -34,13 +34,11 @@ cmp aclocal.m4 aclocal.tmp && exit 1
 
 mv aclocal.tmp aclocal.m4
 
-$MAKE 2>stderr || { cat cat stderr >&2; exit 1; }
-cat stderr >&2
+run_make -E
 grep 'You have another version of autoconf' stderr
 grep 'aclocal.m4:.*this file was generated for' stderr
 
-$MAKE 2>stderr || { cat cat stderr >&2; exit 1; }
-cat stderr >&2
+run_make -E
 grep 'You have another version of autoconf' stderr && exit 1
 grep 'aclocal.m4:.*this file was generated for' stderr && exit 1
 

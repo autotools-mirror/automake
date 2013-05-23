@@ -125,8 +125,7 @@ total=$(($total + 3))
 # And add the test plan!
 echo 1..$total >> all.test
 
-$MAKE check >stdout && { cat stdout; exit 1; }
-cat stdout
+run_make -O -e FAIL check
 
 $EGREP '^(PASS|FAIL|SKIP).*#.*TODO' stdout && exit 1
 $EGREP '^X?(PASS|FAIL).*#.*SKIP' stdout && exit 1

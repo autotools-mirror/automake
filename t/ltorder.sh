@@ -53,8 +53,7 @@ $AUTOMAKE --add-missing
 ./configure --prefix="$(pwd)/inst"
 
 $MAKE
-$MAKE install 2>stderr || { cat stderr >&2; exit 1; }
-cat stderr >&2
+run_make -E install
 grep 'has not been installed' stderr && exit 1
 
 $MAKE uninstall

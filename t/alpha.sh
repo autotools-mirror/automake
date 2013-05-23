@@ -60,11 +60,12 @@ $AUTOMAKE
 ./configure
 
 # "make distdir" should fail because NEWS does not mention 1.0a
-$MAKE check 2>stderr && { cat stderr >&2; exit 1; }
-cat stderr >&2
+run_make -E -e FAIL check
 grep 'NEWS not updated' stderr
 test ! -e works
 
 echo 'alpha 1.0a released' > NEWS
 $MAKE check
 test -f works
+
+:

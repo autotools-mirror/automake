@@ -57,10 +57,7 @@ ok 16
 ok 17
 END
 
-run_make TESTS='a.test b.test c.test d.test' check >stdout \
-  && { cat stdout; exit 1; }
-cat stdout
-
+run_make -O -e FAIL TESTS='a.test b.test c.test d.test' check
 count_test_results total=17 pass=8 fail=0 xpass=0 xfail=1 skip=0 error=8
 
 test $($FGREP -c ': a.test' stdout) -eq 3

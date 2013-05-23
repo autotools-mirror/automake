@@ -104,12 +104,10 @@ grep '^\.test\$(EXEEXT)\.log:' Makefile || st=1
 grep '^qux\.log:' Makefile && st=1
 test $st -eq 0 || fatal_ "doesn't cover expected code paths"
 
-st=0
-$MAKE check >stdout || st=1
-cat stdout
+run_make -O -e IGNORE check
 cat baz.log
 cat qux.log
-test $st -eq 0
+test $am_make_rc_got -eq 0
 grep "^ bazbazbaz$" stdout
 grep "^ quxquxqux$" stdout
 $EGREP '(bazbazbaz|quxquxqux)' *.log && exit 1

@@ -30,8 +30,7 @@ do_and_check_silent_build ()
             *) rebuild=false;;
   esac
 
-  $MAKE >stdout || { cat stdout; exit 1; }
-  cat stdout
+  run_make -O
   # Avoid spurious failures with SunStudio Fortran compilers.
   sed '/^NOTICE:/d' stdout > t
   mv -f t stdout
@@ -74,8 +73,7 @@ do_and_check_verbose_build ()
             *) rebuild=false;;
   esac
 
-  $MAKE V=1 >stdout || { cat stdout; exit 1; }
-  cat stdout
+  run_make -O V=1
 
   grep ' -c ' stdout
   grep ' -o ' stdout

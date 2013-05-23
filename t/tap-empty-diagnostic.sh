@@ -30,8 +30,7 @@ ok 1$
 #   ${tab} $tab${tab}$
 END
 
-$MAKE check >stdout || { cat stdout; exit 1; }
-cat stdout
+run_make -O check
 
 grep '^PASS:.*all\.test' stdout # Sanity check.
 grep '#.*all\.test' stdout && exit 1

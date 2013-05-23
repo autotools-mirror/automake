@@ -53,7 +53,6 @@ do_check ()
   shift
   cat > summary.exp
   cat all.test
-  st=0
   if test $use_colors = yes; then
     # Forced colorization should take place also with non-ANSI terminals;
     # hence the "TERM=dumb" definition.
@@ -61,12 +60,11 @@ do_check ()
   else
     make_args=
   fi
-  run_make $make_args check > stdout || st=$?
-  cat stdout
+  run_make -O -e IGNORE $make_args check
   if test $expect_failure = yes; then
-    test $st -gt 0 || exit 1
+    test $am_make_rc_got -gt 0 || exit 1
   else
-    test $st -eq 0 || exit 1
+    test $am_make_rc_got -eq 0 || exit 1
   fi
   $PERL "$am_testaux_srcdir"/extract-testsuite-summary.pl stdout >summary.got \
     || fatal_ "cannot extract testsuite summary"

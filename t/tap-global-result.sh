@@ -140,8 +140,7 @@ END
 
 tests=$(echo *.test) # Also required later.
 
-run_make TESTS="$tests" check >stdout && { cat stdout; exit 1; }
-cat stdout
+run_make -O -e FAIL TESTS="$tests" check
 
 # Dirty trick required here.
 for tst in $(echo " $tests " | sed 's/\.test / /'); do

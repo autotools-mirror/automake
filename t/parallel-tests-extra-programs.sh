@@ -115,13 +115,10 @@ $AUTOMAKE -a
 #    'test-suite.log' file shouldn't be created (as it depends
 #     on *all* the test logs).
 
-st=0
-$MAKE -k check >stdout 2>stderr || st=$?
-cat stdout
-cat stderr >&2
+run_make -E -O -e IGNORE -- -k check
 ls -l
 if using_gmake; then
-  test $st -gt 0 || exit 1
+  test $am_make_rc_got -gt 0 || exit 1
 else
   # Don't trust exit status of "make -k" for non-GNU make.
   $MAKE check && exit 1
@@ -158,8 +155,7 @@ $sleep
 
 echo 'int main (void) { return 0; }' > none.c
 
-run_make -e IGNORE RECHECK_LOGS= check >stdout
-cat stdout
+run_make -O -e IGNORE check RECHECK_LOGS=
 ls -l # For debugging.
 test $am_make_rc_got -eq 0 || exit 1
 

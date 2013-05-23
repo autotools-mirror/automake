@@ -51,21 +51,18 @@ $AUTOMAKE --add-missing
 
 ./configure --prefix "$(pwd)/inst"
 
-$MAKE check >stdout && { cat stdout; exit 1; }
-cat stdout
+run_make -O -e FAIL -- check
 grep '^FAIL: fail\.sh *$' stdout
 grep '^PASS: ok\.sh *$' stdout && exit 1
 
 # The exit status of 'make -k' can be anything
 # (depending on the Make implementation)
-$MAKE -k check >stdout || :
-cat stdout
+run_make -O -e IGNORE -- -k check
 grep '^FAIL: fail\.sh *$' stdout
 grep '^PASS: ok\.sh *$' stdout
 
 # Should also works when -k is not in first position.
-$MAKE -s -k check >stdout || :
-cat stdout
+run_make -O -e IGNORE -- -s -k check
 grep '^FAIL: fail\.sh *' stdout
 grep '^PASS: ok\.sh *' stdout
 
@@ -75,8 +72,7 @@ if using_gmake; then
   # Try with a long-option that do not have a short option equivalent
   # (here, --no-print-directory).  That should cause all options to
   # appear verbatim in MAKEFLAGS.
-  $MAKE --no-print-directory -k check >stdout || :
-  cat stdout
+  run_make -e FAIL -O -- --no-print-directory -k check
   grep '^FAIL: fail\.sh *$' stdout
   grep '^PASS: ok\.sh *$' stdout
 fi

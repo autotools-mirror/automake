@@ -92,8 +92,7 @@ for vpath in : false; do
     srcdir=.
   fi
   $srcdir/configure
-  $MAKE check >stdout && { cat stdout; exit 1; }
-  cat stdout
+  run_make -O -e FAIL check
   LC_ALL=C grep '^[A-Z][A-Z]*:' stdout > got
   cat got
   diff $srcdir/exp got

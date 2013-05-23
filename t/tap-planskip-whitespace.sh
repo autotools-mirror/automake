@@ -34,10 +34,7 @@ cat > baz.test <<END
 1..0 #  SKIP${tab}  Strip${tab}external  preserve ${tab}middle  ${tab}${sp}
 END
 
-run_make TESTS='foo.test bar.test baz.test' check > stdout \
-  || { cat stdout; exit 1; }
-cat stdout
-
+run_make -O TESTS='foo.test bar.test baz.test' check
 count_test_results total=3 pass=0 fail=0 error=0 xpass=0 xfail=0 skip=3
 
 grep "SKIP: foo\\.test - Strip leading & trailing$" stdout

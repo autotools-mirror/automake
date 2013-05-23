@@ -26,9 +26,7 @@
 echo 'Bail out! 0' > a.test
 echo 'Bail out! 0.0' > b.test
 
-run_make TESTS='a.test b.test' check >stdout && { cat stdout; exit 1; }
-cat stdout
-
+run_make -O -e FAIL TESTS='a.test b.test' check
 count_test_results total=2 pass=0 fail=0 xpass=0 xfail=0 skip=0 error=2
 
 grep '^ERROR: a.test - Bail out! 0$' stdout

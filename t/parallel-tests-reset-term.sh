@@ -41,15 +41,11 @@ chmod a+x foobar
 
 mkcheck ()
 {
-  if $MAKE "$@" check > stdout; then
-    rc=0
-  else
-    rc=1
-  fi
+  run_make -O -e IGNORE "$@" check
   cat stdout
   cat foobar.log
   cat test-suite.log
-  return $rc
+  return $am_make_rc_got
 }
 
 $ACLOCAL

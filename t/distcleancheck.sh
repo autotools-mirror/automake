@@ -62,9 +62,7 @@ mv -f t Makefile.am
 $AUTOMAKE
 ./configure
 $MAKE
-$MAKE distcheck 2>stderr && { cat srderr >&2; exit 1; }
-cat stderr >&2
-
+run_make -E -e FAIL distcheck
 grep 'ERROR:.*files left in build directory after distclean' stderr
 grep '^\./foo\.1$' stderr
 

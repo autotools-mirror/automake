@@ -74,8 +74,7 @@ $MAKE distcheck
 
 # ... but not when "make distcheck" is run from the subpackage.
 cd subpkg
-$MAKE distcheck >output 2>&1 && { cat output; exit 1; }
-cat output
+run_make -e FAIL -M distcheck
 grep '^configure:.* dc=KO am_dc=KO' output
 
 :

@@ -70,10 +70,7 @@ cat > e.test <<END
 ok 0 # TODO
 END
 
-run_make TESTS='a.test b.test c.test d.test e.test' check >stdout \
-  && { cat stdout; exit 1; }
-cat stdout
-
+run_make -O -e FAIL TESTS='a.test b.test c.test d.test e.test' check
 count_test_results total=5 pass=0 fail=0 xpass=0 xfail=0 skip=0 error=5
 
 grep '^ERROR: a\.test 0 # OUT-OF-ORDER (expecting 1)$' stdout

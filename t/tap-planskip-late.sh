@@ -32,8 +32,7 @@ cat > bar.test <<END
 1..0
 END
 
-run_make TESTS='foo.test bar.test' check >stdout || { cat stdout; exit 1; }
-cat stdout
+run_make -O TESTS='foo.test bar.test' check
 
 grep '^SKIP: foo\.test .* from the last line$' stdout
 grep '^SKIP: bar\.test$' stdout

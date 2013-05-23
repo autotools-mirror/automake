@@ -62,6 +62,7 @@ sc_tests_no_source_defs \
 sc_tests_obsolete_variables \
 sc_tests_here_document_format \
 sc_tests_command_subst \
+sc_tests_no_run_make_redirect \
 sc_tests_exit_not_Exit \
 sc_tests_automake_fails \
 sc_tests_required_after_defs \
@@ -343,6 +344,16 @@ sc_tests_exit_not_Exit:
 sc_tests_no_source_defs:
 	@if grep -E '\. .*defs($$| )' $(xtests); then \
 	  echo "Source 'test-init.sh', not './defs'." 1>&2; \
+	  exit 1; \
+	fi
+
+## Invocation of 'run_make' should not have output redirections.
+sc_tests_no_run_make_redirect:
+	@if grep -Pzo '.*(\$$MAKE|\brun_make)\b(.*(\\\n))*.*>.*' $(xtests); \
+	then \
+	  echo 'Do not redirect stdout/stderr in "run_make" or "$$MAKE"' \
+	       'invocations,' >&2; \
+	  echo 'use "run_make {-E|-O|-M}" instead.' >&2; \
 	  exit 1; \
 	fi
 
