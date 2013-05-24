@@ -105,7 +105,7 @@ do_check ()
   test ! -e "$log"
   if using_gmake; then
     grep "[Cc]ircular.*dependency" output | $FGREP "$log"
-    test $am_make_rc_got -gt 0
+    test $am_make_rc -gt 0
   else
     # Look for possible error messages about circular dependencies from
     # either make or our own recipes.  At least one such a message must

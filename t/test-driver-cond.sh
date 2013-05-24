@@ -107,7 +107,7 @@ cat test-suite.log
 cat foo.log
 cat bar.log
 cat baz.log
-test $am_make_rc_got -eq 0 || exit 1
+test $am_make_rc -eq 0 || exit 1
 do_count
 
 run_make -O distcheck

@@ -72,7 +72,7 @@ sed '/^ERROR:/d' exp-1 > exp-2
 mk_ ()
 {
   n=$1; shift
-  unset am_make_rc_got
+  unset am_make_rc
   run_make -e IGNORE -O -- ${1+"$@"} check
   cat test-suite.log
   LC_ALL=C grep '^[A-Z][A-Z]*:' stdout | LC_ALL=C sort > got-$n
@@ -82,10 +82,10 @@ mk_ ()
 }
 
 mk_ 0
-test $am_make_rc_got -gt 0
+test $am_make_rc -gt 0
 mk_ 1 XFAIL_TESTS="$failure_statuses 99"
-test $am_make_rc_got -gt 0
+test $am_make_rc -gt 0
 mk_ 2 XFAIL_TESTS="$failure_statuses" TESTS="0 77 $failure_statuses"
-test $am_make_rc_got -eq 0
+test $am_make_rc -eq 0
 
 :

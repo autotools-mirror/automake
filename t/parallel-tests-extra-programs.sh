@@ -118,7 +118,7 @@ $AUTOMAKE -a
 run_make -E -O -e IGNORE -- -k check
 ls -l
 if using_gmake; then
-  test $am_make_rc_got -gt 0 || exit 1
+  test $am_make_rc -gt 0 || exit 1
 else
   # Don't trust exit status of "make -k" for non-GNU make.
   $MAKE check && exit 1
@@ -157,7 +157,7 @@ echo 'int main (void) { return 0; }' > none.c
 
 run_make -O -e IGNORE check RECHECK_LOGS=
 ls -l # For debugging.
-test $am_make_rc_got -eq 0 || exit 1
+test $am_make_rc -eq 0 || exit 1
 
 # For debugging.
 stat stamp foo.log bar.log baz.log || :

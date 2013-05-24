@@ -44,7 +44,7 @@ count_test_results total=1 pass=0 fail=1 xpass=0 xfail=0 skip=0 error=0
 $sleep # Required to avoid a spurious failure with some FreeBSD makes.
 run_make -O -e IGNORE -- -k recheck
 # Don't trust the exit status of "make -k" for non-GNU makes.
-! using_gmake || test $am_make_rc_got -gt 0 || exit 1
+! using_gmake || test $am_make_rc -gt 0 || exit 1
 count_test_results total=1 pass=0 fail=1 xpass=0 xfail=0 skip=0 error=0
 
 # Introduce an error in foo.c, that should cause a compilation failure.
@@ -62,7 +62,7 @@ test -f foo.trs
 $sleep # Required to avoid a spurious failure with some FreeBSD makes.
 run_make -O -e IGNORE -- -k recheck
 # Don't trust the exit status of "make -k" for non-GNU makes.
-! using_gmake || test $am_make_rc_got -gt 0 || exit 1
+! using_gmake || test $am_make_rc -gt 0 || exit 1
 # We don't get a change to run the testsuite.
 $EGREP '(X?PASS|X?FAIL|SKIP|ERROR):' stdout && exit 1
 test -f foo.log
