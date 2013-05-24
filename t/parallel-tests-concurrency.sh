@@ -40,7 +40,7 @@ END
     if test x"$j" = xNONE; then
       skip_ "can't run make in parallel mode"
     fi
-    $MAKE ${j}2 all >output 2>&1 || continue
+    run_make -M -- ${j}2 all || continue
     $EGREP -i "(warning|error):|-j[\"\'\` ]" output && continue
     break
   done
@@ -92,11 +92,7 @@ cd serial
 $MAKE ${j}1 check &
 cd ../parallel
 $sleep
-# Use append mode here to avoid dropping output.  See automake bug#11413.
-# TODO: port this to to run_make(), and rewrite this hunk to use that
-#       function ...
-: > stdout
-$MAKE ${j}4 check >> stdout
+run_make -O -- ${j}4 check
 cd ..
 # Ensure the tests are really being run in parallel mode: if this is
 # the case, the serial run of the dummy testsuite started above should
