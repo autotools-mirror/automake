@@ -270,6 +270,12 @@ check-cc-no-c-o:
 	$(AM_V_GEN)$(MAKE) check AM_TESTSUITE_SIMULATING_NO_CC_C_O=yes
 .PHONY: check-cc-no-c-o
 
+# Automake-generated Makefiles should work when run with parallel make.
+check-parallel:
+	$(AM_V_GEN)$(MAKE) $(AM_MAKEFLAGS) check \
+	  AM_TESTSUITE_MAKE="$${AM_TESTSUITE_MAKE-$${MAKE-make}} -j4"
+.PHONY: check-parallel
+
 # Run the testsuite with the installed aclocal and automake.
 installcheck-local: installcheck-testsuite
 installcheck-testsuite:

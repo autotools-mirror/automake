@@ -71,11 +71,7 @@ cd serial
 $MAKE -j1 check &
 cd ../parallel
 $sleep
-# Use append mode here to avoid dropping output.  See automake bug#11413.
-# TODO: port this to to run_make(), and rewrite this hunk to use that
-#       function ...
-: > stdout
-$MAKE -j4 check >> stdout
+run_make -O -- -j4 check
 cd ..
 # Ensure the tests are really being run in parallel mode: if this is
 # the case, the serial run of the dummy testsuite started above should

@@ -180,7 +180,9 @@ is_valid_varname ()
 #
 run_make ()
 {
-  am__make_redirect=
+  am__make_redirect_stdout=no
+  am__make_redirect_stderr=no
+  am__make_redirect_stdall=no
   am__make_flags=
   # Follow-up code might want to analyse these, so don't make them as
   # private, nor unset them later.
@@ -190,25 +192,50 @@ run_make ()
   while test $# -gt 0; do
     case $1 in
       -e) am_make_rc_exp=$2; shift;;
-      -O) am__make_redirect="$am__make_redirect >stdout";;
-      -E) am__make_redirect="$am__make_redirect 2>stderr";;
-      -M) am__make_redirect=">output 2>&1";;
+      -O) am__make_redirect_stdout=yes;;
+      -E) am__make_redirect_stderr=yes;;
+      -M) am__make_redirect_stdall=yes;;
       --) shift; break;;
        *) break;;
     esac
     shift
   done
 
-  eval "\$MAKE${am__make_redirect}"' ${1+"$@"}' || am_make_rc_got=$?
+  # In redirecting make output below, use append mode, to avoid
+  # dropping output.  See automake bug#11413 for details.
+  # The exit status of 253 is a more-or-less random choice, to
+  # help us catch possible errors in redirections and error out
+  # accordingly.
+  (
+    : exec $MAKE ${1+"$@"} # Display traces for future command.
+    set +x # We need to remove them now, not to pollute redirected stderr.
+    if test $am__make_redirect_stdall = yes; then
+      : > output && exec 1>>output 2>&1 || exit 253
+    else
+      if test $am__make_redirect_stdout = yes; then
+        : > stdout && exec 1>>stdout || exit 253
+      fi
+      if test $am__make_redirect_stderr = yes; then
+        : > stderr && exec 2>>stderr || exit 253
+      fi
+    fi
+    exec $MAKE ${1+"$@"}
+  ) || am_make_rc_got=$?
 
-  case $am__make_redirect in
-           *output*) cat output;;
-    *stderr*stdout*) cat stdout && cat stderr >&2;;
-    *stdout*stderr*) cat stdout && cat stderr >&2;;
-           *stdout*) cat stdout;;
-           *stderr*) cat stderr >&2;;
-  esac \
-    || fatal_ "displaying make output"
+  if test $am_make_rc_got -eq 253; then
+    fatal_ "run_make: problems in redirecting make output"
+  fi
+
+  if test $am__make_redirect_stdall = yes; then
+    cat output || fatal_ "displaying make output"
+  else
+    if test $am__make_redirect_stdout = yes; then
+      cat stdout || fatal_ "displaying make output"
+    fi
+    if test $am__make_redirect_stderr = yes; then
+      cat stderr >&2 || fatal_ "displaying make output"
+    fi
+  fi
 
   case $am_make_rc_exp in
     IGNORE)
@@ -223,7 +250,6 @@ run_make ()
      test $am_make_rc_exp -eq $am_make_rc_got || return 1
      ;;
   esac
-  unset am__make_redirect
 }
 
 # AUTOMAKE_run [-e STATUS] [-d DESCRIPTION] [--] [AUTOMAKE-ARGS...]

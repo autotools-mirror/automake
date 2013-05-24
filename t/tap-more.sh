@@ -93,7 +93,6 @@ for try in 0 1; do
     mkdir build
     cd build
     srcdir=..
-    run_make=$MAKE
   elif test $try -eq 1; then
     # In-tree parallel build.
     srcdir=.
@@ -101,10 +100,10 @@ for try in 0 1; do
       *\ -j*)
         # Degree of parallelism already specified by the user: do
         # not override it.
-        run_make=$MAKE
+        :
         ;;
       *)
-        run_make="$MAKE -j3"
+        MAKE="$MAKE -j3"
         ;;
     esac
   else
@@ -116,10 +115,7 @@ for try in 0 1; do
 
   # Success.
 
-  # Use append mode here to avoid dropping output.  See automake bug#11413.
-  : >stdout
-  $run_make check >>stdout || { cat stdout; exit 1; }
-  cat stdout
+  run_make -O check
   count_test_results total=6 pass=4 fail=0 xpass=0 xfail=1 skip=1 error=0
   grep '^PASS: 1\.test 1 - mu$' stdout
   grep '^SKIP: 1\.test 2 zardoz # SKIP$' stdout
@@ -136,10 +132,7 @@ for try in 0 1; do
 
   : > not-skip
   : > bail-out
-  # Use append mode here to avoid dropping output.  See automake bug#11413.
-  : >stdout
-  $run_make check >>stdout && { cat stdout; exit 1; }
-  cat stdout
+  run_make -e FAIL -O check
   count_test_results total=7 pass=4 fail=1 xpass=0 xfail=1 skip=0 error=1
   grep '^PASS: 1\.test 1 - mu$' stdout
   grep '^FAIL: 1\.test 2 zardoz$' stdout
