@@ -65,7 +65,6 @@ sc_tests_command_subst \
 sc_tests_no_run_make_redirect \
 sc_tests_exit_not_Exit \
 sc_tests_automake_fails \
-sc_tests_required_after_defs \
 sc_tests_overriding_macros_on_cmdline \
 sc_tests_no_make_e \
 sc_tests_plain_sleep \
@@ -356,15 +355,6 @@ sc_tests_automake_fails:
 	  echo 'Use AUTOMAKE_fails + grep to catch automake failures in the above tests.' 1>&2;  \
 	  exit 1; \
 	fi
-
-## Setting 'required' after sourcing 'test-init.sh' is a bug.
-sc_tests_required_after_defs:
-	@for file in $(xtests); do \
-	  if out=`sed -n '/test-init\.sh/,$${/required=/p;}' $$file`; test -n "$$out"; then \
-	    echo 'Do not set "required" after sourcing "test-init.sh" in '"$$file: $$out" 1>&2; \
-	    exit 1; \
-	  fi; \
-	done
 
 # "make -e" is brittle and unsafe, since it let *all* the environment
 # win over the macro definitions in the Makefiles.  Since we offer
