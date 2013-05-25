@@ -79,6 +79,18 @@ sc_unquoted_DESTDIR \
 sc_tabs_in_texi \
 sc_at_in_texi
 
+# The recipes of syntax checks require a modern GNU grep.
+sc_sanity_gnu_grep:
+	$(AM_V_GEN)grep --version | grep 'GNU grep' >/dev/null 2>&1 \
+	  && ab=$$(printf 'a\nb') \
+	  && test "$$(printf 'xa\nb\nc' | grep -Pzo 'a\nb')" = "$$ab" \
+	  || { \
+	    echo "Syntax checks recipes require a modern GNU grep" >&2; \
+	    exit 1; \
+	  }
+.PHONY: sc_sanity_gnu_grep
+$(syntax_check_rules): sc_sanity_gnu_grep
+
 ## These check avoids accidental configure substitutions in the source.
 ## There are exactly 8 lines that should be modified from automake.in to
 ## automake, and 9 lines that should be modified from aclocal.in to
