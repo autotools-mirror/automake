@@ -79,6 +79,18 @@ sc_unquoted_DESTDIR \
 sc_tabs_in_texi \
 sc_at_in_texi
 
+$(syntax_check_rules): automake aclocal
+maintainer-check: $(syntax_check_rules)
+.PHONY: maintainer-check $(syntax_check_rules)
+
+# Check that the list of tests given in the Makefile is equal to the
+# list of all test scripts in the Automake testsuite.
+maintainer-check: maintainer-check-list-of-tests
+
+# I'm a lazy typist.
+lint: maintainer-check
+.PHONY: lint
+
 # The recipes of syntax checks require a modern GNU grep.
 sc_sanity_gnu_grep:
 	$(AM_V_GEN)grep --version | grep 'GNU grep' >/dev/null 2>&1 \
@@ -534,16 +546,3 @@ sc_at_in_texi:
 	  echo 'Unescaped @.' 1>&2; \
 	  exit 1; \
 	fi
-
-$(syntax_check_rules): automake aclocal
-maintainer-check: $(syntax_check_rules)
-.PHONY: maintainer-check $(syntax_check_rules)
-
-## Check that the list of tests given in the Makefile is equal to the
-## list of all test scripts in the Automake testsuite.
-maintainer-check: maintainer-check-list-of-tests
-
-# I'm a lazy typist.
-lint: maintainer-check
-.PHONY: lint
-
