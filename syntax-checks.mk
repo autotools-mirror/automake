@@ -57,7 +57,6 @@ sc_perl_at_uscore_in_scalar_context \
 sc_perl_local \
 sc_AMDEP_TRUE_in_automake_in \
 sc_make_without_am_makeflags \
-$(sc_obsolete_requirements_rules) \
 sc_tests_no_source_defs \
 sc_tests_obsolete_variables \
 sc_tests_here_document_format \
@@ -265,19 +264,6 @@ sc_tests_obsolete_variables:
 	  done; \
 	  exit 1; \
 	else :; fi
-
-# Look out for obsolete requirements specified in the test cases.
-sc_obsolete_requirements_rules = sc_no_texi2dvi-o sc_no_makeinfo-html
-modern-requirement.texi2dvi-o = texi2dvi
-modern-requirement.makeinfo-html = makeinfo
-
-$(sc_obsolete_requirements_rules): sc_no_% :
-	@if grep -E 'required=.*\b$*\b' $(xtests); then \
-	  echo "Requirement '$*' is obsolete and shouldn't" \
-	       "be used anymore." >&2; \
-	  echo "You should use '$(modern-requirement.$*)' instead." >&2; \
-	  exit 1; \
-	fi
 
 # Tests should never call some programs directly, but only through the
 # corresponding variable (e.g., '$MAKE', not 'make').  This will allow
