@@ -56,7 +56,7 @@ sc_cd_relative_dir \
 sc_perl_at_uscore_in_scalar_context \
 sc_perl_local \
 sc_AMDEP_TRUE_in_automake_in \
-sc_tests_make_without_am_makeflags \
+sc_make_without_am_makeflags \
 $(sc_obsolete_requirements_rules) \
 sc_tests_no_source_defs \
 sc_tests_obsolete_variables \
@@ -206,7 +206,7 @@ sc_AMDEP_TRUE_in_automake_in:
 
 ## Recursive make invocations should always pass $(AM_MAKEFLAGS)
 ## to $(MAKE), for portability to non-GNU make.
-sc_tests_make_without_am_makeflags:
+sc_make_without_am_makeflags:
 	@if grep '^[^#].*(MAKE) ' $(ams) $(srcdir)/automake.in \
 	    | grep -Fv '$$(AM_MAKEFLAGS)'; \
 	then \
