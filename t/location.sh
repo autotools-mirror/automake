@@ -48,8 +48,6 @@ END
 # Smash the useless difference of lib file locations.
 smash_useless_diffs ()
 {
-  # FIXME: we could get rid of the second 's,,,' once we improve our
-  # wrapper scripts ...
   sed -e "s,^$am_amdir/\\([a-z]*\.am\\),\\1," \
       -e "s,^automake-$APIVERSION:,automake:," ${1+"$@"};
 }
