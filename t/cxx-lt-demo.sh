@@ -114,7 +114,6 @@ END
 
 cat > lib/libfoo.c++ << 'END'
 #include "libfoo.h++"
-#include <string>
 std::string target (void)
 {
   std::string s1 = "Test";
@@ -124,9 +123,7 @@ std::string target (void)
 END
 
 ./configure
-# Creative quoting and redundant use of eval to avoid spurious
-# 'maintainer-check' failures.
-eval \$'MAKE CC=false AM_MAKEFLAGS=CC=false'
+run_make CC=false
 ls -l . src lib # For debugging.
 $MAKE test-objs
 VERBOSE=yes $MAKE check-TESTS
