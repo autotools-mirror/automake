@@ -103,7 +103,7 @@ test ! -f bar.log
 test ! -f baz.log
 test ! -f zardoz.log
 
-run_make -O check TESTS=zardoz L!NU.X_LOG_COMPILER=/bin/sh
+run_make -e IGNORE -O check TESTS=zardoz L!NU.X_LOG_COMPILER=/bin/sh
 count_test_results total=1 pass=0 fail=0 skip=0 xfail=0 xpass=1 error=0
 cat test-suite.log
 test ! -f foo.log
@@ -111,7 +111,7 @@ test ! -f bar.log
 test ! -f baz.log
 cat zardoz.log
 grep 'Hello Zardoz' zardoz.log
-test $am_make_rc -eq 0
+test $am_make_rc -gt 0
 
 run_make -O recheck
 count_test_results total=1 pass=0 fail=0 skip=0 xfail=1 xpass=0 error=0
