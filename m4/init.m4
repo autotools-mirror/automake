@@ -9,6 +9,12 @@
 # This macro actually does too much.  Some checks are only needed if
 # your package does certain things.  But this isn't really a big deal.
 
+dnl Redefine AC_PROG_CC to automatically invoke _AM_PROG_CC_C_O.
+m4_define([AC_PROG_CC],
+m4_defn([AC_PROG_CC])
+[_AM_PROG_CC_C_O
+])
+
 # AM_INIT_AUTOMAKE(PACKAGE, VERSION, [NO-DEFINE])
 # AM_INIT_AUTOMAKE([OPTIONS])
 # -----------------------------------------------
@@ -110,12 +116,6 @@ AC_PROVIDE_IFELSE([AC_PROG_OBJCXX],
 		  [m4_define([AC_PROG_OBJCXX],
 			     m4_defn([AC_PROG_OBJCXX])[_AM_DEPENDENCIES([OBJCXX])])])dnl
 ])
-dnl Automatically invoke AM_PROG_CC_C_O as necessary.  Since AC_PROG_CC is
-dnl usually called after AM_INIT_AUTOMAKE, we arrange for the test to be
-dnl done later by AC_CONFIG_COMMANDS_PRE.
-AC_CONFIG_COMMANDS_PRE([AC_PROVIDE_IFELSE(
-    [AC_PROG_CC],
-    [AC_LANG_PUSH([C]) AM_PROG_CC_C_O AC_LANG_POP([C])])])dnl
 AC_REQUIRE([AM_SILENT_RULES])dnl
 dnl The testsuite driver may need to know about EXEEXT, so add the
 dnl 'am__EXEEXT' conditional if _AM_COMPILER_EXEEXT was seen.  This

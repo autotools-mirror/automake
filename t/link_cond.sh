@@ -64,7 +64,7 @@ run_make CXX=false
 
 # Sanity check.
 rm -f foo foo.exe
-run_make CC=false && exit 99
+run_make CC=false && fatal_ '"make CC=false" succeeded unexpectedly'
 
 $MAKE distclean
 
@@ -83,6 +83,6 @@ run_make CC=false
 
 # Sanity check.
 rm -f foo foo.exe
-run_make CXX=false && exit 99
+run_make CXX=false && fatal_ '"make CXX=false" succeeded unexpectedly'
 
 :
