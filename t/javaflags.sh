@@ -24,10 +24,6 @@ echo "$*" > javaflags.list
 END
 chmod a+x fake-javac
 
-# Remove JAVAC from the environment, so that it won't interfere
-# with 'make -e' below.
-unset JAVAC
-
 cat >> configure.ac <<'END'
 AC_PROG_CC
 # Simulate presence of the java compiler using our fake-javac script.
