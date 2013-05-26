@@ -155,10 +155,10 @@ sc_rm_minus_f:
 	  exit 1; \
 	else :; fi
 
-## Never use something like "for file in $(FILES)", this doesn't work
-## if FILES is empty or if it contains shell meta characters (e.g. '$'
-## is commonly used in Java filenames).  Make an exception for
-## $(am__installdirs), which is already defined as properly quoted.
+# Never use something like "for file in $(FILES)", this doesn't work
+# if FILES is empty or if it contains shell meta characters (e.g. '$'
+# is commonly used in Java filenames).  Make an exception for
+# $(am__installdirs), which is already defined as properly quoted.
 sc_no_for_variable_in_macro:
 	@LC_ALL=C; export LC_ALL; \
 	if grep 'for .* in \$$(' $(ams) | grep -v '/Makefile\.am:' \
@@ -168,7 +168,7 @@ sc_no_for_variable_in_macro:
 	  exit 1; \
 	else :; fi
 
-## The script and variable 'mkinstalldirs' are obsolete.
+# The script and variable 'mkinstalldirs' are obsolete.
 sc_mkinstalldirs:
 	@files="\
 	  $(xtests) \
@@ -228,7 +228,7 @@ sc_perl_at_uscore_in_scalar_context:
 	  exit 1; \
 	fi
 
-## Allow only few variables to be localized in automake and aclocal.
+# Allow only few variables to be localized in automake and aclocal.
 sc_perl_local:
 	@if egrep -v '^[ \t]*local \$$[_~]( *=|;)' \
 	      $(automake_in) $(aclocal_in) | \
@@ -244,8 +244,8 @@ sc_AMDEP_TRUE_in_automake_in:
 	  exit 1; \
 	fi
 
-## Tests should never require GNU make explicitly: automake-ng assumes
-## it unconditionally.
+# Tests should never require GNU make explicitly: automake-ng assumes
+# it unconditionally.
 sc_tests_no_gmake_requirement:
 	@if grep -iE '^ *required=.*\b(g|gnu)make\b' $(xtests) $(xdefs); \
 	then \
@@ -253,9 +253,9 @@ sc_tests_no_gmake_requirement:
 	  exit 1; \
 	fi
 
-## Tests should never check explicitly whether the make program being
-## used in the test suite is indeed GNU make: automake-ng assumes it
-## unconditionally.
+# Tests should never check explicitly whether the make program being
+# used in the test suite is indeed GNU make: automake-ng assumes it
+# unconditionally.
 sc_tests_no_gmake_checking:
 	@if grep -E '\b(is|using)_g(nu)?make\b' $(xtests) $(xdefs); \
 	then \
@@ -264,8 +264,8 @@ sc_tests_no_gmake_checking:
 	  exit 1; \
 	fi
 
-## GNU make can obviously chain suffix rules, so don't try to check
-## whether this is the case.
+# GNU make can obviously chain suffix rules, so don't try to check
+# whether this is the case.
 sc_tests_make_can_chain_suffix_rules:
 	@if grep 'chain_suffix_rule' $(xtests); then \
 	  echo 'GNU make can implicitly chain suffix rules; tests' \
@@ -273,8 +273,8 @@ sc_tests_make_can_chain_suffix_rules:
 	  exit 1; \
 	fi
 
-## Automake bug#7884 affects only FreeBSD make, so that we don't
-## need to work around in any of our tests anymore.
+# Automake bug#7884 affects only FreeBSD make, so that we don't
+# need to work around in any of our tests anymore.
 sc_tests_make_dont_do_useless_vpath_rebuilds:
 	@if grep -E 'useless_vpath_rebuild|yl_distcheck' $(xtests); then \
 	  echo 'No need to work around automake bug#7884 anymore;' \
@@ -282,7 +282,7 @@ sc_tests_make_dont_do_useless_vpath_rebuilds:
 	  exit 1; \
 	fi
 
-## GNU make supports POSIX-style runtime include directives.
+# GNU make supports POSIX-style runtime include directives.
 sc_grep_for_bad_make_include = \
   if grep -E 'AM_MAKE_INCLUDE|am__(include|quote)' $$files; then \
     echo 'GNU make supports runtime "include" directive.' 1>&2; \
@@ -304,8 +304,8 @@ sc_make_simple_include:
 	 "; \
 	 $(sc_grep_for_bad_make_include)
 
-## The '.MAKE' special target is NetBSD-make specific, and not supported
-## by GNU make.  No point in using it.
+# The '.MAKE' special target is NetBSD-make specific, and not supported
+# by GNU make.  No point in using it.
 sc_no_dotmake_target:
 	@files="\
 	  $(ams) \
@@ -319,9 +319,9 @@ sc_no_dotmake_target:
 	  exit 1; \
 	fi
 
-## $(AM_MAKEFLAGS) is obsolete now that we assume GNU make, since it
-## is smart enough to correctly pass the values of macros redefined on
-## the command line to sub-make invocations.
+# $(AM_MAKEFLAGS) is obsolete now that we assume GNU make, since it
+# is smart enough to correctly pass the values of macros redefined on
+# the command line to sub-make invocations.
 sc_no_am_makeflags:
 	@files="\
 	  $(xtests) \
@@ -376,10 +376,10 @@ sc_no_RECHECK_LOGS:
 	  exit 1; \
 	fi
 
-## "make -e" is brittle and unsafe, since it let *all* the environment
-## win over the macro definitions in the Makefiles.  We needed it when
-## we couldn't assume GNU make, but now that the tide has turned, it's
-## better to prohibit it altogether.
+# "make -e" is brittle and unsafe, since it let *all* the environment
+# win over the macro definitions in the Makefiles.  We needed it when
+# we couldn't assume GNU make, but now that the tide has turned, it's
+# better to prohibit it altogether.
 sc_tests_no_make_e:
 	@if grep -E '\$$MAKE\b.* -[a-zA-Z0-9]*e' $(xtests); then \
 	  echo "\"make -e\" is brittle, don't use it." 1>&2; \
@@ -559,11 +559,11 @@ sc_tests_no_configure_in:
 	  exit 1; \
 	fi
 
-## Rule to ensure that the testsuite has been run before.  We don't depend
-## on 'check' here, because that would be very wasteful in the common case.
-## We could run "make check AM_LAZY_CHECK=yes" and avoid toplevel races with
-## AM_RECURSIVE_TARGETS.  Suggest keeping test directories around for
-## greppability of the Makefile.in files.
+# Rule to ensure that the testsuite has been run before.  We don't depend
+# on 'check' here, because that would be very wasteful in the common case.
+# We could run "make check AM_LAZY_CHECK=yes" and avoid toplevel races with
+# AM_RECURSIVE_TARGETS.  Suggest keeping test directories around for
+# greppability of the Makefile.in files.
 sc_ensure_testsuite_has_run:
 	@if test ! -f '$(TEST_SUITE_LOG)'; then \
 	  echo 'Run "env keep_testdirs=yes make check" before' \
