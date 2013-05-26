@@ -98,12 +98,6 @@ AC_PROG_LEX
 AC_PROG_YACC
 AC_PROG_CXX
 
-# FIXME: remove this hack once the requirements c++, fortran and fortran77
-# are implemented correctly.
-test -n "`echo $CXX`" || AC_MSG_ERROR([C++ compiler not found], [77])
-test -n "`echo $FC`"  || AC_MSG_ERROR([Fortran compiler not found], [77])
-test -n "`echo $F77`" || AC_MSG_ERROR([Fortran 77 compiler not found], [77])
-
 # The SunStudio C++ compiler is unfortunately named 'sunCC' (or even just
 # 'CC', yuck!); similarly and the Portland group C++ compiler is named
 # 'pgCC'.  This can cause problems with our grepping checks on the output
