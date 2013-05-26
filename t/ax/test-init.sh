@@ -17,6 +17,10 @@
 
 set -e
 
+# The variable '$required' should no longer be modified after this
+# file gets sources.
+required=${required-}; readonly required
+
 # Source the actual code for test initialization and setup.
 . test-lib.sh
 . am-test-lib.sh

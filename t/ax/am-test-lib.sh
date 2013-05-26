@@ -188,14 +188,14 @@ run_make ()
   am__make_redirect_stderr=no
   am__make_redirect_stdall=no
   am__make_flags=
-  # Follow-up code might want to analyse these, so don't make them as
-  # private, nor unset them later.
-  am_make_rc_exp=0
-  am_make_rc_got=0
+  am__make_rc_exp=0
+  # Follow-up code might want to analyse this, so mark is as
+  # publicly accessible (no double undesrscore).
+  am_make_rc=0
   # Parse options for this function.
   while test $# -gt 0; do
     case $1 in
-      -e) am_make_rc_exp=$2; shift;;
+      -e) am__make_rc_exp=$2; shift;;
       -O) am__make_redirect_stdout=yes;;
       -E) am__make_redirect_stderr=yes;;
       -M) am__make_redirect_stdall=yes;;
@@ -269,9 +269,9 @@ run_make ()
       fi
     fi
     exec $MAKE ${1+"$@"}
-  ) || am_make_rc_got=$?
+  ) || am_make_rc=$?
 
-  if test $am_make_rc_got -eq 253; then
+  if test $am_make_rc -eq 253; then
     fatal_ "run_make: problems in redirecting make output"
   fi
 
@@ -286,17 +286,17 @@ run_make ()
     fi
   fi
 
-  case $am_make_rc_exp in
+  case $am__make_rc_exp in
     IGNORE)
       : Ignore exit status
       ;;
     FAIL)
-      test $am_make_rc_got -gt 0 || return 1
+      test $am_make_rc -gt 0 || return 1
       ;;
     *)
-     test $am_make_rc_exp -ge 0 && test $am_make_rc_exp -le 255 \
-       || fatal_ "invalid expected exit status: '$am_make_rc_exp'"
-     test $am_make_rc_exp -eq $am_make_rc_got || return 1
+     test $am__make_rc_exp -ge 0 && test $am__make_rc_exp -le 255 \
+       || fatal_ "invalid expected exit status: '$am__make_rc_exp'"
+     test $am_make_rc -eq $am__make_rc_exp || return 1
      ;;
   esac
 }
