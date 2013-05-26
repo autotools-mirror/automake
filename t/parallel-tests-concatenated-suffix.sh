@@ -43,13 +43,7 @@ $AUTOMAKE -a
 
 for j in '' -j4; do
 
-  # Use append mode here to avoid dropping output.  See automake bug#11413.
-  # Also, use 'echo' here to "nullify" the previous contents of 'stdout',
-  # since Solaris 10 /bin/sh would try to optimize a ':' away after the
-  # first iteration, even if it is redirected.
-  echo " " >stdout
-  $MAKE $j check >>stdout || { cat stdout; exit 1; }
-  cat stdout
+  run_make -O $j check
   count_test_results total=7 pass=7 fail=0 skip=0 xfail=0 xpass=0 error=0
   for t in $tests; do grep "^PASS: $t *$" stdout; done
 

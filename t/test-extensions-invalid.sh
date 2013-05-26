@@ -32,8 +32,7 @@ $AUTOMAKE -a
 
 ./configure
 
-$MAKE 2>stderr && { cat stderr >&2; exit 1; }
-cat stderr >&2
+run_make -E -e FAIL
 for suf in mu x1 _ x2; do
   $FGREP "invalid test extension: '$suf'" stderr
 done

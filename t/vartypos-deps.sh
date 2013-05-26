@@ -85,15 +85,13 @@ $MAKE
 (cd ok2 && $MAKE)
 
 cd ko1
-$MAKE 2>stderr && { cat stderr >&2; exit 1; }
-cat stderr >&2
+run_make -E -e FAIL
 errgrep LOG
 errgrep TEST_LOG
 cd ..
 
 cd ko2
-$MAKE 2>stderr && { cat stderr >&2; exit 1; }
-cat stderr >&2
+run_make -E -e FAIL
 errgrep SH_LOG
 errgrep CONFIG
 errgrep CONFIGSTATUS

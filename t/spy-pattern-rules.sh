@@ -85,7 +85,8 @@ test "$(cat barzap)" = .zap
 test "$(cat bar-mu)" = .-mu
 
 # Sanity check.
-$MAKE bax && exit 99
-$MAKE bax 2>&1 | grep '^bax: longest stem rule selected!' || exit 99
+run_make -e FAIL -M bax \
+  && grep '^bax: longest stem rule selected!' output \
+  || fatal_ 'the longest stem rule was not selected'
 
 :

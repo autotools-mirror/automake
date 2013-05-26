@@ -32,8 +32,7 @@ $AUTOCONF
 ./configure
 
 for t in all check install; do
-  $MAKE -n $t-recursive 2>stderr && { cat stderr >&2; exit 1; }
-  cat stderr >&2
+  run_make -E -e FAIL -- -n $t-recursive
   grep " [Nn]o rule to make target.*[\`\"']$t-recursive" stderr
 done
 

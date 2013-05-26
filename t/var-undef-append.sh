@@ -91,7 +91,7 @@ $AUTOCONF
 
 checkit ()
 {
-  $MAKE "$@" 2>stderr && test ! -s stderr || { cat stderr >&2; exit 1; }
+  run_make -E -- "$@" && test ! -s stderr
 }
 
 checkit test1

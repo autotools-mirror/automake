@@ -86,8 +86,7 @@ $AUTOCONF
 $AUTOMAKE -a
 
 ./configure
-$MAKE nihil 2>stderr && { cat stderr >&2; exit 1; }
-cat stderr >&2
+run_make -E -e FAIL nihil
 
 $FGREP 'as canonical' stderr \
   | $EGREP -v " '(foo|libfoo_a|libbar_la)' " && exit 1
@@ -107,8 +106,7 @@ $MAKE nihil
 $sleep
 echo none_SOURCES = >> Makefile.am
 
-$MAKE nihil 2>stderr && { cat stderr >&2; exit 1; }
-cat stderr >&2
+run_make -E -e FAIL nihil
 
 grep "variable 'none_SOURCES'" stderr
 grep "'none' as canonical name" stderr

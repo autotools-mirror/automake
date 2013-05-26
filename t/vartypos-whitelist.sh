@@ -105,14 +105,12 @@ $MAKE distcheck
 # If we remove the whitelisting, failure ensues.
 sed '/^AM_VARTYPOS_WHITELIST *=/d' <Makefile.am >t && mv -f t Makefile.am \
   || fatal_ "editing Makefile.am"
-$MAKE 2>stderr && { cat stderr; exit 1; }
-cat stderr >&2
+run_make -e FAIL -E
 grep "'copy_LDADD' is defined but no program" stderr
 grep "'remove_LDADD' is defined but no program" stderr
 
-$MAKE AM_VARTYPOS_WHITELIST=remove_LDADD AM_FORCE_SANITY_CHECK=yes \
-  2>stderr && { cat stderr; exit 1; }
-cat stderr >&2
+run_make -e FAIL -E \
+  AM_VARTYPOS_WHITELIST=remove_LDADD AM_FORCE_SANITY_CHECK=yes
 grep "'copy_LDADD' is defined but no program" stderr
 grep "remove_LDADD" stderr && exit 1
 

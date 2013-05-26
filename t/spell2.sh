@@ -38,8 +38,7 @@ $AUTOMAKE
 
 ./configure
 
-$MAKE 2>stderr && { cat stderr >&2; exit 1; }
-cat stderr >&2
+run_make -E -e FAIL
 
 LC_ALL=C sed -e 's|^Makefile:[0-9][0-9]*: ||' \
              -e 's|.*\.mk:[0-9][0-9]*: ||' \

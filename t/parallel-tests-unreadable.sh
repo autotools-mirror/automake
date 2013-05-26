@@ -55,8 +55,7 @@ doit ()
   $MAKE check
   rm -f test-suite.log
   chmod a-r $*
-  $MAKE test-suite.log 2>stderr && { cat stderr >&2; exit 1; }
-  cat stderr >&2
+  run_make -E -e FAIL test-suite.log
 }
 
 could_not_read ()

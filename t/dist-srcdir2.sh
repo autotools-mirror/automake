@@ -38,8 +38,7 @@ cd build
 ../configure
 
 echo bad > filename-that-is-easy-to-grep
-$MAKE distdir 2>stderr && { cat stderr >&2; exit 1; }
-cat stderr >&2
+run_make -e FAIL -E distdir
 grep 'filename-that-is-easy-to-grep' stderr
 
 echo good > ../filename-that-is-easy-to-grep

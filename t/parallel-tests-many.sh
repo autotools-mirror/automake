@@ -76,8 +76,7 @@ $AUTOCONF
 $AUTOMAKE -a
 ./configure
 
-$MAKE check > stdout || { cat stdout; exit 1; }
-cat stdout
+run_make -O check
 
 grep "^# TOTAL: $whole_count$" stdout
 grep "^# PASS:  $whole_count$" stdout
@@ -118,31 +117,25 @@ check_three_reruns ()
 
 $sleep
 touch $tst-1.test $dir1-1/foo.sh $dir2-1/$tst-1
-$MAKE check AM_LAZY_CHECK=yes > stdout || { cat stdout; exit 1; }
-cat stdout
+run_make -O check AM_LAZY_CHECK=yes
 check_three_reruns
 grep "^# TOTAL: $whole_count$" stdout
 grep "^# PASS:  $whole_count$" stdout
 
 # We need to simulate the failure of few tests.
-st=0
-$MAKE check TESTS="$tst-1.test $dir1-1/foo.sh $dir2-1/$tst-1" \
-            LOG_COMPILER=false > stdout && st=1
-cat stdout
-test $(grep -c '^FAIL:' stdout) -eq 3 || st=1
-test $st -eq 0 || fatal_ "couldn't simulate failure of 3 tests"
-unset st
+run_make -O -e FAIL check \
+         TESTS="$tst-1.test $dir1-1/foo.sh $dir2-1/$tst-1" \
+         LOG_COMPILER=false \
+  && test $(grep -c '^FAIL:' stdout) -eq 3 \
+  || fatal_ "couldn't simulate failure of 3 tests"
 
-$MAKE recheck > stdout || { cat stdout; exit 1; }
-cat stdout
+run_make -O recheck
 check_three_reruns
 grep "^# TOTAL: 3$" stdout
 grep "^# PASS:  3$" stdout
 
 # We need to simulate the failure of a lot of tests.
-$MAKE check LOG_COMPILER=false > stdout && { cat stdout; exit 1; }
-cat stdout
-
+run_make -O -e FAIL check LOG_COMPILER=false
 grep '^PASS:' stdout && exit 1
 # A random sample.
 grep "^FAIL: $tst-363\.test$" stdout
@@ -153,9 +146,7 @@ grep "^FAIL: " stdout > grp
 sed 20q grp # For debugging.
 test $(wc -l <grp) -eq $whole_count
 
-$MAKE recheck > stdout || { cat stdout; exit 1; }
-cat stdout
-
+run_make -O recheck
 grep '^FAIL:' stdout && exit 1
 # A random sample.
 grep "^PASS: $tst-363\.test$" stdout
@@ -171,8 +162,7 @@ grep "^# PASS:  $whole_count$" stdout
 # "make clean" might ignore some failures (either on purpose or spuriously),
 # so we prefer to also grep its output to ensure that no "Argument list too
 # long" error was encountered.
-$MAKE clean >output 2>&1 || { cat output; exit 1; }
-cat output
+run_make -M clean
 grep -i 'list.* too long' output && exit 1
 list_logs | grep . && exit 1
 

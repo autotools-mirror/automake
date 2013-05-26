@@ -66,8 +66,7 @@ args1="0 1 2 3 4 5 6 7 8 9"
 args2="$args1 $args1"
 args4="$args2 $args2"
 
-$MAKE .am/nil WARN=yes 2>stderr || { cat stderr >&2; exit 1; }
-cat stderr >&2
+run_make -E .am/nil WARN=yes
 grep '^Makefile:' stderr # For debugging
 test $(grep -c "^Makefile:11: $args4$" stderr) -eq 4
 test $(grep -c "^Makefile:12: $args4$" stderr) -eq 4

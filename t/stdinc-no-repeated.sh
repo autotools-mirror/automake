@@ -36,16 +36,14 @@ $AUTOMAKE --add-missing
 mkdir build
 cd build
 ../configure
-$MAKE V=1 > stdout || { cat stdout; exit 1; }
-cat stdout
+run_make -O V=1
 grep '.*-I *\. .*-I *\.\. ' stdout
 grep '.*-I *\. .*-I *\. ' stdout && exit 1
 cd ..
 
 # Test with $builddir = $srcdir
 ./configure
-$MAKE V=1 > stdout || { cat stdout; exit 1; }
-cat stdout
+run_make -O V=1
 grep '.*-I *\.  ' stdout
 grep '.*-I *\..*-I *\.' stdout && exit 1
 

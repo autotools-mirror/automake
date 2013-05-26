@@ -93,8 +93,7 @@ for vpath in : false; do
   rm -f *.run
 
   : An empty '$(TESTS)' means that no test should be run.
-  run_make TESTS= recheck >stdout || { cat stdout; exit 1; }
-  cat stdout
+  run_make -O TESTS= recheck
   count_test_results total=0 pass=0 fail=0 xpass=0 xfail=0 skip=0 error=0
   test ! -e a.run
   test ! -e b.run

@@ -83,8 +83,7 @@ $AUTOMAKE -a
 
 ./configure
 
-st=0; $MAKE check >stdout || st=$?
-cat stdout
+run_make -e IGNORE -O check
 ls -l
 cat test-suite.log
 cat foo.log
@@ -94,7 +93,7 @@ grep '@K @K @K' baz.log
 cat bar.log
 cat zardoz.log
 grep 'Hello Zardoz' zardoz.log && exit 1
-test $st -eq 0 || exit 1
+test $am_make_rc -eq 0
 count_all
 
 $MAKE clean
@@ -104,9 +103,7 @@ test ! -f bar.log
 test ! -f baz.log
 test ! -f zardoz.log
 
-st=0
-$MAKE check TESTS=zardoz L!NU.X_LOG_COMPILER=/bin/sh >stdout || st=$?
-cat stdout
+run_make -O check TESTS=zardoz L!NU.X_LOG_COMPILER=/bin/sh
 count_test_results total=1 pass=0 fail=0 skip=0 xfail=0 xpass=1 error=0
 cat test-suite.log
 test ! -f foo.log
@@ -114,19 +111,16 @@ test ! -f bar.log
 test ! -f baz.log
 cat zardoz.log
 grep 'Hello Zardoz' zardoz.log
-test $st -gt 0 || exit 1
+test $am_make_rc -eq 0
 
-$MAKE recheck >stdout || { cat stdout; exit 1; }
-cat stdout
+run_make -O recheck
 count_test_results total=1 pass=0 fail=0 skip=0 xfail=1 xpass=0 error=0
 grep '^XFAIL: zardoz.l!Nu\.x$' stdout
 
-$MAKE recheck >stdout || { cat stdout; exit 1; }
-cat stdout
+run_make -O recheck
 count_test_results total=0 pass=0 fail=0 skip=0 xfail=0 xpass=0 error=0
 
-$MAKE distcheck >stdout || { cat stdout; exit 1; }
-cat stdout
+run_make -O distcheck
 count_all
 
 :

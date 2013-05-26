@@ -98,9 +98,7 @@ $AUTOMAKE -a
 
 ./configure
 
-$MAKE check > stdout || { cat stdout; exit 1; }
-cat stdout
-
+run_make -O check
 count_test_results total=13 pass=9 fail=0 xpass=0 xfail=2 skip=2 error=0
 
 grep '^PASS: t/nosuffix$'  stdout
@@ -120,15 +118,13 @@ grep '^SKIP: mu$'          stdout
 $MAKE mostlyclean
 test "$(find . -name '*.log')" = ./config.log
 
-$MAKE distcheck > stdout || { cat stdout; exit 1; }
-cat stdout
+run_make -O distcheck
 count_test_results total=13 pass=9 fail=0 xpass=0 xfail=2 skip=2 error=0
 
-$MAKE check tests1='$(wildcard t00*.sh t98?.sh)' \
-            tests2='$(shell ./get-tests-list | sed 1d)' \
-            TESTS='$(tests1) $(tests2)' \
-  > stdout || { cat stdout; exit 1; }
-cat stdout
+run_make -O check \
+  tests1='$(wildcard t00*.sh t98?.sh)' \
+  tests2='$(shell ./get-tests-list | sed 1d)' \
+  TESTS='$(tests1) $(tests2)'
 
 count_test_results total=4 pass=3 fail=0 xpass=0 xfail=1 skip=0 error=0
 
@@ -144,13 +140,11 @@ $MAKE check TESTS='$(shell echo t00 | sed "s/$$/-foo/") t99'
 test -f t00-foo.log
 test -f t99.log
 
-$MAKE check \
-      foo='E9E9E' \
-      a='t00.err' \
-      b='${a:.err=-foo}' \
-      TESTS='$(b) t$(subst E,,$(foo)) $(call my_add_dirprefix,t,nosuffix)' \
-  > stdout || { cat stdout; exit 1; }
-cat stdout
+run_make -O check \
+  foo='E9E9E' \
+  a='t00.err' \
+  b='${a:.err=-foo}' \
+  TESTS='$(b) t$(subst E,,$(foo)) $(call my_add_dirprefix,t,nosuffix)'
 
 count_test_results total=3 pass=2 fail=0 xpass=0 xfail=1 skip=0 error=0
 grep '^PASS: t/nosuffix'  stdout
