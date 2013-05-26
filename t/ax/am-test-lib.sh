@@ -43,18 +43,16 @@ unset __MKLVL__ MAKE_JOBS_FIFO                     # For BSD make.
 unset DMAKE_CHILD DMAKE_DEF_PRINTED DMAKE_MAX_JOBS # For Solaris dmake.
 # Unset verbosity flag.
 unset V
-# Also unset variables that will let "make -e install" divert
-# files into unwanted directories.
+# Also unset variables that might influence "make install".
 unset DESTDIR
 unset prefix exec_prefix bindir datarootdir datadir docdir dvidir
 unset htmldir includedir infodir libdir libexecdir localedir mandir
 unset oldincludedir pdfdir psdir sbindir sharedstatedir sysconfdir
-# Unset variables that might change the "make distcheck" behaviour.
+# Unset variables that might influcence "make distcheck".
 unset DISTCHECK_CONFIGURE_FLAGS AM_DISTCHECK_CONFIGURE_FLAGS
 # Used by install rules for info files.
 unset AM_UPDATE_INFO_DIR
-# The tests call "make -e" but we do not want $srcdir from the environment
-# to override the definition from the Makefile.
+# We don't want to use the $srcdir value exported by the test driver.
 unset srcdir
 # Also unset variables that control our test driver.  While not
 # conceptually independent, they cause some changed semantics we
