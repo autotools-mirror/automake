@@ -89,10 +89,6 @@ $(syntax_check_rules): bin/automake bin/aclocal
 maintainer-check: $(syntax_check_rules)
 .PHONY: maintainer-check $(syntax_check_rules)
 
-# Check that the list of tests given in the Makefile is equal to the
-# list of all test scripts in the Automake testsuite.
-maintainer-check: maintainer-check-list-of-tests
-
 # I'm a lazy typist.
 lint: maintainer-check
 .PHONY: lint
