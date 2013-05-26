@@ -47,7 +47,6 @@ $AUTOMAKE Makefile
 ./config.status Makefile
 $MAKE # Sanity check.
 rm -f foobar.am
-$sleep # Required to avoid racy failures with FreeBSD make.
 run_make -e FAIL -E
 # This error will come from automake, not make, so we can be stricter
 # in our grepping of it.

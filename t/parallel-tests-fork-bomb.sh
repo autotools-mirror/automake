@@ -65,7 +65,7 @@ do_check ()
   $FGREP '::OOPS::' output && exit 1 # Possible infinite recursion.
   grep "[Cc]ircular.*dependency" output | $FGREP "$log"
   grep "$log:.*depends on itself" output
-  test $am_make_rc_got -gt 0
+  test $am_make_rc -gt 0
 }
 
 : > test-suite.test

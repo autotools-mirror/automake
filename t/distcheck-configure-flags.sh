@@ -38,8 +38,7 @@ $AUTOCONF
 # It should be ok to define DISTCHECK_CONFIGURE_FLAGS either on the
 # make command line or in the environment.
 
-env \
-  DISTCHECK_CONFIGURE_FLAGS='--enable-success sentence=it\ works\ :-\)' \
+env DISTCHECK_CONFIGURE_FLAGS='--enable-success sentence=it\ works\ :-\)' \
   $MAKE distcheck
 
 $MAKE distcheck \

@@ -37,11 +37,11 @@ dist_automake_ac_DATA = \
   %D%/install-sh.m4 \
   %D%/lex.m4 \
   %D%/lispdir.m4 \
-  %D%/minuso.m4 \
   %D%/missing.m4 \
   %D%/obsolete.m4 \
   %D%/options.m4 \
   %D%/python.m4 \
+  %D%/prog-cc-c-o.m4 \
   %D%/runlog.m4 \
   %D%/sanity.m4 \
   %D%/silent.m4 \

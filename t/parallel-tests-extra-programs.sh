@@ -117,7 +117,7 @@ $AUTOMAKE -a
 
 run_make -E -O -e IGNORE -- -k check
 ls -l
-test $am_make_rc_got -gt 0
+test $am_make_rc -gt 0
 
 # Files that should have been created, with the expected content.
 cat bar.c
@@ -149,7 +149,7 @@ echo 'int main (void) { return 0; }' > none.c
 
 run_make -O -e IGNORE AM_LAZY_CHECK=yes check
 ls -l # For debugging.
-test $am_make_rc_got -eq 0 || exit 1
+test $am_make_rc -eq 0 || exit 1
 
 # For debugging.
 stat stamp foo.log bar.log baz.log || :

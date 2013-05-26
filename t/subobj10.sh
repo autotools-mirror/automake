@@ -16,7 +16,7 @@
 
 # PR 492: Test asm subdir objects.
 
-required=gcc
+required='gcc -c-o'
 . test-init.sh
 
 cat >> configure.ac << 'END'

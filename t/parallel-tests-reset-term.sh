@@ -45,7 +45,7 @@ mkcheck ()
   cat stdout
   cat foobar.log
   cat test-suite.log
-  return $am_make_rc_got
+  return $am_make_rc
 }
 
 $ACLOCAL

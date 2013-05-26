@@ -75,9 +75,9 @@ do_check ()
   done
   run_make -O -e IGNORE check TESTS="$tests" XFAIL_TESTS="$xfail_tests"
   if $expect_failure; then
-    test $am_make_rc_got -gt 0 || exit 1
+    test $am_make_rc -gt 0 || exit 1
   else
-    test $am_make_rc_got -eq 0 || exit 1
+    test $am_make_rc -eq 0 || exit 1
   fi
   $PERL "$am_testaux_srcdir"/extract-testsuite-summary.pl stdout >summary.got \
    || fatal_ "cannot extract testsuite summary"

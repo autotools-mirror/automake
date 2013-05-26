@@ -93,7 +93,7 @@ EOF
 cp "$am_scriptdir"/compile .
 
 $ACLOCAL
-$AUTOCONF
+$AUTOCONF -Werror -Wall
 $AUTOMAKE -Wno-override
 
 cd lib

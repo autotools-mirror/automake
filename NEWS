@@ -165,16 +165,25 @@ New in 1.14:
 
   - Automake will automatically enhance the AC_PROG_CC autoconf macro
     to make it check, at configure time, that the C compiler supports
-    the combined use of both the "-c -o" options.  This "rewrite" of
-    AC_PROG_CC is only meant to be temporary, since future Autoconf
-    versions should provide all the features Automake needs.
+    the combined use of both the "-c -o" options.  The result of this
+    check is saved in the cache variable 'am_cv_prog_cc_c_o', and said
+    result can be overridden by pre-defining that variable.
 
-  - The AM_PROG_CC_C_O is no longer useful, and its use is a no-op
-    now.  Future Automake versions might start warning that this
-    macro is obsolete.  For better backward-compatibility, this macro
-    still sets a proper 'ac_cv_prog_cc_*_c_o' cache variable, and
-    define the 'NO_MINUS_C_MINUS_O' C preprocessor symbol, but you
-    should really stop relying on that.
+  - The AM_PROG_CC_C_O can still be called, but that should no longer
+    be necessary. This macro is now just a thin wrapper around the
+    Automake-enhanced AC_PROG_CC.  This means, among the other things,
+    that its behaviour is changed in three ways:
+
+      1. It no longer invokes the Autoconf-provided AC_PROG_CC_C_O
+         macros behind the scenes.
+
+      2. It caches the check result in the 'am_cv_prog_cc_c_o'variable,
+         and not in a 'ac_cv_prog_cc_*_c_o' variable whose exact name
+         in only dynamically computed at configure runtime (sic!) from
+         the content of the '$CC' variable.
+
+      3. It no longer automatically AC_DEFINE the C preprocessor
+         symbol 'NO_MINUS_C_MINUS_O'.
 
 * Texinfo support:
 
@@ -217,6 +226,15 @@ New in 1.14:
         bin_PROGRAMS += %reldir%/foo
         %canon_reldir%_foo_SOURCES = %reldir%/bar.c
 
+* Deprecated distribution formats:
+
+  - The 'shar' and 'compress' distribution formats are deprecated, and
+    scheduled for removal in Automake 2.0.  Accordingly, the use of the
+    'dist-shar' and 'dist-tarZ' will cause warnings at automake runtime
+    (in the 'obsolete' category), and the recipes for the Automake-generated
+    targets 'dist-shar' and 'dist-tarZ' will unconditionally display
+    (non-fatal) warnings at make runtime.
+    
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 New in 1.13.3:
@@ -225,6 +243,26 @@ New in 1.13.3:
 
   - Byte-compilation of Emacs lisp files could fail spuriously on Solaris,
     when /bin/ksh or /usr/xpg4/bin/sh were used as shell.
+
+* Testsuite work:
+
+  - The test cases no longer have the executable bit set.  This should
+    make it clear that they are not meant to be run directly; as
+    explained in t/README, the can only be run through the custom
+    'runtest' script, or by a "make check" invocation.
+
+  - The testsuite has seen the introduction of a new helper function
+    'run_make', and several related changes.  These serve a two-fold
+    purpose:
+
+      1. Removing brittleness due to the use of "make -e" in test cases.
+
+      2. Seamlessly allowing the use of parallel make ("make -j...") in
+         the test cases, even where redirection of make output is involved
+         (see automake bug#11413 for a description of the subtle issues in
+         this area).
+
+   - Some other minor, miscellaneous changes and fixlets.
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
