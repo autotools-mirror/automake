@@ -114,7 +114,6 @@ END
 
 cat > lib/libfoo.c++ << 'END'
 #include "libfoo.h++"
-#include <string>
 std::string target (void)
 {
   std::string s1 = "Test";
