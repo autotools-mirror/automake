@@ -62,9 +62,7 @@ sc_tests_make_can_chain_suffix_rules \
 sc_tests_make_dont_do_useless_vpath_rebuilds \
 sc_no_dotmake_target \
 sc_no_am_makeflags \
-$(sc_obsolete_requirements_rules) \
 $(sc_renamed_variables_rules) \
-$(sc_variable_typos_rules) \
 sc_no_RECHECK_LOGS \
 sc_tests_no_make_e \
 sc_docs_no_make_e \
