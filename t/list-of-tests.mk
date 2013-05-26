@@ -41,6 +41,7 @@ t/remake-timing-bug-pr8365.sh \
 t/lex-subobj-nodep.sh \
 t/remake-am-pr10111.sh \
 t/remake-m4-pr10111.sh \
+t/suffix-custom-pr14441.sh \
 $(perl_fake_XFAIL_TESTS)
 
 perl_TESTS = \
@@ -1060,6 +1061,7 @@ t/suffix9.sh \
 t/suffix10.tap \
 t/suffix11.tap \
 t/suffix-chain.tap \
+t/suffix-custom-pr14441.sh \
 t/suffix-custom-subobj.sh \
 t/suffix-custom-subobj-and-specflg.sh \
 t/symlink.sh \
