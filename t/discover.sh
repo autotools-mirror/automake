@@ -19,9 +19,9 @@
 . test-init.sh
 
 cat >> configure.ac << 'END'
+AC_PROG_CC
 AC_PROG_RANLIB
 AM_PROG_AR
-AC_PROG_CC
 AC_LIBOBJ([fsusage])
 AC_OUTPUT
 END

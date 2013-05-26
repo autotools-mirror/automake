@@ -80,7 +80,7 @@ cat test-suite.log
 cat foo.log
 cat bar.log
 cat baz.log
-test $am_make_rc_got -eq 0
+test $am_make_rc -eq 0
 count_test_results total=3 pass=1 fail=0 skip=1 xfail=1 xpass=0 error=0
 
 :

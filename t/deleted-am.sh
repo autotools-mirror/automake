@@ -35,7 +35,7 @@ $AUTOMAKE
 $MAKE
 
 rm -f zardoz.am
-$sleep # Required to avoid racy failures with FreeBSD make.
+using_gmake || $sleep # Required by BSD make.
 run_make -e FAIL -M
 # This error will come from automake, not make, so we can be stricter
 # in our grepping of it.
@@ -48,7 +48,7 @@ $AUTOMAKE Makefile
 ./config.status Makefile
 $MAKE # Sanity check.
 rm -f foobar.am
-$sleep # Required to avoid racy failures with FreeBSD make.
+using_gmake || $sleep # Required by BSD make.
 run_make -e FAIL -M
 # This error will come from automake, not make, so we can be stricter
 # in our grepping of it.

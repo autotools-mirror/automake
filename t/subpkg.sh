@@ -91,7 +91,7 @@ int lib (void)
 EOF
 
 $ACLOCAL
-$AUTOCONF
+$AUTOCONF -Werror -Wall
 $AUTOMAKE -Wno-override
 
 cd lib

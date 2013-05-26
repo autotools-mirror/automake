@@ -43,18 +43,16 @@ unset __MKLVL__ MAKE_JOBS_FIFO                     # For BSD make.
 unset DMAKE_CHILD DMAKE_DEF_PRINTED DMAKE_MAX_JOBS # For Solaris dmake.
 # Unset verbosity flag.
 unset V
-# Also unset variables that will let "make -e install" divert
-# files into unwanted directories.
+# Also unset variables that might influence "make install".
 unset DESTDIR
 unset prefix exec_prefix bindir datarootdir datadir docdir dvidir
 unset htmldir includedir infodir libdir libexecdir localedir mandir
 unset oldincludedir pdfdir psdir sbindir sharedstatedir sysconfdir
-# Unset variables that might change the "make distcheck" behaviour.
+# Unset variables that might influcence "make distcheck".
 unset DISTCHECK_CONFIGURE_FLAGS AM_DISTCHECK_CONFIGURE_FLAGS
 # Used by install rules for info files.
 unset AM_UPDATE_INFO_DIR
-# The tests call "make -e" but we do not want $srcdir from the environment
-# to override the definition from the Makefile.
+# We don't want to use the $srcdir value exported by the test driver.
 unset srcdir
 # Also unset variables that control our test driver.  While not
 # conceptually independent, they cause some changed semantics we
@@ -188,14 +186,14 @@ run_make ()
   am__make_redirect_stderr=no
   am__make_redirect_stdall=no
   am__make_flags=
-  # Follow-up code might want to analyse these, so don't make them as
-  # private, nor unset them later.
-  am_make_rc_exp=0
-  am_make_rc_got=0
+  am__make_rc_exp=0
+  # Follow-up code might want to analyse this, so mark is as
+  # publicly accessible (no double undesrscore).
+  am_make_rc=0
   # Parse options for this function.
   while test $# -gt 0; do
     case $1 in
-      -e) am_make_rc_exp=$2; shift;;
+      -e) am__make_rc_exp=$2; shift;;
       -O) am__make_redirect_stdout=yes;;
       -E) am__make_redirect_stderr=yes;;
       -M) am__make_redirect_stdall=yes;;
@@ -269,9 +267,9 @@ run_make ()
       fi
     fi
     exec $MAKE ${1+"$@"}
-  ) || am_make_rc_got=$?
+  ) || am_make_rc=$?
 
-  if test $am_make_rc_got -eq 253; then
+  if test $am_make_rc -eq 253; then
     fatal_ "run_make: problems in redirecting make output"
   fi
 
@@ -286,17 +284,17 @@ run_make ()
     fi
   fi
 
-  case $am_make_rc_exp in
+  case $am__make_rc_exp in
     IGNORE)
       : Ignore exit status
       ;;
     FAIL)
-      test $am_make_rc_got -gt 0 || return 1
+      test $am_make_rc -gt 0 || return 1
       ;;
     *)
-     test $am_make_rc_exp -ge 0 && test $am_make_rc_exp -le 255 \
-       || fatal_ "invalid expected exit status: '$am_make_rc_exp'"
-     test $am_make_rc_exp -eq $am_make_rc_got || return 1
+     test $am__make_rc_exp -ge 0 && test $am__make_rc_exp -le 255 \
+       || fatal_ "invalid expected exit status: '$am__make_rc_exp'"
+     test $am_make_rc -eq $am__make_rc_exp || return 1
      ;;
   esac
 }
@@ -765,6 +763,11 @@ require_tool ()
   case $1 in
     cc|c++|fortran|fortran77)
       require_compiler_ $1;;
+    -c-o)
+      if test x"$AM_TESTSUITE_SIMULATING_NO_CC_C_O" = x"yes"; then
+        skip_all_ "need a C compiler that grasps -c and -o together"
+      fi
+      ;;
     xsi-lib-shell)
       if test x"$am_test_prefer_config_shell" = x"yes"; then
         require_xsi "$SHELL"

@@ -62,9 +62,9 @@ do_check ()
   fi
   run_make -O -e IGNORE $make_args check
   if test $expect_failure = yes; then
-    test $am_make_rc_got -gt 0 || exit 1
+    test $am_make_rc -gt 0 || exit 1
   else
-    test $am_make_rc_got -eq 0 || exit 1
+    test $am_make_rc -eq 0 || exit 1
   fi
   $PERL "$am_testaux_srcdir"/extract-testsuite-summary.pl stdout >summary.got \
     || fatal_ "cannot extract testsuite summary"

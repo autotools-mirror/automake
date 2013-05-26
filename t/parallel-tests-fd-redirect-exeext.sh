@@ -107,7 +107,7 @@ test $st -eq 0 || fatal_ "doesn't cover expected code paths"
 run_make -O -e IGNORE check
 cat baz.log
 cat qux.log
-test $am_make_rc_got -eq 0
+test $am_make_rc -eq 0
 grep "^ bazbazbaz$" stdout
 grep "^ quxquxqux$" stdout
 $EGREP '(bazbazbaz|quxquxqux)' *.log && exit 1
