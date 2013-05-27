@@ -123,34 +123,8 @@ only when keys exists in C<%dependencies>.
 
 use vars '%actions';
 
-=item <$suffix_rules>
-
-This maps the source extension for all suffix rules seen to
-a C<hash> whose keys are the possible output extensions.
-
-Note that this is transitively closed by construction:
-if we have
-      exists $suffix_rules{$ext1}{$ext2}
-   && exists $suffix_rules{$ext2}{$ext3}
-then we also have
-      exists $suffix_rules{$ext1}{$ext3}
-
-So it's easy to check whether C<.foo> can be transformed to
-C<.$(OBJEXT)> by checking whether
-C<$suffix_rules{'.foo'}{'.$(OBJEXT)'}> exists.  This will work even if
-transforming C<.foo> to C<.$(OBJEXT)> involves a chain of several
-suffix rules.
-
-The value of C<$suffix_rules{$ext1}{$ext2}> is a pair
-C<[ $next_sfx, $dist ]> where C<$next_sfx> is target suffix
-for the next rule to use to reach C<$ext2>, and C<$dist> the
-distance to C<$ext2'>.
-
-The content of this variable should be updated via the
-C<register_suffix_rule> function.
-
-=cut
-
+# See comments in the implementation of the 'suffix_rule()' variable
+# for details.
 my %suffix_rules;
 
 # Same as $suffix_rules, but records only the default rules
@@ -374,26 +348,25 @@ sub reset()
   %actions = ();
 }
 
-=item C<suffix_rule ($ext, $obj)>
+=item C<suffix_rule ($ext1, $ext2)>
 
-XXX
+Return the target suffix for the next rule to use to reach C<$ext2>
+from C<$ext1>, or C<undef> if no such rule exists.
 
 =cut
 
 sub suffix_rule ($$)
 {
-  my ($source_ext, $obj) = @_;
-  return undef unless (exists $suffix_rules{$source_ext} and
-                       exists $suffix_rules{$source_ext}{$obj});
-  return $suffix_rules{$source_ext}{$obj}[0];
+  my ($ext1, $ext2) = @_;
+  return undef unless (exists $suffix_rules{$ext1} and
+                       exists $suffix_rules{$ext1}{$ext2});
+  return $suffix_rules{$ext1}{$ext2}[0];
 }
 
 =item C<register_suffix_rule ($where, $src, $dest)>
 
 Register a suffix rule defined on C<$where> that transforms
 files ending in C<$src> into files ending in C<$dest>.
-
-This upgrades the C<$suffix_rules> variables.
 
 =cut
 
@@ -417,8 +390,29 @@ sub register_suffix_rule ($$$)
   # output suffix rules for '.o' or '.obj' ...
   $dest = '.$(OBJEXT)' if ($dest eq '.o' || $dest eq '.obj');
 
-  # Reading the comments near the declaration of $suffix_rules might
-  # help to understand the update of $suffix_rules that follows ...
+  # ----------------------------------------------------------------------
+  # The $suffix_rules variable maps the source extension for all suffix
+  # rules seen to a hash whose keys are the possible output extensions.
+  #
+  # Note that this is transitively closed by construction:
+  # if we have
+  #
+  #       exists $suffix_rules{$ext1}{$ext2}
+  #    && exists $suffix_rules{$ext2}{$ext3}
+  #
+  # then we also have
+  #
+  #       exists $suffix_rules{$ext1}{$ext3}
+  #
+  # So it's easy to check whether '.foo' can be transformed to
+  # '.$(OBJEXT)' by checking whether $suffix_rules{'.foo'}{'.$(OBJEXT)'}
+  # exists.  This will work even if transforming '.foo' to '.$(OBJEXT)'
+  # involves a chain of several suffix rules.
+  #
+  # The value of $suffix_rules{$ext1}{$ext2} is a pair [$next_sfx, $dist]
+  # where $next_sfx is target suffix for the next rule to use to reach
+  # $ext2, and $dist the distance to $ext2.
+  # ----------------------------------------------------------------------
 
   # Register $dest as a possible destination from $src.
   # We might have the create the \hash.
