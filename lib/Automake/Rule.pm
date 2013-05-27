@@ -101,10 +101,6 @@ my $_SUFFIX_RULE_PATTERN =
 # Suffixes found during a run.
 use vars '@_suffixes';
 
-# Same as $suffix_rules (declared below), but records only the
-# default rules supplied by the languages Automake supports.
-use vars '$_suffix_rules_default';
-
 =item C<%dependencies>
 
 Holds the dependencies of targets which dependencies are factored.
@@ -154,7 +150,11 @@ C<register_suffix_rule> function.
 
 =cut
 
-my $suffix_rules;
+my %suffix_rules;
+
+# Same as $suffix_rules, but records only the default rules
+# supplied by the languages Automake supports.
+my %suffix_rules_builtin;
 
 =item C<$KNOWN_EXTENSIONS_PATTERN>
 
@@ -317,16 +317,7 @@ sub reset()
 {
   %_rule_dict = ();
   @_suffixes = ();
-  # The first time we initialize the variables,
-  # we save the value of $suffix_rules.
-  if (defined $_suffix_rules_default)
-    {
-      $suffix_rules = $_suffix_rules_default;
-    }
-  else
-    {
-      $_suffix_rules_default = $suffix_rules;
-    }
+  %suffix_rules = %suffix_rules_builtin;
 
   %dependencies =
     (
@@ -393,9 +384,9 @@ XXX
 sub suffix_rule ($$)
 {
   my ($source_ext, $obj) = @_;
-  return undef unless (exists $suffix_rules->{$source_ext} and
-                       exists $suffix_rules->{$source_ext}{$obj});
-  return $suffix_rules->{$source_ext}{$obj}[0];
+  return undef unless (exists $suffix_rules{$source_ext} and
+                       exists $suffix_rules{$source_ext}{$obj});
+  return $suffix_rules{$source_ext}{$obj}[0];
 }
 
 =item C<register_suffix_rule ($where, $src, $dest)>
@@ -410,6 +401,8 @@ This upgrades the C<$suffix_rules> variables.
 sub register_suffix_rule ($$$)
 {
   my ($where, $src, $dest) = @_;
+  my $suffix_rules = $where->{'position'} ? \%suffix_rules
+                                          : \%suffix_rules_builtin;
 
   verb "Sources ending in $src become $dest";
   push @_suffixes, $src, $dest;
@@ -487,7 +480,7 @@ F<Makefile> (excluding predefined suffix rules).
 
 sub suffix_rules_count ()
 {
-  return (scalar keys %$suffix_rules) - (scalar keys %$_suffix_rules_default);
+  return (scalar keys %suffix_rules) - (scalar keys %suffix_rules_builtin);
 }
 
 =item C<@list = suffixes>
