@@ -29,8 +29,8 @@ use Automake::DisjConditions;
 require Exporter;
 use vars '@ISA', '@EXPORT', '@EXPORT_OK';
 @ISA = qw/Automake::Item Exporter/;
-@EXPORT = qw (reset register_suffix_rule suffix_rules_count
-	      suffixes rules $suffix_rules $KNOWN_EXTENSIONS_PATTERN
+@EXPORT = qw (reset register_suffix_rule suffix_rules_count suffix_rule
+	      suffixes rules $KNOWN_EXTENSIONS_PATTERN
 	      depend %dependencies %actions register_action
 	      accept_extensions
 	      reject_rule msg_rule msg_cond_rule err_rule err_cond_rule
@@ -154,7 +154,7 @@ C<register_suffix_rule> function.
 
 =cut
 
-use vars '$suffix_rules';
+my $suffix_rules;
 
 =item C<$KNOWN_EXTENSIONS_PATTERN>
 
@@ -382,6 +382,20 @@ sub reset()
      '.MAKE'		    => [],
      );
   %actions = ();
+}
+
+=item C<suffix_rule ($ext, $obj)>
+
+XXX
+
+=cut
+
+sub suffix_rule ($$)
+{
+  my ($source_ext, $obj) = @_;
+  return undef unless (exists $suffix_rules->{$source_ext} and
+                       exists $suffix_rules->{$source_ext}{$obj});
+  return $suffix_rules->{$source_ext}{$obj}[0];
 }
 
 =item C<register_suffix_rule ($where, $src, $dest)>
