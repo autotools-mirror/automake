@@ -29,7 +29,8 @@ use Automake::DisjConditions;
 require Exporter;
 use vars '@ISA', '@EXPORT', '@EXPORT_OK';
 @ISA = qw/Automake::Item Exporter/;
-@EXPORT = qw (reset register_suffix_rule suffix_rules_count suffix_rule
+@EXPORT = qw (reset register_suffix_rule suffix_rules_count
+              next_in_suffix_chain
 	      suffixes rules $KNOWN_EXTENSIONS_PATTERN
 	      depend %dependencies %actions register_action
 	      accept_extensions
@@ -123,8 +124,8 @@ only when keys exists in C<%dependencies>.
 
 use vars '%actions';
 
-# See comments in the implementation of the 'suffix_rule()' variable
-# for details.
+# See comments in the implementation of the 'next_in_suffix_chain()'
+# variable for details.
 my %suffix_rules;
 
 # Same as $suffix_rules, but records only the default rules
@@ -348,14 +349,14 @@ sub reset()
   %actions = ();
 }
 
-=item C<suffix_rule ($ext1, $ext2)>
+=item C<next_in_suffix_chain ($ext1, $ext2)>
 
 Return the target suffix for the next rule to use to reach C<$ext2>
 from C<$ext1>, or C<undef> if no such rule exists.
 
 =cut
 
-sub suffix_rule ($$)
+sub next_in_suffix_chain ($$)
 {
   my ($ext1, $ext2) = @_;
   return undef unless (exists $suffix_rules{$ext1} and
