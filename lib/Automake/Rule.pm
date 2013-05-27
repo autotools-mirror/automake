@@ -98,8 +98,9 @@ non-object).
 my $_SUFFIX_RULE_PATTERN =
   '^(\.[a-zA-Z0-9_(){}$+@\-]+)(\.[a-zA-Z0-9_(){}$+@\-]+)' . "\$";
 
-# Suffixes found during a run.
-use vars '@_suffixes';
+my @_suffixes = ();
+my @_known_extensions_list = ();
+my %_rule_dict = ();
 
 =item C<%dependencies>
 
@@ -167,9 +168,8 @@ New extensions should be registered with C<accept_extensions>.
 
 =cut
 
-use vars qw ($KNOWN_EXTENSIONS_PATTERN @_known_extensions_list);
+use vars qw ($KNOWN_EXTENSIONS_PATTERN);
 $KNOWN_EXTENSIONS_PATTERN = "";
-@_known_extensions_list = ();
 
 =back
 
@@ -278,7 +278,6 @@ rules defined so far.)
 
 =cut
 
-use vars '%_rule_dict';
 sub rules ()
 {
   return values %_rule_dict;
