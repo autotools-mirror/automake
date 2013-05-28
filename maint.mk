@@ -518,6 +518,12 @@ build-minimal-autoconf:
 .PHONY: build-minimal-autoconf
 
 check-minimal-autoconf:
+	$(AM_V_at)p='$(ac-d)/bin/autoconf'; \
+	  if test ! -f "$$p" || test ! -x "$$p"; then \
+	    echo "$@: program '$$p' seems missing." >&2; \
+	    echo "$@: have you run '$(MAKE) build-minimal-autoconf'?" >&2; \
+	    exit 1; \
+	  fi
 	$(AM_V_GEN): \
 	  && PATH='$(CURDIR)/$(ac-d)/bin$(PATH_SEPARATOR)'$$PATH \
 	  && export PATH \
@@ -527,7 +533,13 @@ check-minimal-autoconf:
 	  && AUTOM4TE=autom4te \
 	  && AUTOUPDATE=autoupdate \
 	  && export AUTOCONF AUTOHEADER AUTORECONF AUTOM4TE AUTOUPDATE \
+	  && echo === check autoconf version '(must be = $(ac-v))' \
+	  && autoconf --version \
+	  && autoconf --version | sed -e 's/^/ /; s/$$/ /' -e 1q \
+	       | $(FGREP) '$(ac-v)' >/dev/null \
+	  && echo === configure \
 	  && ./configure $(shell ./config.status --config) \
+	  && echo === build and test \
 	  && $(MAKE) check
 .PHONY: check-minimal-autoconf
 
