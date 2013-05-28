@@ -103,6 +103,14 @@ my @_suffixes = ();
 my @_known_extensions_list = ();
 my %_rule_dict = ();
 
+# See comments in the implementation of the 'next_in_suffix_chain()'
+# variable for details.
+my %_suffix_rules;
+
+# Same as $suffix_rules, but records only the default rules
+# supplied by the languages Automake supports.
+my %_suffix_rules_builtin;
+
 =item C<%dependencies>
 
 Holds the dependencies of targets which dependencies are factored.
@@ -123,14 +131,6 @@ only when keys exists in C<%dependencies>.
 =cut
 
 use vars '%actions';
-
-# See comments in the implementation of the 'next_in_suffix_chain()'
-# variable for details.
-my %suffix_rules;
-
-# Same as $suffix_rules, but records only the default rules
-# supplied by the languages Automake supports.
-my %suffix_rules_builtin;
 
 =item C<$KNOWN_EXTENSIONS_PATTERN>
 
@@ -291,7 +291,7 @@ sub reset()
 {
   %_rule_dict = ();
   @_suffixes = ();
-  %suffix_rules = %suffix_rules_builtin;
+  %_suffix_rules = %_suffix_rules_builtin;
 
   %dependencies =
     (
@@ -359,9 +359,9 @@ from C<$ext1>, or C<undef> if no such rule exists.
 sub next_in_suffix_chain ($$)
 {
   my ($ext1, $ext2) = @_;
-  return undef unless (exists $suffix_rules{$ext1} and
-                       exists $suffix_rules{$ext1}{$ext2});
-  return $suffix_rules{$ext1}{$ext2}[0];
+  return undef unless (exists $_suffix_rules{$ext1} and
+                       exists $_suffix_rules{$ext1}{$ext2});
+  return $_suffix_rules{$ext1}{$ext2}[0];
 }
 
 =item C<register_suffix_rule ($where, $src, $dest)>
@@ -374,8 +374,8 @@ files ending in C<$src> into files ending in C<$dest>.
 sub register_suffix_rule ($$$)
 {
   my ($where, $src, $dest) = @_;
-  my $suffix_rules = $where->{'position'} ? \%suffix_rules
-                                          : \%suffix_rules_builtin;
+  my $suffix_rules = $where->{'position'} ? \%_suffix_rules
+                                          : \%_suffix_rules_builtin;
 
   verb "Sources ending in $src become $dest";
   push @_suffixes, $src, $dest;
@@ -474,7 +474,7 @@ F<Makefile> (excluding predefined suffix rules).
 
 sub suffix_rules_count ()
 {
-  return (scalar keys %suffix_rules) - (scalar keys %suffix_rules_builtin);
+  return (scalar keys %_suffix_rules) - (scalar keys %_suffix_rules_builtin);
 }
 
 =item C<@list = suffixes>
