@@ -517,6 +517,21 @@ build-minimal-autoconf:
 	$(AM_V_at)echo ' ======' && $(ac-d)/bin/autoconf --version
 .PHONY: build-minimal-autoconf
 
+check-minimal-autoconf:
+	$(AM_V_GEN): \
+	  && PATH='$(CURDIR)/$(ac-d)/bin$(PATH_SEPARATOR)'$$PATH \
+	  && export PATH \
+	  && AUTOCONF=autoconf \
+	  && AUTOHEADER=autoheader \
+	  && AUTORECONF=autoreconf \
+	  && AUTOM4TE=autom4te \
+	  && AUTOUPDATE=autoupdate \
+	  && export AUTOCONF AUTOHEADER AUTORECONF AUTOM4TE AUTOUPDATE \
+	  && ./configure $(shell ./config.status --config) \
+	  && $(MAKE) check
+.PHONY: check-minimal-autoconf
+
+
 # --------------------------------------------------------------- #
 #  Testing on real-world packages can help us avoid regressions.  #
 # --------------------------------------------------------------- #
