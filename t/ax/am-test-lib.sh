@@ -48,7 +48,7 @@ unset DESTDIR
 unset prefix exec_prefix bindir datarootdir datadir docdir dvidir
 unset htmldir includedir infodir libdir libexecdir localedir mandir
 unset oldincludedir pdfdir psdir sbindir sharedstatedir sysconfdir
-# Unset variables that might influcence "make distcheck".
+# Unset variables that might influence "make distcheck".
 unset DISTCHECK_CONFIGURE_FLAGS AM_DISTCHECK_CONFIGURE_FLAGS
 # Used by install rules for info files.
 unset AM_UPDATE_INFO_DIR
