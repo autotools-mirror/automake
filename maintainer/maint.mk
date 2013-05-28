@@ -18,6 +18,9 @@
 # Avoid CDPATH issues.
 unexport CDPATH
 
+# Program to use to fetch files from the Net.
+WGET = wget
+
 # --------------------------------------------------------- #
 #  Automatic generation of the ChangeLog from git history.  #
 # --------------------------------------------------------- #
@@ -303,9 +306,6 @@ CLEANFILES += announcement
 #  Synchronize third-party files that are committed in our repository.  #
 # --------------------------------------------------------------------- #
 
-# Program to use to fetch files.
-WGET = wget
-
 # Git repositories on Savannah.
 git-sv-host = git.savannah.gnu.org
 
@@ -476,6 +476,77 @@ update-copyright:
 	  | grep -Ev '^PLANS(/|$$)' \
 	  | grep -Ev "^($$excluded_re)$$" \
 	  | $(update_copyright_env) xargs $(srcdir)/lib/$@
+
+# -------------------------------------------------------------- #
+#  Run the testsuite with the least supported autoconf version.  #
+# -------------------------------------------------------------- #
+
+gnu-ftp = http://ftp.gnu.org/gnu
+
+# Various shorthands: version, name, package name, tarball name,
+# tarball location, installation directory.
+ac-v = $(required_autoconf_version)
+ac-n = autoconf
+ac-p = $(ac-n)-$(ac-v)
+ac-t = $(ac-p).tar.gz
+ac-l = maintainer/$(ac-t)
+ac-d = maintainer/$(ac-p)
+
+fetch-minimal-autoconf: o = $(ac-l)
+fetch-minimal-autoconf:
+	$(AM_V_at)$(MKDIR_P) $(dir $o)
+	$(AM_V_at)rm -f $o $o-t
+	$(AM_V_GEN)$(WGET) -O $o-t $(gnu-ftp)/$(ac-n)/$(ac-t)
+	$(AM_V_at)chmod a-w $o-t && mv -f $o-t $o && ls -l $o
+.PHONY: fetch-minimal-autoconf
+
+build-minimal-autoconf:
+	$(AM_V_GEN):; \
+	test -f $(ac-l) || { \
+	  echo "$@: tarball $(ac-l) seems missing." >&2; \
+	  echo "$@: have you run '$(MAKE) fetch-minimal-autoconf'?" >&2; \
+	  exit 1; \
+	}; \
+	  set -x \
+	  && $(PERL) $(srcdir)/t/ax/deltree.pl $(ac-d) \
+	  && $(MKDIR_P) $(ac-d) \
+	  && cd $(ac-d) \
+	  && tar xzf '$(CURDIR)/$(ac-l)' \
+	  && mv $(ac-p) src \
+	  && mkdir build \
+	  && cd build \
+	  && env CONFIG_SHELL='$(SHELL)' $(SHELL) ../src/configure \
+	       --prefix='$(CURDIR)/$(ac-d)' CONFIG_SHELL='$(SHELL)' \
+	  && $(MAKE) install
+	$(AM_V_at)echo ' ======' && $(ac-d)/bin/autoconf --version
+.PHONY: build-minimal-autoconf
+
+check-minimal-autoconf:
+	$(AM_V_at)p='$(ac-d)/bin/autoconf'; \
+	  if test ! -f "$$p" || test ! -x "$$p"; then \
+	    echo "$@: program '$$p' seems missing." >&2; \
+	    echo "$@: have you run '$(MAKE) build-minimal-autoconf'?" >&2; \
+	    exit 1; \
+	  fi
+	$(AM_V_GEN): \
+	  && PATH='$(CURDIR)/$(ac-d)/bin$(PATH_SEPARATOR)'$$PATH \
+	  && export PATH \
+	  && AUTOCONF=autoconf \
+	  && AUTOHEADER=autoheader \
+	  && AUTORECONF=autoreconf \
+	  && AUTOM4TE=autom4te \
+	  && AUTOUPDATE=autoupdate \
+	  && export AUTOCONF AUTOHEADER AUTORECONF AUTOM4TE AUTOUPDATE \
+	  && echo === check autoconf version '(must be = $(ac-v))' \
+	  && autoconf --version \
+	  && autoconf --version | sed -e 's/^/ /; s/$$/ /' -e 1q \
+	       | $(FGREP) '$(ac-v)' >/dev/null \
+	  && echo === configure \
+	  && ./configure $(shell ./config.status --config) \
+	  && echo === build and test \
+	  && $(MAKE) check
+.PHONY: check-minimal-autoconf
+
 
 # --------------------------------------------------------------- #
 #  Testing on real-world packages can help us avoid regressions.  #
