@@ -5972,7 +5972,7 @@ sub register_language (%)
   # Update the pattern of known extensions.
   accept_extensions (@{$lang->extensions});
 
-  # Update the $suffix_rule map.
+  # Update the suffix rules map.
   foreach my $suffix (@{$lang->extensions})
     {
       foreach my $dest (&{$lang->output_extensions} ($suffix))
@@ -5990,12 +5990,11 @@ sub derive_suffix ($$)
 {
   my ($source_ext, $obj) = @_;
 
-  while (! $extension_map{$source_ext}
-	 && $source_ext ne $obj
-	 && exists $suffix_rules->{$source_ext}
-	 && exists $suffix_rules->{$source_ext}{$obj})
+  while (!$extension_map{$source_ext} && $source_ext ne $obj)
     {
-      $source_ext = $suffix_rules->{$source_ext}{$obj}[0];
+      my $new_source_ext = next_in_suffix_chain ($source_ext, $obj);
+      last if not defined $new_source_ext;
+      $source_ext = $new_source_ext;
     }
 
   return $source_ext;
