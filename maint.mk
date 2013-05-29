@@ -550,7 +550,7 @@ check-minimal-autoconf:
 
 #
 # NOTE (from Stefano Lattarini):
-# 
+#
 # This section is mostly hacky and ad-hoc, but works for me and
 # on my system.  And while far from clean, it should help catching
 # real regressions on real world packages, which is important.
