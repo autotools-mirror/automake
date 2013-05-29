@@ -93,6 +93,8 @@ non-object).
 
 =cut
 
+my %_rule_dict;
+
 =item C<%dependencies>
 
 Holds the dependencies of targets which dependencies are factored.
@@ -207,7 +209,6 @@ rules defined so far.)
 
 =cut
 
-use vars '%_rule_dict';
 sub rules ()
 {
   return values %_rule_dict;
