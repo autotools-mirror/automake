@@ -398,7 +398,6 @@ grep_configure_help ()
   $EGREP "$2" am--our-help || exit 1
 }
 
-
 # using_gmake
 # -----------
 # Return success if $MAKE is GNU make, return failure otherwise.
@@ -508,7 +507,6 @@ END
 am__useless_vpath_rebuild=""
 
 yl_distcheck () { useless_vpath_rebuild || run_make distcheck ${1+"$@"}; }
-
 
 null_install ()
 {

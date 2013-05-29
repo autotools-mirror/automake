@@ -22,6 +22,7 @@ required='cc bison'
 
 cat >> configure.ac << 'END'
 AC_PROG_CC
+AC_C_INLINE    dnl Required by some pre-C99 compilers such as MSVC.
 AC_PROG_YACC
 AC_OUTPUT
 END
