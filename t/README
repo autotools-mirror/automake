@@ -200,6 +200,24 @@ Writing test cases
   $PERL, $MAKE, $EGREP, and $FGREP, instead of the corresponding
   commands.
 
+* When you want to redirect the output from a make invocation, use the
+  'run_make' function rather than calling $MAKE directly.  Not only is
+  this more idiomatic, but it also avoid possible spurious racy failures
+  when the make invocations in the testsuite are run in parallel mode
+  (as with "make check AM_TESTSUITE_MAKE='make -j4"').
+
+* Do not override Makefile variables using make arguments, as in e.g.:
+
+    $MAKE prefix=/opt install           # BAD
+
+  This is not portable for recursive targets (with non-GNU make,
+  targets that call a sub-make may not pass "prefix=/opt" along).
+  Instead, use the 'run_make' function, which automatically uses
+  the AM_MAKEFLAGS to propagate the variable definitions along to
+  sub-make:
+
+    run_make prefix=/opt install        # GOOD
+
 * Use '$sleep' when you have to make sure that some file is newer
   than another.
 
@@ -283,13 +301,3 @@ Writing test cases
 
   Note this doesn't prevent the test from failing for another reason,
   but at least it makes sure the original error is still here.
-
-* Do not override Makefile variables using make arguments, as in e.g.:
-
-    $MAKE prefix=/opt install
-
-  This is not portable for recursive targets (targets that call a
-  sub-make may not pass "prefix=/opt" along).  Use the following
-  instead:
-
-    prefix=/opt $MAKE -e install
