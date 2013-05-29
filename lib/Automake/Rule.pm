@@ -30,7 +30,8 @@ require Exporter;
 use vars '@ISA', '@EXPORT', '@EXPORT_OK';
 @ISA = qw/Automake::Item Exporter/;
 @EXPORT = qw (reset register_suffix_rule suffix_rules_count
-	      suffixes rules $suffix_rules $KNOWN_EXTENSIONS_PATTERN
+              next_in_suffix_chain
+	      suffixes rules $KNOWN_EXTENSIONS_PATTERN
 	      depend %dependencies %actions register_action
 	      accept_extensions
 	      reject_rule msg_rule msg_cond_rule err_rule err_cond_rule
@@ -98,12 +99,17 @@ non-object).
 my $_SUFFIX_RULE_PATTERN =
   '^(\.[a-zA-Z0-9_(){}$+@\-]+)(\.[a-zA-Z0-9_(){}$+@\-]+)' . "\$";
 
-# Suffixes found during a run.
-use vars '@_suffixes';
+my @_suffixes = ();
+my @_known_extensions_list = ();
+my %_rule_dict = ();
 
-# Same as $suffix_rules (declared below), but records only the
-# default rules supplied by the languages Automake supports.
-use vars '$_suffix_rules_default';
+# See comments in the implementation of the 'next_in_suffix_chain()'
+# variable for details.
+my %_suffix_rules;
+
+# Same as $suffix_rules, but records only the default rules
+# supplied by the languages Automake supports.
+my %_suffix_rules_builtin;
 
 =item C<%dependencies>
 
@@ -126,36 +132,6 @@ only when keys exists in C<%dependencies>.
 
 use vars '%actions';
 
-=item <$suffix_rules>
-
-This maps the source extension for all suffix rules seen to
-a C<hash> whose keys are the possible output extensions.
-
-Note that this is transitively closed by construction:
-if we have
-      exists $suffix_rules{$ext1}{$ext2}
-   && exists $suffix_rules{$ext2}{$ext3}
-then we also have
-      exists $suffix_rules{$ext1}{$ext3}
-
-So it's easy to check whether C<.foo> can be transformed to
-C<.$(OBJEXT)> by checking whether
-C<$suffix_rules{'.foo'}{'.$(OBJEXT)'}> exists.  This will work even if
-transforming C<.foo> to C<.$(OBJEXT)> involves a chain of several
-suffix rules.
-
-The value of C<$suffix_rules{$ext1}{$ext2}> is a pair
-C<[ $next_sfx, $dist ]> where C<$next_sfx> is target suffix
-for the next rule to use to reach C<$ext2>, and C<$dist> the
-distance to C<$ext2'>.
-
-The content of this variable should be updated via the
-C<register_suffix_rule> function.
-
-=cut
-
-use vars '$suffix_rules';
-
 =item C<$KNOWN_EXTENSIONS_PATTERN>
 
 Pattern that matches all know input extensions (i.e. extensions used
@@ -167,9 +143,8 @@ New extensions should be registered with C<accept_extensions>.
 
 =cut
 
-use vars qw ($KNOWN_EXTENSIONS_PATTERN @_known_extensions_list);
+use vars qw ($KNOWN_EXTENSIONS_PATTERN);
 $KNOWN_EXTENSIONS_PATTERN = "";
-@_known_extensions_list = ();
 
 =back
 
@@ -278,7 +253,6 @@ rules defined so far.)
 
 =cut
 
-use vars '%_rule_dict';
 sub rules ()
 {
   return values %_rule_dict;
@@ -317,16 +291,7 @@ sub reset()
 {
   %_rule_dict = ();
   @_suffixes = ();
-  # The first time we initialize the variables,
-  # we save the value of $suffix_rules.
-  if (defined $_suffix_rules_default)
-    {
-      $suffix_rules = $_suffix_rules_default;
-    }
-  else
-    {
-      $_suffix_rules_default = $suffix_rules;
-    }
+  %_suffix_rules = %_suffix_rules_builtin;
 
   %dependencies =
     (
@@ -384,18 +349,33 @@ sub reset()
   %actions = ();
 }
 
+=item C<next_in_suffix_chain ($ext1, $ext2)>
+
+Return the target suffix for the next rule to use to reach C<$ext2>
+from C<$ext1>, or C<undef> if no such rule exists.
+
+=cut
+
+sub next_in_suffix_chain ($$)
+{
+  my ($ext1, $ext2) = @_;
+  return undef unless (exists $_suffix_rules{$ext1} and
+                       exists $_suffix_rules{$ext1}{$ext2});
+  return $_suffix_rules{$ext1}{$ext2}[0];
+}
+
 =item C<register_suffix_rule ($where, $src, $dest)>
 
 Register a suffix rule defined on C<$where> that transforms
 files ending in C<$src> into files ending in C<$dest>.
-
-This upgrades the C<$suffix_rules> variables.
 
 =cut
 
 sub register_suffix_rule ($$$)
 {
   my ($where, $src, $dest) = @_;
+  my $suffix_rules = $where->{'position'} ? \%_suffix_rules
+                                          : \%_suffix_rules_builtin;
 
   verb "Sources ending in $src become $dest";
   push @_suffixes, $src, $dest;
@@ -411,8 +391,29 @@ sub register_suffix_rule ($$$)
   # output suffix rules for '.o' or '.obj' ...
   $dest = '.$(OBJEXT)' if ($dest eq '.o' || $dest eq '.obj');
 
-  # Reading the comments near the declaration of $suffix_rules might
-  # help to understand the update of $suffix_rules that follows ...
+  # ----------------------------------------------------------------------
+  # The $suffix_rules variable maps the source extension for all suffix
+  # rules seen to a hash whose keys are the possible output extensions.
+  #
+  # Note that this is transitively closed by construction:
+  # if we have
+  #
+  #       exists $suffix_rules{$ext1}{$ext2}
+  #    && exists $suffix_rules{$ext2}{$ext3}
+  #
+  # then we also have
+  #
+  #       exists $suffix_rules{$ext1}{$ext3}
+  #
+  # So it's easy to check whether '.foo' can be transformed to
+  # '.$(OBJEXT)' by checking whether $suffix_rules{'.foo'}{'.$(OBJEXT)'}
+  # exists.  This will work even if transforming '.foo' to '.$(OBJEXT)'
+  # involves a chain of several suffix rules.
+  #
+  # The value of $suffix_rules{$ext1}{$ext2} is a pair [$next_sfx, $dist]
+  # where $next_sfx is target suffix for the next rule to use to reach
+  # $ext2, and $dist the distance to $ext2.
+  # ----------------------------------------------------------------------
 
   # Register $dest as a possible destination from $src.
   # We might have the create the \hash.
@@ -473,7 +474,7 @@ F<Makefile> (excluding predefined suffix rules).
 
 sub suffix_rules_count ()
 {
-  return (scalar keys %$suffix_rules) - (scalar keys %$_suffix_rules_default);
+  return (scalar keys %_suffix_rules) - (scalar keys %_suffix_rules_builtin);
 }
 
 =item C<@list = suffixes>
