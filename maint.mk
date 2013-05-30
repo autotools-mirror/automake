@@ -294,8 +294,8 @@ announcement: NEWS
 	  && X "-*-*-*-" \
 	  && X \
 	  && $(AWK) '\
-	        ($$0 == "New in $(VERSION):") { wait_for_end=1; } \
-		(/^~~~/ && wait_for_end) { exit(0) } \
+	        ($$0 ~ /^New in .*:/) { wait_for_end=1; } \
+		(/^~~~/ && wait_for_end) { print; exit(0) } \
 		{ print } \
 	     ' <$(srcdir)/NEWS >> $@-t \
 	  && mv -f $@-t $@
