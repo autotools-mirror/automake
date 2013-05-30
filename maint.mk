@@ -153,7 +153,7 @@ determine_release_type = \
 print-release-type:
 	@$(determine_release_type); \
 	 echo "$$release_type $(VERSION);" \
-	      "it will be announced as a $$announcement_type"
+	      "it will be announced as a \"$$announcement_type\""
 
 git-tag-release: maintainer-check
 	@set -e -u; \
