@@ -165,7 +165,8 @@ END
     Good morning, work.
 END
   for p in play work; do
-    ./$p > got.$p || { cat got.$p; exit 1; }
+    # Strip CR characters catering to MinGW programs on MSYS.
+    ./$p | tr -d '\015' > got.$p || { cat got.$p; exit 1; }
     cat exp.$p
     cat got.$p
     diff exp.$p got.$p
