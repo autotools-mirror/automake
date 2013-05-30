@@ -107,10 +107,16 @@ GIT = git
 
 EXTRA_DIST += lib/gnupload
 
-base_version_rx = ^[1-9][0-9]*\.[0-9][0-9]*
-stable_major_version_rx = $(base_version_rx)$$
-stable_minor_version_rx = $(base_version_rx)\.[0-9][0-9]*$$
-beta_version_rx = $(base_version_rx)(\.[0-9][0-9]*)?[bdfhjlnprtvxz]$$
+# First component of a version number (mandatory).
+rx-0 = ^[1-9][0-9]*
+# Later components of a version number (optional).
+rx-1 = \.[0-9][0-9]*
+# Used in recipes to decide which kind of release we are.
+stable_major_version_rx = $(rx-0)\.0$$
+stable_minor_version_rx = $(rx-0)$(rx-1)$$
+stable_micro_version_rx = $(rx-0)$(rx-1)$(rx-1)$$
+beta_version_rx = $(rx-0)($(rx-1)){1,2}[bdfhjlnprtvxz]$$
+alpha_version_rx  = $(rx-0)($(rx-1)){1,2}[acegikmoqsuwy]$$
 match_version = echo "$(VERSION)" | $(EGREP) >/dev/null
 
 # Check that we don't have uncommitted or unstaged changes.
@@ -131,14 +137,18 @@ determine_release_type = \
     dest=ftp; \
   elif $(match_version) '$(stable_minor_version_rx)'; then \
     release_type='Minor release'; \
+    announcement_type='minor release'; \
+    dest=ftp; \
+  elif $(match_version) '$(stable_micro_version_rx)'; then \
+    release_type='Micro release'; \
     announcement_type='maintenance release'; \
     dest=ftp; \
   elif $(match_version) '$(beta_version_rx)'; then \
     release_type='Beta release'; \
     announcement_type='test release'; \
     dest=alpha; \
-  else \
-    echo "$@: invalid version '$(VERSION)' for a release" >&2; \
+  elif $(match_version) '$(alpha_version_rx)'; then \
+    echo "$@: improper version '$(VERSION)' for a release" >&2; \
     if test -n '$(strip $(DEVEL_SNAPSHOT))'; then \
       echo "$@: continuing anyway since DEVEL_SNAPSHOT is set" >&2; \
       release_type='Development snapshot'; \
@@ -147,6 +157,9 @@ determine_release_type = \
     else \
       exit 1; \
     fi; \
+  else \
+    echo "$@: invalid version number '$(VERSION)'" >&2; \
+    exit 1; \
   fi
 
 # Help the debugging of $(determine_release_type) and related code.
@@ -399,7 +412,7 @@ web-manual:
 web-manual-update:
 	$(AM_V_at)$(determine_release_type); \
 	case $$release_type in \
-	  [Mm]ajor\ release|[Mm]inor\ release);; \
+	  [Mm]ajor\ release|[Mm]inor\ release|[Mm]icro\ release);; \
 	  *) echo "Cannot upload manuals from a \"$$release_type\"" >&2; \
 	     exit 1;; \
 	esac
