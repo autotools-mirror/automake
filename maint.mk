@@ -139,7 +139,14 @@ determine_release_type = \
     dest=alpha; \
   else \
     echo "$@: invalid version '$(VERSION)' for a release" >&2; \
-    exit 1; \
+    if test -n '$(strip $(DEVEL_SNAPSHOT))'; then \
+      echo "$@: continuing anyway since DEVEL_SNAPSHOT is set" >&2; \
+      release_type='Development snapshot'; \
+      announcement_type='development snapshot'; \
+      dest=alpha; \
+    else \
+      exit 1; \
+    fi; \
   fi
 
 # Help the debugging of $(determine_release_type) and related code.
@@ -262,6 +269,7 @@ compare-autodiffs: autodiffs
 
 PACKAGE_MAILINGLIST = automake@gnu.org
 
+announcement: DEVEL_SNAPSHOT = yes
 announcement: NEWS
 	$(AM_V_GEN): \
 	  && rm -f $@ $@-t \
