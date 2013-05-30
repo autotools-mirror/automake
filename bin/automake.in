@@ -632,6 +632,7 @@ register_language ('name' => 'c',
 		   'linker' => 'LINK',
 		   'link' => '$(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@',
 		   'compile_flag' => '-c',
+		   'output_flag' => '-o',
 		   'libtool_tag' => 'CC',
 		   'extensions' => ['.c']);
 
@@ -1313,14 +1314,6 @@ sub handle_languages ()
 	if (((! option 'no-dependencies') && $lang->autodep ne 'no')
 	    || defined $lang->compile)
 	{
-	    # Some C compilers don't support -c -o.  Use it only if really
-	    # needed.
-	    my $output_flag = $lang->output_flag || '';
-	    $output_flag = '-o'
-	      if (! $output_flag
-		  && $lang->name eq 'c'
-		  && option 'subdir-objects');
-
 	    # Compute a possible derived extension.
 	    # This is not used by depend2.am.
 	    my $der_ext = ($lang->output_extensions->($ext))[0];
@@ -1364,7 +1357,7 @@ sub handle_languages ()
 
 			     COMPILE   => '$(' . $lang->compiler . ')',
 			     LTCOMPILE => '$(LT' . $lang->compiler . ')',
-			     -o        => $output_flag,
+			     -o        => $lang->output_flag,
 			     SUBDIROBJ => !! option 'subdir-objects');
 	}
 
