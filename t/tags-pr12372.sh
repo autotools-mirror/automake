@@ -63,7 +63,7 @@ $AUTOMAKE
 
 ./configure
 
-# Exuberant Ctags (at least version 5.8) do not generate any tags
+# Exuberant Ctags (at least version 5.8) doesn't generate any tags
 # for file extensions it doesn't recognize.  This can be fixed by
 # using the '--langmap' option.  But we must be careful, because
 # etags from Emacs (at least version 23.4) doesn't recognize that
