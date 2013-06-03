@@ -61,6 +61,7 @@ $AUTOMAKE
 ./configure
 $MAKE test-1
 
+$sleep
 (echo '#!/bin/sh' && echo 'printf %s 2.1') > print-version
 using_gmake || $MAKE Makefile
 $MAKE test-2
@@ -70,6 +71,8 @@ mkdir build
 cd build
 ../configure
 $MAKE test-2
+
+$sleep
 (echo '#!/bin/sh' && echo 'printf %s 3.14') > ../print-version
 using_gmake || $MAKE Makefile
 $MAKE test-3
