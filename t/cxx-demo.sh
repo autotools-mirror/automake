@@ -165,7 +165,11 @@ END
     Good morning, work.
 END
   for p in play work; do
-    # Strip CR characters catering to MinGW programs on MSYS.
+    # The program must run correctly (exit status = 0).
+    ./$p
+    # And it must have the expected output.  Note that we strip extra
+    # CR characters (if any), to cater to MinGW programs on MSYS.
+    # See automake bug#14493.
     ./$p | tr -d '\015' > got.$p || { cat got.$p; exit 1; }
     cat exp.$p
     cat got.$p
