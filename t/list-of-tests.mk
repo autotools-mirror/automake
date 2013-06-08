@@ -42,6 +42,7 @@ t/remake-timing-bug-pr8365.sh \
 t/lex-subobj-nodep.sh \
 t/subobj-indir-pr13928.sh \
 t/subobj-vpath-pr13928.sh \
+t/suffix-extra-c-stuff-pr14560.sh \
 t/remake-am-pr10111.sh \
 t/remake-m4-pr10111.sh \
 $(perl_fake_XFAIL_TESTS)
@@ -695,6 +696,7 @@ t/mkinst2.sh \
 t/mkinst3.sh \
 t/mmode.sh \
 t/mmodely.sh \
+t/no-extra-c-stuff.sh \
 t/no-extra-makefile-code.sh \
 t/no-spurious-install-recursive.sh \
 t/nobase.sh \
@@ -1069,6 +1071,7 @@ t/suffix-chain.tap \
 t/suffix-custom-pr14441.sh \
 t/suffix-custom-subobj.sh \
 t/suffix-custom-subobj-and-specflg.sh \
+t/suffix-extra-c-stuff-pr14560.sh \
 t/symlink.sh \
 t/symlink2.sh \
 t/syntax.sh \
