@@ -33,6 +33,7 @@ t/all.sh \
 t/cond17.sh \
 t/gcj6.sh \
 t/override-conditional-2.sh \
+t/override-conditional-pr13940.sh \
 t/dist-pr109765.sh \
 t/instdir-cond2.sh \
 t/java-nobase.sh \
@@ -740,6 +741,7 @@ t/output13.sh \
 t/output-order.sh \
 t/override-conditional-1.sh \
 t/override-conditional-2.sh \
+t/override-conditional-pr13940.sh \
 t/override-html.sh \
 t/override-suggest-local.sh \
 t/parallel-am.sh \
