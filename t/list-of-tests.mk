@@ -33,12 +33,15 @@ t/all.sh \
 t/cond17.sh \
 t/gcj6.sh \
 t/override-conditional-2.sh \
+t/override-conditional-pr13940.sh \
 t/dist-pr109765.sh \
 t/instdir-cond2.sh \
 t/java-nobase.sh \
 t/objext-pr10128.sh \
 t/remake-timing-bug-pr8365.sh \
 t/lex-subobj-nodep.sh \
+t/subobj-indir-pr13928.sh \
+t/subobj-vpath-pr13928.sh \
 t/remake-am-pr10111.sh \
 t/remake-m4-pr10111.sh \
 $(perl_fake_XFAIL_TESTS)
@@ -747,6 +750,7 @@ t/output13.sh \
 t/output-order.sh \
 t/override-conditional-1.sh \
 t/override-conditional-2.sh \
+t/override-conditional-pr13940.sh \
 t/override-html.sh \
 t/override-suggest-local.sh \
 t/parallel-am.sh \
@@ -1045,6 +1049,8 @@ t/subobj11c.sh \
 t/subobjname.sh \
 t/subobj-clean-pr10697.sh \
 t/subobj-clean-lt-pr10697.sh \
+t/subobj-indir-pr13928.sh \
+t/subobj-vpath-pr13928.sh \
 t/subpkg.sh \
 t/subpkg2.sh \
 t/subpkg3.sh \
