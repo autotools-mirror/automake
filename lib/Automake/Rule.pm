@@ -29,8 +29,7 @@ use Automake::DisjConditions;
 require Exporter;
 use vars '@ISA', '@EXPORT', '@EXPORT_OK';
 @ISA = qw/Automake::Item Exporter/;
-@EXPORT = qw (reset register_suffix_rule suffix_rules_count
-              next_in_suffix_chain
+@EXPORT = qw (reset register_suffix_rule next_in_suffix_chain
 	      suffixes rules $KNOWN_EXTENSIONS_PATTERN
 	      depend %dependencies %actions register_action
 	      accept_extensions
@@ -463,18 +462,6 @@ sub register_suffix_rule ($$$)
 	    }
 	}
     }
-}
-
-=item C<$count = suffix_rules_count>
-
-Return the number of suffix rules added while processing the current
-F<Makefile> (excluding predefined suffix rules).
-
-=cut
-
-sub suffix_rules_count ()
-{
-  return (scalar keys %_suffix_rules) - (scalar keys %_suffix_rules_builtin);
 }
 
 =item C<@list = suffixes>

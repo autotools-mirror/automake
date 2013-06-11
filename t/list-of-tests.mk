@@ -42,7 +42,6 @@ t/remake-timing-bug-pr8365.sh \
 t/lex-subobj-nodep.sh \
 t/subobj-indir-pr13928.sh \
 t/subobj-vpath-pr13928.sh \
-t/suffix-extra-c-stuff-pr14560.sh \
 t/remake-am-pr10111.sh \
 t/remake-m4-pr10111.sh \
 $(perl_fake_XFAIL_TESTS)
