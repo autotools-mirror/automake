@@ -1572,10 +1572,11 @@ sub handle_languages
     # If the project is entirely C++ or entirely Fortran 77 (i.e., 1
     # suffix rule was learned), don't bother with the C stuff.  But if
     # anything else creeps in, then use it.
-    $needs_c = 1
-      if $need_link || suffix_rules_count > 1;
-
-    if ($needs_c)
+    my @languages_seen = map { $languages{$extension_map{$_}}->name }
+                             (keys %extension_seen);
+    @languages_seen = uniq (@languages_seen);
+    $needs_c = 1 if @languages_seen > 1;
+    if ($need_link || $needs_c)
       {
 	&define_compiler_variable ($languages{'c'})
 	  unless defined $done{$languages{'c'}};

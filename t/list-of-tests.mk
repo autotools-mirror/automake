@@ -695,6 +695,7 @@ t/mkinst2.sh \
 t/mkinst3.sh \
 t/mmode.sh \
 t/mmodely.sh \
+t/no-extra-c-stuff.sh \
 t/no-extra-makefile-code.sh \
 t/no-spurious-install-recursive.sh \
 t/nobase.sh \
@@ -1069,6 +1070,7 @@ t/suffix-chain.tap \
 t/suffix-custom-pr14441.sh \
 t/suffix-custom-subobj.sh \
 t/suffix-custom-subobj-and-specflg.sh \
+t/suffix-extra-c-stuff-pr14560.sh \
 t/symlink.sh \
 t/symlink2.sh \
 t/syntax.sh \
