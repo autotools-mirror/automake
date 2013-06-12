@@ -29,8 +29,7 @@ use Automake::DisjConditions;
 require Exporter;
 use vars '@ISA', '@EXPORT', '@EXPORT_OK';
 @ISA = qw/Automake::Item Exporter/;
-@EXPORT = qw (reset register_suffix_rule suffix_rules_count
-              next_in_suffix_chain
+@EXPORT = qw (reset register_suffix_rule next_in_suffix_chain
 	      suffixes rules $KNOWN_EXTENSIONS_PATTERN
 	      depend %dependencies %actions register_action
 	      accept_extensions
@@ -465,18 +464,6 @@ sub register_suffix_rule ($$$)
     }
 }
 
-=item C<$count = suffix_rules_count>
-
-Return the number of suffix rules added while processing the current
-F<Makefile> (excluding predefined suffix rules).
-
-=cut
-
-sub suffix_rules_count ()
-{
-  return (scalar keys %_suffix_rules) - (scalar keys %_suffix_rules_builtin);
-}
-
 =item C<@list = suffixes>
 
 Return the list of known suffixes.
@@ -631,7 +618,7 @@ sub _maybe_warn_about_duplicated_target ($$$$$$)
               ## from rules that only add dependencies.  E.g.,
               ##   .PHONY: foo
               ##   .PHONY: bar
-              ## is legitimate. (This is phony.test.)
+              ## is legitimate.  This is checked in the 'phony.sh' test.
 
               # msg ('syntax', $where,
               #      "redefinition of '$target'$condmsg ...", partial => 1);
@@ -734,7 +721,7 @@ sub _conditionals_for_rule ($$$$)
   # condition.  So for now we do our best *here*.  If 'foo:'
   # was already defined in condition COND1 and we want to define
   # it in condition TRUE, then define it only in condition !COND1.
-  # (See cond14.test and cond15.test for some test cases.)
+  # (See cond14.sh and cond15.sh for some test cases.)
   @conds = $rule->not_always_defined_in_cond ($cond)->conds;
 
   # No conditions left to define the rule.
