@@ -212,7 +212,7 @@ endif # am.conf.check-news
 ## is distributed from several Makefiles at once (see automake bug#9546
 ## and bug#9651, and the follow-up commits 'v1.11-1219-g326ecba',
 ## 'v1.11-1220-g851b1ae' and 'v1.11-1221-gdccae6a').  See also test
-## 't/dist-repeated.sh'.
+## 'dist-repeated.sh'.
 	    test -f "$(distdir)/$$file" \
 	    || cp -p $$d/$$file "$(distdir)/$$file" \
 	    || exit 1; \

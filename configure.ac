@@ -246,9 +246,6 @@ exit 77" >&AS_MESSAGE_LOG_FD 2>&1; test $? -eq 77; }
 # would emit "P=1" into file with /usr/xpg4/bin/sh from Solaris 10 and
 # /bin/sh from SunOS 5.11 and OpenBSD 4.7.
 #
-# Finally, we look for weird bugs and portability problems mentioned in
-# the Autoconf manual, and reject shells that suffers from them. (TODO)
-#
 # Use '$am_score' to indicate the degree of acceptability of the shell.
 # A score of "10" means that the shell is good enough for our needs;
 # a score of "9" means that the shell has some minor bugs or limitation,

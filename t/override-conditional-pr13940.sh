@@ -1,34 +1,44 @@
-#!/usr/bin/env perl
-# deltree: recursively removes file and directory,
-# trying to handle permissions and other complications.
-
+#! /bin/sh
 # Copyright (C) 2013 Free Software Foundation, Inc.
-
+#
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2, or (at your option)
 # any later version.
-
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-
+#
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-use strict;
-use warnings FATAL => 'all';
-use File::Path qw/rmtree/;
+# Expose automake bug#1394: automake erroneously think that a .PHONY
+# target's rule is overridden only because we declare dependencies
+# to such targets twice: one in an Automake conditional, and once
+# unconditionally.
 
-my $exit_status = 0;
-local $SIG{__WARN__} = sub { warn "@_"; $exit_status = 1; };
+. test-init.sh
 
-foreach my $path (@ARGV) {
-  local $@ = undef;
-  rmtree ($path);
-}
+cat >> configure.ac << 'END'
+AM_CONDITIONAL([FOO], [true])
+AC_OUTPUT
+END
 
-exit $exit_status;
+cat > Makefile.am << 'END'
+# The conditional here is important: Automake only appears to warn
+# when one of the all-local rules is inside a conditional and the
+# other is not.
+if FOO
+all-local: bar
+bar: ; @echo bar
+endif
+all-local: baz
+baz: ; @echo baz
+END
 
-# vim: ft=perl ts=4 sw=4 et
+$ACLOCAL
+$AUTOMAKE -a
+
+:

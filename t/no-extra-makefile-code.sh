@@ -1,5 +1,5 @@
 #!/bin/sh
-# Copyright (C) 1996-2013 Free Software Foundation, Inc.
+# Copyright (C) 2011-2013 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,9 +25,14 @@ echo AC_OUTPUT >> configure.ac
 
 : > Makefile.am
 
+# Automake shouldn't need nor require these.
 rm -f depcomp compile
 
 $ACLOCAL
+
+# Don't use '--add-missing' here, so that we can implicitly
+# check that the auxiliary scripts 'compile' and 'depcomp'
+# are not spuriously required by Automake.
 $AUTOMAKE
 
 $EGREP 'INCLUDE|-compile|\$\(OBJEXT\)|tab\.[ch]' Makefile.in && exit 1

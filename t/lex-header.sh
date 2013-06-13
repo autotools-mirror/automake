@@ -55,6 +55,7 @@ cat > lexer.l << 'END'
 END
 
 cat > main.c <<'END'
+#define YY_NO_UNISTD_H 1
 #include "mylex.h"
 int main (void)
 {

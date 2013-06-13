@@ -91,9 +91,11 @@ XFAIL_TESTS = \
   %D%/interp3.sh \
   %D%/java-nobase.sh \
   %D%/objext-pr10128.sh \
+  %D%/override-conditional-pr13940.sh \
   %D%/remake-timing-bug-pr8365.sh \
   %D%/remake-am-pr10111.sh \
   %D%/remake-m4-pr10111.sh \
+  %D%/subobj-vpath-pr13928.sh \
   %D%/var-undef-append.sh \
   $(perl_fake_XFAIL_TESTS)
  

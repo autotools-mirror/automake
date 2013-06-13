@@ -34,6 +34,13 @@ check-local:
 	test "`find $(srcdir) . | grep '\.info'`" = "$(srcdir)/foo.info"
 END
 
+# Systems lacking a working TeX installation cannot run "make dvi".
+if test -z "$TEX"; then
+  warn_ "TeX installation missing, \"make dvi\" will be skipped"
+  echo AUTOMAKE_OPTIONS = -Wno-override >> Makefile.am
+  echo 'dvi:; @echo Tex is missing, do nothing' >> Makefile.am
+fi
+
 cat > foo.texi << 'END'
 \input texinfo
 @setfilename foo.info
