@@ -29,6 +29,7 @@ END
 mkdir foo po
 
 $ACLOCAL
+$AUTOCONF
 
 # config.rpath is required.
 : >config.rpath
@@ -47,9 +48,12 @@ grep 'AM_GNU_GETTEXT.*po' stderr
 echo 'SUBDIRS = po' >Makefile.am
 $AUTOMAKE --add-missing
 
+
 # Don't try running ./configure --with-included-gettext if the
 # user is using AM_GNU_GETTEXT([external]).
 grep 'with-included-gettext' Makefile.in && exit 1
+./configure
+$MAKE -n distcheck | grep 'with-included-gettext' && exit 1
 
 # intl/ isn't wanted with AM_GNU_GETTEXT([external]).
 
