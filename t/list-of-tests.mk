@@ -484,9 +484,11 @@ t/gcj3.sh \
 t/gcj4.sh \
 t/gcj5.sh \
 t/gcj6.sh \
-t/gettext.sh \
-t/gettext2.sh \
-t/gettext3.sh \
+t/gettext-basics.sh \
+t/gettext-config-rpath.sh \
+t/gettext-external-pr338.sh \
+t/gettext-intl-subdir.sh \
+t/gettext-pr381.sh \
 t/gnumake.sh \
 t/gnuwarn.sh \
 t/gnuwarn2.sh \
