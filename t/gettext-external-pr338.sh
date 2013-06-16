@@ -14,45 +14,52 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Check gettext support.
+# Check gettext 'external' support.
+# PR/338, reported by Charles Wilson.
 
 required='gettext'
 . test-init.sh
 
-cat >> configure.ac << 'END'
-AM_GNU_GETTEXT
+cat >>configure.ac <<END
+AM_GNU_GETTEXT([external])
 AC_OUTPUT
 END
 
-: > Makefile.am
-: > config.rpath
-mkdir po intl
+: >Makefile.am
+mkdir foo po
 
 $ACLOCAL
 $AUTOCONF
 
-# po/ and intl/ are required.
+# config.rpath is required.
+: >config.rpath
+
+# po/ is required, but intl/ isn't.
 
 AUTOMAKE_fails --add-missing
 grep 'AM_GNU_GETTEXT.*SUBDIRS' stderr
 
-echo 'SUBDIRS = po' >Makefile.am
-AUTOMAKE_fails --add-missing
-grep 'AM_GNU_GETTEXT.*intl' stderr
-
-echo 'SUBDIRS = intl' >Makefile.am
+echo 'SUBDIRS = foo' >Makefile.am
 AUTOMAKE_fails --add-missing
 grep 'AM_GNU_GETTEXT.*po' stderr
 
 # Ok.
 
-echo 'SUBDIRS = po intl' >Makefile.am
+echo 'SUBDIRS = po' >Makefile.am
 $AUTOMAKE --add-missing
 
-# Make sure distcheck runs './configure --with-included-gettext'.
+# Don't try running ./configure --with-included-gettext if the
+# user is using AM_GNU_GETTEXT([external]).
+
+grep 'with-included-gettext' Makefile.in && exit 1
 ./configure
-echo distdir: > po/Makefile
-echo distdir: > intl/Makefile
-$MAKE -n distcheck | grep '.*--with-included-gettext'
+$MAKE -n distcheck | grep 'with-included-gettext' && exit 1
+
+# intl/ isn't wanted with AM_GNU_GETTEXT([external]).
+
+mkdir intl
+echo 'SUBDIRS = po intl' >Makefile.am
+AUTOMAKE_fails --add-missing
+grep 'intl.*AM_GNU_GETTEXT' stderr
 
 :

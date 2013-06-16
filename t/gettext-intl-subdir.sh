@@ -45,3 +45,5 @@ grep 'AM_GNU_GETTEXT.*intl.*SUBDIRS' stderr
 
 echo 'SUBDIRS = po intl' > Makefile.am
 $AUTOMAKE --add-missing
+
+:
