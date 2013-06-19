@@ -20,6 +20,7 @@ set -e -u
 
 me=${0##*/}
 msg_file=$me.git-msg
+
 fatal () { echo "$me: $*" >&2; exit 1; }
 
 case $# in
@@ -37,15 +38,16 @@ SED=${SED-sed}
 $SED --version 2>&1 | grep GNU >/dev/null 2>&1 \
   || fatal "GNU sed is required by this script"
 
-# Validate and cleanup input.
+# Input validation and cleanup.
 input=$(
-  $AWK -v me="$me" "
+  $AWK -v me="$me" '
     /^#/ { next; }
     (NF == 0) { next; }
-    (NF != 2) { print me \": wrong number of fields at line \" NR;
+    (NF != 2) { print me ": wrong number of fields at line " NR;
                 exit(1); }
-    { printf (\"t/%s t/%s\\n\", \$1, \$2); }
-  " <<<"$input")
+    { printf ("t/%s t/%s\n", $1, $2); }
+  ' <<<"$input"
+) || exit $?
 
 # Prepare git commit message.
 exec 5>"$msg_file"
