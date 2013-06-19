@@ -448,7 +448,7 @@ t/ext.sh \
 t/ext2.sh \
 t/ext3.sh \
 t/extra.sh \
-t/extra2.sh \
+t/extra-sources-no-spurious.sh \
 t/extra-data.sh \
 t/extra-dist-vpath-dir.sh \
 t/extra-dist-dirs-and-subdirs.sh \
@@ -591,7 +591,7 @@ t/lex-line.sh \
 t/lex-nodist.sh \
 t/lex-pr204.sh \
 t/lflags.sh \
-t/lflags2.sh \
+t/lflags-cxx.sh \
 t/libexec.sh \
 t/libobj-basic.sh \
 t/libobj2.sh \
@@ -1295,7 +1295,7 @@ t/yacc-pr204.sh \
 t/yacc-subdir.sh \
 t/yacc-weirdnames.sh \
 t/yflags.sh \
-t/yflags2.sh \
+t/yflags-cxx.sh \
 t/yflags-cmdline-override.sh \
 t/yflags-conditional.sh \
 t/yflags-d-false-positives.sh \
