@@ -15,9 +15,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Check that $(LFLAGS) takes precedence over both $(AM_LFLAGS) and
-# $(foo_LFLAGS).
-# Please keep this in sync with the sister tests lflags.sh, yflags.sh
-# and yflags2.sh.
+# $(foo_LFLAGS).  This is the C++ case.
+# Please keep this in sync with the sister tests:
+#  - lflags.sh
+#  - yflags.sh
+#  - yflags-cxx.sh
 
 . test-init.sh
 
