@@ -443,7 +443,7 @@ t/exeext.sh \
 t/exeext2.sh \
 t/exeext3.sh \
 t/exeext4.sh \
-t/exsource.sh \
+t/extra-sources.sh \
 t/ext.sh \
 t/ext2.sh \
 t/ext3.sh \
