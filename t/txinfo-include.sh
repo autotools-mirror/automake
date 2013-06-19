@@ -25,7 +25,7 @@ echo AC_OUTPUT >> configure.ac
 cat > Makefile.am << 'END'
 info_TEXINFOS = main.texi sub/more.texi
 main_TEXINFOS = one.texi two.texi three.texi
-sub_more_TEXINFOS = sub/one.texi sub/two.texi
+sub_more_TEXINFOS = sub/desc.texi sub/hist.texi
 END
 
 cat > main.texi << 'END'
@@ -79,18 +79,18 @@ cat > sub/more.texi << 'END'
 * hist:: History of this program
 @end menu
 @end ifnottex
-@include one.texi
-@include two.texi
+@include desc.texi
+@include hist.texi
 @bye
 END
 
-cat > sub/one.texi << 'END'
+cat > sub/desc.texi << 'END'
 @node desc
 @chapter Description of this program
 It does something, really.
 END
 
-cat > sub/two.texi << 'END'
+cat > sub/hist.texi << 'END'
 @node hist
 @chapter History of this program
 It was written somehow.
