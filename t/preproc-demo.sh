@@ -142,7 +142,6 @@ END
 cat > lib/tests/gnulib-check.am <<'END'
 check_PROGRAMS += %D%/safe-print-test
 TESTS += $(check_PROGRAMS)
-AM_TESTS_ENVIRONMENT += EXEEXT='$(EXEEXT)'; export EXEEXT;
 END
 
 cat > lib/tests/safe-print-test.c <<'END'
@@ -160,6 +159,8 @@ END
 cat > tests/check.am <<'END'
 TEST_EXTENSIONS = .sh
 SH_LOG_COMPILER = $(SHELL)
+
+AM_TESTS_ENVIRONMENT += EXEEXT='$(EXEEXT)'; export EXEEXT;
 
 handwritten_TESTS = \
   %D%/hello.sh \
