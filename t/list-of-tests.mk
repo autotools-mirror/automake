@@ -1191,6 +1191,7 @@ t/txinfo-builddir.sh \
 t/txinfo-clean.sh \
 t/txinfo-dvi-recurs.sh \
 t/txinfo-info-in-srcdir.sh \
+t/txinfo-include.sh \
 t/txinfo-makeinfo-error-no-clobber.sh \
 t/txinfo-many-output-formats.sh \
 t/txinfo-many-output-formats-vpath.sh \
