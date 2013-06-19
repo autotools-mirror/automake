@@ -32,7 +32,6 @@ AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
-## Use a different dir for each to make grep easy.
 bin_PROGRAMS = maude
 sbin_PROGRAMS = maude.static
 ## We don't define this one for now.  Probably it is an error.
@@ -46,11 +45,17 @@ if WANT_RMT
   libexec_PROGRAMS = rmt
 endif
 
-print:
-	@echo 1BEG: $(bin_PROGRAMS) :END1
-	@echo 2BEG: $(sbin_PROGRAMS) :END2
-	@echo 3BEG: $(check_PROGRAMS) :END3
-	@echo 4BEG: $(libexec_PROGRAMS) :END4
+test-default:
+	is $(bin_PROGRAMS)      ==  maude$(EXEEXT) mt$(EXEEXT)
+	is $(sbin_PROGRAMS)     ==  maude.static$(EXEEXT)
+	is $(check_PROGRAMS)    ==  maude3$(EXEEXT)
+	is $(libexec_PROGRAMS)  ==  rmt$(EXEEXT)
+
+test-revert:
+	is $(bin_PROGRAMS)      ==  maude$(EXEEXT)
+	is $(sbin_PROGRAMS)     ==  maude.static$(EXEEXT)
+	is $(check_PROGRAMS)    ==  maude3$(EXEEXT)
+	is $(libexec_PROGRAMS)  ==
 END
 
 $ACLOCAL
@@ -68,21 +73,11 @@ test $(grep -c '^bin_PROGRAMS =' Makefile.in) -eq 1
 grep 'maude3__EXEEXT__OBJECTS' Makefile.in && exit 1
 
 ./configure
-
-run_make -O EXEEXT=.foo print
-
-grep '1BEG: maude.foo mt.foo :END1' stdout
-grep '2BEG: maude.static.foo :END2' stdout
-grep '3BEG: maude3.foo :END3' stdout
-grep '4BEG: rmt.foo :END4' stdout
+run_make test-default
+run_make test-default EXEEXT=.foo
 
 ./configure revert=yes
-
-run_make -O EXEEXT=.foo print
-
-grep '1BEG: maude.foo :END1' stdout
-grep '2BEG: maude.static.foo :END2' stdout
-grep '3BEG: maude3.foo :END3' stdout
-grep '4BEG: :END4' stdout
+run_make test-revert
+run_make test-revert EXEEXT=.foo
 
 :

@@ -58,10 +58,15 @@ check_PROGRAMS = zardoz \$(noinst_PROGRAMS)
 ## PROGRAMS primary, otherwise automake will complain.
 EXTRA_PROGRAMS =
 
-print-programs:
-	@echo BEG1: \$(noinst_PROGRAMS) :END1
-	@echo BEG2: \$(bin_PROGRAMS) :END2
-	@echo BEG3: \$(check_PROGRAMS) :END3
+test-real-empty:
+	is \$(noinst_PROGRAMS) == x
+	is \$(bin_PROGRAMS)    ==
+	is \$(check_PROGRAMS)  == zardoz x
+
+test-fake-empty:
+	is \$(noinst_PROGRAMS) == x X
+	is \$(bin_PROGRAMS)    == X
+	is \$(check_PROGRAMS)  == zardoz x X
 END
 
 $ACLOCAL
@@ -82,14 +87,7 @@ test $($EGREP -c "^[ $tab]*@$v2@ @$v3@[ $tab]*$bs?$" Makefile.in) -eq 3
 cat t-programs
 grep '^ *$' t-programs && exit 1
 
-run_make -O print-programs
-grep '^BEG1: x :END1$' stdout
-grep '^BEG2: :END2$' stdout
-grep '^BEG3: zardoz x :END3$' stdout
-
-run_make -O am__empty=X print-programs
-grep '^BEG1: x X :END1$' stdout
-grep '^BEG2: X :END2$' stdout
-grep '^BEG3: zardoz x X :END3$' stdout
+run_make test-real-empty
+run_make test-fake-empty am__empty=X
 
 :
