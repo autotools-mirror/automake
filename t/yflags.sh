@@ -16,8 +16,10 @@
 
 # Check that $(YFLAGS) takes precedence over both $(AM_YFLAGS) and
 # $(foo_YFLAGS).
-# Please keep this in sync with the sister tests yflags2.sh, lflags.sh
-# and lflags2.sh.
+# Please keep this in sync with the sister tests:
+#  - yflags-cxx.sh
+#  - lflags.sh
+#  - lflags-cxx.sh
 
 . test-init.sh
 

@@ -58,24 +58,25 @@ New in 2.0:
 
 * WARNING: New versioning scheme for Automake.
 
-  - Starting with this version onward, Automake will use an update and
-    more rational versioning scheme, one that will allow users to know
-    which kind of changes can be expected from a new version, based on
-    its version number.
+  - Beginning with the release 1.13.2, Automake has started to use a
+    more rational versioning scheme, that should allow users to know
+    which kind of changes can be expected from a new version, based
+    on its version number.
 
-    + Micro versions (e.g., 1.13.3, 2.0.1, 3.2.8) will introduce only
-      documentation updates and bug and regression fixes; they will
-      not introduce new features, nor any backward-incompatibility (any
+    + Micro releases (e.g., 1.13.3, 2.0.1, 3.2.8) introduce only bug
+      and regression fixes and documentation updates; they should not
+      introduce new features, nor any backward-incompatibility (any
       such incompatibility would be considered a bug, to be fixed with
       a further micro release).
 
-    + Minor versions (e.g., 1.14, 2.1) can introduce new backward
+    + Minor releases (e.g., 1.14, 2.1) can introduce new backward
       compatible features; the only backward-incompatibilities allowed
       in such a release are new *non-fatal* deprecations and warnings,
       and possibly fixes for old or non-trivial bugs (or even inefficient
-      behaviours) that could unfortunately have been seen, and used, by
-      some developers as "corner case features".  Possible disruptions
-      caused by this kind of fixes should hopefully be quite rare.
+      behaviours) that could unfortunately have been seen and used by
+      some as "corner case features".  Possible disruptions caused by
+      this kind of fixes should hopefully be quite rare, and their
+      effects limited in scope.
 
     + Major versions (now expected to be released every 18 or 24 months,
       and not more often) can introduce new big features (possibly with
@@ -87,13 +88,18 @@ New in 2.0:
       should be duly implemented in the preceding minor releases.
 
   - According to this new scheme, the next major version of Automake
-    (the one that has until now been labelled as '1.14') will actually
-    become "Automake 2.0".  Automake 1.14 will be the next minor version,
-    which will introduce new features, deprecations and bug fixes, but
-    no serious backward incompatibility.
+    (the one that had previously been labelled as "1.14") will actually
+    become "Automake 2.0".  Automake 1.14 is *this* release (which is
+    a minor one).  It introduces new features, deprecations and bug
+    fixes, but no serious backward incompatibility.  A partial exception
+    is given by the behavioural changes in the AM_PROG_CC_C_O macro
+    (described in details below) but such changes can also be seen as a
+    fix for the old suboptimal and somewhat confusing behaviour.
 
   - See discussion about automake bug#13578 for more details and
     background: <http://debbugs.gnu.org/cgi/bugreport.cgi?bug=13578>
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 * WARNING: Future backward-incompatibilities!
 
@@ -101,12 +107,17 @@ New in 2.0:
     'rm' program that doesn't complain when called without any non-option
     argument if the '-f' option is given (so that commands like "rm -f"
     and "rm -rf" will act as a no-op, instead of raising usage errors).
-    Accordingly, AM_INIT_AUTOMAKE will expand new shell code checking
-    that the default 'rm' program in PATH satisfies this requirement, and
-    aborting the configure process if this is not the case.  This behavior
-    of 'rm' is very widespread in the wild, and it will be required in the
-    next POSIX version:
-    <http://austingroupbugs.net/view.php?id=542>
+    This behavior of 'rm' is very widespread in the wild, and it will be
+    required in the next POSIX version:
+
+      <http://austingroupbugs.net/view.php?id=542>
+
+    Accordingly, AM_INIT_AUTOMAKE now expands some shell code that checks
+    that the default 'rm' program in PATH satisfies this requirement,
+    aborting the configure process if this is not the case.  For the
+    moment, it's still possible to force the configuration process to
+    succeed even with a broken 'rm', that that will no longer be the case
+    for Automake 2.0.
 
   - Automake 2.0 will require Autoconf 2.70 or later (which is still
     unreleased at the moment of writing, but is planned to be released
@@ -116,11 +127,12 @@ New in 2.0:
     name for the Autoconf input file.  You are advised to start using the
     recommended name 'configure.ac' instead, ASAP.
 
-  - The ACLOCAL_AMFLAGS special make variable will be fully deprecated
-    in Automake 2.0 (where it will raise warnings in the "obsolete"
-    category).  You are advised to start relying on the new Automake
-    support for AC_CONFIG_MACRO_DIRS instead (which was introduced in
-    Automake 1.13).
+  - The ACLOCAL_AMFLAGS special make variable will be fully deprecated in
+    Automake 2.0: it will raise warnings in the "obsolete" category (but
+    still no hard error of course, for compatibilities with the many, many
+    packages that still relies on that variable).  You are advised to
+    start relying on the new Automake support for AC_CONFIG_MACRO_DIRS
+    instead (which was introduced in Automake 1.13).
 
   - Automake 2.0 will remove support for automatic dependency tracking
     with the SGI C/C++ compilers on IRIX.  The SGI depmode has been
@@ -136,7 +148,11 @@ New in 2.0:
     versions will continue to be fully supported.
 
   - Automake-provided scripts and makefile recipes might (finally!)
-    start assuming a POSIX shell in Automake 2.0.
+    start assuming a POSIX shell in Automake 2.0.  There still is no
+    certainty about this though: we'd first like to wait and see
+    whether future Autoconf versions will be enhanced to guarantee
+    that such a shell is always found and provided by the checks in
+    ./configure.
 
   - Starting from Automake 2.0, third-party m4 files located in the
     system-wide aclocal directory, as well as in any directory listed
@@ -153,45 +169,46 @@ New in 1.14:
 
 * C compilation, and the AC_PROG_CC and AM_PROG_CC_C_O macros:
 
-  - The 'compile' script is now unconditionally required for all
-    packages that perform C compilation (note that if you are using
-    the '--add-missing' option, automake will fetch that script for
-    you, so you shouldn't need any explicit adjustment).
-    This new behaviour is needed to avoid obscure errors when the
-    'subdir-objects' option is used, and the compiler is an inferior
-    one that doesn't grasp the combined use of both the "-c -o"
-    options; see discussion about automake bug#13378 for more details:
+  - The 'compile' script is now unconditionally required for all packages
+    that perform C compilation (if you are using the '--add-missing'
+    option, automake will fetch that script for you, so you shouldn't
+    need any explicit adjustment).  This new behaviour is needed to avoid
+    obscure errors when the 'subdir-objects' option is used, and the
+    compiler is an inferior one that doesn't grasp the combined use of
+    both the "-c -o" options; see discussion about automake bug#13378 for
+    more details:
     <http://debbugs.gnu.org/cgi/bugreport.cgi?bug=13378#35>
     <http://debbugs.gnu.org/cgi/bugreport.cgi?bug=13378#44>
 
-  - The next major Automake version (2.0) will unconditionally turn on
+  - The next major Automake version (2.0) will unconditionally activate
     the 'subdir-objects' option.  In order to smooth out the transition,
     we now give a warning (in the category 'unsupported') whenever a
     source file is present in a subdirectory but the 'subdir-object' is
     not enabled.  For example, the following usage will trigger such a
-    warning (of course, assuming the 'subdir-objects' option is off):
+    warning:
 
         bin_PROGRAMS = sub/foo
         sub_foo_SOURCES = sub/main.c sub/bar.c
 
-  - Automake will automatically enhance the AC_PROG_CC autoconf macro
-    to make it check, at configure time, that the C compiler supports
-    the combined use of both the "-c -o" options.  The result of this
-    check is saved in the cache variable 'am_cv_prog_cc_c_o', and said
-    result can be overridden by pre-defining that variable.
+  - Automake will automatically enhance the autoconf-provided macro
+    AC_PROG_CC to force it to check, at configure time, that the
+    C compiler supports the combined use of both the '-c' and '-o'
+    options.  The result of this check is saved in the cache variable
+    'am_cv_prog_cc_c_o', and said result can be overridden by
+    pre-defining that variable.
 
-  - The AM_PROG_CC_C_O can still be called, but that should no longer
-    be necessary. This macro is now just a thin wrapper around the
+  - The AM_PROG_CC_C_O macro can still be called, albeit that should no
+    longer be necessary. This macro is now just a thin wrapper around the
     Automake-enhanced AC_PROG_CC.  This means, among the other things,
     that its behaviour is changed in three ways:
 
       1. It no longer invokes the Autoconf-provided AC_PROG_CC_C_O
-         macros behind the scenes.
+         macro behind the scenes.
 
-      2. It caches the check result in the 'am_cv_prog_cc_c_o'variable,
-         and not in a 'ac_cv_prog_cc_*_c_o' variable whose exact name
-         in only dynamically computed at configure runtime (really!)
-         from the content of the '$CC' variable.
+      2. It caches the check result in the 'am_cv_prog_cc_c_o' variable,
+         and not in a 'ac_cv_prog_cc_*_c_o' variable whose exact name is
+         dynamically computed only at configure runtime (really!) from
+         the content of the '$CC' variable.
 
       3. It no longer automatically AC_DEFINE the C preprocessor
          symbol 'NO_MINUS_C_MINUS_O'.
@@ -207,10 +224,10 @@ New in 1.14:
 
   - For quite a long time, Automake has been implementing an undocumented
     hack which ensured that '.info' files which appeared to be cleaned
-    (by e.g. being listed in the CLEANFILES or DISTCLEANFILES variables)
-    were built in the builddir rather than in the srcdir; this hack was
-    introduced to ensure better backward-compatibility with packages such
-    as Texinfo, which did things like:
+    (by being listed in the CLEANFILES or DISTCLEANFILES variables) were
+    built in the builddir rather than in the srcdir; this hack was
+    introduced to ensure better backward-compatibility with package
+    such as Texinfo, which do things like:
 
         info_TEXINFOS = texinfo.txi info-stnd.texi info.texi
         DISTCLEANFILES = texinfo texinfo-* info*.info*
@@ -230,19 +247,27 @@ New in 1.14:
   - The special Automake-time substitutions '%reldir%' and '%canon_reldir%'
     (and their short versions, '%D%' and '%C%' respectively) can now be used
     in an included Makefile fragment.  The former is substituted with the
-    relative directory of the included fragment (compared to the top level
+    relative directory of the included fragment (compared to the top-level
     including Makefile), and the latter with the canonicalized version of
-    the same relative directory:
+    the same relative directory.
 
+        # in 'Makefile.am':
+        bin_PROGRAMS = # will be updated by included Makefile fragments
+        include src/Makefile.inc
+
+        # in 'src/Makefile.inc':
         bin_PROGRAMS += %reldir%/foo
         %canon_reldir%_foo_SOURCES = %reldir%/bar.c
+
+    This should be especially useful for packages using a non-recursive
+    build system.
 
 * Deprecated distribution formats:
 
   - The 'shar' and 'compress' distribution formats are deprecated, and
     scheduled for removal in Automake 2.0.  Accordingly, the use of the
     'dist-shar' and 'dist-tarZ' will cause warnings at automake runtime
-    (in the 'obsolete' category), and the recipes for the Automake-generated
+    (in the 'obsolete' category), and the recipes of the Automake-generated
     targets 'dist-shar' and 'dist-tarZ' will unconditionally display
     (non-fatal) warnings at make runtime.
 
@@ -251,13 +276,12 @@ New in 1.14:
   - To simplify transition to Automake 2.0, the shell code expanded by
     AM_INIT_AUTOMAKE now checks (at configure runtime) that the default
     'rm' program in PATH doesn't complain when called without any
-    non-option argument if the '-f' option is given (so that commands
-    like "rm -f" and "rm -rf" act as a no-op, instead of raising usage
-    error).  If this is not the case,
-    the configure script is aborted, to call the attention of the user
-    on the issue, and invite him to fix his PATH.  The checked 'rm'
-    behavior is very widespread in the wild, and will be required by
-    future POSIX version:
+    non-option argument if the '-f' option is given (so that commands like
+    "rm -f" and "rm -rf" act as a no-op, instead of raising usage errors).
+    If this is not the case, the configure script is aborted, to call the
+    attention of the user on the issue, and invite him to fix his PATH.
+    The checked 'rm' behavior is very widespread in the wild, and will be
+    required by future POSIX versions:
 
         <http://austingroupbugs.net/view.php?id=542>
 

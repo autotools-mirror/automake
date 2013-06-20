@@ -32,9 +32,8 @@ check-local:
 	test -f one$(EXEEXT)
 	test -f two$(EXEEXT)
 	touch ok
-.PHONY: print-tests
-print-tests:
-	echo BEG: $(TESTS) :END
+expect-tests:
+	is $(TESTS) == one$(EXEEXT) two$(EXEEXT)
 END
 
 $ACLOCAL
@@ -52,8 +51,8 @@ cp one.c two.c
 ./configure
 $MAKE check
 test -f ok
-run_make -O EXEEXT=.bin print-tests
-$FGREP 'BEG: one.bin two.bin :END' stdout
+run_make expect-tests
+run_make expect-tests EXEEXT=.bin
 # No am__EXEEXT_* variable is needed.
 grep '_EXEEXT_[1-9]' Makefile.in && exit 1
 $FGREP 'TESTS = $(check_PROGRAMS)' Makefile.in

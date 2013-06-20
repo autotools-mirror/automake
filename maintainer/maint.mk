@@ -566,7 +566,7 @@ check-minimal-autoconf:
 	  && autoconf --version | sed -e 's/^/ /; s/$$/ /' -e 1q \
 	       | $(FGREP) '$(ac-v)' >/dev/null \
 	  && echo === configure \
-	  && ./configure $(shell ./config.status --config) \
+	  && $(srcdir)/configure $(shell ./config.status --config) \
 	  && echo === build and test \
 	  && $(MAKE) check
 .PHONY: check-minimal-autoconf

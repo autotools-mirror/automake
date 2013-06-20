@@ -19,6 +19,8 @@
 set -e -u
 
 me=${0##*/}
+msg_file=$me.git-msg
+
 fatal () { echo "$me: $*" >&2; exit 1; }
 
 case $# in
@@ -36,18 +38,19 @@ SED=${SED-sed}
 $SED --version 2>&1 | grep GNU >/dev/null 2>&1 \
   || fatal "GNU sed is required by this script"
 
-# Validate and cleanup input.
+# Input validation and cleanup.
 input=$(
-  $AWK -v me="$me" "
+  $AWK -v me="$me" '
     /^#/ { next; }
     (NF == 0) { next; }
-    (NF != 2) { print me \": wrong number of fields at line \" NR;
+    (NF != 2) { print me ": wrong number of fields at line " NR;
                 exit(1); }
-    { printf (\"t/%s t/%s\\n\", \$1, \$2); }
-  " <<<"$input")
+    { printf ("t/%s t/%s\n", $1, $2); }
+  ' <<<"$input"
+) || exit $?
 
 # Prepare git commit message.
-exec 5>$me.git-msg
+exec 5>"$msg_file"
 echo "tests: more significant names for some tests" >&5
 echo >&5
 $AWK >&5 <<<"$input" \
@@ -58,10 +61,15 @@ exec 5>&-
 eval "$($AWK '{ printf ("git mv %s %s\n", $1, $2) }' <<<"$input")"
 
 # Adjust the list of tests (do this conditionally, since such a
-# list is not required nor used in Automake-NG.
+# list is not required nor used in Automake-NG).
 if test -f t/list-of-tests.mk; then
   $SED -e "$($AWK '{ printf ("s|^%s |%s |\n", $1, $2) }' <<<"$input")" \
        -i t/list-of-tests.mk
+  git add t/list-of-tests.mk
 fi
 
 git status
+echo
+echo "NOTICE: pre-filled commit message is in file '$msg_file'"
+
+exit 0

@@ -28,10 +28,9 @@ EXTRA_www_SOURCES = xtra.c
 www_LDADD = @extra_stuff@
 END
 
-: > www.c
-: > xtra.c
-
 $ACLOCAL
 $AUTOMAKE
 
 grep '@am__include@ .*/xtra\.P' Makefile.in
+
+:
