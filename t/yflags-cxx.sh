@@ -14,50 +14,50 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Check that $(LFLAGS) takes precedence over both $(AM_LFLAGS) and
-# $(foo_LFLAGS).
-# Please keep this in sync with the sister tests lflags.sh, yflags.sh
-# and yflags2.sh.
+# Check that $(YFLAGS) takes precedence over both $(AM_YFLAGS) and
+# $(foo_YFLAGS).  This is the C++ case.
+# Please keep this in sync with the sister tests:
+#  - yflags.sh
+#  - lflags.sh
+#  - lflags-cxx.sh
 
 . test-init.sh
 
-cat >fake-lex <<'END'
+cat >fake-yacc <<'END'
 #!/bin/sh
-echo '/*' "$*" '*/' >lex.yy.c
-echo 'extern int dummy;' >> lex.yy.c
+echo '/*' "$*" '*/' >y.tab.c
+echo 'extern int dummy;' >> y.tab.c
 END
-chmod a+x fake-lex
+chmod a+x fake-yacc
 
 cat >> configure.ac <<'END'
 AC_SUBST([CXX], [false])
-# Simulate presence of Lex using our fake-lex script.
-AC_SUBST([LEX], ['$(abs_top_srcdir)'/fake-lex])
-AC_SUBST([LEX_OUTPUT_ROOT], [lex.yy])
-AC_SUBST([LEXLIB], [''])
+# Simulate presence of Yacc using our fake-yacc script.
+AC_SUBST([YACC], ['$(abs_top_srcdir)'/fake-yacc])
 AC_OUTPUT
 END
 
 cat > Makefile.am <<'END'
 AUTOMAKE_OPTIONS = no-dependencies
 bin_PROGRAMS = foo bar
-foo_SOURCES = main.cc foo.ll
-bar_SOURCES = main.cc bar.l++
-AM_LFLAGS = __am_flags__
-bar_LFLAGS = __bar_flags__
+foo_SOURCES = main.cc foo.yy
+bar_SOURCES = main.cc bar.y++
+AM_YFLAGS = __am_flags__
+bar_YFLAGS = __bar_flags__
 END
 
 $ACLOCAL
 $AUTOMAKE -a
 
-grep '\$(LFLAGS).*\$(bar_LFLAGS)' Makefile.in && exit 1
-grep '\$(LFLAGS).*\$(AM_LFLAGS)' Makefile.in && exit 1
+grep '\$(YFLAGS).*\$(bar_YFLAGS)' Makefile.in && exit 1
+grep '\$(YFLAGS).*\$(AM_YFLAGS)' Makefile.in && exit 1
 
-: > foo.ll
-: > bar.l++
+: > foo.yy
+: > bar.y++
 
 $AUTOCONF
 ./configure
-$MAKE foo.cc bar-bar.c++ LFLAGS=__user_flags__
+$MAKE foo.cc bar-bar.c++ YFLAGS=__user_flags__
 
 cat foo.cc
 cat bar-bar.c++

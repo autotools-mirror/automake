@@ -42,7 +42,7 @@ check-deps: all
 	grep 'stdio\.h' $(DEPDIR)/foo.Po
 	grep 'foobar\.h' $(DEPDIR)/foo.Po
 check-updated: all
-	is_newest foo foobar.h
+	is_newest foo$(EXEEXT) foobar.h
 END
 
 # We deliberately don't invoke AM_PROG_CC_C_O here.
