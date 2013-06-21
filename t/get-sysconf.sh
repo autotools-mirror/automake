@@ -46,6 +46,14 @@ $PERL -V || st=1
 # happen with older perl installation, or on MinGW/MSYS.
 $PERL -e 'use TAP::Parser; print $TAP::Parser::VERSION, "\n"' || :
 
+# It's OK if the selected Lex and Yacc programs don't know how to print
+# the version number or the help screen; those are usually available only
+# for Flex and Bison.
+$LEX --version || :
+$LEX --help || :
+$YACC --version || :
+$YACC --help || :
+
 cat "$am_top_builddir/config.log" || st=1
 cat "$am_top_builddir/t/wrap/aclocal-$APIVERSION" || st=1
 cat "$am_top_builddir/t/wrap/automake-$APIVERSION" || st=1

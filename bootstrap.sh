@@ -35,7 +35,6 @@ export AUTOM4TE  # ditto
 VERSION=`sed -ne '/AC_INIT/s/^[^[]*\[[^[]*\[\([^]]*\)\].*$/\1/p' configure.ac`
 PACKAGE=automake
 datadir=.
-PERL_THREADS=0
 # This should be automatically updated by the 'update-copyright'
 # rule of our Makefile.
 RELEASE_YEAR=2013
@@ -83,7 +82,6 @@ dosubst ()
   sed -e "s%@APIVERSION@%$APIVERSION%g" \
       -e "s%@PACKAGE@%$PACKAGE%g" \
       -e "s%@PERL@%$PERL%g" \
-      -e "s%@PERL_THREADS@%$PERL_THREADS%g" \
       -e "s%@SHELL@%$BOOTSTRAP_SHELL%g" \
       -e "s%@VERSION@%$VERSION%g" \
       -e "s%@datadir@%$datadir%g" \
@@ -97,27 +95,29 @@ dosubst ()
 dosubst automake-$APIVERSION/Automake/Config.in \
         automake-$APIVERSION/Automake/Config.pm
 
-# Create temporary replacement for aclocal.
-dosubst aclocal.in aclocal.tmp
-
 # Overwrite amversion.m4.
 dosubst m4/amversion.in m4/amversion.m4
 
-# Create temporary replacement for automake.
-dosubst automake.in automake.tmp
+# Create temporary replacement for aclocal and automake.
+for p in bin/aclocal bin/automake; do
+  dosubst $p.in $p.tmp
+  $PERL -w bin/gen-perl-protos $p.tmp > $p.tmp2
+  mv -f $p.tmp2 $p.tmp
+done
 
 # Create required makefile snippets.
 $PERL ./gen-testsuite-part > t/testsuite-part.tmp
 chmod a-w t/testsuite-part.tmp
 mv -f t/testsuite-part.tmp t/testsuite-part.am
 
-# Run the autotools.
+# Run the autotools.  Bail out if any warning is triggered.
 # Use '-I' here so that our own *.m4 files in m4/ gets included,
 # not copied, in aclocal.m4.
-$PERL ./aclocal.tmp -I m4 --automake-acdir m4 --system-acdir m4/acdir
-$AUTOCONF
-$PERL ./automake.tmp
+$PERL ./bin/aclocal.tmp -Wall -Werror -I m4 \
+                        --automake-acdir=m4 --system-acdir=m4/acdir
+$AUTOCONF -Wall -Werror
+$PERL ./bin/automake.tmp -Wall -Werror
 
 # Remove temporary files and directories.
 rm -rf aclocal-$APIVERSION automake-$APIVERSION
-rm -f aclocal.tmp automake.tmp
+rm -f bin/aclocal.tmp bin/automake.tmp

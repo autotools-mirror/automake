@@ -48,7 +48,7 @@ $ACLOCAL
 $AUTOMAKE -a -Wno-gnu
 
 $EGREP '(foo|YFLAGS)' Makefile.in # For debugging.
-grep '^foo.h *:' Makefile.in
+grep '^foo\.h *:' Makefile.in
 
 $AUTOCONF
 ./configure

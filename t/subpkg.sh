@@ -62,7 +62,7 @@ mkdir lib/src
 
 cat >lib/configure.ac <<'EOF'
 AC_INIT([lib], [2.3])
-AM_INIT_AUTOMAKE
+AM_INIT_AUTOMAKE([subdir-objects])
 AC_CONFIG_MACRO_DIR([../m4])
 AM_PROG_AR
 AC_PROG_RANLIB
@@ -91,7 +91,7 @@ int lib (void)
 EOF
 
 $ACLOCAL
-$AUTOCONF
+$AUTOCONF -Werror -Wall
 $AUTOMAKE -Wno-override
 
 cd lib

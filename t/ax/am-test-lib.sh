@@ -761,6 +761,11 @@ require_tool ()
   case $1 in
     cc|c++|fortran|fortran77)
       require_compiler_ $1;;
+    -c-o)
+      if test x"$AM_TESTSUITE_SIMULATING_NO_CC_C_O" = x"yes"; then
+        skip_all_ "need a C compiler that grasps -c and -o together"
+      fi
+      ;;
     xsi-lib-shell)
       if test x"$am_test_prefer_config_shell" = x"yes"; then
         require_xsi "$SHELL"
@@ -1031,7 +1036,7 @@ am_setup_testdir ()
     || framework_failure_ "cannot chdir into test subdirectory"
   if test x"$am_create_testdir" != x"empty"; then
     cp "$am_scriptdir"/install-sh "$am_scriptdir"/missing \
-       "$am_scriptdir"/depcomp . \
+       "$am_scriptdir"/compile "$am_scriptdir"/depcomp . \
       || framework_failure_ "fetching common files from $am_scriptdir"
     # Build appropriate environment in test directory.  E.g., create
     # configure.ac, touch all necessary files, etc.  Don't use AC_OUTPUT,

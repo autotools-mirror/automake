@@ -1498,6 +1498,7 @@ command as follows:
 ~/amhello % @kbd{autoreconf --install}
 configure.ac: installing './install-sh'
 configure.ac: installing './missing'
+configure.ac: installing './compile'
 src/Makefile.am: installing './depcomp'
 @end example
 
@@ -3995,11 +3996,11 @@ choose the assembler for you (by default the C compiler) and set
 
 @item AM_PROG_CC_C_O
 @acindex AM_PROG_CC_C_O
-@acindex AC_PROG_CC_C_O
-This is like @code{AC_PROG_CC_C_O}, but it generates its results in
-the manner required by Automake.  You must use this instead of
-@code{AC_PROG_CC_C_O} when you need this functionality, that is, when
-using per-target flags or subdir-objects with C sources.
+This is an obsolescent macro that checks that the C compiler supports
+the @option{-c} and @option{-o} options together.  Note that, since
+Automake 1.14, the @code{AC_PROG_CC} is rewritten to implement such
+checks itself, and thus the explicit use of @code{AM_PROG_CC_C_O}
+should no longer be required.
 
 @item AM_PROG_LEX
 @acindex AM_PROG_LEX
@@ -5812,9 +5813,7 @@ different name for the intermediate object files.  Ordinarily a file
 like @file{sample.c} will be compiled to produce @file{sample.o}.
 However, if the program's @code{_CFLAGS} variable is set, then the
 object file will be named, for instance, @file{maude-sample.o}.  (See
-also @ref{Renamed Objects}.)  The use of per-target compilation flags
-with C sources requires that the macro @code{AM_PROG_CC_C_O} be called
-from @file{configure.ac}.
+also @ref{Renamed Objects}).
 
 In compilations with per-target flags, the ordinary @samp{AM_} form of
 the flags variable is @emph{not} automatically included in the
@@ -6245,10 +6244,10 @@ rebuild rule for distributed Yacc and Lex sources are only used when
 @cindex Multiple @command{lex} lexers
 @cindex @command{lex}, multiple lexers
 
-When @command{lex} or @command{yacc} sources are used, @code{automake
--i} automatically installs an auxiliary program called
-@command{ylwrap} in your package (@pxref{Auxiliary Programs}).  This
-program is used by the build rules to rename the output of these
+When @command{lex} or @command{yacc} sources are used, @code{automake -a}
+automatically installs an auxiliary program called @command{ylwrap} in
+your package (@pxref{Auxiliary Programs}).
+This program is used by the build rules to rename the output of these
 tools, and makes it possible to include multiple @command{yacc} (or
 @command{lex}) source files in a single directory.  (This is necessary
 because yacc's output file name is fixed, and a parallel make could
@@ -7837,6 +7836,11 @@ install} (unless you use @option{no-installinfo}, see below).
 Furthermore, @file{.info} files are automatically distributed so that
 Texinfo is not a prerequisite for installing your package.
 
+It is worth noting that, contrary to what happens with the other formats,
+the generated @file{.info} files are by default placed in @code{srcdir}
+rather than in the @code{builddir}.  This can be changed with the
+@option{info-in-builddir} option.
+
 @trindex dvi
 @trindex html
 @trindex pdf
@@ -8415,7 +8419,9 @@ You can also mention a directory in @code{EXTRA_DIST}; in this case the
 entire directory will be recursively copied into the distribution.
 Please note that this will also copy @emph{everything} in the directory,
 including, e.g., Subversion's @file{.svn} private directories or CVS/RCS
-version control files.  We recommend against using this feature.
+version control files; thus we recommend against using this feature
+as-is.  However, you can use the @code{dist-hook} feature to
+ameliorate the problem; @pxref{The dist Hook}.
 
 @vindex SUBDIRS
 @vindex DIST_SUBDIRS
@@ -8694,13 +8700,16 @@ Generate a @samp{zip} archive of the distribution.
 
 @item @code{dist-tarZ}
 Generate a tar archive of the distribution, compressed with the
-historical (obsolescent) program @command{compress}.  Use of this
-option is discouraged.
+historical (and obsolescent) program @command{compress}.  This
+option is deprecated, and it and the corresponding functionality
+will be removed altogether in Automake 2.0.
 @trindex dist-tarZ
 
 @item @code{dist-shar}
-Generate a @samp{shar} archive of the distribution.  This format archive
-is obsolescent, and use of this option is discouraged.
+Generate a @samp{shar} archive of the distribution.  This format
+archive is obsolescent, and use of this option is deprecated.
+It and the corresponding functionality will be removed altogether
+in Automake 2.0.
 @trindex dist-shar
 
 @end table
@@ -10096,15 +10105,17 @@ Hook @code{dist-zip} to @code{dist}.
 @cindex Option, @option{dist-shar}
 @opindex dist-shar
 Hook @code{dist-shar} to @code{dist}.  Use of this option
-is discouraged, as the @samp{shar} format is obsolescent and
-problematic.
+is deprecated, as the @samp{shar} format is obsolescent and
+problematic.  Support for it will be removed altogether in
+Automake 2.0.
 @trindex dist-shar
 
 @item @option{dist-tarZ}
 @cindex Option, @option{dist-tarZ}
 @opindex dist-tarZ
 Hook @code{dist-tarZ} to @code{dist}.  Use of this option
-is discouraged, as the @samp{compress} program is obsolete.
+is deprecated, as the @samp{compress} program is obsolete.
+Support for it will be removed altogether in Automake 2.0.
 @trindex dist-tarZ
 
 @item @option{filename-length-max=99}
@@ -10117,6 +10128,14 @@ options below.  This option should be used in the top-level
 @file{Makefile.am} or as an argument of @code{AM_INIT_AUTOMAKE} in
 @file{configure.ac}, it will be ignored otherwise.  It will also be
 ignored in sub-packages of nested packages (@pxref{Subpackages}).
+
+@item @option{info-in-builddir}
+@cindex Option, @option{info-in-builddir}
+@opindex info-in-builddir
+Instruct Automake to place the generated @file{.info} files in the
+@code{builddir} rather than in the @code{srcdir}.  Note that this
+might make VPATH builds with some non-GNU make implementations more
+brittle.
 
 @item @option{no-define}
 @cindex Option, @option{no-define}
@@ -10252,9 +10271,6 @@ subdirectory of the build directory corresponding to the subdirectory of
 the source file.  For instance, if the source file is
 @file{subdir/file.cxx}, then the output file would be
 @file{subdir/file.o}.
-
-In order to use this option with C sources, you should add
-@code{AM_PROG_CC_C_O} to @file{configure.ac}.
 
 @anchor{tar-formats}
 @item @option{tar-v7}
@@ -10509,6 +10525,26 @@ condition applies to the entire contents of that fragment.
 
 Makefile fragments included this way are always distributed because
 they are needed to rebuild @file{Makefile.in}.
+
+Inside a fragment, the construct @code{%reldir%} is replaced with the
+directory of the fragment relative to the base @file{Makefile.am}.
+Similarly, @code{%canon_reldir%} is replaced with the canonicalized
+(@pxref{Canonicalization}) form of @code{%reldir%}.  As a convenience,
+@code{%D%} is a synonym for @code{%reldir%}, and @code{%C%}
+is a synonym for @code{%canon_reldir%}.
+
+A special feature is that if the fragment is in the same directory as
+the base @file{Makefile.am} (i.e., @code{%reldir%} is @code{.}), then
+@code{%reldir%} and @code{%canon_reldir%} will expand to the empty
+string as well as eat, if present, a following slash or underscore
+respectively.
+
+Thus, a makefile fragment might look like this:
+
+@example
+bin_PROGRAMS += %reldir%/mumble
+%canon_reldir%_mumble_SOURCES = %reldir%/one.c
+@end example
 
 @node Conditionals
 @chapter Conditionals

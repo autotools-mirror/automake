@@ -41,7 +41,7 @@ Hello walls.
 END
 
 $ACLOCAL
-$AUTOMAKE --add-missing
+$AUTOMAKE --add-missing -Wno-obsolete
 $AUTOCONF
 
 mkdir build

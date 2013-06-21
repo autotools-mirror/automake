@@ -53,8 +53,11 @@ I'm included.
 END
 
 $ACLOCAL
-$AUTOMAKE --add-missing
 $AUTOCONF
+
+AUTOMAKE_run --add-missing -Wno-error
+grep "Makefile\.am:.*undocumented.* automake hack" stderr
+grep "Makefile\.am:.*'info-in-builddir' automake option" stderr
 
 mkdir build
 cd build

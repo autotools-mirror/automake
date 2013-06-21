@@ -94,10 +94,12 @@ $AUTOCONF
 $AUTOMAKE --add-missing --copy
 
 ls -l . ax # For debugging.
-for f in ltmain.sh depcomp config.guess config.sub; do
+# Ideally, the 'compile' script should not be required by C++ compilers.
+# But alas, LT_INIT seems to invoke AC_PROG_CC anyway, and that brings in
+# that script.
+for f in ltmain.sh depcomp compile config.guess config.sub; do
   test -f ax/$f && test ! -h ax/$f || exit 1
 done
-test ! -e ax/compile # Not required by C++ compilers.
 
 cat > src/main.cc << 'END'
 #include "libfoo.h++"

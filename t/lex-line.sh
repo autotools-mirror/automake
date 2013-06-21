@@ -25,7 +25,6 @@ required='cc lex'
 cat >> configure.ac << 'END'
 AC_CONFIG_FILES([sub/Makefile])
 AC_PROG_CC
-AM_PROG_CC_C_O
 AC_PROG_LEX
 AC_OUTPUT
 END
@@ -87,7 +86,9 @@ c_outputs='zardoz.c bar-quux.c sub/foo-zardoz.c sub/dir/quux.c'
 
 $ACLOCAL
 $AUTOCONF
-$AUTOMAKE -a
+# FIXME: stop disabling the warnings in the 'unsupported' category
+# FIXME: once the 'subdir-objects' option has been mandatory.
+$AUTOMAKE -a -Wno-unsupported
 
 for vpath in : false; do
 

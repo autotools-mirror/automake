@@ -37,6 +37,16 @@
 
 * Changes other than *trivial* bug fixes must be mentioned in NEWS.
 
+* Changes which are potentially controversial, require a non-trivial
+  plan, or must be implemented gradually with a roadmap spanning several
+  releases (either minor or major) should be discussed on the list,
+  and have a proper entry in the PLANS directory.  This entry should be
+  always committed in the "maint" branch, even if the change it deals
+  with is only for the master branch, or a topic branch.  Usually, in
+  addition to this, it is useful to open a "wishlist" report on the
+  Automake debbugs tracker, to keep the idea more visible, and have the
+  discussions surrounding it easily archived in a central place.
+
 ============================================================================
 = Naming
 
@@ -84,7 +94,7 @@
   default), and other portions using the GNU style (cperl-mode's
   default).  Write new code using GNU style.
 
-* Don't use & for function calls, unless required.
+* Don't use & for function calls, unless really required.
   The use of & prevents prototypes from being checked.
 
 ============================================================================
@@ -190,16 +200,17 @@
   the active branches descending from the buggy commit.  This offers a
   simple way to fix the bug consistently and effectively.
 
-* For merges, prefer 'git merge --log' over plain 'git merge', so that
+* When merging, prefer 'git merge --log' over plain 'git merge', so that
   a later 'git log' gives an indication of which actual patches were
   merged even when they don't appear early in the list.
 
 * The 'master', 'maint' and 'micro' branches should not be rewound, i.e.,
   should always fast-forward, except maybe for privacy issues.  For
   feature branches, the announcement for the branch should document
-  the rewinding policy.  It is usually a good idea to keep rewindable
-  branches in the 'experimental/*' "namespace"; i.e., give them names
-  like 'experimental/testsuite-work' or 'experimental/djgpp-for-WinNT'.
+  the rewinding policy.
+  If a topic branch is expected to be rewound, it is good practice to put
+  it in the 'experimental/*' namespace; for example, a rewindable branch
+  dealing with Vala support could be named like "experimental/vala-work".
 
 ============================================================================
 = Writing a good commit message
@@ -213,8 +224,9 @@
       <reference to relevant bugs, if any>
 
       Here goes a more detailed explanation of why the commit is needed,
-      and a general overview of what it does, and how.  This section is
-      optional, but you are expected to provide it more often than not.
+      and a general overview of what it does, and how.  This section
+      should almost always be provided, possibly only with the expection
+      of obvious fixes or very trivial changes.
 
       And if the detailed explanation is quite long or detailed, you can
       want to break it in more paragraphs.
@@ -231,10 +243,10 @@
 
       <detailed list of touched files>
 
-* The <detailed list of touched files> is mandatory but for the most
-  trivial changes, and should follows the GNU guidelines for ChangeLog
-  entries (described explicitly in the GNU Coding Standards); it might
-  be something of this sort:
+* The <detailed list of touched files> should usually be provided (but
+  for short or trivial changes), and should follow the GNU guidelines
+  for ChangeLog entries (described explicitly in the GNU Coding
+  Standards); it might be something of this sort:
 
     * some/file (func1): Improved frobnication.
     (func2): Adjusted accordingly.
@@ -298,9 +310,14 @@
   The repository will always have its own "odd" number so we can easily
   distinguish net and repo versions.)
 
-* Run this:
+* Run these commands, in this order:
 
-    make bootstrap && make check && make distcheck
+    make bootstrap
+    make check keep_testdirs=yes
+    make maintainer-check
+    make distcheck
+    make check-no-trailing-backslash-in-recipes
+    make check-cc-no-c-o
 
   It is also advised to run "git clean -fdx" before invoking the
   bootstrap, to ensure a really clean rebuild.  However, it must

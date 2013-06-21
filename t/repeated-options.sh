@@ -24,7 +24,6 @@ cat >configure.ac <<END
 AC_INIT([$me], [1.0])
 AM_INIT_AUTOMAKE([foreign dist-bzip2 no-dist-gzip no-dist-gzip dist-bzip2])
 AC_PROG_CC
-AM_PROG_CC_C_O
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT
 END
@@ -58,7 +57,7 @@ int main (void)
 }
 END
 
-cp "$am_scriptdir"/compile "$am_scriptdir"/test-driver .
+cp "$am_scriptdir"/test-driver .
 
 $ACLOCAL
 $AUTOMAKE --foreign --foreign -Wall 2>stderr || { cat stderr >&2; exit 1; }

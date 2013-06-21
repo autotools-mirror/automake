@@ -24,7 +24,6 @@ required=cc
 
 cat >> configure.ac << 'END'
 AC_PROG_CC
-#x AM_PROG_CC_C_O
 AC_OUTPUT
 END
 
@@ -49,7 +48,9 @@ int bar (void)
 END
 
 $ACLOCAL
-$AUTOMAKE -a
+# FIXME: stop disabling the warnings in the 'unsupported' category
+# FIXME: once the 'subdir-objects' option has been mandatory.
+$AUTOMAKE -a -Wno-unsupported
 grep include Makefile.in # For debugging.
 grep 'include.*\./\$(DEPDIR)/foo\.P' Makefile.in
 grep 'include.*\./\$(DEPDIR)/bar\.P' Makefile.in
@@ -64,12 +65,9 @@ DISTCHECK_CONFIGURE_FLAGS='--enable-dependency-tracking' $MAKE distcheck
 
 # Try again with subdir-objects option.
 
-sed 's/#x //' configure.ac >configure.tmp
-mv -f configure.tmp configure.ac
 echo AUTOMAKE_OPTIONS = subdir-objects >> Makefile.am
 
-$ACLOCAL
-$AUTOMAKE -a
+$AUTOMAKE
 grep include Makefile.in # For debugging.
 grep 'include.*\./\$(DEPDIR)/foo\.P' Makefile.in
 grep 'include.*[^a-zA-Z0-9_/]sub/\$(DEPDIR)/bar\.P' Makefile.in

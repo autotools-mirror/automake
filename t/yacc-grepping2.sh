@@ -21,7 +21,6 @@
 
 cat >> configure.ac << 'END'
 AC_PROG_CC
-AM_PROG_CC_C_O
 AC_PROG_YACC
 END
 
@@ -35,7 +34,9 @@ mkdir sub
 : > sub/maude.y
 
 $ACLOCAL
-$AUTOMAKE -a
+# FIXME: stop disabling the warnings in the 'unsupported' category
+# FIXME: once the 'subdir-objects' option has been mandatory.
+$AUTOMAKE -a -Wno-unsupported
 
 grep '^maude\.c:.*maude\.y' Makefile.in
 
@@ -48,7 +49,6 @@ bin_PROGRAMS = maude
 maude_SOURCES = sub/maude.y
 END
 
-$ACLOCAL
 $AUTOMAKE -a
 
 # No rule needed, the default .y.c: inference rule is enough
@@ -65,8 +65,9 @@ maude_SOURCES = sub/maude.y
 maude_YFLAGS = -d
 END
 
-$ACLOCAL
-$AUTOMAKE -a
+# FIXME: stop disabling the warnings in the 'unsupported' category
+# FIXME: once the 'subdir-objects' option has been mandatory.
+$AUTOMAKE -a -Wno-unsupported
 
 # Rule should use maude_YFLAGS.
 grep 'AM_YFLAGS.*maude' Makefile.in && exit 1

@@ -23,7 +23,6 @@ required='cc libtoolize'
 
 cat >>configure.ac <<'END'
 AC_PROG_CC
-AM_PROG_CC_C_O
 AM_PROG_AR
 AC_PROG_LIBTOOL
 AM_PATH_PYTHON
@@ -67,7 +66,6 @@ cd build
 ../configure --prefix="$instdir" PYTHON="echo" \
              am_cv_python_pythondir="$instdir/python" \
              am_cv_python_pyexecdir="$instdir/pyexec"
-$MAKE
 
 nulldirs='bindir= libdir= pyexecdir='
 null_install

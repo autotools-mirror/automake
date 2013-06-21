@@ -26,7 +26,6 @@ AC_INIT([$me], [1.0])
 AM_INIT_AUTOMAKE([-Wno-extra-portability])
 AC_CONFIG_FILES([$makefiles])
 AC_PROG_CC
-AM_PROG_CC_C_O
 AC_PROG_CXX
 AC_PROG_RANLIB
 AC_OUTPUT
@@ -55,15 +54,8 @@ cat - libMakefile.am > libMakefile2.am << 'END'
 AUTOMAKE_OPTIONS = no-dependencies
 END
 
-# Make sure 'compile' is required.
-for m in $makefiles; do
-  AUTOMAKE_fails $m
-  $EGREP " required file.* '(compile|\./compile)'" stderr
-done
-
 makefiles=$(for mkf in $makefiles; do echo $mkf.in; done)
 
-: > compile
 $AUTOMAKE
 
 # Sanity check.

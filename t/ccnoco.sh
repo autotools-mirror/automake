@@ -17,13 +17,12 @@
 # Test to make sure we can compile when the compiler doesn't
 # understand '-c -o'.
 
-required=gcc
+required=gcc # For cc-no-c-o.
 . test-init.sh
 
 cat >> configure.ac << 'END'
 AC_PROG_CC
-AM_PROG_CC_C_O
-# Make sure that $CC can be used after AM_PROG_CC_C_O.
+$CC --version || exit 1
 $CC -v || exit 1
 AC_OUTPUT
 END
@@ -44,28 +43,11 @@ int main ()
 }
 END
 
-cat > Mycomp << END
-#!/bin/sh
-
-case " \$* " in
- *\ -c*\ -o* | *\ -o*\ -c*)
-    exit 1
-    ;;
-esac
-
-# Use '$CC', not 'gcc', to honour the compiler chosen
-# by the testsuite setup.
-exec $CC "\$@"
-END
-
-chmod +x Mycomp
-
-# Make sure the compiler doesn't understand '-c -o'
-CC=$(pwd)/Mycomp
-export CC
+# Make sure the compiler doesn't understand '-c -o'.
+CC=$am_testaux_builddir/cc-no-c-o; export CC
 
 $ACLOCAL
-$AUTOCONF
+$AUTOCONF -Wall -Werror
 $AUTOMAKE --copy --add-missing
 
 for vpath in : false; do
@@ -76,9 +58,15 @@ for vpath in : false; do
   else
     srcdir=.
   fi
-  $srcdir/configure
+  $srcdir/configure >stdout || { cat stdout; exit 1; }
+  cat stdout
+  $EGREP 'understands? -c and -o together.* no$' stdout
+  # No repeated checks please.
+  test $(grep -c ".*-c['\" ].*-o['\" ]" stdout) -eq 1
   $MAKE
   cd $srcdir
 done
+
+$MAKE distcheck
 
 :

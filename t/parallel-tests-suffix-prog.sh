@@ -27,6 +27,7 @@ AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
+AUTOMAKE_OPTIONS = subdir-objects
 ## Note that automake should not match the '/test' part of 'sub/test' as
 ## '.test' suffix, nor the '/chk' part of 'sub/chk' as '.chk' suffix.
 TESTS = $(dist_TESTS) $(check_PROGRAMS)

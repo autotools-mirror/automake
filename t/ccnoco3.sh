@@ -16,12 +16,11 @@
 
 # Test to make sure 'compile' doesn't call 'mv SRC SRC'.
 
-required=gcc
+required=gcc # For cc-no-c-o.
 . test-init.sh
 
 cat >> configure.ac << 'END'
 AC_PROG_CC
-AM_PROG_CC_C_O
 $CC --version; $CC -v; # For debugging.
 AC_OUTPUT
 END
@@ -43,25 +42,8 @@ int main ()
 }
 END
 
-cat > Mycomp << END
-#!/bin/sh
-
-case " \$* " in
- *\ -c*\ -o* | *\ -o*\ -c*)
-    exit 1
-    ;;
-esac
-
-# Use '$CC', not 'gcc', to honour the compiler chosen
-# by the testsuite setup.
-exec $CC "\$@"
-END
-
-chmod +x Mycomp
-
 # Make sure the compiler doesn't understand '-c -o'
-CC=$(pwd)/Mycomp
-export CC
+CC=$am_testaux_builddir/cc-no-c-o; export CC
 
 $ACLOCAL
 $AUTOCONF

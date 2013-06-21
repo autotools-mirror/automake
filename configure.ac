@@ -16,9 +16,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 AC_PREREQ([2.69])
-AC_INIT([GNU Automake], [1.13.4a], [bug-automake@gnu.org])
+AC_INIT([GNU Automake], [1.14], [bug-automake@gnu.org])
 
-AC_CONFIG_SRCDIR([automake.in])
+AC_CONFIG_SRCDIR([bin/automake.in])
 AC_CONFIG_AUX_DIR([lib])
 
 AM_SILENT_RULES([yes])
@@ -39,7 +39,7 @@ AC_SUBST([am_AUTOUPDATE], ["${AUTOUPDATE-autoupdate}"])
 dnl We call AC_PROG_CC in an unusual way, and only for use in our
 dnl testsuite, so also use 'no-dependencies' and 'no-define' among
 dnl the automake options to avoid bloating and potential problems.
-AM_INIT_AUTOMAKE([dist-xz filename-length-max=99 color-tests
+AM_INIT_AUTOMAKE([-Wall -Werror dist-xz filename-length-max=99
                   no-define no-dependencies])
 
 ## Keep this on a line of its own, since it must be found and processed
@@ -85,32 +85,6 @@ is recommended.  If you have several perl versions
 installed, select the one Automake should use using
   ./configure PERL=/path/to/perl])
 }
-
-# We require ithreads support, and version 5.7.2 for CLONE.
-AC_CACHE_CHECK([whether $PERL supports ithreads], [am_cv_prog_PERL_ithreads],
-[if $PERL -e '
-    require 5.007_002;
-    use Config;
-    if ($Config{useithreads})
-      {
-        require threads;
-        import threads;
-        require Thread::Queue;
-        import Thread::Queue;
-        exit 0;
-      }
-    exit 1;' >&AS_MESSAGE_LOG_FD 2>&1
-then
-  am_cv_prog_PERL_ithreads=yes
-else
-  am_cv_prog_PERL_ithreads=no
-fi])
-if test $am_cv_prog_PERL_ithreads = yes; then
-  PERL_THREADS=1;
-else
-  PERL_THREADS=0;
-fi
-AC_SUBST([PERL_THREADS])
 
 # The test suite will skip some tests if tex is absent.
 AC_CHECK_PROG([TEX], [tex], [tex])
