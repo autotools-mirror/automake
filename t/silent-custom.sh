@@ -80,8 +80,18 @@ do_check ()
   else
     $FGREP 'GEN ' output && exit 1
     $FGREP 'cp ./foo.in foo' output
-    $FGREP "rm -f sub/0.h sub/1.h sub/2.h" output
-    $FGREP "generate-header --flags sub/0.h sub/1.h sub/2.h" output
+    # Be prepared to handle "creative quoting" in the shell traces.
+    # See automake bug#14760.
+    ok=false
+    for q in '' \' \"; do
+      files="${q}sub/0.h${q} ${q}sub/1.h${q} ${q}sub/2.h${q}"
+      $FGREP "rm -f $files" output || continue
+      $FGREP "generate-header --flags $files" output || continue
+      ok=:
+      break
+    done
+    $ok || exit 1
+    unset ok
   fi
 }
 
