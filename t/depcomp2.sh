@@ -45,6 +45,9 @@ $AUTOMAKE --add-missing
 $AUTOCONF
 ./configure 2>stderr || { cat stderr >&2; exit 1; }
 cat stderr >&2
-test ! -s stderr
+# Ignore warning messages sometimes seen on Mac OS X; they are
+# not automake's fault anyway, but either autoconf's or Mac's.
+sed '/rm:.* conftest\.dSYM/d' stderr >stderr2
+test -s stderr2 && { cat stderr2; exit 1; }
 
 :
