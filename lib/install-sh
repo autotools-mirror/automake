@@ -63,17 +63,6 @@ mvprog=${MVPROG-mv}
 rmprog=${RMPROG-rm}
 stripprog=${STRIPPROG-strip}
 
-posix_glob='?'
-initialize_posix_glob='
-  test "$posix_glob" != "?" || {
-    if (set -f) 2>/dev/null; then
-      posix_glob=
-    else
-      posix_glob=:
-    fi
-  }
-'
-
 posix_mkdir=
 
 # Desired mode of installed file.
@@ -365,14 +354,12 @@ do
 	*)  prefix='';;
       esac
 
-      eval "$initialize_posix_glob"
-
       oIFS=$IFS
       IFS=/
-      $posix_glob set -f
+      set -f
       set fnord $dstdir
       shift
-      $posix_glob set +f
+      set +f
       IFS=$oIFS
 
       prefixes=
@@ -443,13 +430,10 @@ do
     if $copy_on_change &&
        old=`LC_ALL=C ls -dlL "$dst"	2>/dev/null` &&
        new=`LC_ALL=C ls -dlL "$dsttmp"	2>/dev/null` &&
-
-       eval "$initialize_posix_glob" &&
-       $posix_glob set -f &&
+       set -f &&
        set X $old && old=:$2:$4:$5:$6 &&
        set X $new && new=:$2:$4:$5:$6 &&
-       $posix_glob set +f &&
-
+       set +f &&
        test "$old" = "$new" &&
        $cmpprog "$dst" "$dsttmp" >/dev/null 2>&1
     then
