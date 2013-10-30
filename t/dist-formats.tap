@@ -67,34 +67,38 @@ setup_vars_for_compression_format ()
 have_compressor ()
 {
   test $# -eq 1 || fatal_ "have_compressor(): bad usage"
-  case $1 in
+  if test $1 = gzip; then
     # Assume gzip(1) is available on every reasonable portability target.
-    gzip)
-      return 0;;
-    *)
-      case $1 in
-        # Do not use --version, or older versions bzip2 would try to
-        # compress stdin.  This would cause binary output in the test
-        # logs, with potential breakage of our testsuite harness.
-        bzip2) o=--help;;
-        # OpenSolaris zip do not support the '--version' option, but
-        # accepts the '-v' one with a similar meaning (if no further
-        # arguments are given).
-        zip) o=-v;;
-        # Assume the other compressors we care about support the
-        # '--version' option.
-        *) o=--version;;
-      esac
-      # Redirect to stderr to avoid polluting the output, in case this
-      # function is used in a command substitution (as it is, below).
-      if $1 $o </dev/null >&2; then
-        return 0
-      else
-        return 1
-      fi
+    return 0
+  fi
+  needed_programs=$1
+  # Assume by default the other compressors we care about support the
+  # '--version' option.  We'll special-case the one which don't.
+  checker_option=--version
+  case $1 in
+    bzip2)
+      # Do not use --version, or older versions bzip2 would try to
+      # compress stdin.  This would cause binary output in the test
+      # logs, with potential breakage of our testsuite harness.
+      checker_option=--help
+      ;;
+    zip)
+      # OpenSolaris zip do not support the '--version' option, but
+      # accepts the '-v' one with a similar meaning (if no further
+      # arguments are given).
+      checker_option=-v
+      # Also, we need 'unzip' to decompress the created zipped archives
+      # (bug#15181).
+      needed_programs='zip unzip'
       ;;
   esac
-  fatal_ "have_compressor(): dead code reached"
+  # Redirect to stderr to avoid polluting the output, in case this
+  # function is used in a command substitution (as it is, later in
+  # this script).
+  for p in $needed_programs; do
+    $p $checker_option </dev/null >&2 || return 1
+  done
+  return 0
 }
 
 all_compression_formats='gzip lzip xz bzip2 zip'
