@@ -788,7 +788,11 @@ require_tool ()
       # in the environment "by hand" before calling the testsuite.
       export CC CPPFLAGS
       echo "$me: running $CC -?"
-      $CC -? || skip_all_ "Microsoft C compiler '$CC' not available"
+      # The IRAF package (http://iraf.noao.edu/) contains a 'cl' program
+      # which is interactive, and which could cause the testsuite to hang
+      # if its standard input is not redirected.  See automake bug#14707.
+      $CC -? </dev/null \
+        || skip_all_ "Microsoft C compiler '$CC' not available"
       ;;
     etags)
       # Exuberant Ctags will create a TAGS file even
