@@ -317,21 +317,21 @@ use vars '%_variable_dict', '%_primary_dict';
 sub variables (;$)
 {
   my ($suffix) = @_;
+  my @vars = ();
   if ($suffix)
     {
       if (exists $_primary_dict{$suffix})
 	{
-	  return values %{$_primary_dict{$suffix}};
-	}
-      else
-	{
-	  return ();
+	  @vars = values %{$_primary_dict{$suffix}};
 	}
     }
   else
     {
-      return values %_variable_dict;
+      @vars = values %_variable_dict;
     }
+  # The behaviour of the 'sort' built-in is undefined in scalar
+  # context, hence we need an ad-hoc handling for such context.
+  return wantarray ? sort { $a->name cmp $b->name } @vars : scalar @vars;
 }
 
 =item C<Automake::Variable::reset>
@@ -1080,7 +1080,7 @@ For debugging.
 sub variables_dump ()
 {
   my $text = "all variables:\n{\n";
-  foreach my $var (sort { $a->name cmp $b->name } variables)
+  foreach my $var (variables())
     {
       $text .= $var->dump;
     }
