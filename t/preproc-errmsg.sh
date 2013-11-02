@@ -58,11 +58,11 @@ Makefile.am:2: 'sub/local.mk' included from here
 sub/local.mk:3: 'sub-two.a' is not a standard library name
 sub/local.mk:3: did you mean 'libsub-two.a'?
 Makefile.am:2: 'sub/local.mk' included from here
-Makefile.am:1: variable 'x1_SOURCES' is defined but no program or
-Makefile.am:1: library has 'x1' as canonical name (possible typo)
 sub/local.mk:4: variable 'sub_x2_SOURCES' is defined but no program or
 sub/local.mk:4: library has 'sub_x2' as canonical name (possible typo)
 Makefile.am:2: 'sub/local.mk' included from here
+Makefile.am:1: variable 'x1_SOURCES' is defined but no program or
+Makefile.am:1: library has 'x1' as canonical name (possible typo)
 END
 
 # We need to break these substitutions into multiple sed invocations

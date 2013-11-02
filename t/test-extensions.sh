@@ -39,7 +39,7 @@ $AUTOMAKE -a
 grep -i 'log' Makefile.in # For debugging.
 
 for lc in $valid_extensions; do
-  uc=$(echo $lc | tr '[a-z]' '[A-Z]')
+  uc=$(echo $lc | tr abcdefghijklmnopqrstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ)
   $FGREP "\$(${uc}_LOG_COMPILER)" Makefile.in
   grep "^${uc}_LOG_COMPILE =" Makefile.in
   grep "^\.${lc}\.log:" Makefile.in

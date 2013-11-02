@@ -24,7 +24,7 @@ required='cc flex'
 # older flex versions don't support is (see automake bug#11524 and
 # bug#12836).  Skip this test if such an old flex version is detected.
 $LEX --help | grep '.*--header-file' \
-  || skip_ "flex doesn't support the --header-file' option"
+  || skip_ "flex doesn't support the '--header-file' option"
 
 cat >> configure.ac << 'END'
 AC_PROG_CC
