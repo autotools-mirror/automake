@@ -35,10 +35,14 @@ cmd='
 
 remote=
 interactive=1
+maybe_sleep=:
 while test $# -gt 0; do
   case $1 in
    -b|--batch) interactive=0;;
    -c|--command) cmd=${2-}; shift;;
+    # Useful to avoid spurious errors due to skewed clocks between
+    # the system where the tarball is built and the target system.
+   -S|--sleep) maybe_sleep="sleep ${2-}"; shift;;
    -*) fatal "'$1': invalid option";;
     *) remote=$1; shift; break;;
   esac
@@ -91,6 +95,8 @@ set -e
 set -x
 
 scp $tarball $remote:tmp/
+
+$maybe_sleep
 
 # Multiple '-t' to force tty allocation.
 ssh -t -t $remote "
