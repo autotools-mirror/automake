@@ -32,7 +32,7 @@ use strict;
 use Getopt::Long ();
 use TAP::Parser;
 
-my $VERSION = '2012-02-01.19'; # UTC
+my $VERSION = '2013-12-24.15'; # UTC
 
 my $ME = "tap-driver.pl";
 
@@ -43,13 +43,13 @@ Usage:
              [--enable-hard-errors={yes|no}] [--ignore-exit]
              [--diagnostic-string=STRING] [--merge|--no-merge]
              [--comments|--no-comments] [--] TEST-COMMAND
-The `--test-name', `--log-file' and `--trs-file' options are mandatory.
+The '--test-name', '--log-file' and '--trs-file' options are mandatory.
 END
 
 my $HELP = "$ME: TAP-aware test driver for Automake testsuite harness." .
            "\n" . $USAGE;
 
-# Keep this in sync with `lib/am/check.am:$(am__tty_colors)'.
+# Keep this in sync with 'lib/am/check.am:$(am__tty_colors)'.
 my %COLOR = (
   red => "\e[0;31m",
   grn => "\e[0;32m",
@@ -208,7 +208,6 @@ TEST_RESULTS :
     return grep { not $_ eq "PASS" } (keys %test_results_seen);
   }
 
-  # FIXME: this can certainly be improved ...
   sub get_global_test_result ()
   {
     return "ERROR"
@@ -465,7 +464,7 @@ sub extract_tap_comment ($)
   my $line = shift;
   if (index ($line, $diag_string) == 0)
     {
-      # Strip leading `$diag_string' from `$line'.
+      # Strip leading '$diag_string' from '$line'.
       $line = substr ($line, length ($diag_string));
       # And strip any leading and trailing whitespace left.
       $line =~ s/(?:^\s*|\s*$)//g;

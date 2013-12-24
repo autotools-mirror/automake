@@ -22,8 +22,8 @@
 
 cp "$am_testaux_srcdir"/trivial-test-driver . \
   || fatal_ "failed to fetch auxiliary script trivial-test-driver"
-cp "$am_scriptdir"/tap-driver.pl . \
-  || fatal_ "failed to fetch auxiliary script tap-driver.pl"
+cp "$am_scriptdir"/tap-driver.sh . \
+  || fatal_ "failed to fetch auxiliary script tap-driver.sh"
 
 cat >> configure.ac << END
 AM_CONDITIONAL([COND1], [:])
@@ -40,7 +40,7 @@ $AUTOCONF
 
 cat > Makefile.am << 'END'
 TESTS = foo bar.test baz.sh
-EXTRA_DIST = $(TESTS) tap-driver.pl trivial-test-driver
+EXTRA_DIST = $(TESTS) tap-driver.sh trivial-test-driver
 TEST_EXTENSIONS = .test .sh
 LOG_DRIVER =
 SH_LOG_DRIVER = $(tap_rulez)
@@ -49,7 +49,7 @@ LOG_DRIVER += @my_LOG_DRIVER@
 if COND2
 tap_rulez = false
 else !COND2
-tap_rulez = $(PERL) $(srcdir)/tap-driver.pl
+tap_rulez = $(PERL) $(srcdir)/tap-driver.sh
 endif !COND2
 endif COND1
 END
