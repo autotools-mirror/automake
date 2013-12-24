@@ -1145,7 +1145,6 @@ t/tap-planskip-whitespace.sh \
 t/tap-planskip-badexit.sh \
 t/tap-planskip-bailout.sh \
 t/tap-planskip-later-errors.sh \
-t/tap-realtime.sh \
 t/tap-test-number-0.sh \
 t/tap-recheck-logs.sh \
 t/tap-result-comment.sh \
