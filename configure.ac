@@ -42,8 +42,8 @@ dnl the automake options to avoid bloating and potential problems.
 AM_INIT_AUTOMAKE([-Wall -Werror dist-xz filename-length-max=99
                   no-define no-dependencies])
 
-## Keep this on a line of its own, since it must be found and processed
-## by the 'update-copyright' rule in our Makefile.
+# Keep this on a line of its own, since it must be found and processed
+# by the 'update-copyright' rule in our Makefile.
 RELEASE_YEAR=2013
 AC_SUBST([RELEASE_YEAR])
 
