@@ -515,7 +515,7 @@ t/implicit.sh \
 t/init.sh \
 t/init2.sh \
 t/insh2.sh \
-t/install2.sh \
+t/dist-with-unreadable-makefile-fails.sh \
 t/installdir.sh \
 t/instsh.sh \
 t/instsh2.sh \
