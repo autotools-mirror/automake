@@ -19,23 +19,37 @@
 am_create_testdir=empty
 . test-init.sh
 
+install_sh_fail () 
+{
+  err_rx=$1; shift
+  ./install-sh ${1+"$@"} 2>stderr && { cat stderr >&2; exit 1; }
+  cat stderr >&2
+  $EGREP "install-sh:.* $err_rx" stderr || exit 1
+}
+
 get_shell_script install-sh
 
 # Basic errors.
-./install-sh && exit 1
-./install-sh -m 644 dest && exit 1
+install_sh_fail 'no input file specified'
+install_sh_fail 'no input file specified' dest
+install_sh_fail 'no input file specified' -m 644 dest
+install_sh_fail 'no input file specified' -c -t dest
 
 # Incorrect usages.
 : > bar
 : > baz
 : > qux
-./install-sh -d -t foo && exit 1
-./install-sh -d -t foo bar && exit 1
-./install-sh -t foo bar && exit 1
-./install-sh bar baz foo && exit 1
+install_sh_fail 'target directory not allowed when installing a directory' \
+                -d -t foo
+install_sh_fail 'target directory not allowed when installing a directory' \
+                -d -t foo bar
+install_sh_fail 'foo: [iI]s not a directory' -t foo bar
+install_sh_fail 'foo: [iI]s not a directory' bar baz foo
 mkdir foo
-./install-sh -d -t foo && exit 1
-./install-sh -d -t foo bar && exit 1
+install_sh_fail 'target directory not allowed when installing a directory' \
+                -d -t foo
+install_sh_fail 'target directory not allowed when installing a directory' \
+                -d -t foo bar
 rmdir foo
 rm -f bar baz qux
 
@@ -96,8 +110,8 @@ test -f d4/z
 ./install-sh -T x d3/y
 test -f x
 test -f d3/y
-./install-sh -T x d3 && exit 1
-./install-sh -T x d4// && exit 1
+install_sh_fail 'd3: [iI]s a directory' -T x d3
+install_sh_fail 'd4(//)?: [iI]s a directory' -T x d4//
 
 # Ensure that install-sh works with names that include spaces.
 touch 'a  b'
@@ -108,8 +122,8 @@ test -f 'a  b'
 
 # Ensure we do not run into 'test' operator precedence bugs with Tru64 sh.
 for c in = '(' ')' '!'; do
-  ./install-sh $c 2>stderr && { cat stderr >&2; exit 1; }
-  cat stderr >&2
+  install_sh_fail 'no input file specified' $c
+  test -f stderr # sanity check
   grep 'test: ' stderr && exit 1
   # Skip tests if the file system is not capable.
   mkdir ./$c || continue
