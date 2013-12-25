@@ -14,15 +14,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Older versions of prove and TAP::Harness (e.g., 3.17) didn't recognize
-# a "Bail out!" directive that was preceded by whitespace, but more modern
-# versions (e.g., 3.23) do.  So we leave this behaviour undefined for the
-# perl implementation of the Automake TAP driver, but expect the latter,
-# "more modern" behaviour in our awk TAP driver.
+# A "Bail out!" directive that is preceded by whitespace should still
+# be recognized.
 
-am_tap_implementation=shell
 . test-init.sh
-
 . tap-setup.sh
 
 cat > a.test <<END

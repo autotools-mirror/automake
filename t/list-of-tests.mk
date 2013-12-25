@@ -765,6 +765,7 @@ t/parallel-tests-basics.sh \
 t/parallel-tests-concurrency.sh \
 t/parallel-tests-concurrency-2.sh \
 t/parallel-tests-empty.sh \
+t/parallel-tests-exit-status-reported.sh \
 t/parallel-tests-generated-and-distributed.sh \
 t/parallel-tests-recheck.sh \
 t/parallel-tests-trailing-whitespace.sh \
