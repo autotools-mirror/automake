@@ -25,26 +25,46 @@ get_shell_script install-sh
 ./install-sh && exit 1
 ./install-sh -m 644 dest && exit 1
 
-# Directories.
+# Incorrect usages.
+: > bar
+: > baz
+: > qux
+./install-sh -d -t foo && exit 1
+./install-sh -d -t foo bar && exit 1
+./install-sh -t foo bar && exit 1
+./install-sh bar baz foo && exit 1
+mkdir foo
+./install-sh -d -t foo && exit 1
+./install-sh -d -t foo bar && exit 1
+rmdir foo
+rm -f bar baz qux
 
-# It should be OK to create no directory.  We sometimes need
-# this when directory are conditionally defined.
-./install-sh -d
-# One directory.
-./install-sh -d d0
-test -d d0
-# Multiple directories (for make installdirs).
-./install-sh -d d1 d2 d3 d4
-test -d d1
-test -d d2
-test -d d3
-test -d d4
-# Subdirectories.
-./install-sh -d p1/p2/p3 p4//p5//p6//
-test -d p1/p2/p3
-test -d p4/p5/p6
+# Directories.
+for opts in '-d' '-d -T' '-T -d' '-d -T -d' '-T -d -T -d -T'; do
+  # It should be OK to create no directory.  We sometimes need
+  # this when directory are conditionally defined.
+  ./install-sh $opts
+  # One directory.
+  ./install-sh $opts d0
+  test -d d0
+  # Multiple directories (for make installdirs).
+  ./install-sh $opts d1 d2 d3 d4
+  test -d d1
+  test -d d2
+  test -d d3
+  test -d d4
+  rmdir d[0-9]
+  # Subdirectories.
+  ./install-sh $opts p1/p2/p3 p4//p5//p6//
+  test -d p1/p2/p3
+  test -d p4/p5/p6
+  rmdir p[0-9]/p[0-9]/p[0-9]
+  rmdir p[0-9]/p[0-9]
+  rmdir p[0-9]
+done
 
 # Files.
+mkdir d0 d1 d2 d3 d4
 : > x
 ./install-sh -c -m 644 x y
 test -f x
