@@ -514,12 +514,12 @@ t/hfs.sh \
 t/implicit.sh \
 t/init.sh \
 t/init2.sh \
-t/insh2.sh \
+t/dist-install-sh.sh \
 t/dist-with-unreadable-makefile-fails.sh \
 t/installdir.sh \
-t/instsh.sh \
-t/instsh2.sh \
-t/instsh3.sh \
+t/add-missing-install-sh.sh \
+t/install-sh-unittests.sh \
+t/install-sh-option-C.sh \
 t/instdat.sh \
 t/instdat2.sh \
 t/instdir.sh \
