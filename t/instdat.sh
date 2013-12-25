@@ -29,4 +29,5 @@ $ACLOCAL
 $AUTOMAKE
 
 grep '^DATA =' Makefile.in | grep 'INSTALL_DATA' && exit 1
-exit 0
+
+:

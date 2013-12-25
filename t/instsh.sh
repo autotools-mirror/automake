@@ -30,10 +30,12 @@ mv Makefile.am configure.ac frob/
 cd frob
 
 $ACLOCAL
-$AUTOMAKE --add-missing > output 2>&1
+$AUTOMAKE --add-missing >output 2>&1 || { cat output; exit 1; }
+cat output
 
 # Only one '/' should appear in the output.
-cat output
 grep '/.*/' output && exit 1
 
 test -f install-sh
+
+:
