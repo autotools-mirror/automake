@@ -515,12 +515,12 @@ t/implicit.sh \
 t/includes-deprecation.sh \
 t/init.sh \
 t/init2.sh \
-t/insh2.sh \
-t/install2.sh \
+t/dist-install-sh.sh \
+t/dist-with-unreadable-makefile-fails.sh \
 t/installdir.sh \
-t/instsh.sh \
-t/instsh2.sh \
-t/instsh3.sh \
+t/add-missing-install-sh.sh \
+t/install-sh-unittests.sh \
+t/install-sh-option-C.sh \
 t/instdat.sh \
 t/instdat2.sh \
 t/instdir.sh \
@@ -763,6 +763,7 @@ t/parallel-tests-basics.sh \
 t/parallel-tests-concurrency.sh \
 t/parallel-tests-concurrency-2.sh \
 t/parallel-tests-empty.sh \
+t/parallel-tests-exit-status-reported.sh \
 t/parallel-tests-generated-and-distributed.sh \
 t/parallel-tests-recheck.sh \
 t/parallel-tests-trailing-whitespace.sh \
@@ -835,6 +836,7 @@ t/percent.sh \
 t/percent2.sh \
 t/per-target-flags.sh \
 t/phony.sh \
+t/precious.sh \
 t/pluseq.sh \
 t/pluseq2.sh \
 t/pluseq3.sh \

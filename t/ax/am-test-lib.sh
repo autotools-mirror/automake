@@ -583,16 +583,30 @@ count_test_results ()
 # of /bin/sh.
 get_shell_script ()
 {
-  test ! -f "$1" || rm -f "$1" || return 99
+  am_source=$1 am_target=${2-$1}
+  test ! -f "$am_target" || rm -f "$am_target" || return 99
   if test x"$am_test_prefer_config_shell" = x"yes"; then
-    sed "1s|#!.*|#! $SHELL|" "$am_scriptdir/$1" > "$1" \
-     && chmod a+x "$1" \
+    sed "1s|#!.*|#! $SHELL|" "$am_scriptdir/$am_source" > "$am_target" \
+     && chmod a+x "$am_target" \
      || return 99
   else
-    cp -f "$am_scriptdir/$1" . || return 99
+    cp -f "$am_scriptdir/$am_source" "$am_target" || return 99
   fi
-  sed 10q "$1" # For debugging.
+  sed 10q "$am_target" # For debugging.
+  unset am_target am_source
 }
+
+# fetch_tap_driver
+# ----------------
+# Fetch the Automake-provided TAP driver from the 'lib/' directory into
+# the current directory, and edit its shebang line so that it will be
+# run with the proper shell.
+fetch_tap_driver ()
+{
+  AM_TAP_AWK=$AWK; export AM_TAP_AWK
+  get_shell_script tap-driver.sh tap-driver
+}
+
 
 # require_xsi SHELL
 # -----------------
@@ -611,35 +625,6 @@ xsi_shell_code='
       = c,a/b,b/c, \
     && eval '\''test $(( 1 + 1 )) -eq 2 \
     && test "${#_lt_dummy}" -eq 5'\'
-
-# fetch_tap_driver
-# ----------------
-# Fetch the Automake-provided TAP driver from the 'lib/' directory into
-# the current directory, and edit its shebang line so that it will be
-# run with the perl interpreter determined at configure time.
-fetch_tap_driver ()
-{
-  # TODO: we should devise a way to make the shell TAP driver tested also
-  # TODO: with /bin/sh, for better coverage.
-  case $am_tap_implementation in
-    # Extra quoting required to avoid maintainer-check spurious failures.
-   'perl')
-      $PERL -MTAP::Parser -e 1 \
-        || skip_all_ "cannot import TAP::Parser perl module"
-      sed "1s|#!.*|#! $PERL -w|" "$am_scriptdir"/tap-driver.pl >tap-driver
-      ;;
-    shell)
-      AM_TAP_AWK=$AWK; export AM_TAP_AWK
-      sed "1s|#!.*|#! $SHELL|" "$am_scriptdir"/tap-driver.sh >tap-driver
-      ;;
-    *)
-      fatal_ "invalid \$am_tap_implementation '$am_tap_implementation'" ;;
-  esac \
-    && chmod a+x tap-driver \
-    || framework_failure_ "couldn't fetch $am_tap_implementation TAP driver"
-  sed 10q tap-driver # For debugging.
-}
-am_tap_implementation=${am_tap_implementation-shell}
 
 # $PYTHON and support for PEP-3147.  Needed to check our python-related
 # install rules.

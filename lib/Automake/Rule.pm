@@ -340,8 +340,8 @@ sub reset()
      # Tarballing.
      'dist-all'             => [],
 
-     # Phonying.
      '.PHONY'               => [],
+     '.PRECIOUS'            => [],
      # Recursive install targets (so "make -n install" works for BSD Make).
      '.MAKE'		    => [],
      );

@@ -26,6 +26,7 @@ EOF
 
 $ACLOCAL
 $AUTOMAKE
+$FGREP '.PHONY:' Makefile.in  # For debugging.
 test $($FGREP -c '.PHONY:' Makefile.in) -eq 3
 
 :
