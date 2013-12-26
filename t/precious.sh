@@ -1,5 +1,5 @@
 #!/bin/sh
-# Copyright (C) 2002-2013 Free Software Foundation, Inc.
+# Copyright (C) 2013 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,19 +14,19 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Make sure .PHONY can be given dependencies several times.
-# From Ralf Corsepius.
+# Make sure .PRECIOUS can be extended by the user, and can be given
+# dependencies several times.
 
 . test-init.sh
 
 cat >Makefile.am << 'EOF'
-.PHONY: foo
-.PHONY: bar
+.PRECIOUS: foo
+.PRECIOUS: bar
 EOF
 
 $ACLOCAL
 $AUTOMAKE
-$FGREP '.PHONY:' Makefile.in  # For debugging.
-test $($FGREP -c '.PHONY:' Makefile.in) -eq 3
+$FGREP '.PRECIOUS:' Makefile.in  # For debugging.
+test $($FGREP -c '.PRECIOUS:' Makefile.in) -eq 3
 
 :

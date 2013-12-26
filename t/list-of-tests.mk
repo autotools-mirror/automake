@@ -838,6 +838,7 @@ t/percent.sh \
 t/percent2.sh \
 t/per-target-flags.sh \
 t/phony.sh \
+t/precious.sh \
 t/pluseq.sh \
 t/pluseq2.sh \
 t/pluseq3.sh \
