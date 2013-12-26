@@ -19,7 +19,7 @@
 am_create_testdir=empty
 . test-init.sh
 
-install_sh_fail () 
+install_sh_fail ()
 {
   err_rx=$1; shift
   ./install-sh ${1+"$@"} 2>stderr && { cat stderr >&2; exit 1; }
