@@ -116,6 +116,8 @@ t/aclocal-scan-configure-ac-pr319.sh \
 t/aclocal-serial.sh \
 t/aclocal-underquoted-defun.sh \
 t/aclocal-verbose-install.sh \
+t/auxdir-pr15981.sh \
+t/auxdir-cc-pr15981.sh \
 t/ac-output-old.tap \
 t/acsilent.sh \
 t/acsubst.sh \
