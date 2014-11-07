@@ -72,7 +72,7 @@ generated_file_finalize = $(AM_V_at) \
 # For some tests or targets, we need to have the just-build automake and
 # aclocal scripts avaiable on PATH.
 extend_PATH = \
-  { PATH='$(abs_builddir)/t/wrap'$(PATH_SEPARATOR)$$PATH && export PATH; }
+  { PATH='$(abs_builddir)/t/wrap$(PATH_SEPARATOR)'$$PATH && export PATH; }
 
 # The master location for INSTALL is lib/INSTALL.
 # This is where "make fetch" will install new versions.

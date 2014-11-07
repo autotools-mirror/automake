@@ -64,9 +64,9 @@ AM_TESTS_ENVIRONMENT += stderr_fileno_=9; export stderr_fileno_;
 # in case it is given with a relative name containing no slashes.
 AM_TESTS_ENVIRONMENT += \
   if test $(srcdir) != .; then \
-    PATH='$(abs_srcdir)/%D%/ax'$(PATH_SEPARATOR)$$PATH; \
+    PATH='$(abs_srcdir)/%D%/ax$(PATH_SEPARATOR)'$$PATH; \
   fi; \
-  PATH='$(abs_builddir)/%D%/ax'$(PATH_SEPARATOR)$$PATH; \
+  PATH='$(abs_builddir)/%D%/ax$(PATH_SEPARATOR)'$$PATH; \
   export PATH;
 
 # Hand-written tests.
