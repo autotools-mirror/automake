@@ -30,6 +30,7 @@ t/pm/Version3.pl
 
 XFAIL_TESTS = \
 t/all.sh \
+t/auxdir-pr19311.sh \
 t/cond17.sh \
 t/gcj6.sh \
 t/override-conditional-2.sh \
@@ -186,6 +187,7 @@ t/auxdir-autodetect.sh \
 t/auxdir-computed.tap \
 t/auxdir-misplaced.sh \
 t/auxdir-nonexistent.sh \
+t/auxdir-pr19311.sh \
 t/auxdir-unportable.tap \
 t/backcompat.sh \
 t/backcompat2.sh \
