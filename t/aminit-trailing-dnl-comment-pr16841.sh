@@ -39,6 +39,6 @@ $AUTOMAKE -a
 
 ./configure >stdout || { cat stdout; exit 1; }
 cat stdout
-greop '^OK OK OK$' stdout
+grep '^OK OK OK$' stdout
 
 :
