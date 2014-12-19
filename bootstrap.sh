@@ -2,7 +2,7 @@
 
 # This script helps bootstrap automake, when checked out from git.
 #
-# Copyright (C) 2002-2013 Free Software Foundation, Inc.
+# Copyright (C) 2002-2014 Free Software Foundation, Inc.
 # Originally written by Pavel Roskin <proski@gnu.org> September 2002.
 #
 # This program is free software; you can redistribute it and/or modify
@@ -39,7 +39,7 @@ PACKAGE=automake
 datadir=.
 # This should be automatically updated by the 'update-copyright'
 # rule of our Makefile.
-RELEASE_YEAR=2013
+RELEASE_YEAR=2014
 
 # Read the rule for calculating APIVERSION and execute it.
 apiver_cmd=`sed -ne 's/\[\[/[/g;s/\]\]/]/g;/^APIVERSION=/p' configure.ac`

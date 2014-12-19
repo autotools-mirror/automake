@@ -1,6 +1,6 @@
 # Process this file with autoconf to produce a configure script.
 
-# Copyright (C) 1995-2013 Free Software Foundation, Inc.
+# Copyright (C) 1995-2014 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -44,7 +44,7 @@ AM_INIT_AUTOMAKE([ng -Wall -Werror filename-length-max=99
 
 ## Keep this on a line of its own, since it must be found and processed
 ## by the 'update-copyright' rule in our Makefile.
-RELEASE_YEAR=2013
+RELEASE_YEAR=2014
 AC_SUBST([RELEASE_YEAR])
 
 # The API version is the base version.  We must guarantee
