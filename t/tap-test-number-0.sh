@@ -19,30 +19,6 @@
 # This is consistent with the behaviour of the 'prove' utility.
 
 . test-init.sh
-
-if test $am_tap_implementation = perl; then
-  $PERL -MTAP::Parser -e 1 \
-    || skip_ "cannot import TAP::Parser perl module"
-  if $PERL -w -e '
-    use warnings FATAL => "all"; use strict;
-    use TAP::Parser;
-    my $parser = TAP::Parser->new({tap => "1..1\n" . "ok 0\n"});
-    my $result = $parser->next;
-    $result->is_plan or die "first line is not TAP plan";
-    $result = $parser->next;
-    $result->is_test or die "second line is not TAP test result";
-    my $testno = $result->number;
-    $parser->next and die "unexpected further TAP stream";
-    exit ($testno == 0 ? 0 : 77);
-  '; then
-    : # Nothing to do.
-  elif test $? -eq 77; then
-    skip_ 'TAP::Parser bug: test number 0 gets relabelled as 1'
-  else
-    fatal_ "error analyzing TAP::Parser module for bugs"
-  fi
-fi
-
 . tap-setup.sh
 
 cat > a.test <<END

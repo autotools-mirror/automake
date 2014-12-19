@@ -86,6 +86,7 @@ ChangeLog:
 
 # Third-party, obsolescent or experimental stuff.
 EXTRA_DIST += \
+  contrib/tap-driver.pl \
   contrib/check-html.am \
   contrib/README
 

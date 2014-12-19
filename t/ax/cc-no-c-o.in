@@ -19,11 +19,23 @@
 
 am_CC=${AM_TESTSUITE_GNU_CC-'@GNU_CC@'}
 
-case " $* " in
- *\ -c*\ -o* | *\ -o*\ -c*)
+seen_c=false
+seen_o=false
+
+for arg
+do
+  case $arg in
+    -c)
+      seen_c=true;;
+    # It is acceptable not to leave a space between the '-o' option
+    # and its argument, so we have to cater for that.
+    -o|-o*)
+      seen_o=true;;
+  esac
+  if $seen_c && $seen_o; then
     echo "$0: both '-o' and '-c' seen on the command line" >&2
     exit 2
-    ;;
-esac
+  fi
+done
 
 exec $am_CC "$@"

@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 1996-2014 Free Software Foundation, Inc.
+# Copyright (C) 2014 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,26 +14,32 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Test for this bug:
-# automake: Makefile.am: required file "../../install-sh" not found; installing
-# This also makes sure that install-sh is created in the correct directory.
+# Automake bug#19311: AC_PROG_CC called before AC_CONFIG_AUX_DIR can
+# silently force wrong $ac_aux_dir definition.
 
+am_create_testdir=empty
+required=cc
 . test-init.sh
 
-: > Makefile.am
-rm -f install-sh
+cat > configure.ac <<END
+AC_INIT([$me], [1.0])
+AC_PROG_CC
+AC_CONFIG_AUX_DIR([build-aux])
+AM_INIT_AUTOMAKE
+AC_OUTPUT([Makefile])
+END
 
-# Since the default path includes '../..', we must run this test in
-# yet another subdir.
-mkdir frob
-mv Makefile.am configure.ac frob/
-cd frob
+: > Makefile.am
+
+mkdir build-aux
 
 $ACLOCAL
-$AUTOMAKE --add-missing > output 2>&1
+$AUTOMAKE -a
+$AUTOCONF
 
-# Only one '/' should appear in the output.
-cat output
-grep '/.*/' output && exit 1
+test -f build-aux/compile
+test -f build-aux/install-sh
 
-test -f install-sh
+./configure
+
+:

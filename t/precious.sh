@@ -1,5 +1,5 @@
-#! /bin/sh
-# Copyright (C) 1998-2014 Free Software Foundation, Inc.
+#!/bin/sh
+# Copyright (C) 2013-2014 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,20 +14,19 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Test to see if defining INSTALL_DATA causes problems.  From EGCS
-# list.
+# Make sure .PRECIOUS can be extended by the user, and can be given
+# dependencies several times.
 
 . test-init.sh
 
-cat >> configure.ac <<END
-AC_SUBST([INSTALL_DATA])
-END
-
-: > Makefile.am
+cat >Makefile.am << 'EOF'
+.PRECIOUS: foo
+.PRECIOUS: bar
+EOF
 
 $ACLOCAL
 $AUTOMAKE
-
-grep '^DATA =' Makefile.in | grep 'INSTALL_DATA' && exit 1
+$FGREP '.PRECIOUS:' Makefile.in  # For debugging.
+test $($FGREP -c '.PRECIOUS:' Makefile.in) -eq 3
 
 :

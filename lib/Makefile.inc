@@ -39,8 +39,7 @@ dist_script_DATA = \
   %D%/py-compile \
   %D%/ar-lib \
   %D%/test-driver \
-  %D%/tap-driver.sh \
-  %D%/tap-driver.pl
+  %D%/tap-driver.sh
 
 install-data-hook:
 	@$(POST_INSTALL)

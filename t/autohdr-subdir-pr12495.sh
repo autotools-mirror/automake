@@ -63,6 +63,10 @@ $MAKE
 test -f a.h.in
 test -f a.h
 
+# We might need to grep the output of GNU make for error messages.
+LANG=C LANGUAGE=C LC_ALL=C
+export LANG LANGUAGE LC_ALL
+
 ocwd=$(pwd)
 for x in b c; do
   test $x = b || cd sub

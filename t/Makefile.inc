@@ -33,7 +33,7 @@ TAP_LOG_DRIVER = AM_TAP_AWK='$(AWK)' $(SHELL) $(srcdir)/lib/tap-driver.sh
 AM_TAP_LOG_DRIVER_FLAGS = --merge
 
 EXTRA_DIST += %D%/README %D%/ax/is %D%/ax/is_newest %D%/ax/deltree.pl
- 
+
 
 # Hand-written tests for stuff in 'contrib/'.
 include $(srcdir)/contrib/%D%/Makefile.inc

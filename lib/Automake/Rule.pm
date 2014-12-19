@@ -295,8 +295,8 @@ sub reset()
      # Tarballing.
      'dist-all'             => [],
 
-     # Phonying.
      '.PHONY'               => [],
+     '.PRECIOUS'            => [],
      );
   %actions = ();
 }

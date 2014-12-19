@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 1998-2014 Free Software Foundation, Inc.
+# Copyright (C) 2014 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,20 +14,31 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Test to see if defining INSTALL_DATA causes problems.  From EGCS
-# list.
+# Check that a trailing 'dnl' m4 comment automake after the
+# AM_INIT_AUTOMAKE invocation doesn't produce a syntactically
+# invalid configure script.  This used to be the case until
+# automake 1.13, but we broke that in automake 1.14. See
+# automake bug#16841.
 
+am_create_testdir=empty
 . test-init.sh
 
-cat >> configure.ac <<END
-AC_SUBST([INSTALL_DATA])
+cat > configure.ac <<END
+AC_INIT([test-pr16841], [1.0])
+AM_INIT_AUTOMAKE([1.14 -Werror]) dnl Some comment
+echo "OK OK OK"
+AC_CONFIG_FILES([Makefile])
+AC_OUTPUT
 END
 
 : > Makefile.am
 
 $ACLOCAL
-$AUTOMAKE
+$AUTOCONF
+$AUTOMAKE -a
 
-grep '^DATA =' Makefile.in | grep 'INSTALL_DATA' && exit 1
+./configure >stdout || { cat stdout; exit 1; }
+cat stdout
+grep '^OK OK OK$' stdout
 
 :

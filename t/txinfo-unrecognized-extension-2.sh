@@ -23,16 +23,16 @@ cat > Makefile.am << 'END'
 info_TEXINFOS = foo.texi bar.texi baz.texi
 END
 
-echo '@setfilename foo.inf'     > foo.texi
-echo '@setfilename bar'         > bar.texi
-echo '@setfilename baz.texi'    > baz.texi
+echo '@setfilename foo.inf'  > foo.texi
+echo '@setfilename bar'      > bar.texi
+echo '@setfilename baz.texi' > baz.texi
 : > texinfo.tex
 
 $ACLOCAL
 AUTOMAKE_fails
 
-grep "foo\.texi:.* 'foo.inf'.*unrecognized extension" stderr
+grep "foo\.texi:.* 'foo\.inf'.*unrecognized extension" stderr
 grep "bar\.texi:.* 'bar'.*unrecognized extension" stderr
-grep "baz\.texi:.* 'baz.texi'.*unrecognized extension" stderr
+grep "baz\.texi:.* 'baz\.texi'.*unrecognized extension" stderr
 
 :

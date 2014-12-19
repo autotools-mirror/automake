@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 1998-2014 Free Software Foundation, Inc.
+# Copyright (C) 1996-2014 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,20 +14,28 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Test to see if defining INSTALL_DATA causes problems.  From EGCS
-# list.
+# Test for this bug:
+# automake: Makefile.am: required file "../../install-sh" not found; installing
+# This also makes sure that install-sh is created in the correct directory.
 
 . test-init.sh
 
-cat >> configure.ac <<END
-AC_SUBST([INSTALL_DATA])
-END
-
 : > Makefile.am
+rm -f install-sh
+
+# Since the default path includes '../..', we must run this test in
+# yet another subdir.
+mkdir frob
+mv Makefile.am configure.ac frob/
+cd frob
 
 $ACLOCAL
-$AUTOMAKE
+$AUTOMAKE --add-missing >output 2>&1 || { cat output; exit 1; }
+cat output
 
-grep '^DATA =' Makefile.in | grep 'INSTALL_DATA' && exit 1
+# Only one '/' should appear in the output.
+grep '/.*/' output && exit 1
+
+test -f install-sh
 
 :

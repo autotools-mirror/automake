@@ -21,7 +21,7 @@ required=non-root
 . test-init.sh
 
 # Solaris /usr/ucb/touch does not accept -t.
-touch -t $old_timestamp foo \
+touch -t "$old_timestamp" foo \
   || skip_ "touch utility doesn't accept '-t' option"
 
 get_shell_script install-sh
@@ -41,3 +41,5 @@ diff file d1/file
 ./install-sh -C -m 444 file d1
 test -r d1/file
 test ! -w d1/file
+
+:

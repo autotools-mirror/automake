@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 1998-2014 Free Software Foundation, Inc.
+# Copyright (C) 2014 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,20 +14,26 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Test to see if defining INSTALL_DATA causes problems.  From EGCS
-# list.
+# AM_AUX_DIR_EXPAND should ensure $ac_aux_dir is properly initialized.
+# Issue revealed by related automake bug#15981.
 
 . test-init.sh
 
-cat >> configure.ac <<END
-AC_SUBST([INSTALL_DATA])
+cat > configure.ac <<'END'
+AC_INIT([test], [0.0])
+AM_AUX_DIR_EXPAND
+printf '%s\n' "ac_aux_dir: '$ac_aux_dir'"
+printf '%s\n' "am_aux_dir: '$am_aux_dir'"
+test "$ac_aux_dir" = . || AS_EXIT([1])
+test "$am_aux_dir" = "`pwd`" || AS_EXIT([1])
+AS_EXIT([0])
 END
 
-: > Makefile.am
-
 $ACLOCAL
-$AUTOMAKE
+$AUTOCONF
 
-grep '^DATA =' Makefile.in | grep 'INSTALL_DATA' && exit 1
+test -f install-sh  # sanity check
+
+./configure
 
 :
