@@ -1,5 +1,5 @@
 ## automake - create Makefile.in from Makefile.am
-## Copyright (C) 1994-2013 Free Software Foundation, Inc.
+## Copyright (C) 1994-2014 Free Software Foundation, Inc.
 
 ## This program is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -27,9 +27,36 @@ VPATH = @srcdir@
 ## DESTDIR =
 
 ## Shell code that determines whether we are running under GNU make.
-## This is somewhat of an hack, and might be improved, but is good
-## enough for now.
-am__is_gnu_make = test -n '$(MAKEFILE_LIST)' && test -n '$(MAKELEVEL)'
+##
+## Why the this needs to be so convoluted?
+##
+## (1) We can't unconditionally use make functions or special variables
+##     starting with a dot, as those cause non-GNU implmentations to
+##     crash hard.
+##
+## (2) We can't use $(MAKE_VERSION) here, as it is also defined in some
+##     non-GNU make implementations (e.g., FreeBSD make).  But at least
+##     BSD make does *not* define the $(CURDIR) variable -- it uses
+##     $(.CURDIR) instead.
+##
+## (3) We can't use $(MAKEFILE_LIST) here, as in some situations it
+##     might cause the shell to die with "Arg list too long" (see
+##     automake bug#18744).
+##
+## (4) We can't use $(MAKE_HOST) unconditionally, as it is only
+##     defined in GNU make 4.0 or later.
+##
+am__is_gnu_make = { \
+  if test -z '$(MAKELEVEL)'; then \
+    false; \
+  elif test -n '$(MAKE_HOST)'; then \
+    true; \
+  elif test -n '$(MAKE_VERSION)' && test -n '$(CURDIR)'; then \
+    true; \
+  else \
+    false; \
+  fi; \
+}
 
 ## Shell code that determines whether the current make instance is
 ## running with a given one-letter option (e.g., -k, -n) that takes
