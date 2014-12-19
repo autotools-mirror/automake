@@ -132,6 +132,7 @@ t/amhello-cflags.sh \
 t/amhello-cross-compile.sh \
 t/amhello-binpkg.sh \
 t/aminit-moreargs-deprecation.sh \
+t/aminit-trailing-dnl-comment-pr16841.sh \
 t/amassign.sh \
 t/am-config-header.sh \
 t/am-prog-cc-stdc.sh \
