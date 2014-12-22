@@ -1,6 +1,6 @@
 ## Process this file with automake to create Makefile.in
 
-## Makefile for Automake.
+## Makefile for Automake NG.
 
 # Copyright (C) 1995-2014 Free Software Foundation, Inc.
 
@@ -89,11 +89,6 @@ EXTRA_DIST += \
   contrib/tap-driver.pl \
   contrib/check-html.am \
   contrib/README
-
-# Older files, kept mostly for historical interest.
-EXTRA_DIST += \
-  $(addprefix old/ChangeLog., 96 98 00 01 02 03 04 09 11) \
-  old/ChangeLog-tests old/TODO
 
 # Maintainer-specific files and scripts.
 EXTRA_DIST += \
