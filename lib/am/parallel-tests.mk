@@ -32,6 +32,10 @@ am.test-suite.is-xfail = \
 
 am.test-suite.runtest = \
   $(am.test-suite.tty-colors);						\
+  if test '$(TEST_SUITE_LOG)' = '$*.log'; then				\
+    echo "fatal: $*.log: depends on itself (check TESTS content)" >&2;	\
+    exit 1;								\
+  fi;									\
   srcdir=$(srcdir); export srcdir;					\
 ## Creates the directory for the log file if needed.  Avoid extra forks.
   test x$(@D) = x. || test -d $(@D) || $(MKDIR_P) $(@D) || exit $$?;	\
@@ -318,9 +322,6 @@ $(TEST_SUITE_LOG): $(am.test-suite.test-logs) $(am.test-suite.test-results)
 	@set +e; $(am.test-suite.tty-colors); \
 	fatal () { echo "fatal: making $@: $$*" >&2; exit 1; }; \
 	workdir='$(am.test-suite.workdir)'; \
-## Detect a possible circular dependency, and error out if it's found.
-	grep '^$(TEST_SUITE_LOG:.log=)$$' $$workdir/bases \
-	  && fatal "depends on itself (check TESTS content)"; \
 ## Prepare data for the test suite summary.  These do not take into account
 ## unreadable test results, but they'll be appropriately updated later if
 ## needed.
