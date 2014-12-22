@@ -52,7 +52,7 @@ for opt in '' --no-force; do
 
   for dir in . subdir; do
     sed -n -e "
-      /^\\(am__\\)\\?DIST_COMMON =.*/ {
+      /^am__DIST_COMMON =.*/ {
         b body
         :loop
         n
