@@ -3714,10 +3714,13 @@ sub handle_dist ()
 	}
     }
 
-  # Files to distributed.  Don't use ->value_as_list_recursive
-  # as it recursively expands '$(dist_pkgdata_DATA)' etc.
+  # Files to distributed.  Don't use ->value_as_list_recursive as it
+  # recursively expands '$(dist_pkgdata_DATA)' etc.
+  # Use 'sort' so that the expansion of $(DIST_COMMON) in the generated
+  # Makefile is deterministic, in face of m4 and/or perl randomizations
+  # (see automake bug#17908).
   my @dist_common = split (' ', rvar ('DIST_COMMON')->variable_value);
-  @dist_common = uniq (@dist_common);
+  @dist_common = uniq (sort @dist_common);
   variable_delete 'DIST_COMMON';
   define_pretty_variable ('DIST_COMMON', TRUE, INTERNAL, @dist_common);
 
@@ -7883,10 +7886,7 @@ sub generate_makefile
 # Helper function for usage().
 sub print_autodist_files
 {
-  # NOTE: we need to call our 'uniq' function with the leading '&'
-  # here, because otherwise perl complains that "Unquoted string
-  # 'uniq' may clash with future reserved word".
-  my @lcomm = sort (&uniq (@_));
+  my @lcomm = uniq (sort @_);
 
   my @four;
   format USAGE_FORMAT =
