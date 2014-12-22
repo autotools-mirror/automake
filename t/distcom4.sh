@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2003-2013 Free Software Foundation, Inc.
+# Copyright (C) 2003-2014 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -43,8 +43,13 @@ mkdir tests
 : > README
 : > tests/wrapper.in
 cat > Makefile.am << 'END'
-.PHONY: test
-test: distdir
+.PHONY: test1 test 2
+test1:
+	for x in $(DIST_COMMON); do echo $$x; done \
+	  | grep 'tests/' > lst
+	cat lst # For debugging.
+	test `wc -l <lst` -eq 1
+test2: distdir
 	test -f $(distdir)/tests/wrapper.in
 END
 
@@ -52,23 +57,6 @@ $ACLOCAL
 $AUTOCONF
 $AUTOMAKE --add-missing
 ./configure
-$MAKE test
-
-sed -n -e '/^DIST_COMMON =.*\\$/ {
-   :loop
-   p
-   n
-   t clear
-   :clear
-   s/\\$/\\/
-   t loop
-   p
-   n
-   }' -e '/^DIST_COMMON =/ p' Makefile.in > dc.txt
-
-cat dc.txt # For debugging.
-
-test 1 -eq $(grep -c tests dc.txt)
-grep configure dc.txt
+$MAKE test1 test2
 
 :

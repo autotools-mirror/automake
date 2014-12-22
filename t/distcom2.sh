@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2001-2013 Free Software Foundation, Inc.
+# Copyright (C) 2001-2014 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -51,22 +51,18 @@ for opt in '' --no-force; do
   test -f depcomp
 
   for dir in . subdir; do
-    # FIXME: the logic of this check and other similar ones in other
-    # FIXME: 'distcom*.sh' files should be factored out in a common
-    # FIXME: subroutine in 'am-test-lib.sh'...
     sed -n -e "
-      /^DIST_COMMON =.*\\\\$/ {
+      /^\\(am__\\)\\?DIST_COMMON =.*/ {
+        b body
         :loop
-        p
         n
-        t clear
-        :clear
+        :body
+        p
         s/\\\\$/\\\\/
         t loop
         s/$/ /
         s/[$tab ][$tab ]*/ /g
         p
-        n
       }" $dir/Makefile.in > $dir/dc.txt
   done
 

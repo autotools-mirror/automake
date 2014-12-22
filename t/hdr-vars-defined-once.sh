@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 1999-2013 Free Software Foundation, Inc.
+# Copyright (C) 1999-2014 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,25 +25,22 @@ END
 
 cat > Makefile.am << 'END'
 include Will_Be_Included_In_Makefile
+test-distcommon:
+	echo ' ' $(DIST_COMMON) ' ' \
+          | grep '[ /]Will_Be_Included_In_Makefile '
 END
 
-: > Will_Be_Included_In_Makefile
+id=0c35bbde7c95b569a
+echo "# $id" > Will_Be_Included_In_Makefile
 
 $ACLOCAL
 $AUTOMAKE
 test $(grep -c '^srcdir' Makefile.in) -eq 1
 
-# Also make sure include file is distributed.
-sed -n -e '/^DIST_COMMON =.*\\$/ {
-   :loop
-   p
-   n
-   t clear
-   :clear
-   s/\\$/\\/
-   t loop
-   p
-   n
-   }' -e '/^DIST_COMMON =/ p' Makefile.in | grep Will_Be_Included_In_Makefile
+$AUTOCONF
+./configure
+$MAKE test-distcommon
+$MAKE distdir
+grep "$id" $distdir/Will_Be_Included_In_Makefile
 
 :

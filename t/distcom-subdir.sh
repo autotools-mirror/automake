@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2004-2013 Free Software Foundation, Inc.
+# Copyright (C) 2004-2014 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,59 +17,60 @@
 # Test to make sure that if an auxfile (here depcomp) is required
 # by a subdir Makefile.am, it is distributed by that Makefile.am.
 
+required=cc
 . test-init.sh
 
 cat >> configure.ac << 'END'
 AC_CONFIG_FILES([subdir/Makefile])
 AC_PROG_CC
+AC_PROG_FGREP
 AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
 SUBDIRS = subdir
+test-distdir: distdir
+	test -f $(distdir)/depcomp
+.PHONY: test-distdir
+check-local: test-distdir
 END
 
 rm -f depcomp
 mkdir subdir
 
-: > subdir/Makefile.am
+cat > subdir/Makefile.am << 'END'
+.PHONY: test-distcom
+test-distcom:
+	echo ' ' $(DIST_COMMON) ' ' | $(FGREP) ' $(top_srcdir)/depcomp '
+END
 
 $ACLOCAL
 $AUTOCONF
 $AUTOMAKE
 test ! -e depcomp
 
-cat > subdir/Makefile.am << 'END'
+cat >> subdir/Makefile.am << 'END'
 bin_PROGRAMS = foo
+.PHONY: test-distcom
+test-distcom:
+	echo ' ' $(DIST_COMMON) ' ' | $(FGREP) ' $(top_srcdir)/depcomp '
+check-local: test-distcom
 END
 
-: > subdir/foo.c
+cat > subdir/foo.c <<'END'
+int main (void)
+{
+  return 0;
+}
+END
 
 $AUTOMAKE -a subdir/Makefile
 test -f depcomp
 
-# FIXME: the logic of this check and other similar ones in other
-# FIXME: 'distcom*.sh' files should be factored out in a common
-# FIXME: subroutine in 'am-test-lib.sh'...
-sed -n -e "
-  /^DIST_COMMON =.*\\\\$/ {
-    :loop
-    p
-    n
-    t clear
-    :clear
-    s/\\\\$/\\\\/
-    t loop
-    s/$/ /
-    s/[$tab ][$tab ]*/ /g
-    p
-    n
-  }" subdir/Makefile.in > dc.txt
-cat dc.txt
-$FGREP ' $(top_srcdir)/depcomp ' dc.txt
-
 ./configure
-$MAKE distdir
-test -f $distdir/depcomp
+(cd subdir && $MAKE test-distcom)
+$MAKE test-distdir
+
+$MAKE distcheck
 
 :

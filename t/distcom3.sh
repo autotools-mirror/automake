@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2001-2013 Free Software Foundation, Inc.
+# Copyright (C) 2001-2014 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,9 +19,13 @@
 
 . test-init.sh
 
+echo AC_OUTPUT >> configure.ac
+
 cat > Makefile.am << 'END'
 README:
 	echo 'I bet you are reading me.' > README
+test-distcommon:
+	echo ' ' $(DIST_COMMON) ' ' | grep ' README '
 END
 
 # Files required by '--gnu'.
@@ -36,20 +40,14 @@ $AUTOMAKE --add-missing --gnu >output 2>&1 || { cat output; exit 1; }
 cat output
 grep README output && exit 1
 
-sed -n -e '/^DIST_COMMON =.*\\$/ {
-   :loop
-   p
-   n
-   t clear
-   :clear
-   s/\\$/\\/
-   t loop
-   p
-   n
-   }' -e '/^DIST_COMMON =/ p' Makefile.in | grep README
-
+$AUTOCONF
+./configure
+$MAKE test-distcommon
+$MAKE distdir
+test -f $distdir/README
 
 # Should warn about missing README.
+rm -f README
 : > Makefile.am
 AUTOMAKE_fails --add-missing --gnu
 grep 'required file.*README.*not found' stderr
