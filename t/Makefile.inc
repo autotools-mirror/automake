@@ -79,6 +79,7 @@ perl_fake_XFAIL_TESTS = \
 
 XFAIL_TESTS = \
   %D%/all.sh \
+  %D%/auxdir-pr19311.sh \
   %D%/override-suggest-local.sh \
   %D%/comments-in-var-def.sh \
   %D%/cond17.sh \
