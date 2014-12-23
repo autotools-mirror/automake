@@ -168,10 +168,10 @@ DESTDIR ?=
 # implementation.  It is worthwhile to note that, when expanded
 # from the top-level make, $(MFLAGS) doesn't contain references to
 # options that take an argument, either mandatory (e.g., '-I') or
-# optional (e.g., '-O').  This *vastly* semplifies the implementation
+# optional (e.g., '-O').  This *vastly* simplifies the implementation
 # of this macro.
 am.make.is-running-with-option = \
-  $(if $(findstring $(strip $1),filter-out --%,$(MFLAGS)),true,false)
+  $(if $(findstring $(strip $1),$(filter-out --%,$(MFLAGS))),true,false)
 
 # Tell whether make is running in "dry mode".
 am.make.dry-run := $(call am.make.is-running-with-option, n)
