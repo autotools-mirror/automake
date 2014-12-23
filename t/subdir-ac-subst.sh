@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2002-2013 Free Software Foundation, Inc.
+# Copyright (C) 2002-2014 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
 
 . test-init.sh
 
-cat >>configure.ac <<'END'
+cat >> configure.ac <<'END'
 if test "$want_opt" = yes; then
   MAYBE_OPT=opt
 else
@@ -31,7 +31,7 @@ AC_CONFIG_FILES([src/Makefile opt/Makefile])
 AC_OUTPUT
 END
 
-cat >Makefile.am << 'END'
+cat > Makefile.am <<'END'
 SUBDIRS = src $(MAYBE_OPT)
 DIST_SUBDIRS = src opt
 
@@ -45,14 +45,16 @@ DIST_SUBDIRS = src opt
 # We rely on 'distcheck' to run 'check-local' and use
 # 'sanity1' and 'sanity2' as evidences that test-build was run.
 
+test_rootdir = $(top_builddir)/../../..
+
 test-build: all
 	test -f src/result
 	if test -n "$(MAYBE_OPT)"; then \
 	   test -f opt/result || exit 1; \
-	   : > $(top_builddir)/../../sanity2 || exit 1; \
+	   : > $(test_rootdir)/sanity2 || exit 1; \
 	else \
 	   test ! -f opt/result || exit 1; \
-	   : > $(top_builddir)/../../sanity1 || exit 1; \
+	   : > $(test_rootdir)/sanity1 || exit 1; \
 	fi
 
 test-dist: distdir
@@ -66,7 +68,7 @@ mkdir src opt
 : > src/source
 : > opt/source
 
-cat >src/Makefile.am << 'END'
+cat > src/Makefile.am <<'END'
 EXTRA_DIST = source
 all-local: result
 CLEANFILES = result
@@ -76,7 +78,7 @@ result: source
 END
 
 # We want in opt/ the same Makefile as in src/.  Let's exercise 'include'.
-cat >opt/Makefile.am << 'END'
+cat > opt/Makefile.am <<'END'
 include ../src/Makefile.am
 END
 
