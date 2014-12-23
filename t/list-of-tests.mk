@@ -30,7 +30,6 @@ t/pm/Version3.pl
 
 XFAIL_TESTS = \
 t/all.sh \
-t/am-include-only-one-generated-fragment.sh \
 t/cond17.sh \
 t/gcj6.sh \
 t/override-conditional-2.sh \
