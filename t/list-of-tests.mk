@@ -143,6 +143,7 @@ t/amopts-location.sh \
 t/amopts-variable-expansion.sh \
 t/amsubst.sh \
 t/am-default-source-ext.sh \
+t/am-include-only-one-generated-fragment.sh \
 t/ansi2knr-no-more.sh \
 t/ar-lib.sh \
 t/ar-lib2.sh \
