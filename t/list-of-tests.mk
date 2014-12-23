@@ -428,6 +428,7 @@ t/distcheck-no-prefix-or-srcdir-override.sh \
 t/distcheck-override-infodir.sh \
 t/distcheck-pr9579.sh \
 t/distcheck-pr10470.sh \
+t/distcheck-pr18286.sh \
 t/dmalloc.sh \
 t/doc-parsing-buglets-colneq-subst.sh \
 t/doc-parsing-buglets-tabs.sh \

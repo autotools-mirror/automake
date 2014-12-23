@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2012-2013 Free Software Foundation, Inc.
+# Copyright (C) 2012-2014 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -43,7 +43,7 @@ CLEANFILES = mu.info
 # to think 'version.texi' has been created...
 check-local:
 	test ! -e mu.info
-	test -f ../mu.info
+	test -f $(srcdir)/mu.info
 END
 
 mkdir subdir
