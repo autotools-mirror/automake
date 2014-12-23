@@ -31,6 +31,7 @@ t/pm/Version3.pl
 XFAIL_TESTS = \
 t/all.sh \
 t/cond17.sh \
+t/distcheck-pr18286.sh \
 t/gcj6.sh \
 t/override-conditional-2.sh \
 t/override-conditional-pr13940.sh \
@@ -427,6 +428,7 @@ t/distcheck-no-prefix-or-srcdir-override.sh \
 t/distcheck-override-infodir.sh \
 t/distcheck-pr9579.sh \
 t/distcheck-pr10470.sh \
+t/distcheck-pr18286.sh \
 t/dmalloc.sh \
 t/doc-parsing-buglets-colneq-subst.sh \
 t/doc-parsing-buglets-tabs.sh \
