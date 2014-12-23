@@ -137,7 +137,7 @@ distcheck: dist
 ## can make our new subdirs.
 	chmod -R a-w $(distdir)
 	chmod u+w $(distdir)
-	mkdir $(distdir)/_build $(distdir)/_inst
+	mkdir $(distdir)/_build $(distdir)/_build/sub $(distdir)/_inst
 ## Undo the write access.
 	chmod a-w $(distdir)
 ## With GNU make, the following command will be executed even with "make -n",
@@ -155,17 +155,20 @@ distcheck: dist
 ## create very long directory names.
 	  && dc_destdir="$${TMPDIR-/tmp}/am-dc-$$$$/" \
 	  $(if $(am.dist.handle-distcheck-hook),&& $(MAKE) distcheck-hook) \
-	  && cd $(distdir)/_build \
-	  && ../configure --srcdir=.. --prefix="$$dc_install_base" \
+## If we merely used '$(distdir)/_build' here, "make distcheck" could
+## sometimes fail to detect missing files in the distribution tarball,
+## especially in those cases where both the generated files and their
+## dependencies are explicitly in $(srcdir).  See automake bug#18286.
+	  && cd $(distdir)/_build/sub \
+	  && ../../configure \
 	    $(if $(am.dist.handle-gettext),--with-included-gettext) \
 ## Additional flags for configure.
-	    $(AM_DISTCHECK_CONFIGURE_FLAGS) \
-	    $(DISTCHECK_CONFIGURE_FLAGS) \
+	    $(AM_DISTCHECK_CONFIGURE_FLAGS) $(DISTCHECK_CONFIGURE_FLAGS) \
 ## At the moment, the code doesn't actually support changes in these --srcdir
 ## and --prefix values, so don't allow them to be overridden by the user or
 ## the developer.  That used to be allowed, and caused issues in practice
 ## (in corner-case usages); see automake bug#14991.
-	    --srcdir=.. --prefix="$$dc_install_base" \
+	    --srcdir=../.. --prefix="$$dc_install_base" \
 	  && $(MAKE) \
 	  && $(MAKE) dvi \
 	  && $(MAKE) check \

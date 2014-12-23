@@ -39,7 +39,7 @@ CLEANFILES = mu.info
 # to think 'version.texi' has been created...
 check-local:
 	test ! -e mu.info
-	test -f ../mu.info
+	test -f $(srcdir)/mu.info
 END
 
 mkdir subdir
