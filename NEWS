@@ -120,6 +120,29 @@ New in 1.15:
     Makefiles, in the face of the newly-introduced randomization for
     hash keys order in Perl 5.18.
 
+  - In older Automake versions, if a user defined one single Makefile
+    fragment (say 'foo.am') to be included (via Automake includes) in
+    his main Makefile.am, and defined a custom make rule to generate that
+    file from other data, Automake used to spuriously complain about with
+    something like "... overrides Automake target '$(srcdir)/foo.am".
+    This bug is now fixed.
+
+  - Automake bug#18286: "make distcheck" could sometimes fail to detect
+    missing files in the distribution tarball, especially in those cases
+    where both the generated files and their dependencies are explicitly
+    in $(srcdir).  An important example of this are *generated* makefile
+    fragments included at Automake time in Makefile.am; e.g.:
+
+        ...
+        $(srcdir)/fragment.am: $(srcdir)/data.txt $(srcdir)/preproc.sh
+            cd $(srcdir) && $(SHELL) preproc.sh <data.txt >fragment.am
+        include $(srcdir)/fragment.am
+        ...
+
+    If the use forgot to add data.txt and/or preproc.sh in the distribution
+    tarball, "make distcheck" would have erroneously succeeded!  This issue
+    is now fixed.
+
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 New in 1.14.1:

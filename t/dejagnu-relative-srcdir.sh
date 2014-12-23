@@ -43,7 +43,7 @@ END
 cat > env.test/env.exp << 'END'
 set env_srcdir $env(srcdir)
 send_user "env_srcdir: $env_srcdir\n"
-if { [ regexp "^\.\.?$" $env_srcdir ] } {
+if { [ regexp "^\.(\./\.\.)?$" $env_srcdir ] } {
     pass "test_env_src"
 } else {
     fail "test_env_src"
@@ -52,13 +52,13 @@ END
 
 cat > tcl.test/tcl.exp << 'END'
 send_user "tcl_srcdir: $srcdir\n"
-if { [ regexp "^\.\.?$" $srcdir ] } {
+if { [ regexp "^\.(\./\.\.)?$" $srcdir ] } {
     pass "test_tcl_src"
 } else {
     fail "test_tcl_src"
 }
 send_user "tcl_orig_srcdir: $orig_srcdir\n"
-if { [ regexp "^\.\.?$" $orig_srcdir ] } {
+if { [ regexp "^\.(\./\.\.)?$" $orig_srcdir ] } {
     pass "test_tcl_orig_src"
 } else {
     fail "test_tcl_orig_src"

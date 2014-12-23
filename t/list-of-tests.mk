@@ -146,6 +146,7 @@ t/amopts-location.sh \
 t/amopts-variable-expansion.sh \
 t/amsubst.sh \
 t/am-default-source-ext.sh \
+t/am-include-only-one-generated-fragment.sh \
 t/ansi2knr-no-more.sh \
 t/ar-lib.sh \
 t/ar-lib2.sh \
@@ -431,6 +432,7 @@ t/distcheck-no-prefix-or-srcdir-override.sh \
 t/distcheck-override-infodir.sh \
 t/distcheck-pr9579.sh \
 t/distcheck-pr10470.sh \
+t/distcheck-pr18286.sh \
 t/dmalloc.sh \
 t/doc-parsing-buglets-colneq-subst.sh \
 t/doc-parsing-buglets-tabs.sh \
