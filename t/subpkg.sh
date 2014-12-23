@@ -90,8 +90,6 @@ int lib (void)
 }
 EOF
 
-cp "$am_scriptdir"/compile .
-
 $ACLOCAL
 $AUTOCONF -Werror -Wall
 $AUTOMAKE -Wno-override
