@@ -171,7 +171,7 @@ DESTDIR ?=
 # optional (e.g., '-O').  This *vastly* simplifies the implementation
 # of this macro.
 am.make.is-running-with-option = \
-  $(if $(findstring $(strip $1),filter-out --%,$(MFLAGS)),true,false)
+  $(if $(findstring $(strip $1),$(filter-out --%,$(MFLAGS))),true,false)
 
 # Tell whether make is running in dry mode ("make -n") or not.
 am.make.dry-run := $(call am.make.is-running-with-option, n)

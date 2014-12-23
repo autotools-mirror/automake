@@ -18,7 +18,7 @@
 
 . test-init.sh
 
-plan_ 132
+plan_ $((27 * 6))
 
 echo AC_OUTPUT >> configure.ac
 
@@ -42,6 +42,7 @@ dry-recursive:
 	$(MAKE) dry-plain
 END
 
+# Each invocation of this will run 6 tests.
 check_make ()
 {
   msg= mode=
@@ -86,14 +87,21 @@ $AUTOMAKE   || fatal_ "automake failed"
 check_make --run
 check_make --run -k
 
-# Test against a known regression.  This was especially heinous, since
+# Test against known regressions.  These were especially heinous, since
 # make running in normal mode was sometimes mistaken for make running
 # in dry mode.
+
 check_make --run TESTS="n1.test n2.test"
 check_make --run TESTS="n1 n2" MAKEFLAGS="TESTS='n1 n2'"
 check_make --run TESTS="n1 n2" MAKEFLAGS='TESTS="n1 n2"'
 check_make --run FOOFLAGS="-n -n -knf2 n --none -n"
 check_make --run MYFLAGS="-n --dryrun -n --dry-run -n"
+
+check_make --run -- --print-directory -k
+check_make --run -- --debug=an
+check_make --run -- --print-directory --no-builtin-rules
+check_make --run -- --no-print-directory
+check_make --run -- --no-print-directory --no-builtin-rules
 
 # ----------------------------------------------------------------------
 
