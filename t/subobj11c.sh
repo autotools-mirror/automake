@@ -43,6 +43,6 @@ $AUTOMAKE -a
 #
 # FIXME: Are we sure this is the most sensible output in our situation?
 #
-grep '^[^/]*am__include[^/]*//\$(DEPDIR)/zardoz\.[^/]*$' Makefile.in
+grep 'am__depfiles_remade =.* //\$(DEPDIR)/zardoz\.Po' Makefile.in
 
 :

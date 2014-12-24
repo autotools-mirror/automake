@@ -1230,48 +1230,50 @@ sub check_user_variables
 sub handle_languages ()
 {
     if (! option 'no-dependencies')
-    {
-	# Include auto-dep code.  Don't include it if DEP_FILES would
-	# be empty.
-	if (keys %extension_seen && keys %dep_files)
-	{
-	    # Set location of depcomp.
-	    define_variable ('depcomp',
-			     "\$(SHELL) $am_config_aux_dir/depcomp",
-			     INTERNAL);
-	    define_variable ('am__depfiles_maybe', 'depfiles', INTERNAL);
+      {
+        # Include auto-dep code.  Don't include it if DEP_FILES would
+        # be empty.
+        if (keys %extension_seen && keys %dep_files)
+          {
+            my @dep_files = sort keys %dep_files;
+            # Set location of depcomp.
+            define_variable ('depcomp',
+                             "\$(SHELL) $am_config_aux_dir/depcomp",
+                             INTERNAL);
+            define_variable ('am__maybe_remake_depfiles', 'depfiles', INTERNAL);
+            define_variable ('am__depfiles_remade', "@dep_files", INTERNAL);
+            # Generate each 'include' directive individually.  Several make
+            # implementations (IRIX 6, Solaris 10, FreeBSD 8) will fail to
+            # properly include several files resulting from a variable
+            # expansion. Just Generating many separate includes seems thus
+            # safest.
+            $output_rules .= "\n";
+            foreach my $depfile (@dep_files)
+              {
+                $output_rules .= subst ('AMDEP_TRUE') .
+                                 subst ('am__include') .
+                                 " " .
+                                 subst('am__quote') .
+                                 $depfile .
+                                 subst('am__quote') .
+                                 " " .
+                                 "# am--include-marker\n";
+              }
 
-	    require_conf_file ("$am_file.am", FOREIGN, 'depcomp');
+            require_conf_file ("$am_file.am", FOREIGN, 'depcomp');
 
-	    my @deplist = sort keys %dep_files;
-	    # Generate each 'include' individually.  Irix 6 make will
-	    # not properly include several files resulting from a
-	    # variable expansion; generating many separate includes
-	    # seems safest.
-	    $output_rules .= "\n";
-	    foreach my $iter (@deplist)
-	    {
-		$output_rules .= (subst ('AMDEP_TRUE')
-				  . subst ('am__include')
-				  . ' '
-				  . subst ('am__quote')
-				  . $iter
-				  . subst ('am__quote')
-				  . "\n");
-	    }
-
-	    # Compute the set of directories to remove in distclean-depend.
-	    my @depdirs = uniq (map { dirname ($_) } @deplist);
-	    $output_rules .= file_contents ('depend',
-					    new Automake::Location,
-					    DEPDIRS => "@depdirs");
-	}
-    }
+            # Compute the set of directories to remove in distclean-depend.
+            my @dep_dirs = uniq (map { dirname ($_) } @dep_files);
+            $output_rules .= file_contents ('depend',
+                                            new Automake::Location,
+                                            DEPDIRS => "@dep_dirs");
+          }
+      }
     else
-    {
-	define_variable ('depcomp', '', INTERNAL);
-	define_variable ('am__depfiles_maybe', '', INTERNAL);
-    }
+      {
+        define_variable ('depcomp', '', INTERNAL);
+        define_variable ('am__maybe_remake_depfiles', '', INTERNAL);
+      }
 
     my %done;
 

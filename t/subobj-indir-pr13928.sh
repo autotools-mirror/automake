@@ -38,7 +38,9 @@ END
 mkdir s
 echo 'int main(void) { return 0; }' > s/foo.c
 
-$ACLOCAL && $AUTOCONF && $AUTOMAKE -a || fatal_ "autotools failed"
+$ACLOCAL
+$AUTOCONF
+$AUTOMAKE -a
 
 ./configure
 $MAKE

@@ -21,7 +21,7 @@
 
 echo AC_PROG_CC >> configure.ac
 
-cat > Makefile.am << 'END'
+cat > Makefile.am <<'END'
 bin_PROGRAMS = www
 www_SOURCES = www.c
 EXTRA_www_SOURCES = xtra.c
@@ -31,6 +31,7 @@ END
 $ACLOCAL
 $AUTOMAKE
 
-grep '@am__include@ .*/xtra\.P' Makefile.in
+grep '@am__include@ .*/xtra\.Po' Makefile.in
+grep '^am__depfiles_remade =.*/xtra.Po' Makefile.in
 
 :

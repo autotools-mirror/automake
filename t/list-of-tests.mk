@@ -41,7 +41,6 @@ t/java-nobase.sh \
 t/objext-pr10128.sh \
 t/remake-timing-bug-pr8365.sh \
 t/lex-subobj-nodep.sh \
-t/subobj-indir-pr13928.sh \
 t/subobj-vpath-pr13928.sh \
 t/remake-am-pr10111.sh \
 t/remake-m4-pr10111.sh \
@@ -391,6 +390,7 @@ t/depend3.sh \
 t/depend4.sh \
 t/depend5.sh \
 t/depend6.sh \
+t/depend-postproc.sh \
 t/deprecated-acinit.sh \
 t/destdir.sh \
 t/dir-named-obj-is-bad.sh \
@@ -866,7 +866,6 @@ t/posixsubst-programs.sh \
 t/posixsubst-scripts.sh \
 t/posixsubst-sources.sh \
 t/posixsubst-tests.sh \
-t/postproc.sh \
 t/ppf77.sh \
 t/pr2.sh \
 t/pr9.sh \

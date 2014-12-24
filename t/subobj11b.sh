@@ -56,9 +56,9 @@ END
 $ACLOCAL
 $AUTOMAKE -a
 
-# Be lax in the regexp, to account for automake conditionals, the
-# use of @am__include@, and similar stuff.
-grep 'include.*//.*foobar' Makefile.in && exit 1
+grep '\.P' Makefile.in # For debugging.
+
+grep '//.*foobar\.P' Makefile.in && exit 1
 
 # These checks depend on automake internals, but presently this is
 # the only way to test the code path we are interested in.
@@ -71,12 +71,12 @@ for x in zardoz0 zardoz1 path/to/zardoz2 another/path/to/zardoz3; do
   esac
   # Be a little lax in the regexp, to account for automake conditionals,
   # quoting, and similar stuff.
-  grep "^[^/]*am__include[^/]*//server/$d\\\$(DEPDIR)/$b\\.[^/]*$" Makefile.in
+  grep "[ 	]//server/$d\\\$(DEPDIR)/$b\\.Po" Makefile.in
 done
 
 # Sanity checks.
 for i in 0 1 2 3 4 5 6 7 8 9; do
-  grep "am__include.*/foobar$i\\." Makefile.in
+  grep "\$(DEPDIR)/foobar$i\\.Po" Makefile.in
 done
 
 :

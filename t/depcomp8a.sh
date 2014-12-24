@@ -51,10 +51,10 @@ $ACLOCAL
 # FIXME: stop disabling the warnings in the 'unsupported' category
 # FIXME: once the 'subdir-objects' option has been mandatory.
 $AUTOMAKE -a -Wno-unsupported
-grep include Makefile.in # For debugging.
-grep 'include.*\./\$(DEPDIR)/foo\.P' Makefile.in
-grep 'include.*\./\$(DEPDIR)/bar\.P' Makefile.in
-grep 'include.*/\./\$(DEPDIR)' Makefile.in && exit 1
+grep '\.P' Makefile.in # For debugging.
+grep '\./\$(DEPDIR)/foo\.Po' Makefile.in
+grep '\./\$(DEPDIR)/bar\.Po' Makefile.in
+grep '/\./\$(DEPDIR)' Makefile.in && exit 1
 
 $AUTOCONF
 # Don't reject slower dependency extractors, for better coverage.
@@ -68,10 +68,10 @@ DISTCHECK_CONFIGURE_FLAGS='--enable-dependency-tracking' $MAKE distcheck
 echo AUTOMAKE_OPTIONS = subdir-objects >> Makefile.am
 
 $AUTOMAKE
-grep include Makefile.in # For debugging.
-grep 'include.*\./\$(DEPDIR)/foo\.P' Makefile.in
-grep 'include.*[^a-zA-Z0-9_/]sub/\$(DEPDIR)/bar\.P' Makefile.in
-$EGREP 'include.*/(\.|sub)/\$\(DEPDIR\)' Makefile.in && exit 1
+grep '\.P' Makefile.in # For debugging.
+grep '\./\$(DEPDIR)/foo\.Po' Makefile.in
+grep '[^a-zA-Z0-9_/]sub/\$(DEPDIR)/bar\.Po' Makefile.in
+$EGREP '/(\.|sub)/\$\(DEPDIR\)' Makefile.in && exit 1
 
 $AUTOCONF
 # Don't reject slower dependency extractors, for better coverage.
