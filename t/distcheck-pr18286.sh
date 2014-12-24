@@ -58,13 +58,12 @@ $AUTOMAKE -a
 $MAKE check
 
 # Oops, we failed to distribute some required files!
-run_make -e FAIL -M distcheck
-$FGREP '../../test_data.txt' output
+run_make -e FAIL -E distcheck
+$FGREP '../../test_data.txt' stderr
 
 # But if we distribute them, everything will be OK.
 echo 'EXTRA_DIST = test_data.txt gen-testdata.sh' >> Makefile.am
 
-using_gmake || $MAKE Makefile
 $MAKE distcheck
 
 :
