@@ -69,7 +69,8 @@ if ! cross_compiling; then
   : For shells with busted 'set -e'.
 fi
 
-# Sanity check on distribution.
-yl_distcheck DISTCHECK_CONFIGURE_FLAGS='LEXLIB="none needed"'
+# Sanity check on distribution.  Escape in LEXLIB must use backspace,
+# not double-quotes, to avoid a spurious failure with AIX make.
+yl_distcheck DISTCHECK_CONFIGURE_FLAGS='LEXLIB=none\ needed'
 
 :
