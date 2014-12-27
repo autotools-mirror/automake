@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2009-2013 Free Software Foundation, Inc.
+# Copyright (C) 2009-2014 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,8 +17,8 @@
 # Check parallel-tests features:
 # - concurrent parallel execution
 
-# FIXME: we should factorize the code to determine how to run
-#        make in parallel out in am-test-lib.sh ...
+# FIXME: we should factor out (into am-test-lib.sh?) the code to determine
+#        how to run make in parallel mode ...
 
 . test-init.sh
 
@@ -89,11 +89,16 @@ for build in serial parallel; do
 done
 
 cd serial
-$MAKE ${j}1 check &
-cd ../parallel
+# Do *not* use "make -j1" here; apparently, some make implementations
+# (e.g., AIX 7.1) interpret it as a synonym of "make -j" :-(
+$MAKE check &
+cd ..
+
+cd parallel
 $sleep
 run_make -O -- ${j}4 check
 cd ..
+
 # Ensure the tests are really being run in parallel mode: if this is
 # the case, the serial run of the dummy testsuite started above should
 # still be ongoing when the parallel one has terminated.
