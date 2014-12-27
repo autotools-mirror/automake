@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2008-2013 Free Software Foundation, Inc.
+# Copyright (C) 2008-2014 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -37,8 +37,6 @@ mkdir x-bin
 
 sed "s|@limit@|$limit|g" >x-bin/my-install <<'END'
 #! /bin/sh
-# Fake install script.  This doesn't really install
-# (the INSTALL path below would be wrong outside this directory).
 limit=@limit@
 PATH=$oPATH; export PATH
 if test -z "$orig_INSTALL"; then
@@ -72,8 +70,16 @@ END
 # Creative quoting in the next line to please maintainer-check.
 chmod +x x-bin/'rm' x-bin/my-install
 
-cat > setenv.in <<'END'
-orig_INSTALL='@INSTALL@'; export orig_INSTALL
+cat >setenv.in <<'END'
+orig_INSTALL='@INSTALL@'
+# In case we've falled back on the install-sh script (seen e.g.,
+# on AIX 7.1), we need to make sure we use its absolute path,
+# as we don't know from which directory we'll be run.
+case "$orig_INSTALL" in
+   /*) ;;
+  */*) orig_INSTALL=$(pwd)/$orig_INSTALL;;
+esac
+export orig_INSTALL
 END
 
 cat >>configure.ac <<END
