@@ -21,25 +21,36 @@ am_create_testdir=empty
 
 get_shell_script mdate-sh
 
-set x $(./mdate-sh mdate-sh)
-shift
-echo "$*" # For debugging.
+year=$(date +%Y) && test $year -gt 2010 || year=NONE
 
-# Check that mdate output looks like a date:
-test $# = 3
-case $1$3 in *[!0-9]*) exit 1;; esac
-test $1 -lt 32
-# Hopefully automake will be obsolete in 80 years ;-)
-case $3 in 20[0-9][0-9]) :;; *) exit 1;; esac
-case $2 in
-  January|February|March|April|May|June|July|August) ;;
-  September|October|November|December) ;;
-  *) exit 1
-esac
+do_checks ()
+{
+  set x $(./mdate-sh mdate-sh)
+  shift
+  echo "$*" # For debugging.
 
-# Stricter checks on the year required a POSIX date(1) command.
-if year=$(date +%Y) && test $year -gt 2010; then
-  test $year = $3 || exit 1
-fi
+  # Check that mdate output looks like a date.
+  test $# = 3 || exit 1
+  case $1$3 in *[!0-9]*) exit 1;; esac
+  test $1 -lt 32 || exit 1
+  # Hopefully automake will be obsolete in 80 years ;-)
+  case $3 in 20[0-9][0-9]) :;; *) exit 1;; esac
+  case $2 in
+    January|February|March|April|May|June|July|August) ;;
+    September|October|November|December) ;;
+    *) exit 1
+  esac
+
+  # Stricter checks on the year require a POSIX date(1) command.
+  test $year = NONE || test $year = $3 || exit 1
+}
+
+TIME_STYLE=; unset TIME_STYLE
+do_checks
+
+# This setting, when honored by GNU ls, used to cause an infinite
+# loop in mdate-sh.
+TIME_STYLE="+%Y-%m-%d %H:%M:%S"; export TIME_STYLE
+do_checks
 
 :

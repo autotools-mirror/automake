@@ -34,12 +34,42 @@ bad:
 END
 
 SHELL=$am_testaux_builddir/shell-no-trail-bslash
+
 $SHELL -c 'exit 0'
 test "$($SHELL -c 'echo is  o\k')" = "is ok"
+
+echo 'echo is  ok\"' > ok.sh
+$SHELL ./ok.sh
+test "$($SHELL ./ok.sh)" = "is ok\""
+
+tab='	'
+nl='
+'
+for sfx in \
+  '\' \
+  '\\' \
+  '\\\\\' \
+  '\ ' \
+  "\\$tab" \
+  "\\ $tab$tab   " \
+  "\\$nl" \
+  "\\ $nl " \
+  "\\$nl$nl$nl" \
+; do
+  for pfx in "" "echo bad" ": a${nl}# multine${nl}: text"; do
+    cmd=${pfx}${sfx}
+    printf '%s\n' "$cmd" > bad.sh
+    for args in '-c "$cmd"' './bad.sh'; do
+      eval "\$SHELL $args 2>stderr && { cat stderr >&2; exit 1; }; :"
+      cat stderr >&2
+      $FGREP "recipe/script ends with backslash character" stderr
+    done
+  done
+done
 
 $MAKE good
 
 run_make -E -e FAIL bad SHELL="$SHELL"
-$FGREP "recipe ends with backslash character" stderr
+$FGREP "recipe/script ends with backslash character" stderr
 
 :
