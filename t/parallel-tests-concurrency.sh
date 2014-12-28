@@ -17,8 +17,8 @@
 # Check parallel-tests features:
 # - concurrent parallel execution
 
-# FIXME: we should factorize the code to determine how to run
-#        make in parallel out in am-test-lib.sh ...
+# FIXME: we should factor out (into am-test-lib.sh?) the code to determine
+#        how to run make in parallel mode ...
 
 . test-init.sh
 
@@ -69,10 +69,13 @@ done
 
 cd serial
 $MAKE -j1 check &
-cd ../parallel
+cd ..
+
+cd parallel
 $sleep
 run_make -O -- -j4 check
 cd ..
+
 # Ensure the tests are really being run in parallel mode: if this is
 # the case, the serial run of the dummy testsuite started above should
 # still be ongoing when the parallel one has terminated.

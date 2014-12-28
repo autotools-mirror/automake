@@ -32,6 +32,8 @@ grep "^Makefile\\.am:2:.* 'INCLUDES'.* deprecated.* 'AM_CPPFLAGS'" stderr
 AUTOMAKE_run -Wall -Wno-obsolete
 test ! -s stderr
 
+$sleep
+
 echo 'AC_SUBST([INCLUDES])' >> configure.ac
 sed '/^INCLUDES/d' Makefile.am > t && mv -f t Makefile.am
 
