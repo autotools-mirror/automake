@@ -14,62 +14,62 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# A "shell" that chokes on '-c' commands having a trailing '\' character
-# (possibly followed by whitespace only).  This is to emulate problems
-# seen in older bash versions (e.g., bash 2.05b).
-# See also automake bug#10436.
+# A "shell" that chokes on '-c' commands and/or shell scripts having
+# a trailing '\' character (possibly followed by whitespace only).
+# This is to emulate problems seen in older bash versions (e.g., bash
+# 2.05b). See also automake bug#10436.
 
-set -e
 set -u
 
 am_SHELL=${AM_TESTSUITE_SHELL-'@SHELL@'}
 
-tab='	'
-nl='
-'
-am_shell_flags=
-am_shell_command=; unset am_shell_command
-while test $# -gt 0; do
-  case $1 in
-    # The shell might be invoked by make e.g. as "sh -ec" or "sh -ce".
-    # Be liberal (in the spirit of defensive programming) and accept
-    # both forms.
-    -*c*)
-        am_flg=$(printf '%s\n' "$1" | sed -e 's/^-//' -e 's/c//g')
-        if test x"$am_flg" != x; then
-          am_shell_flags="$am_shell_flags -$am_flg"
-        fi
-        am_shell_command=$2
-        shift;;
-    -?*)
-        am_shell_flags="$am_shell_flags $1";;
-      *)
-        break;;
-  esac
-  shift
-done
+(
+  set -e
+  shell_command=; unset shell_command
+  while test $# -gt 0; do
+    case $1 in
+      # The shell might be invoked by make e.g. as "sh -ec" or "sh -ce".
+      # Be liberal (in the spirit of defensive programming) and accept
+      # both forms.
+      -*c*) shell_command=$2; shift;;
+       -?*) ;;
+         *) break;;
+    esac
+    shift
+  done
 
-if test x${am_shell_command+"set"} != x"set"; then
-  echo "$0: fatal: no shell command given through the '-c' option" >&2
-  exit 1
+  if test x${shell_command+"set"} != x"set"; then
+    if test $# -gt 0; then
+      shell_command=$(cat "$1")
+    else
+      echo "$0: fatal: no shell script given," \
+            "nor a command given via the '-c' option" >&2
+      exit 1
+    fi
+  fi
+
+  tab='	'
+  nl='
+'
+  case "$shell_command" in
+    *" "|*"$tab"|*"$nl")
+      shell_command=$(printf '%s\n' "$shell_command" | tr -d " $tab$nl");;
+  esac
+
+  case "$shell_command" in
+    *\\)
+      printf '%s\n' "$0: recipe ends with backslash character" >&2
+      printf '%s\n' "=== BEGIN recipe" >&2
+      printf '%s\n' "${am_shell_command-}" >&2
+      printf '%s\n' "=== END recipe" >&2
+      exit 1
+      ;;
+  esac
+)
+
+if test $? -gt 0; then
+  # Some of our scripts or makefile recipes had invalid contents.
+  exit 3
 fi
 
-case $am_shell_command in
-  *" "|*"$tab"|*"$nl")
-    am_tweaked_shell_command=$(printf '%s\n' "$am_shell_command" \
-                                 | tr -d " $tab$nl");;
-  *)
-    am_tweaked_shell_command=$am_shell_command;;
-esac
-
-case $am_tweaked_shell_command in
-  *\\)
-    printf '%s\n' "$0: recipe ends with backslash character" >&2
-    printf '%s\n' "=== BEGIN recipe" >&2
-    printf '%s\n' "${am_shell_command-}" >&2
-    printf '%s\n' "=== END recipe" >&2
-    exit 1
-    ;;
-esac
-
-exec $am_SHELL $am_shell_flags -c "$am_shell_command" ${1+"$@"}
+exec ${AM_TESTSUITE_SHELL-'@SHELL@'} ${1+"$@"}
