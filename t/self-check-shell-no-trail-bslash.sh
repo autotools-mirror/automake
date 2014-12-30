@@ -55,11 +55,17 @@ for sfx in \
 ; do
   for pfx in "" "echo bad" ": a${nl}# multine${nl}: text"; do
     cmd=${pfx}${sfx}
-    printf '%s\n' "$cmd" > bad.sh
+    printf '%s' "$cmd" > bad.sh
     for args in '-c "$cmd"' './bad.sh'; do
       eval "\$SHELL $args 2>stderr && { cat stderr >&2; exit 1; }; :"
       cat stderr >&2
       $FGREP "recipe/script ends with backslash character" stderr
+      cmd="$cmd" $PERL -w -e '
+        undef $/;
+        $_ = <>;
+        index($_, $ENV{cmd}) >= 0 or exit 1;
+      ' <stderr
+      $FGREP "$cmd" stderr
     done
   done
 done
