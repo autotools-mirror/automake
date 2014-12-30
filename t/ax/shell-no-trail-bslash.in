@@ -26,6 +26,7 @@ am_SHELL=${AM_TESTSUITE_SHELL-'@SHELL@'}
 (
   set -e
   shell_command=; unset shell_command
+  shell_script=; unset shell_script
   while test $# -gt 0; do
     case $1 in
       # The shell might be invoked by make e.g. as "sh -ec" or "sh -ce".
@@ -40,7 +41,8 @@ am_SHELL=${AM_TESTSUITE_SHELL-'@SHELL@'}
 
   if test x${shell_command+"set"} != x"set"; then
     if test $# -gt 0; then
-      shell_command=$(cat "$1")
+      shell_script=$1
+      shell_command=$(cat <"$shell_script")
     else
       # Some make implementations, like *BSD's, pass the recipes to the
       # shell through its standard input.  Trying to run our extra checks
@@ -48,6 +50,7 @@ am_SHELL=${AM_TESTSUITE_SHELL-'@SHELL@'}
       exit 0
     fi
   fi
+  original_shell_command=$shell_command
 
   tab='	'
   nl='
@@ -59,10 +62,16 @@ am_SHELL=${AM_TESTSUITE_SHELL-'@SHELL@'}
 
   case "$shell_command" in
     *\\)
-      printf '%s\n' "$0: recipe/script ends with backslash character" >&2
-      printf '%s\n' "=== BEGIN recipe/script" >&2
-      printf '%s\n' "${am_shell_command-}" >&2
-      printf '%s\n' "=== END recipe/script" >&2
+      {
+        printf '%s\n' "$0: recipe/script ends with backslash character"
+        printf '%s\n' "=== BEGIN recipe/script"
+        if test x${shell_script+"set"} = x"set"; then
+          cat <"$shell_script"
+        else
+          printf '%s\n' "$original_shell_command"
+        fi
+        printf '%s\n' "=== END recipe/script"
+      } >&2
       exit 1
       ;;
   esac
