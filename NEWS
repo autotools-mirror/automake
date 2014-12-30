@@ -97,16 +97,43 @@ New in 1.15:
     extra useless "make all" recursive invocation in some corner cases
     (automake bug#16302).
 
-* Bugs fixed:
+* Distribution:
+
+  - Automake bug#18286: "make distcheck" could sometimes fail to detect
+    missing files in the distribution tarball, especially in those cases
+    where both the generated files and their dependencies are explicitly
+    in $(srcdir).  An important example of this are *generated* makefile
+    fragments included at Automake time in Makefile.am; e.g.:
+
+        ...
+        $(srcdir)/fragment.am: $(srcdir)/data.txt $(srcdir)/preproc.sh
+            cd $(srcdir) && $(SHELL) preproc.sh <data.txt >fragment.am
+        include $(srcdir)/fragment.am
+        ...
+
+    If the use forgot to add data.txt and/or preproc.sh in the distribution
+    tarball, "make distcheck" would have erroneously succeeded!  This issue
+    is now fixed.
+
+  - As a consequence of the previous change, "make distcheck" will run
+    using '$(distdir)/_build/sub' as the build directory, rather than
+    simply '$(distdir)/_build' (as it was with Automake 1.14 and earlier).
+    Consequently, the './configure' and 'make' invocations issued by the
+    distcheck recipe will have $(srcdir) equal to '../..', rather than to
+    just '..' (as it was with Automake 1.14 and earlier).  Dependent and
+    similar variables (e.g., top_srcdir) are also changed accordingly.
+
+    Thus, Makefiles that made assumptions about the exact values of the
+    build and source directories used by "make distcheck" will have to
+    be adjusted.  Notice that making such assumptions was a bad and
+    unsupported practice anyway, since the exact locations of those
+    directories should be considered implementation details, and we
+    reserve the right to change them at any time.
+
+* Miscellaneous bugs fixed:
 
   - The expansion of AM_INIT_AUTOMAKE ends once again with a trailing
     newline (bug#16841).  Regression introduced in Automake 1.14.
-
-  - The user can now extend the special .PRECIOUS target, the same way
-    he could already do with the .MAKE .and .PHONY targets.
-
-  - Fixed confusing typos in the manual and in some warning messages
-    (automake bug#16827 and bug#16997).
 
   - We no longer risk to use '$ac_aux_dir' before it's defined (see
     automake bug#15981). Bug introduced in Automake 1.14.
@@ -127,21 +154,11 @@ New in 1.15:
     something like "... overrides Automake target '$(srcdir)/foo.am".
     This bug is now fixed.
 
-  - Automake bug#18286: "make distcheck" could sometimes fail to detect
-    missing files in the distribution tarball, especially in those cases
-    where both the generated files and their dependencies are explicitly
-    in $(srcdir).  An important example of this are *generated* makefile
-    fragments included at Automake time in Makefile.am; e.g.:
+  - The user can now extend the special .PRECIOUS target, the same way
+    he could already do with the .MAKE .and .PHONY targets.
 
-        ...
-        $(srcdir)/fragment.am: $(srcdir)/data.txt $(srcdir)/preproc.sh
-            cd $(srcdir) && $(SHELL) preproc.sh <data.txt >fragment.am
-        include $(srcdir)/fragment.am
-        ...
-
-    If the use forgot to add data.txt and/or preproc.sh in the distribution
-    tarball, "make distcheck" would have erroneously succeeded!  This issue
-    is now fixed.
+  - Fixed confusing typos in the manual and in some warning messages
+    (automake bug#16827 and bug#16997).
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -249,8 +266,8 @@ New in 1.14:
 
     Now that we have the 'info-in-builddir' option that explicitly causes
     generated '.info' files to be placed in the builddir, this hack should
-    be longer necessary, so we deprecate it with runtime warnings.  It will
-    likely be removed altogether in Automake 2.0.
+    be longer necessary, so we deprecate it with runtime warnings.
+    It will be removed altogether in Automake 2.0.
 
 * Relative directory in Makefile fragments:
 
