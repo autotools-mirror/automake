@@ -89,14 +89,18 @@ ifneq ($(or $(ETAGS_ARGS),$(am.tags.subfiles),$(am.tags.files.unique)),)
 	$(ETAGS) \
 	  $(ETAGSFLAGS) $(AM_ETAGSFLAGS) $(ETAGS_ARGS) \
 	  $(foreach f,$(am.tags.subfiles),'$(am.tags.include-option)=$(CURDIR)/$f') \
-	  $(am.tags.files.unique)
+## Some shells choke when a recipe ends with a backslash.  So make sure the
+## next line is not an empty string.
+	  $(or $(am.tags.files.unique),;)
 endif
 
 ctags-am: $(TAGS_DEPENDENCIES) $(am.tags.files)
 ifneq ($(or $(CTAGS_ARGS),$(am.tags.files.unique)),)
 	$(CTAGS) \
 	  $(CTAGSFLAGS) $(AM_CTAGSFLAGS) $(CTAGS_ARGS) \
-	  $(am.tags.files.unique)
+## Some shells choke when a recipe ends with a backslash.  So make sure the
+## next line is not an empty string.
+	  $(or $(am.tags.files.unique),;)
 endif
 
 am.clean.dist.f += TAGS tags

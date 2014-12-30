@@ -169,14 +169,14 @@ install-html-am: .am/install-html
 	rellist='$(notdir $(and $(infodir),$^))'; \
 	test -n "$$rellist" || exit 0; \
 	for relfile in $$rellist; do \
-	  echo " install-info --info-dir='$(DESTDIR)$(infodir)' '$(DESTDIR)$(infodir)/$$relfile'";\
+	  echo " install-info --info-dir='$(DESTDIR)$(infodir)' '$(DESTDIR)$(infodir)/$$relfile'"; \
 ## Run ":" after install-info in case install-info fails.  We really
 ## don't care about failures here, because they can be spurious.  For
 ## instance if you don't have a dir file, install-info will fail.  I
 ## think instead it should create a new dir file for you.  This bug
 ## causes the "make distcheck" target to fail reliably.
-	  install-info --info-dir="$(DESTDIR)$(infodir)" "$(DESTDIR)$(infodir)/$$relfile" || :;\
-	done; \
+	  install-info --info-dir="$(DESTDIR)$(infodir)" "$(DESTDIR)$(infodir)/$$relfile" || :; \
+	done
 
 .am/install-dvi: $(DVIS)
 	@$(NORMAL_INSTALL)
