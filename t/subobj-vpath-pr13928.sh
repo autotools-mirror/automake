@@ -33,7 +33,7 @@ AUTOMAKE_OPTIONS = subdir-objects
 noinst_PROGRAMS = test
 test_SOURCES = $(srcdir)/test.c
 test-objs:
-	test ! -f $(srcdir)/test.$(OBJEXT)
+	test ! -f '@srcdir@/test.$(OBJEXT)'
 	test -f test.$(OBJEXT)
 END
 
@@ -42,7 +42,7 @@ $ACLOCAL && $AUTOCONF && $AUTOMAKE -a || fatal_ "autotools failed"
 $EGREP 'test\.|DEPDIR|dirstamp|srcdir' Makefile.in || : # For debugging.
 $EGREP '\$.srcdir./test\.[o$]' Makefile.in && exit 1
 $FGREP '$(srcdir)/$(am__dirstamp)' Makefile.in && exit 1
-$FGREP '$(srcdir)/$(DEPDIR)' && exit 1
+$FGREP '$(srcdir)/$(DEPDIR)' Makefile.in && exit 1
 
 cat > test.c << 'END'
 int main (void)
