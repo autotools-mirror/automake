@@ -1617,9 +1617,9 @@ sub handle_single_transform
 	my $renamed = 0;
 	my ($linker, $object);
 
-	# This records whether we've seen a derived source file (e.g.
-	# yacc output).
-	my $derived_source = 0;
+        # This records whether we've seen a derived source file (e.g., yacc
+        # or lex output).
+        my $derived_source;
 
 	# This holds the 'aggregate context' of the file we are
 	# currently examining.  If the file is compiled with
@@ -1667,17 +1667,36 @@ sub handle_single_transform
 	    # Now extract linker and other info.
 	    $linker = $lang->linker;
 
-	    my $this_obj_ext;
-	    if (defined $source_extension)
-	    {
-		$this_obj_ext = $source_extension;
-		$derived_source = 1;
-	    }
-	    else
-	    {
-		$this_obj_ext = $obj;
-	    }
-	    $object = $base . $this_obj_ext;
+            my $this_obj_ext;
+            if (defined $source_extension)
+              {
+                $this_obj_ext = $source_extension;
+                $derived_source = 1;
+              }
+            else
+              {
+                $this_obj_ext = $obj;
+                $derived_source = 0;
+                # Don't ever place built object files in $(srcdir),
+                # even when sources are specified explicitly as (say)
+                # '$(srcdir)/foo.c' or '$(top_srcdir)/foo.c'.
+                # See automake bug#13928.
+                my @d = split '/', $directory;
+                if (@d > 0 && option 'subdir-objects')
+                  {
+                    my $d = $d[0];
+                    if ($d eq '$(srcdir)' or $d eq '${srcdir}')
+                      {
+                        shift @d;
+                      }
+                    elsif ($d eq '$(top_srcdir)' or $d eq '${top_srcdir}')
+                      {
+                        $d[0] = '$(top_builddir)';
+                      }
+                    $directory = join '/', @d;
+                  }
+              }
+            $object = $base . $this_obj_ext;
 
 	    if ($have_per_exec_flags)
 	    {
@@ -1710,8 +1729,7 @@ sub handle_single_transform
 		$renamed = 1;
 	    }
 
-	    # If rewrite said it was ok, put the object into a
-	    # subdir.
+	    # If rewrite said it was ok, put the object into a subdir.
 	    if ($directory ne '')
 	    {
               if ($r == LANG_SUBDIR)

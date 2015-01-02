@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2013-2015 Free Software Foundation, Inc.
+# Copyright (C) 2015 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,17 +14,20 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Expose part of automake bug#13928: if the subdir-objects option is
-# in use and a source file is listed in a _SOURCES variable with a
-# leading $(srcdir) component, Automake will generate a Makefile that
-# tries to create the corresponding object file in $(srcdir) as well.
+# Expose part of automake bug#13928, also for non-C languages: if the
+# subdir-objects option is in use and a source file is listed in a
+# _SOURCES variable with a leading $(srcdir) component, Automake will
+# generate a Makefile that tries to create the corresponding object
+# file in $(srcdir) as well.
 
-required=cc
+required='cc c++ fortran77 fortran'
 . test-init.sh
 
 cat >> configure.ac <<'END'
 AC_PROG_CC
-AM_PROG_CC_C_O
+AC_PROG_CXX
+AC_PROG_F77
+AC_PROG_FC
 AM_CONDITIONAL([OBVIOUS], [:])
 AC_CONFIG_FILES([sub/Makefile])
 AC_OUTPUT
@@ -34,16 +37,17 @@ cat > Makefile.am <<'END'
 AUTOMAKE_OPTIONS = subdir-objects
 SUBDIRS = sub
 
-LESS = more
+LESS = m/o/r/e
 
 noinst_PROGRAMS = test test2
-test_SOURCES = $(srcdir)/test.c
+test_SOURCES = $(srcdir)/test.f90
 
 test2_SOURCES = $(indir)
 
-indir =
+indir = ${indir2} $(empty)
+indir2 =
 if OBVIOUS
-indir += ${srcdir}/$(LESS)/test.c
+indir2 += ${srcdir}/$(LESS)///test.f
 else
 endif
 
@@ -52,8 +56,8 @@ test-objs:
         :
 	test ! -f @srcdir@/test.$(OBJEXT)
 	test -f test.$(OBJEXT)
-	test ! -f @srcdir@/more/test.$(OBJEXT)
-	test -f more/test.$(OBJEXT)
+	test ! -f @srcdir@/m/o/r/e/test.$(OBJEXT)
+	test -f m/o/r/e/test.$(OBJEXT)
         :
 	test ! -f @srcdir@/bar.$(OBJEXT)
 	test -f bar.$(OBJEXT)
@@ -61,9 +65,9 @@ test-objs:
 	test -f baz.$(OBJEXT)
         :
 	test ! -d @srcdir@/$(DEPDIR)
-	test ! -d @srcdir@/more/$(DEPDIR)
+	test ! -d @srcdir@/m/o/r/e/$(DEPDIR)
 	test -d $(DEPDIR)
-	test -d more/$(DEPDIR)
+	test -d m/o/r/e/$(DEPDIR)
 
 check-local: test-objs
 END
@@ -72,9 +76,10 @@ mkdir sub
 cat > sub/Makefile.am <<'END'
 AUTOMAKE_OPTIONS = subdir-objects
 bin_PROGRAMS = foo
+foo = baz
 foo_SOURCES = foo.h \
-	      $(top_srcdir)/bar.c \
-              ${top_srcdir}/baz.c
+	      $(top_srcdir)/bar.cc \
+              ${top_srcdir}/$(foo).c
 END
 
 
@@ -84,26 +89,32 @@ $AUTOMAKE -a
 
 mkfiles='Makefile.in sub/Makefile.in'
 $EGREP '(test|ba[rz])\.|DEPDIR|dirstamp|srcdir' $mkfiles # For debugging.
-$EGREP '\$.(top_)?srcdir./(test|ba[rz])\.[o$]' $mkfiles && exit 1
+$EGREP '\$.(top_)?srcdir./(test|ba[rz]|\$.foo.)\.[o$]' $mkfiles && exit 1
 $FGREP '\$.(top_)?srcdir./.*$(am__dirstamp)' $mkfiles && exit 1
 $FGREP '\$.(top_)?srcdir./.*$(DEPDIR)' $mkfiles && exit 1
 
-cat > test.c <<'END'
-int main (void)
-{
-  return 0;
-}
+cat > test.f90 <<'EOF'
+      program foo
+      stop
+      end
+EOF
+
+mkdir -p m/o/r/e
+cp test.f90 m/o/r/e/test.f
+
+cat > sub/foo.h <<'END'
+#ifdef __cplusplus
+extern "C"
+#endif
+int foo (void);
 END
 
-mkdir more
-cp test.c more/test.c
-
-echo 'int foo (void);' > sub/foo.h
-
-cat > bar.c <<'END'
+cat > bar.cc <<'END'
 #include "foo.h"
+#include <iostream>
 int main (void)
 {
+  std::cout << "OK!" << "\n";
   return foo ();
 }
 END

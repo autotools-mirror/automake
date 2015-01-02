@@ -41,7 +41,6 @@ t/java-nobase.sh \
 t/objext-pr10128.sh \
 t/remake-timing-bug-pr8365.sh \
 t/lex-subobj-nodep.sh \
-t/subobj-vpath-pr13928.sh \
 t/remake-am-pr10111.sh \
 t/remake-m4-pr10111.sh \
 $(perl_fake_XFAIL_TESTS)
@@ -1063,6 +1062,7 @@ t/subobj-clean-pr10697.sh \
 t/subobj-clean-lt-pr10697.sh \
 t/subobj-indir-pr13928.sh \
 t/subobj-vpath-pr13928.sh \
+t/subobj-pr13928-more-langs.sh \
 t/subpkg.sh \
 t/subpkg2.sh \
 t/subpkg3.sh \

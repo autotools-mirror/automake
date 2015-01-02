@@ -67,8 +67,8 @@ New in 1.16:
 * Bugs fixed:
 
   - Automatic dependency tracking has been fixed to work also when the
-    subdir-object option is used and some 'foo_SOURCES' definition contains
-    unexpanded references to make variables, as in, e.g.:
+    'subdir-object' option is used and some 'foo_SOURCES' definition
+    contains unexpanded references to make variables, as in, e.g.:
 
         a_src = sources/libs/aaa
         b_src = sources/bbb
@@ -78,7 +78,7 @@ New in 1.16:
     tracking information will be correctly placed under the directories
     named 'sources/libs/aaa/.deps' and 'sources/bbb/.deps', rather than
     mistakenly under directories named (literally!) '$(src_a)/.deps' and
-    '$(src_b)/.deps' (this was automake bug#13928).
+    '$(src_b)/.deps' (this was the first part of automake bug#13928).
 
     Notice that in order to fix this bug we had to slightly change the
     semantics of how config.status bootstraps the makefile fragments
@@ -87,6 +87,21 @@ New in 1.16:
     invoke 'make' on a slightly preprocessed version of those Makefiles,
     using a private target that is only meant to bootstrap the required
     makefile fragments.
+
+  - The 'subdir-object' option no longer causes object files corresponding
+    to source files specified with an explicit '$(srcdir)' component to be
+    placed in the source tree rather than in the build tree.
+
+    For example, if Makefile.am contains:
+
+        AUTOMAKE_OPTIONS = subdir-objects
+        foo_SOURCES = $(srcdir)/foo.c $(srcdir)/s/bar.c $(top_srcdir)/baz.c
+
+    then "make all" will create 'foo.o' and 's/bar.o' in $(builddir) rather
+    than in $(srcdir), and will create 'baz.o' in $(top_builddir) rather
+    than in $(top_srcdir).
+
+    This was the second part of automake bug#13928.
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
