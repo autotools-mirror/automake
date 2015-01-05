@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 1996-2013 Free Software Foundation, Inc.
+# Copyright (C) 1999-2014 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,27 +14,39 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Test for bug where install-sh not included in distribution.
+# Test for bug in 'make dist'
+# From Pavel Roskin.
 
+am_create_testdir=empty
 . test-init.sh
 
-echo AC_OUTPUT >> configure.ac
+cat > configure.ac << END
+AC_INIT([$me], [1.0])
+dnl Prevent automake from looking in .. and ../..
+AC_CONFIG_AUX_DIR([.])
+AM_INIT_AUTOMAKE
+AC_CONFIG_FILES([Makefile])
+AC_OUTPUT
+END
 
 cat > Makefile.am << 'END'
-pkgdata_DATA =
-.PHONY: test
-test: distdir
-	find $(distdir) ;: For debugging.
-	echo ' ' $(DISTFILES) ' ' | grep '[ /]install-sh '
-	echo ' ' $(DIST_COMMON) ' ' | grep '[ /]install-sh '
-	test -f $(distdir)/install-sh
+SUBDIRS = .
 END
 
 $ACLOCAL
-$AUTOMAKE
 $AUTOCONF
+$AUTOMAKE -a
+
+chmod 000 Makefile.am
+
+# On some systems (like DOS and Windows), files are always readable.
+test ! -r Makefile.am || skip_ "cannot drop file read permissions"
 
 ./configure
-$MAKE test
 
-:
+# 'dist' should fail because we can't copy Makefile.am.
+if $MAKE dist; then
+  exit 1
+else
+  exit 0
+fi

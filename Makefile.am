@@ -2,7 +2,7 @@
 
 ## Makefile for Automake.
 
-# Copyright (C) 1995-2013 Free Software Foundation, Inc.
+# Copyright (C) 1995-2014 Free Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -92,6 +92,7 @@ ChangeLog:
 
 # Third-party, obsolescent or experimental stuff.
 EXTRA_DIST += \
+  contrib/tap-driver.pl \
   contrib/check-html.am \
   contrib/multilib/README \
   contrib/multilib/config-ml.in \

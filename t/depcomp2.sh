@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2001-2013 Free Software Foundation, Inc.
+# Copyright (C) 2001-2014 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -47,7 +47,7 @@ $AUTOCONF
 cat stderr >&2
 # Ignore warning messages sometimes seen on Mac OS X; they are
 # not automake's fault anyway, but either autoconf's or Mac's.
-sed '/rm:.* conftest\.dSYM/d' stderr >stderr2
+sed '/rm:.*conftest\.dSYM/d' stderr >stderr2
 test -s stderr2 && { cat stderr2; exit 1; }
 
 :

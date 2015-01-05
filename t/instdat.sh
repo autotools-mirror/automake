@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 1998-2013 Free Software Foundation, Inc.
+# Copyright (C) 1998-2014 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -29,4 +29,5 @@ $ACLOCAL
 $AUTOMAKE
 
 grep '^DATA =' Makefile.in | grep 'INSTALL_DATA' && exit 1
-exit 0
+
+:

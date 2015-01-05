@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2002-2013 Free Software Foundation, Inc.
+# Copyright (C) 2002-2014 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,32 +19,66 @@
 am_create_testdir=empty
 . test-init.sh
 
+install_sh_fail ()
+{
+  err_rx=$1; shift
+  ./install-sh ${1+"$@"} 2>stderr && { cat stderr >&2; exit 1; }
+  cat stderr >&2
+  $EGREP "install-sh:.* $err_rx" stderr || exit 1
+}
+
 get_shell_script install-sh
 
 # Basic errors.
-./install-sh && exit 1
-./install-sh -m 644 dest && exit 1
+install_sh_fail 'no input file specified'
+install_sh_fail 'no input file specified' dest
+install_sh_fail 'no input file specified' -m 644 dest
+install_sh_fail 'no input file specified' -c -t dest
+
+# Incorrect usages.
+: > bar
+: > baz
+: > qux
+install_sh_fail 'target directory not allowed when installing a directory' \
+                -d -t foo
+install_sh_fail 'target directory not allowed when installing a directory' \
+                -d -t foo bar
+install_sh_fail 'foo: [iI]s not a directory' -t foo bar
+install_sh_fail 'foo: [iI]s not a directory' bar baz foo
+mkdir foo
+install_sh_fail 'target directory not allowed when installing a directory' \
+                -d -t foo
+install_sh_fail 'target directory not allowed when installing a directory' \
+                -d -t foo bar
+rmdir foo
+rm -f bar baz qux
 
 # Directories.
-
-# It should be OK to create no directory.  We sometimes need
-# this when directory are conditionally defined.
-./install-sh -d
-# One directory.
-./install-sh -d d0
-test -d d0
-# Multiple directories (for make installdirs).
-./install-sh -d d1 d2 d3 d4
-test -d d1
-test -d d2
-test -d d3
-test -d d4
-# Subdirectories.
-./install-sh -d p1/p2/p3 p4//p5//p6//
-test -d p1/p2/p3
-test -d p4/p5/p6
+for opts in '-d' '-d -T' '-T -d' '-d -T -d' '-T -d -T -d -T'; do
+  # It should be OK to create no directory.  We sometimes need
+  # this when directory are conditionally defined.
+  ./install-sh $opts
+  # One directory.
+  ./install-sh $opts d0
+  test -d d0
+  # Multiple directories (for make installdirs).
+  ./install-sh $opts d1 d2 d3 d4
+  test -d d1
+  test -d d2
+  test -d d3
+  test -d d4
+  rmdir d[0-9]
+  # Subdirectories.
+  ./install-sh $opts p1/p2/p3 p4//p5//p6//
+  test -d p1/p2/p3
+  test -d p4/p5/p6
+  rmdir p[0-9]/p[0-9]/p[0-9]
+  rmdir p[0-9]/p[0-9]
+  rmdir p[0-9]
+done
 
 # Files.
+mkdir d0 d1 d2 d3 d4
 : > x
 ./install-sh -c -m 644 x y
 test -f x
@@ -76,8 +110,8 @@ test -f d4/z
 ./install-sh -T x d3/y
 test -f x
 test -f d3/y
-./install-sh -T x d3 && exit 1
-./install-sh -T x d4// && exit 1
+install_sh_fail 'd3: [iI]s a directory' -T x d3
+install_sh_fail 'd4(//)?: [iI]s a directory' -T x d4//
 
 # Ensure that install-sh works with names that include spaces.
 touch 'a  b'
@@ -88,8 +122,8 @@ test -f 'a  b'
 
 # Ensure we do not run into 'test' operator precedence bugs with Tru64 sh.
 for c in = '(' ')' '!'; do
-  ./install-sh $c 2>stderr && { cat stderr >&2; exit 1; }
-  cat stderr >&2
+  install_sh_fail 'no input file specified' $c
+  test -f stderr # sanity check
   grep 'test: ' stderr && exit 1
   # Skip tests if the file system is not capable.
   mkdir ./$c || continue

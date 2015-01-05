@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 1999-2013 Free Software Foundation, Inc.
+# Copyright (C) 2014 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,39 +14,32 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Test for bug in 'make dist'
-# From Pavel Roskin.
+# Automake bug#19311: AC_PROG_CC called before AC_CONFIG_AUX_DIR can
+# silently force wrong $ac_aux_dir definition.
 
 am_create_testdir=empty
+required=cc
 . test-init.sh
 
-cat > configure.ac << END
+cat > configure.ac <<END
 AC_INIT([$me], [1.0])
-dnl Prevent automake from looking in .. and ../..
-AC_CONFIG_AUX_DIR([.])
+AC_PROG_CC
+AC_CONFIG_AUX_DIR([build-aux])
 AM_INIT_AUTOMAKE
-AC_CONFIG_FILES([Makefile])
-AC_OUTPUT
+AC_OUTPUT([Makefile])
 END
 
-cat > Makefile.am << 'END'
-SUBDIRS = .
-END
+: > Makefile.am
+
+mkdir build-aux
 
 $ACLOCAL
-$AUTOCONF
 $AUTOMAKE -a
+$AUTOCONF
 
-chmod 000 Makefile.am
-
-# On some systems (like DOS and Windows), files are always readable.
-test ! -r Makefile.am || skip_ "cannot drop file read permissions"
+test -f build-aux/compile
+test -f build-aux/install-sh
 
 ./configure
 
-# 'dist' should fail because we can't copy Makefile.am.
-if $MAKE dist; then
-  exit 1
-else
-  exit 0
-fi
+:

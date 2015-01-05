@@ -25,7 +25,7 @@ This manual is for GNU Automake (version @value{VERSION},
 @value{UPDATED}), a program that creates GNU standards-compliant
 Makefiles from template files.
 
-Copyright @copyright{} 1995-2013 Free Software Foundation, Inc.
+Copyright @copyright{} 1995-2014 Free Software Foundation, Inc.
 
 @quotation
 Permission is granted to copy, distribute and/or modify this document
@@ -1242,8 +1242,12 @@ uninstall} do not omit any file (@pxref{Standard Targets}),
 and it checks that @code{DESTDIR} installations work (@pxref{DESTDIR}).
 @end itemize
 
-All of these actions are performed in a temporary subdirectory, so
-that no root privileges are required.
+All of these actions are performed in a temporary directory, so that no
+root privileges are required.  Please note that the exact location and the
+exact structure of such a subdirectory (where the extracted sources are
+placed, how the temporary build and install directories are named and how
+deeply they are nested, etc.) is to be considered an implementation detail,
+which can change at any time; so do not rely on it.
 
 Releasing a package that fails @code{make distcheck} means that one of
 the scenarios we presented will not work and some users will be
@@ -1901,9 +1905,6 @@ It is customary to make the first line of @file{Makefile.am} read:
 @example
 ## Process this file with automake to produce Makefile.in
 @end example
-
-@c FIXME discuss putting a copyright into Makefile.am here?  I would but
-@c I don't know quite what to say.
 
 @c FIXME document customary ordering of Makefile.am here!
 
@@ -7606,7 +7607,9 @@ native machine code; @pxref{Java Support with gcj}).  Note however that
 Future Automake releases will strive to provide a better and cleaner
 interface, which however @emph{won't be backward-compatible}; the present
 interface will probably be removed altogether some time after the
-introduction of the new interface (if that ever materializes).
+introduction of the new interface (if that ever materializes).  In any
+case, the current @code{JAVA} primary features are frozen and will no
+longer be developed, not even to take bug fixes.
 
 Any @file{.java} files listed in a @code{_JAVA} variable will be
 compiled with @code{JAVAC} at build time.  By default, @file{.java}
@@ -8556,6 +8559,13 @@ finally, makes another tarball to ensure the distribution is
 self-contained.
 @end itemize
 
+All of these actions are performed in a temporary directory.  Please
+note that the exact location and the exact structure of such a directory
+(where the read-only sources are placed, how the temporary build and
+install directories are named and how deeply they are nested, etc.) is
+to be considered an implementation detail, which can change at any time;
+so do not reply on it.
+
 @vindex AM_DISTCHECK_CONFIGURE_FLAGS
 @vindex DISTCHECK_CONFIGURE_FLAGS
 @subheading DISTCHECK_CONFIGURE_FLAGS
@@ -8830,9 +8840,6 @@ error} happens when e.g., the set-up of a test case scenario fails, or when
 some other unexpected or highly undesirable condition is encountered (for
 example, the program under test experiences a segmentation fault).
 
-@emph{TODO}: Links to other test harnesses (esp. those sharing our
-terminology)?
-
 @node Simple Tests
 @section Simple Tests
 
@@ -8965,8 +8972,6 @@ flag on file descriptors opened with the @command{exec} builtin, thus
 rendering an idiom like @code{AM_TESTS_ENVIRONMENT = exec 9>&2;}
 ineffectual.  This issue also affects some Bourne shells, such as the
 HP-UX's @command{/bin/sh},
-@c FIXME: should we offer a link to the relevant discussions on the
-@c bug-autoconf list?
 
 @c Keep in sync with tests-environment-backcompat.sh
 @example
@@ -9026,7 +9031,6 @@ The serial test harness is enabled by the Automake option
 @option{serial-tests}. It operates by simply running the tests serially,
 one at the time, without any I/O redirection.  It's up to the user to
 implement logging of tests' output, if that's requited or desired.
-@c TODO: give an example of how this can be done.
 
 For historical and implementation reasons, the @code{AM_TESTS_ENVIRONMENT}
 variable is @emph{not} supported by this harness (it will be silently
@@ -9095,8 +9099,6 @@ to a per-test log file, so that parallel execution does not produce
 intermingled output.  The output from failed tests is collected in the
 @file{test-suite.log} file.  If the variable @samp{VERBOSE} is set, this
 file is output after the summary.
-@c FIXME: we should be clearer about what we mean exactly here ...
-For best results, the tests should be verbose by default now.
 
 @vindex TEST_EXTENSIONS
 @vindex TEST_LOGS
@@ -9160,7 +9162,7 @@ and @samp{./wrapper-script -d baz} to produce @file{foo.log},
 as a side-effect.
 
 It's important to note that, differently from what we've seen for the
-serial test harness (@pxref{Parallel Test Harness}), the
+serial test harness (@pxref{Serial Test Harness}), the
 @code{AM_TESTS_ENVIRONMENT} and @code{TESTS_ENVIRONMENT} variables
 @emph{cannot} be use to define a custom test runner; the
 @code{LOG_COMPILER} and @code{LOG_FLAGS} (or their extension-specific
@@ -9605,12 +9607,6 @@ other end, if you are using a known and widespread test protocol with
 well-established implementations, being consistent with those
 implementations' output might be a good idea too.
 
-@c TODO: Give an example, maybe inspired to py.test-style output.
-@c TODO: That is a good idea because it shows a test driver that allows
-@c TODO: for different levels of verbosity in the progress output (could
-@c TODO: be implemented either using a driver cmdline flag, or an
-@c TODO: environment variable, or both).
-
 @node Using the TAP test protocol
 @section Using the TAP test protocol
 
@@ -9659,10 +9655,9 @@ Currently, the TAP driver that comes with Automake requires some by-hand
 steps on the developer's part (this situation should hopefully be improved
 in future Automake versions).  You'll have to grab the @file{tap-driver.sh}
 script from the Automake distribution by hand, copy it in your source tree,
-add a call to @code{AC_PROG_AWK} in @file{configure.ac} to search for a
-proper awk program, and use the Automake support for third-party test
-drivers to instruct the harness to use the @file{tap-driver.sh} script
-and that awk program to run your TAP-producing tests.  See the example
+and use the Automake support for third-party test drivers to instruct the
+harness to use the @file{tap-driver.sh} script and the awk program found
+by @code{AM_INIT_AUTOMAKE} to run your TAP-producing tests.  See the example
 below for clarification.
 
 Apart from the options common to all the Automake test drivers
@@ -9718,7 +9713,6 @@ AC_CONFIG_AUX_DIR([build-aux])
 AM_INIT_AUTOMAKE([foreign -Wall -Werror])
 AC_CONFIG_FILES([Makefile])
 AC_REQUIRE_AUX_FILE([tap-driver.sh])
-AC_PROG_AWK
 AC_OUTPUT
 
 % @kbd{cat Makefile.am}
@@ -9751,7 +9745,7 @@ echo ok 1
 # Exit with error, even if all the tests have been successful.
 exit 7
 
-% @kbd{cp @var{PREFIX}/share/automake-@var{APIVERSION}/tap-driver.pl .}
+% @kbd{cp @var{PREFIX}/share/automake-@var{APIVERSION}/tap-driver.sh .}
 % @kbd{autoreconf -vi && ./configure && make check}
 ...
 PASS: foo.test 1 - Swallows fly
@@ -10850,9 +10844,6 @@ previous section can be useful from time to time, but we've seen that
 they all have their serious drawbacks and limitations.  That's why
 automake provides support for a more advanced and flexible way of
 obtaining quieter output from @command{make} (for most rules at least).
-
-@c TODO: Maybe describe in brief the precedent set by the build system
-@c of the Linux Kernel, from which Automake took inspiration ... Links?
 
 To give the gist of what Automake can do in this respect, here is a simple
 comparison between a typical @command{make} output (where silent rules

@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2001-2013 Free Software Foundation, Inc.
+# Copyright (C) 2001-2014 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -62,7 +62,7 @@ pkgdata_SCRIPTS = script
 ##pkginclude_SCRIPTS = script
 EOF
 
-$ACLOCAL || exit 1
+$ACLOCAL
 $AUTOMAKE
 
 # install-SCRIPTS targets.
@@ -75,7 +75,6 @@ EOF
 
 diff expected produced
 
-
 # install-exec targets.
 sed -n '/^install-exec-am/,/^	/p' Makefile.in > produced
 
@@ -86,4 +85,4 @@ EOF
 
 diff expected produced
 
-exit 0
+:

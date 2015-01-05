@@ -1,6 +1,6 @@
 # -*- shell-script -*-
 #
-# Copyright (C) 1996-2013 Free Software Foundation, Inc.
+# Copyright (C) 1996-2014 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -254,7 +254,7 @@ am_exit_trap ()
     # behaviour, while from time to time useful to developers, is not
     # meant to be enabled by default, as it could cause spurious failures
     # in the wild.  Thus it will be enabled only when the variable
-    # "am_explicit_skips" is set to a "true" value.
+    # 'am_explicit_skips' is set to a "true" value.
     case $am_explicit_skips in
       [yY]|[yY]es|1)
         if test $exit_status -eq 77 && test $am__test_skipped != yes; then
@@ -266,7 +266,6 @@ am_exit_trap ()
   fi
   am_keeping_testdirs || rm_rf_ $am_test_subdir
   set +x
-  echo "$me: exit $exit_status"
   # Spurious escaping to ensure we do not call our "exit" alias.
   \exit $exit_status
 }
