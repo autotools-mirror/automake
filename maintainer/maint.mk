@@ -417,7 +417,7 @@ web-manual-update:
 	     exit 1;; \
 	esac
 	$(AM_V_at)test -f $(web_manual_dir)/$(PACKAGE).html || { \
-	  echo 'You have to run "$(MAKE) web-manuals" before' \
+	  echo 'You have to run "$(MAKE) web-manual" before' \
 	       'invoking "$(MAKE) $@"' >&2; \
 	  exit 1; \
 	}
