@@ -42,10 +42,10 @@ libtoolize
 $ACLOCAL
 $AUTOMAKE -a
 
-grep include Makefile.in # For debugging.
-LC_ALL=C grep 'include.*\./\$(DEPDIR)/foo\.P' Makefile.in
-LC_ALL=C grep 'include.*[^a-zA-Z0-9_/]sub/\$(DEPDIR)/bar\.P' Makefile.in
-$EGREP 'include.*/(\.|sub)/\$\(DEPDIR\)' Makefile.in && exit 1
+grep '\.P' Makefile.in # For debugging.
+grep '\./\$(DEPDIR)/foo\.Plo' Makefile.in
+grep '[^a-zA-Z0-9_/]sub/\$(DEPDIR)/bar\.Plo' Makefile.in
+$EGREP '/(\.|sub)/\$\(DEPDIR\)' Makefile.in && exit 1
 
 $AUTOCONF
 # Don't reject slower dependency extractors, for better coverage.

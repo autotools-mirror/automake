@@ -83,6 +83,12 @@ $AUTOCONF
 ./configure --enable-dependency-tracking
 
 $MAKE
+
+# For debugging.
+for f in $(find . -name '*.Po'); do
+  cat $f
+done
+
 $MAKE test-deps-exist
 
 $sleep

@@ -21,7 +21,7 @@
 
 echo AC_PROG_CC >> configure.ac
 
-cat > Makefile.am << 'END'
+cat > Makefile.am <<'END'
 bin_PROGRAMS = www
 www_SOURCES = www.c
 EXTRA_www_SOURCES = xtra.c
