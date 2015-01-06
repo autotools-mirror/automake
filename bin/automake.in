@@ -1132,34 +1132,28 @@ sub check_user_variables
 sub handle_languages ()
 {
     if (! option 'no-dependencies')
-    {
-	# Include auto-dep code.  Don't include it if DEP_FILES would
-	# be empty.
-	if (keys %extension_seen && keys %dep_files)
-	{
-	    # Set location of depcomp.
+      {
+        # Include automatic dependency tracking code, if needed.
+        if (keys %extension_seen && keys %dep_files)
+          {
             define_variable ('depcomp', INTERNAL,
-                              '$(SHELL) $(am.conf.aux-dir)/depcomp');
+                             '$(SHELL) $(am.conf.aux-dir)/depcomp');
 
-	    require_conf_file ("$am_file.am", FOREIGN, 'depcomp');
+            require_conf_file ("$am_file.am", FOREIGN, 'depcomp');
 
-	    my @deplist = sort keys %dep_files;
-	    # Generate each 'include' individually.  Irix 6 make will
-	    # not properly include several files resulting from a
-	    # variable expansion; generating many separate includes
-	    # seems safest.
-	    $output_rules .= "\n";
-	    foreach my $depfile (@deplist)
-	    {
-		$output_rules .= subst ('AMDEP_TRUE') . "-include $depfile\n";
-		$clean_dirs{dirname ($depfile)} = DIST_CLEAN;
-	    }
-	}
-    }
+            my @deplist = sort keys %dep_files;
+            $output_rules .= "\n";
+            foreach my $depfile (@deplist)
+              {
+                $output_rules .= subst ('AMDEP_TRUE') . "-include $depfile\n";
+                $clean_dirs{dirname ($depfile)} = DIST_CLEAN;
+              }
+          }
+      }
     else
-    {
-	define_variable ('depcomp', INTERNAL, '');
-    }
+      {
+        define_variable ('depcomp', INTERNAL, '');
+      }
 
     my %done;
 
