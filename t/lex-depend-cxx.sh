@@ -82,6 +82,11 @@ $AUTOCONF
 # using slow dependency extractors.
 ./configure --enable-dependency-tracking
 
+# For debugging.
+for f in $(find . -name '*.Po'); do
+  cat $f
+done
+
 $MAKE test-deps-exist
 $MAKE
 

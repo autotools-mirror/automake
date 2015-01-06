@@ -56,8 +56,8 @@ cd build
 ../configure
 
 $MAKE
-test -d foo/.deps
+test -f foo/.deps/main.Po
 $MAKE distclean
-test -d foo/.deps && exit 1
+test ! -e foo/.deps/main.Po
 
 :
