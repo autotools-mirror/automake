@@ -41,8 +41,8 @@ $ACLOCAL && $AUTOCONF && $AUTOMAKE -a || fatal_ "autotools failed"
 
 $EGREP 'test\.|DEPDIR|dirstamp|srcdir' Makefile.in || : # For debugging.
 $EGREP '\$.srcdir./test\.[o$]' Makefile.in && exit 1
-$FGREP '$(srcdir)/$(am__dirstamp)' Makefile.in && exit 1
-$FGREP '$(srcdir)/$(DEPDIR)' && exit 1
+$EGREP '$(srcdir)/$(am__dirstamp)' Makefile.in && exit 1
+$EGREP '$(srcdir)/$(DEPDIR)' && exit 1
 
 cat > test.c << 'END'
 int main (void)
