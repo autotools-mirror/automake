@@ -1188,48 +1188,50 @@ sub check_user_variables
 sub handle_languages ()
 {
     if (! option 'no-dependencies')
-    {
-	# Include auto-dep code.  Don't include it if DEP_FILES would
-	# be empty.
-	if (keys %extension_seen && keys %dep_files)
-	{
-	    # Set location of depcomp.
-	    define_variable ('depcomp',
-			     "\$(SHELL) $am_config_aux_dir/depcomp",
-			     INTERNAL);
-	    define_variable ('am__depfiles_maybe', 'depfiles', INTERNAL);
+      {
+        # Include auto-dep code.  Don't include it if DEP_FILES would
+        # be empty.
+        if (keys %extension_seen && keys %dep_files)
+          {
+            my @dep_files = sort keys %dep_files;
+            # Set location of depcomp.
+            define_variable ('depcomp',
+                             "\$(SHELL) $am_config_aux_dir/depcomp",
+                             INTERNAL);
+            define_variable ('am__maybe_remake_depfiles', 'depfiles', INTERNAL);
+            define_variable ('am__depfiles_remade', "@dep_files", INTERNAL);
+            $output_rules .= "\n";
+            my @dist_rms;
+            foreach my $depfile (@dep_files)
+              {
+                push @dist_rms, "\t-rm -f $depfile";
+                # Generate each 'include' directive individually.  Several
+                # make implementations (IRIX 6, Solaris 10, FreeBSD 8) will
+                # fail to properly include several files resulting from a
+                # variable expansion. Just Generating many separate includes
+                # seems thus safest.
+                $output_rules .= subst ('AMDEP_TRUE') .
+                                 subst ('am__include') .
+                                 " " .
+                                 subst('am__quote') .
+                                 $depfile .
+                                 subst('am__quote') .
+                                 " " .
+                                 "# am--include-marker\n";
+              }
 
-	    require_conf_file ("$am_file.am", FOREIGN, 'depcomp');
+            require_conf_file ("$am_file.am", FOREIGN, 'depcomp');
 
-	    my @deplist = sort keys %dep_files;
-	    # Generate each 'include' individually.  Irix 6 make will
-	    # not properly include several files resulting from a
-	    # variable expansion; generating many separate includes
-	    # seems safest.
-	    $output_rules .= "\n";
-	    foreach my $iter (@deplist)
-	    {
-		$output_rules .= (subst ('AMDEP_TRUE')
-				  . subst ('am__include')
-				  . ' '
-				  . subst ('am__quote')
-				  . $iter
-				  . subst ('am__quote')
-				  . "\n");
-	    }
-
-	    # Compute the set of directories to remove in distclean-depend.
-	    my @depdirs = uniq (map { dirname ($_) } @deplist);
-	    $output_rules .= file_contents ('depend',
-					    new Automake::Location,
-					    DEPDIRS => "@depdirs");
-	}
-    }
+            $output_rules .= file_contents (
+                'depend', new Automake::Location,
+                'DISTRMS' => join ("\n", @dist_rms));
+          }
+      }
     else
-    {
-	define_variable ('depcomp', '', INTERNAL);
-	define_variable ('am__depfiles_maybe', '', INTERNAL);
-    }
+      {
+        define_variable ('depcomp', '', INTERNAL);
+        define_variable ('am__maybe_remake_depfiles', '', INTERNAL);
+      }
 
     my %done;
 
@@ -1544,9 +1546,9 @@ sub handle_single_transform
 	my $renamed = 0;
 	my ($linker, $object);
 
-	# This records whether we've seen a derived source file (e.g.
-	# yacc output).
-	my $derived_source = 0;
+        # This records whether we've seen a derived source file (e.g., yacc
+        # or lex output).
+        my $derived_source;
 
 	# This holds the 'aggregate context' of the file we are
 	# currently examining.  If the file is compiled with
@@ -1598,17 +1600,36 @@ sub handle_single_transform
 	    # Now extract linker and other info.
 	    $linker = $lang->linker;
 
-	    my $this_obj_ext;
-	    if (defined $source_extension)
-	    {
-		$this_obj_ext = $source_extension;
-		$derived_source = 1;
-	    }
-	    else
-	    {
-		$this_obj_ext = $obj;
-	    }
-	    $object = $base . $this_obj_ext;
+            my $this_obj_ext;
+            if (defined $source_extension)
+              {
+                $this_obj_ext = $source_extension;
+                $derived_source = 1;
+              }
+            else
+              {
+                $this_obj_ext = $obj;
+                $derived_source = 0;
+                # Don't ever place built object files in $(srcdir),
+                # even when sources are specified explicitly as (say)
+                # '$(srcdir)/foo.c' or '$(top_srcdir)/foo.c'.
+                # See automake bug#13928.
+                my @d = split '/', $directory;
+                if (@d > 0 && option 'subdir-objects')
+                  {
+                    my $d = $d[0];
+                    if ($d eq '$(srcdir)' or $d eq '${srcdir}')
+                      {
+                        shift @d;
+                      }
+                    elsif ($d eq '$(top_srcdir)' or $d eq '${top_srcdir}')
+                      {
+                        $d[0] = '$(top_builddir)';
+                      }
+                    $directory = join '/', @d;
+                  }
+              }
+            $object = $base . $this_obj_ext;
 
 	    if ($have_per_exec_flags)
 	    {

@@ -40,7 +40,7 @@ $AUTOMAKE -a
 $EGREP '([mj]oe|_[01234]|include|\.P)' Makefile.in # For debugging.
 
 for x in joe moe _0 _1 _2 _3 _4; do
-  grep "include.*$x\.Po" Makefile.in
+  $EGREP '\$\(DEPDIR\)/'"$x"'\.Po( |$)' Makefile.in
 done
 
 :
