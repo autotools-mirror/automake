@@ -44,8 +44,15 @@ $AUTOMAKE -a
 
 ./configure
 $MAKE
-test -f s/.deps/foo.Po
+
+test -d s/.deps
+if ! grep '^am_cv_CC_dependencies_compiler_type=none$' config.log; then
+  # This file is not created if the compiler does not support generation
+  # of dependency tracking information.
+  test -f s/.deps/foo.Po
+fi
 find . | $FGREP '$(src)' && exit 1
+
 $MAKE distcheck
 
 :
