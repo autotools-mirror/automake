@@ -37,11 +37,17 @@ T ()
   cd T$i.d
   {
     echo 'include ../defn.mk'
+    # Make sure $(shell ...) invocations use a POSIX shell -- /bin/sh is
+    # borked and non-POSIX on a few systems, most notably Solaris 10.
+    # That has already caused spurious failures in the past.
+    echo "SHELL = ${SHELL}"
     echo 'lower = abcdefghijklmnopqrstuvwxyz'
     echo 'upper = ABCDEFGHIJKLMNOPQRSTUVWXYZ'
     echo 'digits = 0123456789'
+    # The rest of the makefile come from the standard input passed to this
+    # function.
+    cat
   } > Makefile
-  cat >> Makefile
   test_name=$1; shift
   command_ok_ "$test_name" $MAKE ${1+"$@"} test
   cd ..
