@@ -17,7 +17,7 @@
 # Vala sources, C and C++ sources and C and C++ headers in the same
 # program.  Functional test.  See automake bug#10894.
 
-required='valac cc c++ pkg-config'
+required='valac gcc g++ pkg-config'
 . test-init.sh
 
 cat >> configure.ac <<'END'
@@ -90,8 +90,8 @@ have_generated_files ()
 have_generated_files
 
 # Remake rules are not uselessly triggered.
-$MAKE -q
 $MAKE -n | $FGREP vala.stamp && exit 1
+$MAKE -q
 
 # But are triggered when they should.
 for file in zardoz.vala foo.h bar.c baz.c zen.hh master.cxx; do
