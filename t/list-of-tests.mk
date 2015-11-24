@@ -272,6 +272,7 @@ t/compile3.sh \
 t/compile4.sh \
 t/compile5.sh \
 t/compile6.sh \
+t/compile7.sh \
 t/compile_f90_c_cxx.sh \
 t/compile_f_c_cxx.sh \
 t/cond-basic.sh \
