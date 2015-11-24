@@ -779,6 +779,17 @@ require_tool ()
       $CC -? </dev/null \
         || skip_all_ "Microsoft C compiler '$CC' not available"
       ;;
+    icl)
+      CC=icl
+      # Don't export CFLAGS, as that could have been initialized to only
+      # work with the C compiler detected at configure time.  If the user
+      # wants CFLAGS to also influence 'icl', he can still export CFLAGS
+      # in the environment "by hand" before calling the testsuite.
+      export CC CPPFLAGS
+      echo "$me: running $CC -?"
+      $CC -? >/dev/null \
+        || skip_all_ "Intel C compiler '$CC' not available"
+      ;;
     etags)
       # Exuberant Ctags will create a TAGS file even
       # when asked for --help or --version.  (Emacs's etags
