@@ -1,6 +1,6 @@
 # Check to see how 'make' treats includes.	            -*- Autoconf -*-
 
-# Copyright (C) 2001-2015 Free Software Foundation, Inc.
+# Copyright (C) 2001-2017 Free Software Foundation, Inc.
 #
 # This file is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
