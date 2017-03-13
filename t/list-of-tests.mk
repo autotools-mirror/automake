@@ -1062,6 +1062,7 @@ t/subobjname.sh \
 t/subobj-clean-pr10697.sh \
 t/subobj-clean-lt-pr10697.sh \
 t/subobj-indir-pr13928.sh \
+t/subobj-objname-clash.sh \
 t/subobj-vpath-pr13928.sh \
 t/subobj-pr13928-more-langs.sh \
 t/subpkg.sh \

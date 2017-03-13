@@ -74,6 +74,7 @@ use Automake::Wrap 'makefile_wrap';
 use Automake::Language;
 use File::Basename;
 use File::Spec;
+use List::Util 'none';
 use Carp;
 
 ## ----------------------- ##
@@ -472,6 +473,15 @@ my %dep_files;
 # This is a list of all targets to run during "make dist".
 my @dist_targets;
 
+# List of all programs, libraries and ltlibraries as returned
+# by am_install_var
+my @proglist;
+my @liblist;
+my @ltliblist;
+# Blacklist of targets (as canonical base name) for which object file names
+# may not be automatically shortened
+my @dup_shortnames;
+
 # Keep track of all programs declared in this Makefile, without
 # $(EXEEXT).  @substitutions@ are not listed.
 my %known_programs;
@@ -591,6 +601,11 @@ sub initialize_per_input ()
 
     @dist_common = ();
     $handle_dist_run = 0;
+
+    @proglist = ();
+    @liblist = ();
+    @ltliblist = ();
+    @dup_shortnames = ();
 
     %known_programs = ();
     %known_libraries = ();
@@ -1704,14 +1719,48 @@ sub handle_single_transform
 		# object.  In this case we rewrite the object's
 		# name to ensure it is unique.
 
-		# We choose the name 'DERIVED_OBJECT' to ensure
-		# (1) uniqueness, and (2) continuity between
-		# invocations.  However, this will result in a
-		# name that is too long for losing systems, in
-		# some situations.  So we provide _SHORTNAME to
-		# override.
-
-		my $dname = $derived;
+                # We choose the name 'DERIVED_OBJECT' to ensure (1) uniqueness,
+                # and (2) continuity between invocations.  However, this will
+                # result in a name that is too long for losing systems, in some
+                # situations.  So we attempt to shorten automatically under
+                # subdir-objects, and provide _SHORTNAME to override as a last
+                # resort.  If subdir-object is in effect, it's usually
+                # unnecessary to use the complete 'DERIVED_OBJECT' (that is
+                # often the result from %canon_reldir%/%C% usage) since objects
+                # are placed next to their source file.  Generally, this means
+                # it is already unique within that directory (see below for an
+                # exception).  Thus, we try to avoid unnecessarily long file
+                # names by stripping the directory components of
+                # 'DERIVED_OBJECT'.  This allows avoiding explicit _SHORTNAME
+                # usage in many cases.  EXCEPTION: If two (or more) targets in
+                # different directories but with the same base name (after
+                # canonicalization), using target-specific FLAGS, link the same
+                # object, then this logic clashes.  Thus, we don't strip if
+                # this is detected.
+                my $dname = $derived;
+                if ($directory ne ''
+                    && option 'subdir-objects'
+                    && none { $dname =~ /$_$/ } @dup_shortnames)
+                  {
+                    # At this point, we don't clear information about what
+                    # parts of $derived are truly file name components.  We can
+                    # determine that by comparing against the canonicalization
+                    # of $directory.
+                    my $dir = $directory . "/";
+                    my $cdir = canonicalize ($dir);
+                    my $dir_len = length ($dir);
+                    # Make sure we only strip full file name components.  This
+                    # is done by repeatedly trying to find cdir at the
+                    # beginning.  Each iteration removes one file name
+                    # component from the end of cdir.
+                    while ($dir_len > 0 && index ($derived, $cdir) != 0)
+                      {
+                        # Eventually $dir_len becomes 0.
+                        $dir_len = rindex ($dir, "/", $dir_len - 2) + 1;
+                        $cdir = substr ($cdir, 0, $dir_len);
+                      }
+                    $dname = substr ($derived, $dir_len);
+                  }
 		my $var = var ($derived . '_SHORTNAME');
 		if ($var)
 		{
@@ -2432,12 +2481,33 @@ sub handle_libtool ()
 				   LTRMS => join ("\n", @libtool_rms));
 }
 
+# Check for duplicate targets
+sub handle_targets ()
+{
+  my %seen = ();
+  my @dups = ();
+  @proglist = am_install_var ('progs', 'PROGRAMS',
+                              'bin', 'sbin', 'libexec', 'pkglibexec',
+                              'noinst', 'check');
+  @liblist = am_install_var ('libs', 'LIBRARIES',
+                             'lib', 'pkglib', 'noinst', 'check');
+  @ltliblist = am_install_var ('ltlib', 'LTLIBRARIES',
+			       'noinst', 'lib', 'pkglib', 'check');
+
+  # Record duplications that may arise after canonicalization of the
+  # base names, in order to prevent object file clashes in the presence
+  # of target-specific *FLAGS
+  my @targetlist = (@proglist, @liblist, @ltliblist);
+  foreach my $pair (@targetlist)
+    {
+      my $base = canonicalize (basename (@$pair[1]));
+      push (@dup_shortnames, $base) if ($seen{$base});
+      $seen{$base} = $base;
+    }
+}
 
 sub handle_programs ()
 {
-  my @proglist = am_install_var ('progs', 'PROGRAMS',
-				 'bin', 'sbin', 'libexec', 'pkglibexec',
-				 'noinst', 'check');
   return if ! @proglist;
   $must_handle_compiled_objects = 1;
 
@@ -2524,8 +2594,6 @@ sub handle_programs ()
 
 sub handle_libraries ()
 {
-  my @liblist = am_install_var ('libs', 'LIBRARIES',
-                                'lib', 'pkglib', 'noinst', 'check');
   return if ! @liblist;
   $must_handle_compiled_objects = 1;
 
@@ -2634,9 +2702,7 @@ sub handle_libraries ()
 
 sub handle_ltlibraries ()
 {
-  my @liblist = am_install_var ('ltlib', 'LTLIBRARIES',
-                                'noinst', 'lib', 'pkglib', 'check');
-  return if ! @liblist;
+  return if ! @ltliblist;
   $must_handle_compiled_objects = 1;
 
   my @prefix = am_primary_prefixes ('LTLIBRARIES', 0, 'lib', 'pkglib',
@@ -2729,7 +2795,7 @@ sub handle_ltlibraries ()
 	 skip_ac_subst => 1);
     }
 
-  foreach my $pair (@liblist)
+  foreach my $pair (@ltliblist)
     {
       my ($where, $onelib) = @$pair;
 
@@ -7793,6 +7859,8 @@ sub generate_makefile
 
   handle_configure ($makefile_am, $makefile_in, $makefile, @inputs);
   handle_gettext;
+
+  handle_targets;
   handle_libraries;
   handle_ltlibraries;
   handle_programs;
