@@ -223,7 +223,7 @@ autodiffs:
 	       && cd tmp \
 	       && $(GIT) checkout -q "$$rev" \
 	       && echo "$@: bootstrapping $$rev" \
-	       && $(SHELL) ./bootstrap.sh \
+	       && $(SHELL) ./bootstrap \
 	       && echo "$@: copying files from $$rev" \
 	       && makefile_ins=`find . -name Makefile.in` \
 	       && (tar cf - configure aclocal.m4 $$makefile_ins) | \
@@ -487,7 +487,7 @@ update-copyright:
 	    || { echo "$@: cannot get current year" >&2; exit 1; }; \
 	fi; \
 	sed -i "/^RELEASE_YEAR=/s/=.*$$/=$$current_year/" \
-	  bootstrap.sh configure.ac; \
+	  bootstrap configure.ac; \
 	excluded_re=`( \
 	  for url in $(FETCHFILES); do echo "$$url"; done \
 	    | sed -e 's!^.*/!!' -e 's!^.*=!!' -e 's!^!lib/!' \

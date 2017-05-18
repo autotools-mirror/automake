@@ -33,7 +33,7 @@ nodist_noinst_SCRIPTS =
 ## ------------ ##
 
 EXTRA_DIST += \
-  bootstrap.sh \
+  bootstrap \
   GNUmakefile \
   HACKING \
   PLANS
