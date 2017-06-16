@@ -65,7 +65,6 @@ cat > baz.texi << 'END'
 @defindex au
 @defindex sa
 @defindex sb
-@synindex sa sb
 @node Top
 Hello walls.
 @cindex foo

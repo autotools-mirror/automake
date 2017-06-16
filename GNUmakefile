@@ -72,7 +72,7 @@ configure-flags := $(old-configure-flags) $(BOOTSTRAP_CONFIGURE_FLAGS)
 
 .PHONY: bootstrap
 bootstrap:
-	cd $(srcdir) && $(SHELL) ./bootstrap.sh
+	cd $(srcdir) && $(SHELL) ./bootstrap
 	$(srcdir)/configure $(configure-flags)
 	$(MAKE) clean
 	$(MAKE) check TESTS=t/get-sysconf

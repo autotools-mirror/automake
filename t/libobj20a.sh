@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2012-2017 Free Software Foundation, Inc.
+# Copyright (C) 2010-2017 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,45 +14,32 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Ensure that the 'make distcheck'-run distcleancheck does not fail
-# due to a leftover .deps/base.Tpo file when part of a successful build
-# involves a failed attempt to create a .deps/base.Po file.
+# Test error reporting for AC_CONFIG_LIBOBJ_DIR.
+# See also sister tests 'libobj20b.sh' and 'libobj20c.sh'.
 
 . test-init.sh
 
-cat >> configure.ac <<END
+cat >> configure.ac << 'END'
+AC_CONFIG_LIBOBJ_DIR([libobj-dir])
 AC_PROG_CC
-AC_OUTPUT
+AM_PROG_AR
+AC_PROG_RANLIB
+AC_LIBOBJ([foo])
 END
 
-cat > foo.c <<\END
-#ifndef FAIL
-int main() { return 0; }
-#else
-int x[no_such];
-#endif
+cat > Makefile.am << 'END'
+noinst_LIBRARIES = libtu.a
+libtu_a_SOURCES =
+libtu_a_LIBADD = $(LIBOBJS)
 END
 
-cat > Makefile.am <<\END
-TESTS = foo bar.test
-check_PROGRAMS = foo
-EXTRA_DIST= bar.test foo.c
-END
-
-cat > bar.test <<END
-#!/bin/sh
-rm -f foo.o
-$MAKE AM_CFLAGS=-DFAIL foo.o && exit 1
-exit 0
-END
-chmod a+x bar.test
+mkdir libobj-dir
+: > libobj-dir/foo.c
+: > ar-lib
 
 $ACLOCAL
-$AUTOCONF
-$AUTOMAKE -a
-./configure
-
-# We can build the distribution.
-run_make -M distcheck
+AUTOMAKE_fails
+grep 'LIBOBJS.*used outside.*libobj-dir' stderr
+grep 'subdir-objects.*not set' stderr
 
 :

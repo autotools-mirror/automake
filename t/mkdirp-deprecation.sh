@@ -14,45 +14,35 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Ensure that the 'make distcheck'-run distcleancheck does not fail
-# due to a leftover .deps/base.Tpo file when part of a successful build
-# involves a failed attempt to create a .deps/base.Po file.
+# Check that the AM_PROG_MKDIR_P macro is deprecated.  It will be
+# be removed in the next major Automake release.
 
 . test-init.sh
 
-cat >> configure.ac <<END
-AC_PROG_CC
-AC_OUTPUT
-END
+echo AM_PROG_MKDIR_P >> configure.ac
+: > Makefile.am
 
-cat > foo.c <<\END
-#ifndef FAIL
-int main() { return 0; }
-#else
-int x[no_such];
-#endif
-END
-
-cat > Makefile.am <<\END
-TESTS = foo bar.test
-check_PROGRAMS = foo
-EXTRA_DIST= bar.test foo.c
-END
-
-cat > bar.test <<END
-#!/bin/sh
-rm -f foo.o
-$MAKE AM_CFLAGS=-DFAIL foo.o && exit 1
-exit 0
-END
-chmod a+x bar.test
+grep_err ()
+{
+  loc='^configure.ac:4:'
+  grep "$loc.*AM_PROG_MKDIR_P.*deprecated" stderr
+  grep "$loc.* use .*AC_PROG_MKDIR_P" stderr
+  grep "$loc.* use '\$(MKDIR_P)' instead of '\$(mkdir_p)'.*Makefile" stderr
+}
 
 $ACLOCAL
-$AUTOCONF
-$AUTOMAKE -a
-./configure
 
-# We can build the distribution.
-run_make -M distcheck
+$AUTOCONF -Werror -Wobsolete 2>stderr && { cat stderr >&2; exit 1; }
+cat stderr >&2
+grep_err
+
+$AUTOCONF -Werror -Wno-obsolete
+
+#AUTOMAKE_fails
+#grep_err
+AUTOMAKE_fails --verbose -Wnone -Wobsolete
+grep_err
+
+$AUTOMAKE -Wno-obsolete
 
 :

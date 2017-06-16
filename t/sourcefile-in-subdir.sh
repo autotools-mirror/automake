@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2001-2017 Free Software Foundation, Inc.
+# Copyright (C) 1999-2017 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,30 +14,23 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Support for $(INCLUDES) is deprecated.
+# Test to make sure subdir source file generates explicit dependency.
 
 . test-init.sh
 
-echo AC_PROG_CC >> configure.ac
-
-$ACLOCAL
-
 cat > Makefile.am << 'END'
-bin_PROGRAMS = foo
-INCLUDES = -DFOO
+bin_PROGRAMS = zardoz widdershins
+zardoz_SOURCES = y.c x/z.c
+widdershins_SOURCES = x/z.c
 END
 
-AUTOMAKE_fails -Wnone -Wobsolete
-grep "^Makefile\\.am:2:.* 'INCLUDES'.* deprecated.* 'AM_CPPFLAGS'" stderr
-AUTOMAKE_run -Wall -Wno-obsolete
-test ! -s stderr
+cat >> configure.ac << 'END'
+AC_PROG_CC
+END
 
-$sleep
+$ACLOCAL
+$AUTOMAKE -Wno-unsupported
 
-echo 'AC_SUBST([INCLUDES])' >> configure.ac
-sed '/^INCLUDES/d' Makefile.am > t && mv -f t Makefile.am
-
-AUTOMAKE_run -Wno-error
-grep "^configure\\.ac:5:.* 'INCLUDES'.* deprecated.* 'AM_CPPFLAGS'" stderr
+grep '^z\.o: x/z\.c$' Makefile.in
 
 :
