@@ -1,6 +1,6 @@
 # Maintainer makefile for Automake.  Requires GNU make.
 
-# Copyright (C) 2012-2015 Free Software Foundation, Inc.
+# Copyright (C) 2012-2017 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -72,7 +72,7 @@ configure-flags := $(old-configure-flags) $(BOOTSTRAP_CONFIGURE_FLAGS)
 
 .PHONY: bootstrap
 bootstrap:
-	cd $(srcdir) && $(SHELL) ./bootstrap.sh
+	cd $(srcdir) && $(SHELL) ./bootstrap
 	$(srcdir)/configure $(configure-flags)
 	$(MAKE) clean
 	$(MAKE) check TESTS=t/get-sysconf
