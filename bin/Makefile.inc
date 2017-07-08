@@ -61,19 +61,15 @@ uninstall-hook:
 # $(datadir) or other do_subst'ituted variables change.
 %D%/automake: %D%/automake.in
 %D%/aclocal: %D%/aclocal.in
-%D%/automake %D%/aclocal: Makefile %D%/gen-perl-protos
+%D%/automake %D%/aclocal: Makefile
 	$(AM_V_GEN)rm -f $@ $@-t $@-t2 \
 	  && $(MKDIR_P) $(@D) \
 ## Common substitutions.
 	  && in=$@.in && $(do_subst) <$(srcdir)/$$in >$@-t \
-## Auto-compute prototypes of perl subroutines.
-	  && $(PERL) -w $(srcdir)/%D%/gen-perl-protos $@-t > $@-t2 \
-	  && mv -f $@-t2 $@-t \
 ## We can't use '$(generated_file_finalize)' here, because currently
 ## Automake contains occurrences of unexpanded @substitutions@ in
 ## comments, and that is perfectly legit.
 	  && chmod a+x,a-w $@-t && mv -f $@-t $@
-EXTRA_DIST += %D%/gen-perl-protos
 
 %D%/aclocal-$(APIVERSION): %D%/aclocal
 	$(AM_V_GEN) rm -f $@; \
