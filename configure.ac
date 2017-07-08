@@ -49,12 +49,7 @@ AC_SUBST([RELEASE_YEAR])
 
 # The API version is the base version.  We must guarantee
 # compatibility for all releases with the same API version.
-# Our current rule is that:
-# * All releases, including the prereleases, in an X.Y series
-#   are compatible.  So 1.5.1c is compatible with 1.5.
-# * Prereleases on the trunk are all incompatible -- 1.5b and 1.5c
-#   aren't the same.
-APIVERSION=`echo "$VERSION" | sed -e 's/^\([[0-9]]*\.[[0-9]]*[[a-z]]*\).*$/\1/'`
+APIVERSION=1.15a
 AC_SUBST([APIVERSION])
 
 AC_SUBST([pkgvdatadir], ["\${datadir}/$PACKAGE-$APIVERSION"])
