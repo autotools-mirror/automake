@@ -32,6 +32,7 @@ man1_MANS = \
 $(man1_MANS): $(top_srcdir)/configure.ac
 
 CLEANFILES += $(man1_MANS)
+# XXX: This script should be updated with 'fetch' target.
 EXTRA_DIST += %D%/help2man
 
 update_mans = \
