@@ -38,6 +38,7 @@ t/override-conditional-pr13940.sh \
 t/dist-pr109765.sh \
 t/instdir-cond2.sh \
 t/java-nobase.sh \
+t/libobj-no-dependency-tracking.sh \
 t/objext-pr10128.sh \
 t/remake-timing-bug-pr8365.sh \
 t/lex-subobj-nodep.sh \
@@ -602,6 +603,7 @@ t/lflags.sh \
 t/lflags-cxx.sh \
 t/libexec.sh \
 t/libobj-basic.sh \
+t/libobj-no-dependency-tracking.sh \
 t/libobj2.sh \
 t/libobj3.sh \
 t/libobj4.sh \
