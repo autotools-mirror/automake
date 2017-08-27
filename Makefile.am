@@ -69,6 +69,10 @@ generated_file_finalize = $(AM_V_at) \
   fi; \
   chmod a-w $@-t && mv -f $@-t $@
 
+# Wrapper for the build environment.
+nodist_noinst_SCRIPTS += pre-inst-env
+CLEANFILES += $(noinst_SCRIPTS)
+
 # For some tests or targets, we need to have the just-build automake and
 # aclocal scripts avaiable on PATH.
 extend_PATH = \
