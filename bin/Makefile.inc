@@ -20,6 +20,10 @@
 bin_SCRIPTS = %D%/automake %D%/aclocal
 CLEANFILES += $(bin_SCRIPTS)
 
+nodist_noinst_SCRIPTS += \
+  %D%/aclocal-$(APIVERSION) \
+  %D%/automake-$(APIVERSION)
+
 # Used by maintainer checks and such.
 automake_in = $(srcdir)/%D%/automake.in
 aclocal_in  = $(srcdir)/%D%/aclocal.in

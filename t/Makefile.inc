@@ -110,10 +110,6 @@ EXTRA_DIST += $(contrib_TESTS)
 # "make all".  This makes it easier to run the test cases by
 # hand after having simply configured and built the package.
 
-nodist_noinst_SCRIPTS += \
-  %D%/wrap/aclocal-$(APIVERSION) \
-  %D%/wrap/automake-$(APIVERSION)
-
 dist_noinst_DATA += \
   %D%/ax/test-init.sh \
   %D%/ax/test-lib.sh \

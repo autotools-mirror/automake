@@ -67,8 +67,8 @@ AC_SUBST([system_acdir], ["\${datadir}/aclocal"])
 # aclocal and automake, hence the remake rules must use those versions
 # as well.  The extra quoting is to cater to cases when the build
 # directory contains whitespace or shell metacharacters.
-ACLOCAL="\"`pwd`/t/wrap/aclocal-$APIVERSION\""
-AUTOMAKE="\"`pwd`/t/wrap/automake-$APIVERSION\""
+ACLOCAL="\"`pwd`/bin/aclocal-$APIVERSION\""
+AUTOMAKE="\"`pwd`/bin/automake-$APIVERSION\""
 
 AC_PROG_LN_S
 
@@ -580,11 +580,11 @@ AC_SUBST([EXEEXT])
 AC_CONFIG_FILES([Makefile])
 AC_CONFIG_LINKS([GNUmakefile:GNUmakefile])
 
-AC_CONFIG_FILES([t/wrap/aclocal-${APIVERSION}:t/wrap/aclocal.in],
-                [chmod +x t/wrap/aclocal-${APIVERSION}],
+AC_CONFIG_FILES([bin/aclocal-${APIVERSION}:bin/wrap-aclocal.in],
+                [chmod +x bin/aclocal-${APIVERSION}],
                 [APIVERSION=$APIVERSION])
-AC_CONFIG_FILES([t/wrap/automake-${APIVERSION}:t/wrap/automake.in],
-                [chmod +x t/wrap/automake-${APIVERSION}],
+AC_CONFIG_FILES([bin/automake-${APIVERSION}:bin/wrap-automake.in],
+                [chmod +x bin/automake-${APIVERSION}],
                 [APIVERSION=$APIVERSION])
 
 AC_OUTPUT
