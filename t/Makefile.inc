@@ -20,13 +20,13 @@
 ## ------------ ##
 
 # Run the tests with a proper shell detected at configure time.
-LOG_COMPILER = $(AM_TEST_RUNNER_SHELL)
+LOG_COMPILER = ./pre-inst-env $(AM_TEST_RUNNER_SHELL)
 
 TEST_EXTENSIONS = .pl .sh .tap
 SH_LOG_COMPILER = $(LOG_COMPILER)
 TAP_LOG_COMPILER = $(LOG_COMPILER)
-PL_LOG_COMPILER = $(PERL)
-AM_PL_LOG_FLAGS = -Mstrict -I $(builddir)/lib -I $(srcdir)/lib -w
+PL_LOG_COMPILER = ./pre-inst-env $(PERL)
+AM_PL_LOG_FLAGS = -Mstrict -w
 
 TAP_LOG_DRIVER = AM_TAP_AWK='$(AWK)' $(SHELL) $(srcdir)/lib/tap-driver.sh
 
