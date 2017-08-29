@@ -73,11 +73,6 @@ generated_file_finalize = $(AM_V_at) \
 nodist_noinst_SCRIPTS += pre-inst-env
 CLEANFILES += $(noinst_SCRIPTS)
 
-# For some tests or targets, we need to have the just-build automake and
-# aclocal scripts avaiable on PATH.
-extend_PATH = \
-  { PATH='$(abs_builddir)/bin$(PATH_SEPARATOR)'$$PATH && export PATH; }
-
 # The master location for INSTALL is lib/INSTALL.
 # This is where "make fetch" will install new versions.
 # Make sure we also update this copy.

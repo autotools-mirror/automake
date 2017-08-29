@@ -67,8 +67,8 @@ AC_SUBST([system_acdir], ["\${datadir}/aclocal"])
 # aclocal and automake, hence the remake rules must use those versions
 # as well.  The extra quoting is to cater to cases when the build
 # directory contains whitespace or shell metacharacters.
-ACLOCAL="\"`pwd`/bin/aclocal-$APIVERSION\""
-AUTOMAKE="\"`pwd`/bin/automake-$APIVERSION\""
+ACLOCAL="\"`pwd`/pre-inst-env\" aclocal-$APIVERSION"
+AUTOMAKE="\"`pwd`/pre-inst-env\" automake-$APIVERSION"
 
 AC_PROG_LN_S
 
