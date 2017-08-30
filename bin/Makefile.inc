@@ -18,9 +18,12 @@
 ## ----------------------------------- ##
 
 bin_SCRIPTS = %D%/automake %D%/aclocal
-CLEANFILES += $(bin_SCRIPTS)
-
 nodist_noinst_SCRIPTS += \
+  %D%/aclocal-$(APIVERSION) \
+  %D%/automake-$(APIVERSION)
+
+CLEANFILES += \
+  $(bin_SCRIPTS) \
   %D%/aclocal-$(APIVERSION) \
   %D%/automake-$(APIVERSION)
 
@@ -71,5 +74,13 @@ uninstall-hook:
 ## comments, and that is perfectly legit.
 	  && chmod a+x,a-w $@-t && mv -f $@-t $@
 EXTRA_DIST += %D%/gen-perl-protos
+
+%D%/aclocal-$(APIVERSION): %D%/aclocal
+	$(AM_V_GEN) rm -f $@; \
+	$(LN) %D%/aclocal $@
+
+%D%/automake-$(APIVERSION): %D%/automake
+	$(AM_V_GEN) rm -f $@; \
+	$(LN) %D%/automake $@
 
 # vim: ft=automake noet

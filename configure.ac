@@ -579,15 +579,7 @@ AC_SUBST([EXEEXT])
 
 AC_CONFIG_FILES([Makefile])
 AC_CONFIG_LINKS([GNUmakefile:GNUmakefile])
-
 AC_CONFIG_FILES([pre-inst-env], [chmod +x pre-inst-env])
-AC_CONFIG_FILES([bin/aclocal-${APIVERSION}:bin/wrap-aclocal.in],
-                [chmod +x bin/aclocal-${APIVERSION}],
-                [APIVERSION=$APIVERSION])
-AC_CONFIG_FILES([bin/automake-${APIVERSION}:bin/wrap-automake.in],
-                [chmod +x bin/automake-${APIVERSION}],
-                [APIVERSION=$APIVERSION])
-
 AC_OUTPUT
 
 # Inform the user if this version of automake is a beta release or
