@@ -100,7 +100,7 @@ $(srcdir)/%D%/testsuite-part.am: $(srcdir)/gen-testsuite-part
 $(srcdir)/%D%/testsuite-part.am: Makefile.am
 
 # Hand-written tests for stuff in 'contrib/'.
-include $(srcdir)/contrib/%D%/Makefile.inc
+include $(srcdir)/contrib/%D%/local.mk
 TESTS += $(contrib_TESTS)
 EXTRA_DIST += $(contrib_TESTS)
 

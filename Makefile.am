@@ -123,12 +123,12 @@ EXTRA_DIST += \
   maintainer/syntax-checks.mk
 
 # Most work delegated to sub-dir makefile fragments.
-include $(srcdir)/bin/Makefile.inc
-include $(srcdir)/doc/Makefile.inc
-include $(srcdir)/lib/Makefile.inc
-include $(srcdir)/lib/Automake/Makefile.inc
-include $(srcdir)/lib/am/Makefile.inc
-include $(srcdir)/m4/Makefile.inc
-include $(srcdir)/t/Makefile.inc
+include $(srcdir)/bin/local.mk
+include $(srcdir)/doc/local.mk
+include $(srcdir)/lib/local.mk
+include $(srcdir)/lib/Automake/local.mk
+include $(srcdir)/lib/am/local.mk
+include $(srcdir)/m4/local.mk
+include $(srcdir)/t/local.mk
 
 # vim: ft=automake noet
