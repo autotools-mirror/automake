@@ -174,9 +174,8 @@ git-tag-release: maintainer-check
 	  ""|[nN]|[nN]o|NO) run="";; \
 	  *) run="echo Running:";; \
 	esac; \
-	$(determine_release_type); \
 	$(git_must_have_clean_workdir); \
-	$$run $(GIT) tag -s "v$(VERSION)" -m "$$release_type $(VERSION)"
+	$$run $(GIT) tag -s "v$(VERSION)" -m "$(PACKAGE) $(VERSION)"
 
 git-upload-release:
 	@# Check this is a version we can cut a release (either test
