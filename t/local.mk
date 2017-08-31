@@ -20,13 +20,13 @@
 ## ------------ ##
 
 # Run the tests with a proper shell detected at configure time.
-LOG_COMPILER = $(AM_TEST_RUNNER_SHELL)
+LOG_COMPILER = ./pre-inst-env $(AM_TEST_RUNNER_SHELL)
 
 TEST_EXTENSIONS = .pl .sh .tap
 SH_LOG_COMPILER = $(LOG_COMPILER)
 TAP_LOG_COMPILER = $(LOG_COMPILER)
-PL_LOG_COMPILER = $(PERL)
-AM_PL_LOG_FLAGS = -Mstrict -I $(builddir)/lib -I $(srcdir)/lib -w
+PL_LOG_COMPILER = ./pre-inst-env $(PERL)
+AM_PL_LOG_FLAGS = -Mstrict -w
 
 TAP_LOG_DRIVER = AM_TAP_AWK='$(AWK)' $(SHELL) $(srcdir)/lib/tap-driver.sh
 
@@ -100,7 +100,7 @@ $(srcdir)/%D%/testsuite-part.am: $(srcdir)/gen-testsuite-part
 $(srcdir)/%D%/testsuite-part.am: Makefile.am
 
 # Hand-written tests for stuff in 'contrib/'.
-include $(srcdir)/contrib/%D%/Makefile.inc
+include $(srcdir)/contrib/%D%/local.mk
 TESTS += $(contrib_TESTS)
 EXTRA_DIST += $(contrib_TESTS)
 
@@ -109,10 +109,6 @@ EXTRA_DIST += $(contrib_TESTS)
 # as the prefix, because we really want them to be built by
 # "make all".  This makes it easier to run the test cases by
 # hand after having simply configured and built the package.
-
-nodist_noinst_SCRIPTS += \
-  %D%/wrap/aclocal-$(APIVERSION) \
-  %D%/wrap/automake-$(APIVERSION)
 
 dist_noinst_DATA += \
   %D%/ax/test-init.sh \

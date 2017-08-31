@@ -51,6 +51,7 @@ sc_mkinstalldirs \
 sc_pre_normal_post_install_uninstall \
 sc_perl_no_undef \
 sc_perl_no_split_regex_space \
+sc_perl_protos \
 sc_cd_in_backquotes \
 sc_cd_relative_dir \
 sc_perl_at_uscore_in_scalar_context \
@@ -101,6 +102,13 @@ sc_sanity_gnu_grep:
 	  }
 .PHONY: sc_sanity_gnu_grep
 $(syntax_check_rules): sc_sanity_gnu_grep
+
+# Check that every subroutine in perl scripts has a corresponding
+# prototype
+sc_perl_protos:
+	$(AM_V_GEN)$(srcdir)/maintainer/check-perl-protos \
+	  <$(srcdir)/bin/aclocal.in && \
+	$(srcdir)/maintainer/check-perl-protos <$(srcdir)/bin/automake.in
 
 # These check avoids accidental configure substitutions in the source.
 # There are exactly 7 lines that should be modified from automake.in to

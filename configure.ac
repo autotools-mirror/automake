@@ -49,12 +49,7 @@ AC_SUBST([RELEASE_YEAR])
 
 # The API version is the base version.  We must guarantee
 # compatibility for all releases with the same API version.
-# Our current rule is that:
-# * All releases, including the prereleases, in an X.Y series
-#   are compatible.  So 1.5.1c is compatible with 1.5.
-# * Prereleases on the trunk are all incompatible -- 1.5b and 1.5c
-#   aren't the same.
-APIVERSION=`echo "$VERSION" | sed -e 's/^\([[0-9]]*\.[[0-9]]*[[a-z]]*\).*$/\1/'`
+APIVERSION=1.99a
 AC_SUBST([APIVERSION])
 
 AC_SUBST([pkgvdatadir], ["\${datadir}/$PACKAGE-$APIVERSION"])
@@ -67,8 +62,8 @@ AC_SUBST([system_acdir], ["\${datadir}/aclocal"])
 # aclocal and automake, hence the remake rules must use those versions
 # as well.  The extra quoting is to cater to cases when the build
 # directory contains whitespace or shell metacharacters.
-ACLOCAL="\"`pwd`/t/wrap/aclocal-$APIVERSION\""
-AUTOMAKE="\"`pwd`/t/wrap/automake-$APIVERSION\""
+ACLOCAL="\"`pwd`/pre-inst-env\" aclocal-$APIVERSION"
+AUTOMAKE="\"`pwd`/pre-inst-env\" automake-$APIVERSION"
 
 AC_PROG_LN_S
 
@@ -574,14 +569,7 @@ AC_SUBST([EXEEXT])
 
 AC_CONFIG_FILES([Makefile])
 AC_CONFIG_LINKS([GNUmakefile:GNUmakefile])
-
-AC_CONFIG_FILES([t/wrap/aclocal-${APIVERSION}:t/wrap/aclocal.in],
-                [chmod +x t/wrap/aclocal-${APIVERSION}],
-                [APIVERSION=$APIVERSION])
-AC_CONFIG_FILES([t/wrap/automake-${APIVERSION}:t/wrap/automake.in],
-                [chmod +x t/wrap/automake-${APIVERSION}],
-                [APIVERSION=$APIVERSION])
-
+AC_CONFIG_FILES([pre-inst-env], [chmod +x pre-inst-env])
 AC_OUTPUT
 
 # Inform the user if this version of automake is a beta release or

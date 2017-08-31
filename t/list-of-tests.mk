@@ -38,6 +38,7 @@ t/override-conditional-pr13940.sh \
 t/dist-pr109765.sh \
 t/instdir-cond2.sh \
 t/java-nobase.sh \
+t/libobj-no-dependency-tracking.sh \
 t/objext-pr10128.sh \
 t/remake-timing-bug-pr8365.sh \
 t/lex-subobj-nodep.sh \
@@ -604,6 +605,7 @@ t/lflags.sh \
 t/lflags-cxx.sh \
 t/libexec.sh \
 t/libobj-basic.sh \
+t/libobj-no-dependency-tracking.sh \
 t/libobj2.sh \
 t/libobj3.sh \
 t/libobj4.sh \
@@ -1059,6 +1061,7 @@ t/subobjname.sh \
 t/subobj-clean-pr10697.sh \
 t/subobj-clean-lt-pr10697.sh \
 t/subobj-indir-pr13928.sh \
+t/subobj-objname-clash.sh \
 t/subobj-vpath-pr13928.sh \
 t/subobj-pr13928-more-langs.sh \
 t/subpkg.sh \

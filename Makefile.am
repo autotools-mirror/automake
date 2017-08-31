@@ -69,10 +69,9 @@ generated_file_finalize = $(AM_V_at) \
   fi; \
   chmod a-w $@-t && mv -f $@-t $@
 
-# For some tests or targets, we need to have the just-build automake and
-# aclocal scripts avaiable on PATH.
-extend_PATH = \
-  { PATH='$(abs_builddir)/t/wrap$(PATH_SEPARATOR)'$$PATH && export PATH; }
+# Wrapper for the build environment.
+nodist_noinst_SCRIPTS += pre-inst-env
+CLEANFILES += $(noinst_SCRIPTS)
 
 # The master location for INSTALL is lib/INSTALL.
 # This is where "make fetch" will install new versions.
@@ -124,12 +123,12 @@ EXTRA_DIST += \
   maintainer/syntax-checks.mk
 
 # Most work delegated to sub-dir makefile fragments.
-include $(srcdir)/bin/Makefile.inc
-include $(srcdir)/doc/Makefile.inc
-include $(srcdir)/lib/Makefile.inc
-include $(srcdir)/lib/Automake/Makefile.inc
-include $(srcdir)/lib/am/Makefile.inc
-include $(srcdir)/m4/Makefile.inc
-include $(srcdir)/t/Makefile.inc
+include $(srcdir)/bin/local.mk
+include $(srcdir)/doc/local.mk
+include $(srcdir)/lib/local.mk
+include $(srcdir)/lib/Automake/local.mk
+include $(srcdir)/lib/am/local.mk
+include $(srcdir)/m4/local.mk
+include $(srcdir)/t/local.mk
 
 # vim: ft=automake noet

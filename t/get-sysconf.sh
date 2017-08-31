@@ -55,8 +55,8 @@ $YACC --version || :
 $YACC --help || :
 
 cat "$am_top_builddir/config.log" || st=1
-cat "$am_top_builddir/t/wrap/aclocal-$APIVERSION" || st=1
-cat "$am_top_builddir/t/wrap/automake-$APIVERSION" || st=1
+cat "$am_top_builddir/bin/aclocal-$APIVERSION" || st=1
+cat "$am_top_builddir/bin/automake-$APIVERSION" || st=1
 
 if test $st -eq 0; then
   # This test SKIPs, so that all the information it has gathered and

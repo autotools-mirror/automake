@@ -32,13 +32,13 @@ man1_MANS = \
 $(man1_MANS): $(top_srcdir)/configure.ac
 
 CLEANFILES += $(man1_MANS)
+# XXX: This script should be updated with 'fetch' target.
 EXTRA_DIST += %D%/help2man
 
 update_mans = \
   $(AM_V_GEN): \
     && $(MKDIR_P) %D% \
-    && $(extend_PATH) \
-    && $(PERL) $(srcdir)/%D%/help2man --output=$@
+    && ./pre-inst-env $(PERL) $(srcdir)/%D%/help2man --output=$@
 
 %D%/aclocal.1 %D%/automake.1:
 	$(AM_V_GEN): \
@@ -77,8 +77,7 @@ dist_noinst_DATA += $(amhello_sources)
 dist_doc_DATA = $(srcdir)/%D%/amhello-1.0.tar.gz
 
 setup_autotools_paths = { \
-  $(extend_PATH) \
-    && ACLOCAL=aclocal-$(APIVERSION) && export ACLOCAL \
+  ACLOCAL=aclocal-$(APIVERSION) && export ACLOCAL \
     && AUTOMAKE=automake-$(APIVERSION) && export AUTOMAKE \
     && AUTOCONF='$(am_AUTOCONF)' && export AUTOCONF \
     && AUTOM4TE='$(am_AUTOM4TE)' && export AUTOM4TE \
@@ -97,7 +96,7 @@ $(srcdir)/%D%/amhello-1.0.tar.gz: $(amhello_sources) $(srcdir)/configure.ac
 	  && $(setup_autotools_paths) \
 	  && ( \
 	    { $(AM_V_P) || exec 5>&2 >$$tmp 2>&1; } \
-	      && $(am_AUTORECONF) -vfi \
+	      && $(abs_builddir)/pre-inst-env $(am_AUTORECONF) -vfi \
 	      && ./configure \
 	      && $(MAKE) $(AM_MAKEFLAGS) distcheck \
 	      && $(MAKE) $(AM_MAKEFLAGS) distclean \

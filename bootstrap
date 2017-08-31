@@ -35,19 +35,14 @@ export AUTOCONF  # might be used by aclocal and/or automake
 export AUTOM4TE  # ditto
 : ${PERL=perl}
 
-BOOTSTRAP_SHELL=${BOOTSTRAP_SHELL-/bin/sh}
-
 # Variables to substitute.
 VERSION=`sed -ne '/AC_INIT/s/^[^[]*\[[^[]*\[\([^]]*\)\].*$/\1/p' configure.ac`
+APIVERSION=`sed -n 's/^APIVERSION=//p' configure.ac`
 PACKAGE=automake
 datadir=.
 # This should be automatically updated by the 'update-copyright'
 # rule of our Makefile.
 RELEASE_YEAR=2017
-
-# Read the rule for calculating APIVERSION and execute it.
-apiver_cmd=`sed -ne 's/\[\[/[/g;s/\]\]/]/g;/^APIVERSION=/p' configure.ac`
-eval "$apiver_cmd"
 
 # Sanity checks.
 if test -z "$VERSION"; then
@@ -96,11 +91,8 @@ dosubst automake-$APIVERSION/Automake/Config.in \
 dosubst m4/amversion.in m4/amversion.m4
 
 # Create temporary replacement for aclocal and automake.
-for p in bin/aclocal bin/automake; do
-  dosubst $p.in $p.tmp
-  $PERL -w bin/gen-perl-protos $p.tmp > $p.tmp2
-  mv -f $p.tmp2 $p.tmp
-done
+dosubst bin/aclocal.in bin/aclocal.tmp
+dosubst bin/automake.in bin/automake.tmp
 
 # Create required makefile snippets.
 $PERL ./gen-testsuite-part > t/testsuite-part.tmp
