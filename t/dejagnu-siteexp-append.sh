@@ -12,7 +12,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 # Check that the files in $(EXTRA_DEJAGNU_SITE_CONFIG) get appended to
 # site.exp in the same order in which they're listed in that variable.

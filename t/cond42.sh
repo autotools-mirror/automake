@@ -13,7 +13,7 @@ nfig
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 # Ensure an error with inconsistent state of conditionals in configure.ac.
 # This shouldn't happen with user input, as _AM_COND_* are not documented,

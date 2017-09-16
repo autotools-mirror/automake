@@ -12,7 +12,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 # Test to make sure aclocal doesn't barf on "WHO_AM_I=...".  Report
 # from Johan Danielsson (and a very nice bug report, too, I might

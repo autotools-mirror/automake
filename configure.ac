@@ -13,7 +13,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 AC_PREREQ([2.69])
 AC_INIT([GNU Automake], [1.99a], [bug-automake@gnu.org])
@@ -417,7 +417,7 @@ AC_DEFUN([_AM_SKIP_COMP_TESTS],
 # more testsuite coverage "in the wild".
 # Note that we don't look for the MSVC C/C++ compiler here.  This is
 # deliberate; for more discussion and rationale, see:
-# <http://lists.gnu.org/archive/html/automake-patches/2012-01/msg00130.html>
+# <https://lists.gnu.org/archive/html/automake-patches/2012-01/msg00130.html>
 
 AC_MSG_NOTICE([will now look for generic compilers])
 

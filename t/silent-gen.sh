@@ -12,7 +12,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 # Silent rules: use of pre-defined variables $(AM_V_GEN) and $(AM_V_at).
 # Incidentally, also check that silent rules are disabled by default.

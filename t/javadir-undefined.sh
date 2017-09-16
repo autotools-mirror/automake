@@ -12,7 +12,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 # Use of JAVA primary should not allow the use of the 'java_' prefix
 # when $(javadir) is undefined.  Otherwise, we could silently end up

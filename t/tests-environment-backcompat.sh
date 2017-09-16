@@ -12,7 +12,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 # With old serial testsuite driver, TESTS_ENVIRONMENT can be used to
 # define the "test runner", i.e. the program that the test scripts must

@@ -12,7 +12,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 # Demo on C support, also testing automatic dependency tracking,
 # conditional SUBDIRS and convenience libraries.
@@ -76,7 +76,7 @@ nodist_lib_convenience_a_SOURCES = foo.h
 # ensure that cleaning rules work correctly; an older implementation
 # of automatic dependency tracking support suffered of weaknesses in
 # this situation, see the "historical comments" reported in:
-# http://lists.gnu.org/archive/html/automake-patches/2012-06/msg00033.html
+# https://lists.gnu.org/archive/html/automake-patches/2012-06/msg00033.html
 foo.h: $(srcdir)/foo.c
 	sed -n 's/.*foo *(.*/&;/p' "$(srcdir)/foo.c" >$@-t
 	test 1 -eq `wc -l <$@-t`

@@ -12,7 +12,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 # An empty "foo_PRIMARY" declaration should *not* cause "make install"
 # to create directory $(foodir).  See automake bug#10997 and bug#11030.

@@ -12,7 +12,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 # Test that EXTRA_PROGRAMS doesn't get removed because it is empty.
 # This check has been introduced in commit 'Release-1-9-254-g9d0eaef'

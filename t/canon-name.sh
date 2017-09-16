@@ -12,7 +12,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 # PR 511: Make sure we warn about e.g. AC_CONFIG_FILES([./gmakefile]),
 # as not all make implementations treat 'file' and './file' equally.

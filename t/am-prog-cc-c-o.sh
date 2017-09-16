@@ -12,7 +12,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 # Check that uses of the obsolescent AM_PROG_CC_C_O macro doesn't
 # cause spurious warnings or errors.  Suggested by Eric Blake.

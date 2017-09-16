@@ -12,7 +12,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 # Make sure xxx_PROGRAMS gets properly rewritten where needed.  These
 # checks have been introduced in commit 'Release-1-9-254-g9d0eaef' into

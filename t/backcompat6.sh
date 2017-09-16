@@ -12,7 +12,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 # Backward-compatibility test: try to build and distribute a package
 # using obsoleted forms of AC_INIT, AM_INIT_AUTOMAKE and AC_OUTPUT.

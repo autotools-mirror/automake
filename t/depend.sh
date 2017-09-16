@@ -12,7 +12,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 # This tests for a bug reported by Henrik Frystyk Nielsen <frystyk@w3.org>
 # In some cases the auto-dependency can get confused and try

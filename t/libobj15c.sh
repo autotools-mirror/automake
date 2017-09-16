@@ -12,7 +12,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 # Nonexistent sources for AC_LIBSOURCES should cause Automake to fail.
 
@@ -23,7 +23,7 @@ AC_PROG_CC
 AC_PROG_RANLIB
 AC_LIBSOURCES([foobar.c, bazquux.c])
 # NOTE: this call to AC_OUTPUT is really needed; see Automake bug #7635
-#       <http://debbugs.gnu.org/cgi/bugreport.cgi?bug=7635>
+#       <https://debbugs.gnu.org/cgi/bugreport.cgi?bug=7635>
 AC_OUTPUT
 END
 
