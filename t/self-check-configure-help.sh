@@ -12,7 +12,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 # Sanity check on the function used by the automake testsuite to
 # analyze output of "configure --help".
@@ -162,7 +162,7 @@ Use these variables to override the choices made by 'configure' or to help
 it to find libraries and programs with nonstandard names/locations.
 
 Report bugs to <bug-automake@gnu.org>.
-General help using GNU software: <http://www.gnu.org/gethelp/>.
+General help using GNU software: <https://www.gnu.org/gethelp/>.
 END
 
 compare_extracted_help ()

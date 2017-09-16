@@ -12,7 +12,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 # Automake must complain if AC_CONFIG_FILES is passed something starting
 # with a dot (like "./Makefile"), since the remake rules might be subtly

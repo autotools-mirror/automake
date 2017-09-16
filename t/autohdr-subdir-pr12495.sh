@@ -12,7 +12,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 # Related to automake bug#12495: Automake shouldn't generate useless
 # remake rules for AC_CONFIG_HEADERS arguments after the first one,

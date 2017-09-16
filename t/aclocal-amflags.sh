@@ -12,7 +12,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 # Check that the obsolescent idiom of setting $(ACLOCAL_AMFLAGS) in
 # Makefile.am still works.  Remove this test once support for this

@@ -12,7 +12,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 # parallel-tests: check that we can use variables and functions set
 # by TESTS_ENVIRONMENT and AM_TESTS_ENVIRONMENT in LOG_COMPILER and

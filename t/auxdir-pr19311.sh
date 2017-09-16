@@ -12,7 +12,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 # Automake bug#19311: AC_PROG_CC called before AC_CONFIG_AUX_DIR can
 # silently force wrong $ac_aux_dir definition.

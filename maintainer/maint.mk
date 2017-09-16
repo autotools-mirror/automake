@@ -13,7 +13,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 # Avoid CDPATH issues.
 unexport CDPATH
@@ -286,7 +286,7 @@ announcement: NEWS
 	$(AM_V_GEN): \
 	  && rm -f $@ $@-t \
 	  && $(determine_release_type) \
-	  && ftp_base="ftp://$$dest.gnu.org/gnu/$(PACKAGE)" \
+	  && ftp_base="https://$$dest.gnu.org/gnu/$(PACKAGE)" \
 	  && X () { printf '%s\n' "$$*" >> $@-t; } \
 	  && X "We are pleased to announce the $(PACKAGE_NAME) $(VERSION)" \
 	       "$$announcement_type." \
@@ -502,7 +502,7 @@ update-copyright:
 #  Run the testsuite with the least supported autoconf version.  #
 # -------------------------------------------------------------- #
 
-gnu-ftp = http://ftp.gnu.org/gnu
+gnu-ftp = https://ftp.gnu.org/gnu
 
 # Various shorthands: version, name, package name, tarball name,
 # tarball location, installation directory.

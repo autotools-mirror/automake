@@ -12,7 +12,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 # Ensure install-strip works when STRIP consists of more than one word.
 # This test needs GNU binutils strip.  See sister test 'strip3.sh'.

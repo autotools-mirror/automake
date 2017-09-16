@@ -12,7 +12,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 # Test AM_PROG_AR ordering requirements for older Libtools
 # Keep this test in sync with sister test 'ar-lib6a.sh'.

@@ -12,7 +12,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 # Make sure that Automake diagnose invalid entries in TEST_EXTENSIONS,
 # and do not diagnose valid (albeit more unusual) ones.
