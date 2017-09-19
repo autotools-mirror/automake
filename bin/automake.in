@@ -2229,13 +2229,15 @@ sub handle_lib_objects
   return $seen_libobjs;
 }
 
-# handle_LIBOBJS_or_ALLOCA ($VAR)
-# -------------------------------
+# handle_LIBOBJS_or_ALLOCA ($VAR, $BASE)
+# --------------------------------------
 # Definitions common to LIBOBJS and ALLOCA.
 # VAR should be one of LIBOBJS, LTLIBOBJS, ALLOCA, or LTALLOCA.
+# BASE should be one base file name from AC_LIBSOURCE, or alloca.
 sub handle_LIBOBJS_or_ALLOCA
 {
-  my ($var) = @_;
+  my ($var, $base) = @_;
+
   my $dir = '';
 
   # If LIBOBJS files must be built in another directory we have
@@ -2253,9 +2255,18 @@ sub handle_LIBOBJS_or_ALLOCA
       $dir = backname ($relative_dir) . "/$dir"
         if $relative_dir ne '.';
       define_variable ('LIBOBJDIR', "$dir", INTERNAL);
-      $clean_files{"\$($var)"} = MOSTLY_CLEAN;
-      # libtool might create LIBOBJS as a side-effect of using LTLIBOBJS.
-      $clean_files{"\$(LIBOBJS)"} = MOSTLY_CLEAN if $var eq "LTLIBOBJS";
+      if ($dir && !defined $clean_files{"$dir$base.\$(OBJEXT)"})
+	{
+	  my $dirstamp = require_build_directory ($dir);
+	  $output_rules .= "$dir$base.\$(OBJEXT): $dirstamp\n";
+	  $output_rules .= "$dir$base.lo: $dirstamp\n"
+	    if ($var =~ /^LT/);
+	}
+      # libtool might create .$(OBJEXT) as a side-effect of using
+      # LTLIBOBJS or LTALLOCA.
+      $clean_files{"$dir$base.\$(OBJEXT)"} = MOSTLY_CLEAN;
+      $clean_files{"$dir$base.lo"} = MOSTLY_CLEAN
+	if ($var =~ /^LT/);
     }
 
   return $dir;
@@ -2270,14 +2281,14 @@ sub handle_LIBOBJS
   $var->requires_variables ("\@${lt}LIBOBJS\@ used", $lt . 'LIBOBJS')
     if ! keys %libsources;
 
-  my $dir = handle_LIBOBJS_or_ALLOCA "${lt}LIBOBJS";
-
   foreach my $iter (keys %libsources)
     {
-      if ($iter =~ /\.[cly]$/)
+      my $dir = '';
+      if ($iter =~ /^(.*)(\.[cly])$/)
 	{
-	  saw_extension ($&);
+	  saw_extension ($2);
 	  saw_extension ('.c');
+	  $dir = handle_LIBOBJS_or_ALLOCA ("${lt}LIBOBJS", $1);
 	}
 
       if ($iter =~ /\.h$/)
@@ -2305,7 +2316,7 @@ sub handle_ALLOCA
   my ($var, $cond, $lt) = @_;
   my $myobjext = $lt ? 'lo' : 'o';
   $lt ||= '';
-  my $dir = handle_LIBOBJS_or_ALLOCA "${lt}ALLOCA";
+  my $dir = handle_LIBOBJS_or_ALLOCA ("${lt}ALLOCA", "alloca");
 
   $dir eq '' and $dir = './';
   $var->requires_variables ("\@${lt}ALLOCA\@ used", $lt . 'ALLOCA');
