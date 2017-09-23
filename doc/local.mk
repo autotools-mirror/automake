@@ -1,5 +1,4 @@
-## Included by top-level Makefile for Automake.
-
+## -*- makefile-automake -*-
 ## Copyright (C) 1995-2017 Free Software Foundation, Inc.
 ##
 ## This program is free software; you can redistribute it and/or modify
