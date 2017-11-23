@@ -656,6 +656,7 @@ t/lisp5.sh \
 t/lisp6.sh \
 t/lisp7.sh \
 t/lisp8.sh \
+t/lisp-readonly-srcdir.sh \
 t/lisp-loadpath.sh \
 t/lisp-subdir.sh \
 t/lisp-subdir2.sh \
