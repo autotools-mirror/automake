@@ -458,6 +458,7 @@ update_copyright_env = \
 # not expected to have a copyright notice.
 files_without_copyright = \
   .autom4te.cfg \
+  .dir-locals.el \
   .git-log-fix \
   .gitattributes \
   .gitignore \
