@@ -59,6 +59,7 @@ cat >> Makefile.am << 'END'
 AUTOMAKE_OPTIONS += dejagnu
 DEJATOOL = hammer spanner
 AM_RUNTESTFLAGS = HAMMER=$(srcdir)/hammer SPANNER=$(srcdir)/spanner
+EXTRA_DIST += $(DEJATOOL)
 EXTRA_DIST += hammer.test/hammer.exp
 EXTRA_DIST += spanner.test/spanner.exp
 END
