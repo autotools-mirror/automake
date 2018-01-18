@@ -181,7 +181,7 @@ check_targets || exit 1
 # TODO: add BUILT_SOURCES to sub2, fix fallout.
 sed 's/##//' < Makefile.am > t
 mv -f t Makefile.am
-$AUTOMAKE -Wno-override --force Makefile
+$AUTOMAKE -Wno-override Makefile
 ./configure
 check_targets || exit 1
 

@@ -58,6 +58,4 @@ cat stderr >&2
 grep 'unrecognized option.*--ver' stderr
 grep '[Tt]ry.*--help.*for more information' stderr
 
-$ACLOCAL --versi
-
 :
