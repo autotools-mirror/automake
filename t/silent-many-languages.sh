@@ -131,9 +131,9 @@ fo2_FFLAGS = $(AM_FFLAGS)
 fo2_FCFLAGS = $(AM_FCFLAGS)
 fo2_YFLAGS = -v
 fo2_LFLAGS = -n
+fo2_LDADD = $(LEXLIB)
 SUBDIRS = sub
 AM_YFLAGS = -d
-LDADD = $(LEXLIB)
 BUILT_SOURCES = foo6.h
 EOF
 
@@ -149,8 +149,8 @@ ba2_FFLAGS = $(AM_FFLAGS)
 ba2_FCFLAGS = $(AM_FCFLAGS)
 ba2_YFLAGS = -v
 ba2_LFLAGS = -n
+ba2_LDADD = $(LEXLIB)
 AM_YFLAGS = -d
-LDADD = $(LEXLIB)
 BUILT_SOURCES = baz6.h
 EOF
 
@@ -173,6 +173,7 @@ EOF
 cat > foo5.l <<'EOF'
 %{
 #define YY_NO_UNISTD_H 1
+int isatty (int fd) { return 0; }
 %}
 %%
 "END"   return EOF;
@@ -186,6 +187,7 @@ int yywrap (void)
 EOF
 cat > foo6.y <<'EOF'
 %{
+extern int yylex (void);
 void yyerror (char *s) {}
 %}
 %token EOF

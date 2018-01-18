@@ -46,6 +46,8 @@ END
 
 cat > joe.ll << 'END'
 %{
+#define YY_DECL int yylex (void)
+extern "C" YY_DECL;
 #define YY_NO_UNISTD_H 1
 int isatty (int fd) { return 0; }
 %}

@@ -53,6 +53,8 @@ END
 
 cat > parsefoo.lxx << 'END'
 %{
+#define YY_DECL int yylex (void)
+extern "C" YY_DECL;
 #define YY_NO_UNISTD_H 1
 int isatty (int fd) { return 0; }
 %}
@@ -69,10 +71,10 @@ cp parsefoo.lxx parsebar.ll
 
 cat > mainfoo.cc << 'END'
 // This file should contain valid C++ but invalid C.
+extern "C" int yylex (void);
 using namespace std;
 int main (int argc, char **argv)
 {
-  extern int yylex (void);
   return yylex ();
 }
 END
