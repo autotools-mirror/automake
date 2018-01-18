@@ -52,6 +52,12 @@ $AUTOMAKE --add-missing
 
 ./configure --prefix="$(pwd)/inst"
 
+# XXX: This is a workaround for a purity mechanism implemented by GNU Guix.
+# For more details see
+# <https://www.gnu.org/s/guix/manual/html_node/Application-Setup.html#index-ld_002dwrapper>.
+GUIX_LD_WRAPPER_ALLOW_IMPURITIES=1
+export GUIX_LD_WRAPPER_ALLOW_IMPURITIES
+
 $MAKE
 run_make -E install
 grep 'has not been installed' stderr && exit 1
