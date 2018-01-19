@@ -128,7 +128,8 @@ test ! -e sub/main2.html
 test ! -e rec/main3.html
 
 # Make sure AM_MAKEINFOHTMLFLAGS is supported, and override AM_MAKEINFO.
-
+# Ensure that MAKEINFOFLAGS is not used for the following targets by using an
+# invalid option.
 cp $srcdir/Makefile.am $srcdir/Makefile.sav
 cat >> $srcdir/Makefile.am <<'EOF'
 AM_MAKEINFOHTMLFLAGS = --no-headers --no-split
