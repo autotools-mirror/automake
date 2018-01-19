@@ -160,6 +160,13 @@ test ! -e share/$me/html/main.html
 test ! -e share/$me/html/main2.html
 test ! -e share/$me/html/main3.html
 
+# Restore the makefile without a broken AM_MAKEINFOFLAGS definition.
+# This must happen before processing any non-html targets.  See
+# https://bugs.gnu.org/30172
+cp -f $srcdir/Makefile.sav $srcdir/Makefile.am
+(cd $srcdir && $AUTOMAKE)
+./config.status Makefile
+
 $MAKE dvi
 test -f main.dvi
 test -f sub/main2.dvi
@@ -203,8 +210,6 @@ test ! -e share/$me/pdf/main2.pdf
 test ! -e share/$me/pdf/main3.pdf
 test ! -e share/$me/pdf/hello
 
-# Restore the makefile without a broken AM_MAKEINFOFLAGS definition.
-cp -f $srcdir/Makefile.sav $srcdir/Makefile.am
 using_gmake || $MAKE Makefile
 $MAKE distcheck
 
