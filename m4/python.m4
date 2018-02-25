@@ -3,7 +3,7 @@
 ## From Andrew Dalke
 ## Updated by James Henstridge
 ## ------------------------
-# Copyright (C) 1999-2017 Free Software Foundation, Inc.
+# Copyright (C) 1999-2018 Free Software Foundation, Inc.
 #
 # This file is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
@@ -36,10 +36,24 @@ AC_DEFUN([AM_PATH_PYTHON],
  [
   dnl Find a Python interpreter.  Python versions prior to 2.0 are not
   dnl supported. (2.0 was released on October 16, 2000).
-  dnl FIXME: Remove the need to hard-code Python versions here.
+  m4_define_default([am_py_min_ver], m4_ifval([$1], [$1], [2.0]))
+  dnl The arbitrary default maximum version.
+  m4_define_default([am_py_max_ver], [4.0])
+
   m4_define_default([_AM_PYTHON_INTERPRETER_LIST],
-[python python2 python3 python3.5 python3.4 python3.3 python3.2 python3.1 python3.0 python2.7 dnl
- python2.6 python2.5 python2.4 python2.3 python2.2 python2.1 python2.0])
+    [[python] \
+     dnl If we want some Python 2 versions (min version <= 2.7),
+     dnl also search for "python2".
+     m4_if(m4_version_compare(am_py_min_ver, [2.8]), [-1], [python2], []) \
+     [python3] \
+     dnl Construct a comma-separated list of interpreter names (python2.6,
+     dnl python2.7, etc). We only care about the first 3 characters of the
+     dnl version strings (major-dot-minor; not
+     dnl major-dot-minor-dot-bugfix[-dot-whatever])
+     m4_foreach([py_ver],
+       m4_esyscmd_s(seq -s[[", "]] -f["[[%.1f]]"] m4_substr(am_py_max_ver, [0], [3]) -0.1 m4_substr(am_py_min_ver, [0], [3])),
+       dnl Remove python2.8 and python2.9 since they will never exist
+       [m4_bmatch(py_ver, [2.[89]], [], [python]py_ver)])])
 
   AC_ARG_VAR([PYTHON], [the Python interpreter])
 

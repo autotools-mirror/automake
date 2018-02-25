@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2011-2017 Free Software Foundation, Inc.
+# Copyright (C) 2011-2018 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -12,7 +12,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 # Test for a behaviour of 'TESTS_ENVIRONMENT' and 'AM_TESTS_ENVIRONMENT'
 # w.r.t. file descriptor redirections which, although undocumented,
@@ -22,9 +22,9 @@
 # redirections by placing them at the end of a {AM_,}TESTS_ENVIRONMENT
 # definition without a following semicolon.  The need to support this
 # is detailedly motivated by coreutils bug#8846:
-#   <http://debbugs.gnu.org/cgi/bugreport.cgi?bug=8846>
+#   <https://debbugs.gnu.org/cgi/bugreport.cgi?bug=8846>
 # and the following CC:ed thread on bug-autoconf list:
-#   <http://lists.gnu.org/archive/html/bug-autoconf/2011-06/msg00002.html>
+#   <https://lists.gnu.org/archive/html/bug-autoconf/2011-06/msg00002.html>
 
 . test-init.sh
 

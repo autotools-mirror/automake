@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2001-2017 Free Software Foundation, Inc.
+# Copyright (C) 2001-2018 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -12,15 +12,15 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 # Check that Automake-generated C compilation rules don't mistakenly
 # use the "-c -o" options combination unconditionally (even with losing
 # compilers) when the 'subdir-objects' is used but sources are only
 # present in the top-level directory.  Reported by Nick Bowler in the
 # discussion on automake bug#13378:
-# <http://debbugs.gnu.org/cgi/bugreport.cgi?bug=13378#35>
-# <http://debbugs.gnu.org/cgi/bugreport.cgi?bug=13378#44>
+# <https://debbugs.gnu.org/cgi/bugreport.cgi?bug=13378#35>
+# <https://debbugs.gnu.org/cgi/bugreport.cgi?bug=13378#44>
 
 required=gcc # For cc-no-c-o.
 . test-init.sh

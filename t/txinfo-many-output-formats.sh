@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2003-2017 Free Software Foundation, Inc.
+# Copyright (C) 2003-2018 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -12,7 +12,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 # Test support for building HTML documentation, and the many
 # install-DOC flavors.
@@ -128,7 +128,8 @@ test ! -e sub/main2.html
 test ! -e rec/main3.html
 
 # Make sure AM_MAKEINFOHTMLFLAGS is supported, and override AM_MAKEINFO.
-
+# Ensure that MAKEINFOFLAGS is not used for the following targets by using an
+# invalid option.
 cp $srcdir/Makefile.am $srcdir/Makefile.sav
 cat >> $srcdir/Makefile.am <<'EOF'
 AM_MAKEINFOHTMLFLAGS = --no-headers --no-split

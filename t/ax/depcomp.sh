@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2012-2017 Free Software Foundation, Inc.
+# Copyright (C) 2012-2018 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -12,7 +12,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 # Check dependency tracking in various flavours.
 # Contains both libtool and non-libtool case.
@@ -22,7 +22,7 @@
 
 # -------------------------------------------------------------------------
 
-# <http://lists.gnu.org/archive/html/automake-patches/2011-04/msg00028.html>
+# <https://lists.gnu.org/archive/html/automake-patches/2011-04/msg00028.html>
 #
 # Here's the bug: makedepend will prefix VPATH to the object file name,
 # thus the second make will invoke depcomp with object='../../src/foo.o',
@@ -34,8 +34,8 @@
 
 # -------------------------------------------------------------------------
 
-# <http://debbugs.gnu.org/cgi/bugreport.cgi?bug=8473>
-# <http://lists.gnu.org/archive/html/automake-patches/2011-04/msg00079.html>
+# <https://debbugs.gnu.org/cgi/bugreport.cgi?bug=8473>
+# <https://lists.gnu.org/archive/html/automake-patches/2011-04/msg00079.html>
 #
 # Here's the bug: hp depmode will prefix VPATH to the object file name,
 # thus the second gmake will invoke depcomp with object='../../src/foo.o',
@@ -49,8 +49,8 @@
 
 # -------------------------------------------------------------------------
 
-# <http://lists.gnu.org/archive/html/automake-patches/2011-04/msg00140.html>
-# <http://lists.gnu.org/archive/html/automake-patches/2011-05/msg00019.html>
+# <https://lists.gnu.org/archive/html/automake-patches/2011-04/msg00140.html>
+# <https://lists.gnu.org/archive/html/automake-patches/2011-05/msg00019.html>
 #
 # A partial failure of an earlier version of this test; some bad
 # post-processing of the '*.Po' files led to the following broken

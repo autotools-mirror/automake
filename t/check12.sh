@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2010-2017 Free Software Foundation, Inc.
+# Copyright (C) 2010-2018 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -12,7 +12,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 # Test to make sure dejagnu tests, automake-style tests, and check-local
 # target can coexist.
@@ -59,6 +59,7 @@ cat >> Makefile.am << 'END'
 AUTOMAKE_OPTIONS += dejagnu
 DEJATOOL = hammer spanner
 AM_RUNTESTFLAGS = HAMMER=$(srcdir)/hammer SPANNER=$(srcdir)/spanner
+EXTRA_DIST += $(DEJATOOL)
 EXTRA_DIST += hammer.test/hammer.exp
 EXTRA_DIST += spanner.test/spanner.exp
 END

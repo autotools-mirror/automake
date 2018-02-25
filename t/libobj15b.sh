@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2010-2017 Free Software Foundation, Inc.
+# Copyright (C) 2010-2018 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -12,7 +12,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 # Nonexistent source for AC_LIBSOURCE should cause Automake to fail.
 
@@ -24,7 +24,7 @@ AM_PROG_AR
 AC_PROG_RANLIB
 AC_LIBSOURCE([foobar.c])
 # NOTE: this call to AC_OUTPUT is really needed; see Automake bug #7635
-#       <http://debbugs.gnu.org/cgi/bugreport.cgi?bug=7635>
+#       <https://debbugs.gnu.org/cgi/bugreport.cgi?bug=7635>
 AC_OUTPUT
 END
 

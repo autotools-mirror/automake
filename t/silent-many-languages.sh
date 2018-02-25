@@ -1,5 +1,5 @@
 #!/bin/sh
-# Copyright (C) 2009-2017 Free Software Foundation, Inc.
+# Copyright (C) 2009-2018 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -12,7 +12,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 # Check silent-rules mode, with many languages at once.
 # This test partly overlaps with other 'silent*.sh', but it serves as
@@ -131,9 +131,9 @@ fo2_FFLAGS = $(AM_FFLAGS)
 fo2_FCFLAGS = $(AM_FCFLAGS)
 fo2_YFLAGS = -v
 fo2_LFLAGS = -n
+fo2_LDADD = $(LEXLIB)
 SUBDIRS = sub
 AM_YFLAGS = -d
-LDADD = $(LEXLIB)
 BUILT_SOURCES = foo6.h
 EOF
 
@@ -149,8 +149,8 @@ ba2_FFLAGS = $(AM_FFLAGS)
 ba2_FCFLAGS = $(AM_FCFLAGS)
 ba2_YFLAGS = -v
 ba2_LFLAGS = -n
+ba2_LDADD = $(LEXLIB)
 AM_YFLAGS = -d
-LDADD = $(LEXLIB)
 BUILT_SOURCES = baz6.h
 EOF
 
@@ -173,6 +173,7 @@ EOF
 cat > foo5.l <<'EOF'
 %{
 #define YY_NO_UNISTD_H 1
+int isatty (int fd) { return 0; }
 %}
 %%
 "END"   return EOF;
@@ -186,6 +187,7 @@ int yywrap (void)
 EOF
 cat > foo6.y <<'EOF'
 %{
+extern int yylex (void);
 void yyerror (char *s) {}
 %}
 %token EOF

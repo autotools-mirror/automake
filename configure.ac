@@ -1,6 +1,6 @@
 # Process this file with autoconf to produce a configure script.
 
-# Copyright (C) 1995-2017 Free Software Foundation, Inc.
+# Copyright (C) 1995-2018 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -13,10 +13,10 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 AC_PREREQ([2.69])
-AC_INIT([GNU Automake], [1.15.1a], [bug-automake@gnu.org])
+AC_INIT([GNU Automake], [1.16], [bug-automake@gnu.org])
 
 AC_CONFIG_SRCDIR([bin/automake.in])
 AC_CONFIG_AUX_DIR([lib])
@@ -44,17 +44,12 @@ AM_INIT_AUTOMAKE([-Wall -Werror dist-xz filename-length-max=99
 
 # Keep this on a line of its own, since it must be found and processed
 # by the 'update-copyright' rule in our Makefile.
-RELEASE_YEAR=2017
+RELEASE_YEAR=2018
 AC_SUBST([RELEASE_YEAR])
 
 # The API version is the base version.  We must guarantee
 # compatibility for all releases with the same API version.
-# Our current rule is that:
-# * All releases, including the prereleases, in an X.Y series
-#   are compatible.  So 1.5.1c is compatible with 1.5.
-# * Prereleases on the trunk are all incompatible -- 1.5b and 1.5c
-#   aren't the same.
-APIVERSION=`echo "$VERSION" | sed -e 's/^\([[0-9]]*\.[[0-9]]*[[a-z]]*\).*$/\1/'`
+APIVERSION=1.16
 AC_SUBST([APIVERSION])
 
 AC_SUBST([pkgvdatadir], ["\${datadir}/$PACKAGE-$APIVERSION"])
@@ -67,8 +62,8 @@ AC_SUBST([system_acdir], ["\${datadir}/aclocal"])
 # aclocal and automake, hence the remake rules must use those versions
 # as well.  The extra quoting is to cater to cases when the build
 # directory contains whitespace or shell metacharacters.
-ACLOCAL="\"`pwd`/t/wrap/aclocal-$APIVERSION\""
-AUTOMAKE="\"`pwd`/t/wrap/automake-$APIVERSION\""
+ACLOCAL="\"`pwd`/pre-inst-env\" aclocal-$APIVERSION"
+AUTOMAKE="\"`pwd`/pre-inst-env\" automake-$APIVERSION"
 
 AC_PROG_LN_S
 
@@ -427,7 +422,7 @@ AC_DEFUN([_AM_SKIP_COMP_TESTS],
 # more testsuite coverage "in the wild".
 # Note that we don't look for the MSVC C/C++ compiler here.  This is
 # deliberate; for more discussion and rationale, see:
-# <http://lists.gnu.org/archive/html/automake-patches/2012-01/msg00130.html>
+# <https://lists.gnu.org/archive/html/automake-patches/2012-01/msg00130.html>
 
 AC_MSG_NOTICE([will now look for generic compilers])
 
@@ -579,14 +574,7 @@ AC_SUBST([EXEEXT])
 
 AC_CONFIG_FILES([Makefile])
 AC_CONFIG_LINKS([GNUmakefile:GNUmakefile])
-
-AC_CONFIG_FILES([t/wrap/aclocal-${APIVERSION}:t/wrap/aclocal.in],
-                [chmod +x t/wrap/aclocal-${APIVERSION}],
-                [APIVERSION=$APIVERSION])
-AC_CONFIG_FILES([t/wrap/automake-${APIVERSION}:t/wrap/automake.in],
-                [chmod +x t/wrap/automake-${APIVERSION}],
-                [APIVERSION=$APIVERSION])
-
+AC_CONFIG_FILES([pre-inst-env], [chmod +x pre-inst-env])
 AC_OUTPUT
 
 # Inform the user if this version of automake is a beta release or

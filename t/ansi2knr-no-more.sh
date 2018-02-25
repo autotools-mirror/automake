@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2011-2017 Free Software Foundation, Inc.
+# Copyright (C) 2011-2018 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -12,7 +12,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 # Check that any attempt to use the obsolete de-ANSI-fication support
 # is diagnosed.
@@ -32,7 +32,7 @@ $ACLOCAL -Wnone 2>stderr && { cat stderr >&2; exit 1; }
 cat stderr >&2
 grep "^configure\\.ac:5:.*$warn_rx" stderr
 
-cat aclocal.sav "$am_automake_acdir"/obsolete.m4 > aclocal.m4
+cat aclocal.sav "$am_top_srcdir"/m4/obsolete.m4 > aclocal.m4
 $AUTOCONF -Wnone 2>stderr && { cat stderr >&2; exit 1; }
 cat stderr >&2
 grep "^configure\\.ac:5:.*$warn_rx" stderr

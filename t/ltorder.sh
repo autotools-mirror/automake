@@ -1,5 +1,5 @@
 #!/bin/sh
-# Copyright (C) 2008-2017 Free Software Foundation, Inc.
+# Copyright (C) 2008-2018 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -12,7 +12,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 # Test for correct installation order of nobase libtool libraries.
 
@@ -51,6 +51,12 @@ $AUTOCONF
 $AUTOMAKE --add-missing
 
 ./configure --prefix="$(pwd)/inst"
+
+# XXX: This is a workaround for a purity mechanism implemented by GNU Guix.
+# For more details see
+# <https://www.gnu.org/s/guix/manual/html_node/Application-Setup.html#index-ld_002dwrapper>.
+GUIX_LD_WRAPPER_ALLOW_IMPURITIES=1
+export GUIX_LD_WRAPPER_ALLOW_IMPURITIES
 
 $MAKE
 run_make -E install

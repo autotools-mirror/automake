@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 1998-2017 Free Software Foundation, Inc.
+# Copyright (C) 1998-2018 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -12,22 +12,36 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-# Test on some aclocal options.  Report from Alexandre Oliva.
+# Test aclocal command-line interface.  Report from Alexandre Oliva.
 
 am_create_testdir=empty
 . test-init.sh
 
 echo "AC_INIT([$me], [0]) AM_INIT_AUTOMAKE" > configure.ac
 
+# Check that aclocal conforms to GNU Coding Standards.
+$ACLOCAL --help
+$ACLOCAL --version
+
+## ----------------- ##
+##  Check --output.  ##
+## ----------------- ##
+
+# Check that --output produce the corresponding file.
 $ACLOCAL --output=fred
 test -f fred
 
+# Check that --output requires an argument.
 $ACLOCAL --output 2>stderr && { cat stderr >&2; exit 1; }
 cat stderr >&2
 grep 'option.*--output.*requires an argument' stderr
 grep '[Tt]ry.*--help.*for more information' stderr
+
+## ----------------------------------- ##
+##  Check Wrong command-line options.  ##
+## ----------------------------------- ##
 
 $ACLOCAL --unknown-option 2>stderr && { cat stderr >&2; exit 1; }
 cat stderr >&2
@@ -43,7 +57,5 @@ $ACLOCAL --ver 2>stderr && { cat stderr >&2; exit 1; }
 cat stderr >&2
 grep 'unrecognized option.*--ver' stderr
 grep '[Tt]ry.*--help.*for more information' stderr
-
-$ACLOCAL --versi
 
 :

@@ -1,4 +1,5 @@
-## Copyright (C) 1995-2017 Free Software Foundation, Inc.
+## -*- makefile-automake -*-
+## Copyright (C) 1995-2018 Free Software Foundation, Inc.
 ##
 ## This program is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -11,14 +12,21 @@
 ## GNU General Public License for more details.
 ##
 ## You should have received a copy of the GNU General Public License
-## along with this program.  If not, see <http://www.gnu.org/licenses/>.
+## along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 ## ----------------------------------- ##
 ##  The automake and aclocal scripts.  ##
 ## ----------------------------------- ##
 
 bin_SCRIPTS = %D%/automake %D%/aclocal
-CLEANFILES += $(bin_SCRIPTS)
+nodist_noinst_SCRIPTS += \
+  %D%/aclocal-$(APIVERSION) \
+  %D%/automake-$(APIVERSION)
+
+CLEANFILES += \
+  $(bin_SCRIPTS) \
+  %D%/aclocal-$(APIVERSION) \
+  %D%/automake-$(APIVERSION)
 
 # Used by maintainer checks and such.
 automake_in = $(srcdir)/%D%/automake.in
@@ -54,18 +62,22 @@ uninstall-hook:
 # $(datadir) or other do_subst'ituted variables change.
 %D%/automake: %D%/automake.in
 %D%/aclocal: %D%/aclocal.in
-%D%/automake %D%/aclocal: Makefile %D%/gen-perl-protos
+%D%/automake %D%/aclocal: Makefile
 	$(AM_V_GEN)rm -f $@ $@-t $@-t2 \
 	  && $(MKDIR_P) $(@D) \
 ## Common substitutions.
 	  && in=$@.in && $(do_subst) <$(srcdir)/$$in >$@-t \
-## Auto-compute prototypes of perl subroutines.
-	  && $(PERL) -w $(srcdir)/%D%/gen-perl-protos $@-t > $@-t2 \
-	  && mv -f $@-t2 $@-t \
 ## We can't use '$(generated_file_finalize)' here, because currently
 ## Automake contains occurrences of unexpanded @substitutions@ in
 ## comments, and that is perfectly legit.
 	  && chmod a+x,a-w $@-t && mv -f $@-t $@
-EXTRA_DIST += %D%/gen-perl-protos
+
+%D%/aclocal-$(APIVERSION): %D%/aclocal
+	$(AM_V_GEN) rm -f $@; \
+	$(LN) %D%/aclocal $@
+
+%D%/automake-$(APIVERSION): %D%/automake
+	$(AM_V_GEN) rm -f $@; \
+	$(LN) %D%/automake $@
 
 # vim: ft=automake noet

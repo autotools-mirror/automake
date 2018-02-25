@@ -1,6 +1,6 @@
 # Maintainer checks for Automake.  Requires GNU make.
 
-# Copyright (C) 2012-2017 Free Software Foundation, Inc.
+# Copyright (C) 2012-2018 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -13,7 +13,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 # We also have to take into account VPATH builds (where some generated
 # tests might be in '$(builddir)' rather than in '$(srcdir)'), TAP-based
@@ -51,6 +51,7 @@ sc_mkinstalldirs \
 sc_pre_normal_post_install_uninstall \
 sc_perl_no_undef \
 sc_perl_no_split_regex_space \
+sc_perl_protos \
 sc_cd_in_backquotes \
 sc_cd_relative_dir \
 sc_perl_at_uscore_in_scalar_context \
@@ -101,6 +102,13 @@ sc_sanity_gnu_grep:
 	  }
 .PHONY: sc_sanity_gnu_grep
 $(syntax_check_rules): sc_sanity_gnu_grep
+
+# Check that every subroutine in perl scripts has a corresponding
+# prototype
+sc_perl_protos:
+	$(AM_V_GEN)$(srcdir)/maintainer/check-perl-protos \
+	  <$(srcdir)/bin/aclocal.in && \
+	$(srcdir)/maintainer/check-perl-protos <$(srcdir)/bin/automake.in
 
 # These check avoids accidental configure substitutions in the source.
 # There are exactly 8 lines that should be modified from automake.in to

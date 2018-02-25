@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 1999-2017 Free Software Foundation, Inc.
+# Copyright (C) 1999-2018 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -12,7 +12,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 # Test to make sure dependencies for Lex and C/C++ does not break
 # in obvious ways.  See PR automake/6, and related semantic tests
@@ -40,7 +40,7 @@ $AUTOMAKE -a
 $EGREP '([mj]oe|_[01234]|include|\.P)' Makefile.in # For debugging.
 
 for x in joe moe _0 _1 _2 _3 _4; do
-  grep "include.*$x\.Po" Makefile.in
+  $EGREP '\$\(DEPDIR\)/'"$x"'\.Po( |$)' Makefile.in
 done
 
 :

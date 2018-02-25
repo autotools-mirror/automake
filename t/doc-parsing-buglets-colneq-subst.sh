@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2011-2017 Free Software Foundation, Inc.
+# Copyright (C) 2011-2018 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -12,14 +12,14 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 # Check a documented limitation of the Automake's Makefile parser
 # w.r.t. POSIX variable substitutions used in the name of targets.
 # See Section "General Operation" in the Automake manual.
 # If you cause some parts of this test to fail, chances are that you've
 # improved the Automake parser ;-)
-# See: <http://lists.gnu.org/archive/html/automake/2010-08/msg00074.html>
+# See: <https://lists.gnu.org/archive/html/automake/2010-08/msg00074.html>
 # or: <http://thread.gmane.org/gmane.comp.sysutils.automake.general/11943/focus=11962>
 
 . test-init.sh

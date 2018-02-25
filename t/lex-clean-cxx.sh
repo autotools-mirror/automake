@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2011-2017 Free Software Foundation, Inc.
+# Copyright (C) 2011-2018 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -12,7 +12,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 # Check that C++ source files derived from non-distributed Lex sources
 # are cleaned by "make clean", while C++ source files derived from
@@ -53,6 +53,8 @@ END
 
 cat > parsefoo.lxx << 'END'
 %{
+#define YY_DECL int yylex (void)
+extern "C" YY_DECL;
 #define YY_NO_UNISTD_H 1
 int isatty (int fd) { return 0; }
 %}
@@ -69,10 +71,10 @@ cp parsefoo.lxx parsebar.ll
 
 cat > mainfoo.cc << 'END'
 // This file should contain valid C++ but invalid C.
+extern "C" int yylex (void);
 using namespace std;
 int main (int argc, char **argv)
 {
-  extern int yylex (void);
   return yylex ();
 }
 END

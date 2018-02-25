@@ -2,7 +2,7 @@
 
 # This script helps bootstrap automake, when checked out from git.
 #
-# Copyright (C) 2002-2017 Free Software Foundation, Inc.
+# Copyright (C) 2002-2018 Free Software Foundation, Inc.
 # Originally written by Pavel Roskin <proski@gnu.org> September 2002.
 #
 # This program is free software; you can redistribute it and/or modify
@@ -16,7 +16,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 # Since Automake uses itself in its build process, we can't simply run
 # 'autoreconf -i' which would require Automake to already be
@@ -37,11 +37,12 @@ export AUTOM4TE  # ditto
 
 # Variables to substitute.
 VERSION=`sed -ne '/AC_INIT/s/^[^[]*\[[^[]*\[\([^]]*\)\].*$/\1/p' configure.ac`
+APIVERSION=`sed -n 's/^APIVERSION=//p' configure.ac`
 PACKAGE=automake
 datadir=.
 # This should be automatically updated by the 'update-copyright'
 # rule of our Makefile.
-RELEASE_YEAR=2017
+RELEASE_YEAR=2018
 
 # Override SHELL.  This is required on DJGPP so that Perl's system()
 # uses bash, not COMMAND.COM which doesn't quote arguments properly.
@@ -51,10 +52,6 @@ if test -n "$DJDIR"; then
 else
   BOOTSTRAP_SHELL=/bin/sh
 fi
-
-# Read the rule for calculating APIVERSION and execute it.
-apiver_cmd=`sed -ne 's/\[\[/[/g;s/\]\]/]/g;/^APIVERSION=/p' configure.ac`
-eval "$apiver_cmd"
 
 # Sanity checks.
 if test -z "$VERSION"; then
@@ -103,11 +100,8 @@ dosubst automake-$APIVERSION/Automake/Config.in \
 dosubst m4/amversion.in m4/amversion.m4
 
 # Create temporary replacement for aclocal and automake.
-for p in bin/aclocal bin/automake; do
-  dosubst $p.in $p.tmp
-  $PERL -w bin/gen-perl-protos $p.tmp > $p.tmp2
-  mv -f $p.tmp2 $p.tmp
-done
+dosubst bin/aclocal.in bin/aclocal.tmp
+dosubst bin/automake.in bin/automake.tmp
 
 # Create required makefile snippets.
 $PERL ./gen-testsuite-part > t/testsuite-part.tmp

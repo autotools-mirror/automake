@@ -62,7 +62,80 @@
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-New in ?.?.?:
+New in 1.16:
+
+* Miscellaneous changes
+
+  - When subdir-objects is in effect, Automake will now construct
+    shorter object file names when no programs and libraries name
+    clashes are encountered.  This should make the discouraged use of
+    'foo_SHORTNAME' unnecessary in many cases.
+
+* Bugs fixed:
+
+  - Automatic dependency tracking has been fixed to work also when the
+    'subdir-object' option is used and some 'foo_SOURCES' definition
+    contains unexpanded references to make variables, as in, e.g.:
+
+        a_src = sources/libs/aaa
+        b_src = sources/bbb
+        foo_SOURCES = $(a_src)/bar.c $(b_src)/baz.c
+
+    With such a setup, the created makefile fragment containing dependency
+    tracking information will be correctly placed under the directories
+    named 'sources/libs/aaa/.deps' and 'sources/bbb/.deps', rather than
+    mistakenly under directories named (literally!) '$(src_a)/.deps' and
+    '$(src_b)/.deps' (this was the first part of automake bug#13928).
+
+    Notice that in order to fix this bug we had to slightly change the
+    semantics of how config.status bootstraps the makefile fragments
+    required for the dependency tracking to work: rather than attempting
+    to parse the Makefiles via grep and sed trickeries only, we actually
+    invoke 'make' on a slightly preprocessed version of those Makefiles,
+    using a private target that is only meant to bootstrap the required
+    makefile fragments.
+
+  - The 'subdir-object' option no longer causes object files corresponding
+    to source files specified with an explicit '$(srcdir)' component to be
+    placed in the source tree rather than in the build tree.
+
+    For example, if Makefile.am contains:
+
+        AUTOMAKE_OPTIONS = subdir-objects
+        foo_SOURCES = $(srcdir)/foo.c $(srcdir)/s/bar.c $(top_srcdir)/baz.c
+
+    then "make all" will create 'foo.o' and 's/bar.o' in $(builddir) rather
+    than in $(srcdir), and will create 'baz.o' in $(top_builddir) rather
+    than in $(top_srcdir).
+
+    This was the second part of automake bug#13928.
+
+  - Installed 'aclocal' m4 macros can now accept installation directories
+    containing '@' characters (automake bug#20903)
+
+  - "./configure && make dist" no longer fails when a distributed file depends
+    on one from BUILT_SOURCES.
+
+  - When combining AC_LIBOBJ or AC_FUNC_ALLOCA with the
+    "--disable-dependency-tracking" configure option in an out of source
+    build, the build sub-directory defined by AC_CONFIG_LIBOBJ_DIR is now
+    properly created.  (automake bug#27781)
+
+  - The time printed by 'mdate-sh' is now using the UTC time zone to support
+    the reproducible build effort.  (automake bug#20314)
+
+  - The elisp byte-compilation rule now uses byte-compile-dest-file-function,
+    rather than byte-compile-dest-file, which was obsoleted in 2009. We expect
+    that Emacs-26 will continue to support the old function, but will complain
+    loudly, and that Emacs-27 will remove support for it altogether.
+
+* New features added
+
+  - A custom testsuite driver for the Guile Scheme SRFI-64 API has been added
+    to the "contrib" section.  This allows a more convenient way to test Guile
+    code without having to use low primitives such as exit status.  See
+    SRFI-64 API specification for more details:
+    <https://srfi.schemers.org/srfi-64/srfi-64.html>
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -229,8 +302,8 @@ New in 1.14:
     compiler is an inferior one that doesn't grasp the combined use of
     both the "-c -o" options; see discussion about automake bug#13378 for
     more details:
-    <http://debbugs.gnu.org/cgi/bugreport.cgi?bug=13378#35>
-    <http://debbugs.gnu.org/cgi/bugreport.cgi?bug=13378#44>
+    <https://debbugs.gnu.org/cgi/bugreport.cgi?bug=13378#35>
+    <https://debbugs.gnu.org/cgi/bugreport.cgi?bug=13378#44>
 
   - The next major Automake version (2.0) will unconditionally activate
     the 'subdir-objects' option.  In order to smooth out the transition,
@@ -534,7 +607,7 @@ New in 1.13:
 
   - Support for the "Cygnus-style" trees (once enabled by the 'cygnus'
     option) has been removed.  See discussion about automake bug#11034
-    for more background: <http://debbugs.gnu.org/11034>.
+    for more background: <https://debbugs.gnu.org/11034>.
 
   - The deprecated aclocal option '--acdir' has been removed.  You
     should use the options '--automake-acdir' and '--system-acdir'
@@ -1505,7 +1578,7 @@ New in 1.11:
 
   - Automake development is done in a git repository on Savannah now, see
 
-      http://git.sv.gnu.org/gitweb/?p=automake.git
+      https://git.sv.gnu.org/gitweb/?p=automake.git
 
     A read-only CVS mirror is provided at
 
@@ -2940,7 +3013,7 @@ New in 0.20:
 
 -----
 
-Copyright (C) 1995-2017 Free Software Foundation, Inc.
+Copyright (C) 1995-2018 Free Software Foundation, Inc.
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -2953,4 +3026,4 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
+along with this program.  If not, see <https://www.gnu.org/licenses/>.

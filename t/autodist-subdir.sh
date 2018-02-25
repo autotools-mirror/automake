@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2011-2017 Free Software Foundation, Inc.
+# Copyright (C) 2011-2018 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -12,7 +12,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 # Check that automake really automatically distributes all the files
 # it advertises to do, even when in subdirectories.
@@ -20,7 +20,7 @@
 # This behavior might be suboptimal, but it has been in place for quite
 # a long time, and it would be risky to change it now.  See also the
 # discussion of automake bug#7819:
-#  <http://debbugs.gnu.org/cgi/bugreport.cgi?bug=7819>
+#  <https://debbugs.gnu.org/cgi/bugreport.cgi?bug=7819>
 #
 # Keep this test in sync with sister test 'autodist.sh'.
 

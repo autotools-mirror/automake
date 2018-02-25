@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2011-2017 Free Software Foundation, Inc.
+# Copyright (C) 2011-2018 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -12,13 +12,13 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 # Test remake rules when a new AC_SUBST'd variable is added, and C header
 # files are involved.
 # This test overlaps with others, and is not strictly necessary per se,
 # but it exercises a real use case (from gnulib, see:
-#  <http://lists.gnu.org/archive/html/bug-gnulib/2011-04/msg00005.html>
+#  <https://lists.gnu.org/archive/html/bug-gnulib/2011-04/msg00005.html>
 # for more info).
 
 required=cc

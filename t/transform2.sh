@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2002-2017 Free Software Foundation, Inc.
+# Copyright (C) 2002-2018 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -12,7 +12,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 # Make sure that --program-transform works even when multiple files are
 # collapsed.
@@ -81,7 +81,7 @@ test $(find inst -type f -print | wc -l) -eq 0
 # aggressive appending of '.exe' suffix when copying/renaming Windows
 # executables.  So let's skip this part of the test if we detect the
 # faulty heuristic is present.  See also:
-# <http://lists.gnu.org/archive/html/automake-patches/2010-08/msg00153.html>
+# <https://lists.gnu.org/archive/html/automake-patches/2010-08/msg00153.html>
 # <http://thread.gmane.org/gmane.os.cygwin/119380>
 echo Foo > foo
 echo Bar > bar.exe

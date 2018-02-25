@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2012-2017 Free Software Foundation, Inc.
+# Copyright (C) 2012-2018 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -12,13 +12,13 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 # Check that we can build a program using several lexers at once
 # (assuming Flex is used).  That is a little tricky, but possible.
 # See:
-# <http://lists.gnu.org/archive/html/automake/2010-10/msg00081.html>
-# <http://lists.gnu.org/archive/html/automake/2009-03/msg00061.html>
+# <https://lists.gnu.org/archive/html/automake/2010-10/msg00081.html>
+# <https://lists.gnu.org/archive/html/automake/2009-03/msg00061.html>
 
 required='cc flex'
 . test-init.sh

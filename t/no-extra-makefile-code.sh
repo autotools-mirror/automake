@@ -1,5 +1,5 @@
 #!/bin/sh
-# Copyright (C) 2011-2017 Free Software Foundation, Inc.
+# Copyright (C) 2011-2018 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -12,12 +12,12 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 # Check that we don't emit harmless but useless code in the generated
 # Makefile.in when the project does not use compiled languages.  Motivated
 # by a regression caused by removal of automatic de-ANSI-fication support:
-# <http://lists.gnu.org/archive/html/automake-patches/2011-08/msg00200.html>
+# <https://lists.gnu.org/archive/html/automake-patches/2011-08/msg00200.html>
 
 . test-init.sh
 

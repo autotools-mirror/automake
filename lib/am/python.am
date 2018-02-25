@@ -1,5 +1,5 @@
 ## automake - create Makefile.in from Makefile.am
-## Copyright (C) 1999-2017 Free Software Foundation, Inc.
+## Copyright (C) 1999-2018 Free Software Foundation, Inc.
 
 ## This program is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -12,7 +12,7 @@
 ## GNU General Public License for more details.
 
 ## You should have received a copy of the GNU General Public License
-## along with this program.  If not, see <http://www.gnu.org/licenses/>.
+## along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 if %?INSTALL%
 include inst-vars.am
@@ -97,7 +97,7 @@ endif %?INSTALL%
 if %?INSTALL%
 
 ?FIRST?am__pep3147_tweak = \
-?FIRST?  sed -e 's|\.py$$||' -e 's|[^/]*$$|__pycache__/&.*.py|'
+?FIRST?  sed -e 's|\.py$$||' -e 's|[^/]*$$|&.*.pyc\n&.*.pyo|'
 
 .PHONY uninstall-am: uninstall-%DIR%PYTHON
 uninstall-%DIR%PYTHON:
@@ -108,26 +108,19 @@ uninstall-%DIR%PYTHON:
 	test -n "$$py_files" || exit 0; \
 	dir='$(DESTDIR)$(%NDIR%dir)'; \
 ## Also remove the .pyc and .pyo byte compiled versions.
-## This is somewhat tricky, because for newer pythons we have to take
-## PEP-3147 into account.
 	pyc_files=`echo "$$py_files" | sed 's|$$|c|'`; \
 	pyo_files=`echo "$$py_files" | sed 's|$$|o|'`; \
-	py_files_pep3147=`echo "$$py_files" | $(am__pep3147_tweak)`; \
-	echo "$$py_files_pep3147";\
-	pyc_files_pep3147=`echo "$$py_files_pep3147" | sed 's|$$|c|'`; \
-	pyo_files_pep3147=`echo "$$py_files_pep3147" | sed 's|$$|o|'`; \
 	st=0; \
-	for files in \
-	  "$$py_files" \
-	  "$$pyc_files" \
-	  "$$pyo_files" \
-## Installation of '.py' files is not influenced by PEP-3147, so it
-## is correct *not* to have $pyfiles_pep3147 here.
-	  "$$pyc_files_pep3147" \
-	  "$$pyo_files_pep3147" \
-	; do \
+	for files in "$$py_files" "$$pyc_files" "$$pyo_files"; do \
 	  $(am__uninstall_files_from_dir) || st=$$?; \
 	done; \
+## This is somewhat tricky, because for newer pythons we have to take PEP-3147
+## into account.  Avoid exceeding the command-line length limit.
+	dir='$(DESTDIR)$(%NDIR%dir)/__pycache__'; \
+	echo "$$py_files" | $(am__pep3147_tweak) | $(am__base_list) | \
+	  while read files; do \
+	    $(am__uninstall_files_from_dir) || st=$$?; \
+	  done || exit $$?; \
 	exit $$st
 endif %?INSTALL%
 

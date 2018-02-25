@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2009-2017 Free Software Foundation, Inc.
+# Copyright (C) 2009-2018 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -12,7 +12,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 # Test 'make -n' for various targets, to ensure that:
 #
@@ -181,7 +181,7 @@ check_targets || exit 1
 # TODO: add BUILT_SOURCES to sub2, fix fallout.
 sed 's/##//' < Makefile.am > t
 mv -f t Makefile.am
-$AUTOMAKE -Wno-override --force Makefile
+$AUTOMAKE -Wno-override Makefile
 ./configure
 check_targets || exit 1
 

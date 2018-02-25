@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2010-2017 Free Software Foundation, Inc.
+# Copyright (C) 2010-2018 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -12,7 +12,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 # Test that automake works around a bug of Solaris Make. The bug is the
 # following.  If we have a Makefile containg a file inclusion like this:
@@ -56,9 +56,9 @@ END
 $ACLOCAL
 $AUTOMAKE -a
 
-# Be lax in the regexp, to account for automake conditionals, the
-# use of @am__include@, and similar stuff.
-grep 'include.*//.*foobar' Makefile.in && exit 1
+grep '\.P' Makefile.in # For debugging.
+
+grep '//.*foobar\.P' Makefile.in && exit 1
 
 # These checks depend on automake internals, but presently this is
 # the only way to test the code path we are interested in.
@@ -71,12 +71,12 @@ for x in zardoz0 zardoz1 path/to/zardoz2 another/path/to/zardoz3; do
   esac
   # Be a little lax in the regexp, to account for automake conditionals,
   # quoting, and similar stuff.
-  grep "^[^/]*am__include[^/]*//server/$d\\\$(DEPDIR)/$b\\.[^/]*$" Makefile.in
+  grep "[ 	]//server/$d\\\$(DEPDIR)/$b\\.Po" Makefile.in
 done
 
 # Sanity checks.
 for i in 0 1 2 3 4 5 6 7 8 9; do
-  grep "am__include.*/foobar$i\\." Makefile.in
+  grep "\$(DEPDIR)/foobar$i\\.Po" Makefile.in
 done
 
 :
