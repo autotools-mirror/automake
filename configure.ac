@@ -16,7 +16,7 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 AC_PREREQ([2.69])
-AC_INIT([GNU Automake], [1.15a], [bug-automake@gnu.org])
+AC_INIT([GNU Automake], [1.16], [bug-automake@gnu.org])
 
 AC_CONFIG_SRCDIR([bin/automake.in])
 AC_CONFIG_AUX_DIR([lib])
@@ -49,7 +49,7 @@ AC_SUBST([RELEASE_YEAR])
 
 # The API version is the base version.  We must guarantee
 # compatibility for all releases with the same API version.
-APIVERSION=1.15a
+APIVERSION=1.16
 AC_SUBST([APIVERSION])
 
 AC_SUBST([pkgvdatadir], ["\${datadir}/$PACKAGE-$APIVERSION"])
