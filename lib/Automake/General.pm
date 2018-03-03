@@ -23,7 +23,7 @@ use File::Basename;
 use vars qw (@ISA @EXPORT);
 
 @ISA = qw (Exporter);
-@EXPORT = qw (&uniq $me);
+@EXPORT = qw (&uniq &none $me);
 
 # Variable we share with the main package.  Be sure to have a single
 # copy of them: using 'my' together with multiple inclusion of this
@@ -66,5 +66,23 @@ sub uniq (@)
    return wantarray ? @res : "@res";
 }
 
+# $RES
+# none (&PRED, @LIST)
+# ------------
+# Return 1 when no element in LIST satisfies predicate PRED otherwise 0.
+sub none (&@)
+{
+  my ($pred, @list) = @_;
+  my $res = 1;
+  foreach my $item (@list)
+    {
+      if ($pred->($item))
+        {
+          $res = 0;
+          last;
+        }
+    }
+  return $res;
+}
 
 1; # for require
