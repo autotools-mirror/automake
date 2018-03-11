@@ -1,6 +1,6 @@
 ;;;; test-driver.scm - Guile test driver for Automake testsuite harness
 
-(define script-version "2018-01-17.23") ;UTC
+(define script-version "2018-03-11.22") ;UTC
 
 ;;; Copyright © 2015-2018 Free Software Foundation, Inc.
 ;;;
@@ -198,10 +198,10 @@ current output port is supposed to be redirected to a '.log' file."
     (exit 0)))
 
 ;;; Local Variables:
-;;; eval: (add-hook 'write-file-functions 'time-stamp)
+;;; eval: (add-hook 'before-save-hook 'time-stamp)
 ;;; time-stamp-start: "(define script-version \""
 ;;; time-stamp-format: "%:y-%02m-%02d.%02H"
-;;; time-stamp-time-zone: "UTC"
+;;; time-stamp-time-zone: "UTC0"
 ;;; time-stamp-end: "\") ;UTC"
 ;;; End:
 
