@@ -1,6 +1,6 @@
 ;;;; test-driver.scm - Guile test driver for Automake testsuite harness
 
-(define script-version "2018-03-24.19") ;UTC
+(define script-version "2018-03-24.22") ;UTC
 
 ;;; Copyright © 2015-2018 Free Software Foundation, Inc.
 ;;;
@@ -49,6 +49,7 @@
 ;;;; Code:
 
 (use-modules (ice-9 getopt-long)
+             (ice-9 match)
              (ice-9 pretty-print)
              (srfi srfi-26)
              (srfi srfi-64))
@@ -179,21 +180,26 @@ current output port is supposed to be redirected to a '.log' file."
    ((option 'help #f)    (show-help))
    ((option 'version #f) (format #t "test-driver.scm ~A" script-version))
    (else
-    (let ((log (open-file (option 'log-file "") "w0"))
-	  (trs (open-file (option 'trs-file "") "wl"))
-	  (out (duplicate-port (current-output-port) "wl")))
-      (redirect-port log (current-output-port))
-      (redirect-port log (current-warning-port))
-      (redirect-port log (current-error-port))
-      (test-with-runner
-	  (test-runner-gnu (option 'test-name #f)
-			   #:color? (option->boolean opts 'color-tests)
-			   #:brief? (option->boolean opts 'brief)
-			   #:out-port out #:trs-port trs)
-	(load-from-path (option 'test-name #f)))
-      (close-port log)
-      (close-port trs)
-      (close-port out))))
+    (match (option '() '())
+      (()
+       (display "missing test script argument\n" (current-error-port))
+       (exit 1))
+      ((script . args)
+       (let ((log (open-file (option 'log-file "") "w0"))
+             (trs (open-file (option 'trs-file "") "wl"))
+             (out (duplicate-port (current-output-port) "wl")))
+         (redirect-port log (current-output-port))
+         (redirect-port log (current-warning-port))
+         (redirect-port log (current-error-port))
+         (test-with-runner
+             (test-runner-gnu (option 'test-name #f)
+                              #:color? (option->boolean opts 'color-tests)
+                              #:brief? (option->boolean opts 'brief)
+                              #:out-port out #:trs-port trs)
+           (primitive-load script))
+         (close-port log)
+         (close-port trs)
+         (close-port out))))))
   (exit 0))
 
 ;;; Local Variables:
