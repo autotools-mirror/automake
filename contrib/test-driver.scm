@@ -1,6 +1,6 @@
 ;;;; test-driver.scm - Guile test driver for Automake testsuite harness
 
-(define script-version "2018-03-11.22") ;UTC
+(define script-version "2018-03-24.19") ;UTC
 
 ;;; Copyright © 2015-2018 Free Software Foundation, Inc.
 ;;;
@@ -173,29 +173,28 @@ current output port is supposed to be redirected to a '.log' file."
 ;;; Entry point.
 ;;;
 
-(define (main . args)
-  (let* ((opts   (getopt-long (command-line) %options))
-         (option (cut option-ref opts <> <>)))
-    (cond
-     ((option 'help #f)    (show-help))
-     ((option 'version #f) (format #t "test-driver.scm ~A" script-version))
-     (else
-      (let ((log (open-file (option 'log-file "") "w0"))
-            (trs (open-file (option 'trs-file "") "wl"))
-            (out (duplicate-port (current-output-port) "wl")))
-        (redirect-port log (current-output-port))
-        (redirect-port log (current-warning-port))
-        (redirect-port log (current-error-port))
-        (test-with-runner
-            (test-runner-gnu (option 'test-name #f)
-                             #:color? (option->boolean opts 'color-tests)
-                             #:brief? (option->boolean opts 'brief)
-                             #:out-port out #:trs-port trs)
-          (load-from-path (option 'test-name #f)))
-        (close-port log)
-        (close-port trs)
-        (close-port out))))
-    (exit 0)))
+(let* ((opts   (getopt-long (command-line) %options))
+       (option (cut option-ref opts <> <>)))
+  (cond
+   ((option 'help #f)    (show-help))
+   ((option 'version #f) (format #t "test-driver.scm ~A" script-version))
+   (else
+    (let ((log (open-file (option 'log-file "") "w0"))
+	  (trs (open-file (option 'trs-file "") "wl"))
+	  (out (duplicate-port (current-output-port) "wl")))
+      (redirect-port log (current-output-port))
+      (redirect-port log (current-warning-port))
+      (redirect-port log (current-error-port))
+      (test-with-runner
+	  (test-runner-gnu (option 'test-name #f)
+			   #:color? (option->boolean opts 'color-tests)
+			   #:brief? (option->boolean opts 'brief)
+			   #:out-port out #:trs-port trs)
+	(load-from-path (option 'test-name #f)))
+      (close-port log)
+      (close-port trs)
+      (close-port out))))
+  (exit 0))
 
 ;;; Local Variables:
 ;;; eval: (add-hook 'before-save-hook 'time-stamp)
