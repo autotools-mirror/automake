@@ -1,6 +1,6 @@
 ;;;; test-driver.scm - Guile test driver for Automake testsuite harness
 
-(define script-version "2018-03-24.22") ;UTC
+(define script-version "2018-03-25.05") ;UTC
 
 ;;; Copyright © 2015-2018 Free Software Foundation, Inc.
 ;;;
@@ -51,14 +51,18 @@
 (use-modules (ice-9 getopt-long)
              (ice-9 match)
              (ice-9 pretty-print)
+             (srfi srfi-11)
              (srfi srfi-26)
-             (srfi srfi-64))
+             (srfi srfi-64)
+             (system vm coverage)
+             (system vm vm))
 
 (define (show-help)
   (display "Usage:
    test-driver --test-name=NAME --log-file=PATH --trs-file=PATH
                [--expect-failure={yes|no}] [--color-tests={yes|no}]
-               [--enable-hard-errors={yes|no}] [--brief={yes|no}}] [--]
+               [--enable-hard-errors={yes|no}] [--brief={yes|no}}]
+               [--coverage={yes|no}] [--]
                TEST-SCRIPT [TEST-SCRIPT-ARGUMENTS]
 The '--test-name', '--log-file' and '--trs-file' options are mandatory.\n"))
 
@@ -69,6 +73,7 @@ The '--test-name', '--log-file' and '--trs-file' options are mandatory.\n"))
     (color-tests               (value #t))
     (expect-failure            (value #t)) ;XXX: not implemented yet
     (enable-hard-errors        (value #t)) ;not implemented in SRFI-64
+    (coverage                  (value #t))
     (brief                     (value #t))
     (help    (single-char #\h) (value #f))
     (version (single-char #\V) (value #f))))
@@ -188,15 +193,29 @@ current output port is supposed to be redirected to a '.log' file."
        (let ((log (open-file (option 'log-file "") "w0"))
              (trs (open-file (option 'trs-file "") "wl"))
              (out (duplicate-port (current-output-port) "wl")))
+         (define (check)
+           (test-with-runner
+               (test-runner-gnu (option 'test-name #f)
+                                #:color? (option->boolean opts 'color-tests)
+                                #:brief? (option->boolean opts 'brief)
+                                #:out-port out #:trs-port trs)
+             (primitive-load script)))
+
          (redirect-port log (current-output-port))
          (redirect-port log (current-warning-port))
          (redirect-port log (current-error-port))
-         (test-with-runner
-             (test-runner-gnu (option 'test-name #f)
-                              #:color? (option->boolean opts 'color-tests)
-                              #:brief? (option->boolean opts 'brief)
-                              #:out-port out #:trs-port trs)
-           (primitive-load script))
+
+         (if (not (option->boolean opts 'coverage))
+             (check)
+             (begin
+               ;; The debug engine is required for tracing coverage data.
+               (set-vm-engine! 'debug)
+               (let-values (((data result) (with-code-coverage check)))
+                 (let* ((file (string-append (option 'test-name #f) ".info"))
+                        (port (open-output-file file)))
+                   (coverage-data->lcov data port)
+                   (close port)))))
+
          (close-port log)
          (close-port trs)
          (close-port out))))))
