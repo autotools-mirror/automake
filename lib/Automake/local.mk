@@ -28,6 +28,7 @@ dist_perllib_DATA = \
   %D%/DisjConditions.pm \
   %D%/FileUtils.pm \
   %D%/General.pm \
+  %D%/Global.pm \
   %D%/Getopt.pm \
   %D%/Item.pm \
   %D%/ItemDef.pm \
