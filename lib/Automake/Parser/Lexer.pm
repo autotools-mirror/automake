@@ -34,9 +34,13 @@ sub lex($)
 			push @tokens, [$1];
 			$rhs = 1;
 		}
-		elsif(s/^(:|\n|_)//o)
+		elsif(s/^(:|_)//o)
 		{
 			push @tokens, [$1];
+		}
+		elsif(s/^\n//o)
+		{
+			push @tokens, ["newline"];
 		}
 		elsif(s/^(\r| )//o)
 		{

@@ -1,9 +1,9 @@
-%token value rhs PROGRAMS LIBRARIES LTLIBRARIES LISP PYTHON JAVA SCRIPTS DATA HEADERS MASN TEXINFOS
+%token value rhs PROGRAMS LIBRARIES LTLIBRARIES LISP PYTHON JAVA SCRIPTS DATA HEADERS MASN TEXINFOS newline
 %%
 
 input : stmts ;
-stmts : stmt '\n'
-		| stmts stmt '\n'
+stmts : stmt newline
+		| stmts stmt newline
 stmt  : lhs '=' rhs  
 		| value ':' rhs 
 lhs   : optionlist primaries
