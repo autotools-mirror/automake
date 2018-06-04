@@ -20,11 +20,13 @@ use strict;
 use Exporter;
 use Automake::Rule;
 use Automake::Global;
+use Automake::Location;
+use Automake::Condition;
 
 use vars qw (@ISA @EXPORT);
 
 @ISA = qw (Exporter);
-@EXPORT = qw (&var_SUFFIXES_trigger &locate_aux_dir);
+@EXPORT = qw (var_SUFFIXES_trigger locate_aux_dir subst);
 
 # var_SUFFIXES_trigger ($TYPE, $VALUE)
 # ------------------------------------
@@ -64,6 +66,18 @@ sub locate_aux_dir
   $am_config_aux_dir =
     '$(top_srcdir)' . ($config_aux_dir eq '.' ? "" : "/$config_aux_dir");
   $am_config_aux_dir =~ s,/*$,,;
+}
+
+# subst ($TEXT)
+# -------------
+# Return a configure-style substitution using the indicated text.
+# We do this to avoid having the substitutions directly in automake.in;
+# when we do that they are sometimes removed and this causes confusion
+# and bugs.
+sub subst ($)
+{
+    my ($text) = @_;
+    return '@' . $text . '@';
 }
 
 1;
