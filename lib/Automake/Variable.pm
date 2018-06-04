@@ -21,6 +21,7 @@ use Carp;
 
 use Automake::Channels;
 use Automake::ChannelDefs;
+use Automake::Config;
 use Automake::Configure_ac;
 use Automake::Item;
 use Automake::VarDef;
@@ -28,6 +29,9 @@ use Automake::Condition qw (TRUE FALSE);
 use Automake::DisjConditions;
 use Automake::General 'uniq';
 use Automake::Wrap 'makefile_wrap';
+use Automake::Global;
+use Automake::Location;
+use Automake::Utils;
 
 require Exporter;
 use vars '@ISA', '@EXPORT', '@EXPORT_OK';
@@ -42,7 +46,14 @@ use vars '@ISA', '@EXPORT', '@EXPORT_OK';
 	      require_variables
 	      variable_value
 	      output_variables
-	      transform_variable_recursively);
+	      transform_variable_recursively
+	      verbose_var
+	      define_verbose_var
+	      define_verbose_tagvar
+	      define_pretty_variable
+	      define_variable
+	      define_files_variable
+	      define_standard_variables);
 
 =head1 NAME
 
@@ -1672,5 +1683,141 @@ L<Automake::VarDef>, L<Automake::Condition>,
 L<Automake::DisjConditions>, L<Automake::Location>.
 
 =cut
+
+
+# _verbose_private_var (NAME)
+# --------------------------
+# The naming policy for the private variables for silent rules.
+sub _verbose_private_var ($)
+{
+    my ($name) = @_;
+    return 'am__v_' . $name;
+}
+
+
+# verbose_var (NAME)
+# ------------------
+# The public variable stem used to implement silent rules.
+sub verbose_var ($)
+{
+    my ($name) = @_;
+    return 'AM_V_' . $name;
+}
+
+
+# define_verbose_var (NAME, VAL-IF-SILENT, [VAL-IF-VERBOSE])
+# ----------------------------------------------------------
+# For  silent rules, setup VAR and dispatcher, to expand to
+# VAL-IF-SILENT if silent, to VAL-IF-VERBOSE (defaulting to
+# empty) if not.
+sub define_verbose_var ($$;$)
+{
+    my ($name, $silent_val, $verbose_val) = @_;
+    $verbose_val = '' unless defined $verbose_val;
+    my $var = verbose_var ($name);
+    my $pvar = _verbose_private_var ($name);
+    my $silent_var = $pvar . '_0';
+    my $verbose_var = $pvar . '_1';
+    # For typical 'make's, 'configure' replaces AM_V (inside @@) with $(V)
+    # and AM_DEFAULT_V (inside @@) with $(AM_DEFAULT_VERBOSITY).
+    # For strict POSIX 2008 'make's, it replaces them with 0 or 1 instead.
+    # See AM_SILENT_RULES in m4/silent.m4.
+    define_variable ($var, '$(' . $pvar . '_@'.'AM_V'.'@)', INTERNAL);
+    define_variable ($pvar . '_', '$(' . $pvar . '_@'.'AM_DEFAULT_V'.'@)',
+                     INTERNAL);
+    define ($silent_var, VAR_AUTOMAKE, '', TRUE,
+	    $silent_val, '', INTERNAL, VAR_ASIS)
+      if (! vardef ($silent_var, TRUE));
+    define ($verbose_var, VAR_AUTOMAKE, '', TRUE,
+	    $verbose_val, '', INTERNAL, VAR_ASIS)
+      if (! vardef ($verbose_var, TRUE));
+}
+
+
+# define_verbose_tagvar (NAME)
+# ----------------------------
+# Engage the needed silent rules machinery for tag NAME.
+sub define_verbose_tagvar ($)
+{
+  my ($name) = @_;
+  define_verbose_var ($name, '@echo "  '. $name . ' ' x (8 - length ($name)) . '" $@;');
+}
+
+
+# define_pretty_variable ($VAR, $COND, $WHERE, @VALUE)
+# ----------------------------------------------------
+# Like define_variable, but the value is a list, and the variable may
+# be defined conditionally.  The second argument is the condition
+# under which the value should be defined; this should be the empty
+# string to define the variable unconditionally.  The third argument
+# is a list holding the values to use for the variable.  The value is
+# pretty printed in the output file.
+sub define_pretty_variable ($$$@)
+{
+    my ($var, $cond, $where, @value) = @_;
+
+    if (! vardef ($var, $cond))
+    {
+	define ($var, VAR_AUTOMAKE, '', $cond, "@value",
+				    '', $where, VAR_PRETTY);
+	rvar ($var)->rdef ($cond)->set_seen;
+    }
+}
+
+
+# define_variable ($VAR, $VALUE, $WHERE)
+# --------------------------------------
+# Define a new Automake Makefile variable VAR to VALUE, but only if
+# not already defined.
+sub define_variable ($$$)
+{
+    my ($var, $value, $where) = @_;
+    define_pretty_variable ($var, TRUE, $where, $value);
+}
+
+
+# define_files_variable ($VAR, \@BASENAME, $EXTENSION, $WHERE)
+# ------------------------------------------------------------
+# Define the $VAR which content is the list of file names composed of
+# a @BASENAME and the $EXTENSION.
+sub define_files_variable ($\@$$)
+{
+  my ($var, $basename, $extension, $where) = @_;
+  define_variable ($var,
+		   join (' ', map { "$_.$extension" } @$basename),
+		   $where);
+}
+
+
+# Like define_variable, but define a variable to be the configure
+# substitution by the same name.
+sub _define_configure_variable ($)
+{
+  my ($var) = @_;
+  # Some variables we do not want to output.  For instance it
+  # would be a bad idea to output `U = @U@` when `@U@` can be
+  # substituted as `\`.
+  my $pretty = exists $ignored_configure_vars{$var} ? VAR_SILENT : VAR_ASIS;
+  define ($var, VAR_CONFIGURE, '', TRUE, subst ($var),
+	  '', $configure_vars{$var}, $pretty);
+}
+
+
+# A helper for read_main_am_file which initializes configure variables
+# and variables from header-vars.am.
+sub define_standard_variables ()
+{
+  my $saved_output_vars = $output_vars;
+  my ($comments, undef, $rules) =
+    file_contents_internal (1, "$libdir/am/header-vars.am",
+			    new Automake::Location);
+
+  foreach my $var (sort keys %configure_vars)
+    {
+      _define_configure_variable ($var);
+    }
+
+  $output_vars .= $comments . $rules;
+}
 
 1;
