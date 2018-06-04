@@ -67,6 +67,7 @@ use Automake::Rule;
 use Automake::RuleDef;
 use Automake::Wrap 'makefile_wrap';
 use Automake::Language;
+use Automake::Utils;
 use File::Basename;
 use File::Spec;
 use Carp;
@@ -120,7 +121,6 @@ sub lang_lex_finish ();
 sub lang_sub_obj ();
 sub lang_vala_finish ();
 sub lang_yacc_finish ();
-sub locate_aux_dir ();
 sub parse_arguments ();
 sub scan_aclocal_m4 ();
 sub scan_autoconf_files ();
@@ -150,19 +150,6 @@ my $gen_copyright = "\
 
 ################################################################
 
-# var_SUFFIXES_trigger ($TYPE, $VALUE)
-# ------------------------------------
-# This is called by Automake::Variable::define() when SUFFIXES
-# is defined ($TYPE eq '') or appended ($TYPE eq '+').
-# The work here needs to be performed as a side-effect of the
-# macro_define() call because SUFFIXES definitions impact
-# on $KNOWN_EXTENSIONS_PATTERN which is used used when parsing
-# the input am file.
-sub var_SUFFIXES_trigger
-{
-    my ($type, $value) = @_;
-    accept_extensions (split (' ', $value));
-}
 Automake::Variable::hook ('SUFFIXES', \&var_SUFFIXES_trigger);
 
 ################################################################
@@ -6980,33 +6967,6 @@ sub is_make_dir
 }
 
 ################################################################
-
-# Find the aux dir.  This should match the algorithm used by
-# ./configure. (See the Autoconf documentation for for
-# AC_CONFIG_AUX_DIR.)
-sub locate_aux_dir ()
-{
-  if (! $config_aux_dir_set_in_configure_ac)
-    {
-      # The default auxiliary directory is the first
-      # of ., .., or ../.. that contains install-sh.
-      # Assume . if install-sh doesn't exist yet.
-      for my $dir (qw (. .. ../..))
-	{
-	  if (-f "$dir/install-sh")
-	    {
-	      $config_aux_dir = $dir;
-	      last;
-	    }
-	}
-      $config_aux_dir = '.' unless $config_aux_dir;
-    }
-  # Avoid unsightly '/.'s.
-  $am_config_aux_dir =
-    '$(top_srcdir)' . ($config_aux_dir eq '.' ? "" : "/$config_aux_dir");
-  $am_config_aux_dir =~ s,/*$,,;
-}
-
 
 # push_required_file ($DIR, $FILE, $FULLFILE)
 # -------------------------------------------
