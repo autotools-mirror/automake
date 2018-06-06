@@ -24,8 +24,11 @@ dist_perllib_DATA = \
   %D%/ChannelDefs.pm \
   %D%/Channels.pm \
   %D%/Condition.pm \
+  %D%/CondStack.pm \
   %D%/Configure_ac.pm \
+  %D%/ConfVars.pm \
   %D%/DisjConditions.pm \
+  %D%/File.pm \
   %D%/FileUtils.pm \
   %D%/General.pm \
   %D%/Global.pm \
@@ -37,6 +40,7 @@ dist_perllib_DATA = \
   %D%/Options.pm \
   %D%/Rule.pm \
   %D%/RuleDef.pm \
+  %D%/Utils.pm \
   %D%/Variable.pm \
   %D%/VarDef.pm \
   %D%/Version.pm \

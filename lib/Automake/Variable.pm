@@ -32,6 +32,7 @@ use Automake::Wrap 'makefile_wrap';
 use Automake::Global;
 use Automake::Location;
 use Automake::Utils;
+use Automake::File;
 
 require Exporter;
 use vars '@ISA', '@EXPORT', '@EXPORT_OK';
@@ -52,8 +53,7 @@ use vars '@ISA', '@EXPORT', '@EXPORT_OK';
 	      define_verbose_tagvar
 	      define_pretty_variable
 	      define_variable
-	      define_files_variable
-	      define_standard_variables);
+	      define_files_variable);
 
 =head1 NAME
 
@@ -1788,36 +1788,5 @@ sub define_files_variable ($\@$$)
 		   $where);
 }
 
-
-# Like define_variable, but define a variable to be the configure
-# substitution by the same name.
-sub _define_configure_variable ($)
-{
-  my ($var) = @_;
-  # Some variables we do not want to output.  For instance it
-  # would be a bad idea to output `U = @U@` when `@U@` can be
-  # substituted as `\`.
-  my $pretty = exists $ignored_configure_vars{$var} ? VAR_SILENT : VAR_ASIS;
-  define ($var, VAR_CONFIGURE, '', TRUE, subst ($var),
-	  '', $configure_vars{$var}, $pretty);
-}
-
-
-# A helper for read_main_am_file which initializes configure variables
-# and variables from header-vars.am.
-sub define_standard_variables ()
-{
-  my $saved_output_vars = $output_vars;
-  my ($comments, undef, $rules) =
-    file_contents_internal (1, "$libdir/am/header-vars.am",
-			    new Automake::Location);
-
-  foreach my $var (sort keys %configure_vars)
-    {
-      _define_configure_variable ($var);
-    }
-
-  $output_vars .= $comments . $rules;
-}
 
 1;
