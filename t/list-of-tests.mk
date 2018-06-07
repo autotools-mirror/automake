@@ -55,6 +55,7 @@ t/pm/DisjCon3.pl \
 t/pm/DisjConditions.pl \
 t/pm/DisjConditions-t.pl \
 t/pm/General.pl \
+t/pm/Utils.pl \
 t/pm/Version.pl \
 t/pm/Version2.pl \
 t/pm/Version3.pl \
