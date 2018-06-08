@@ -29,4 +29,25 @@ sub check_subst
   return 0;
 }
 
-exit check_subst;
+sub check_flatten
+{
+  my $test_str = "\
+
+  Aliquam posuere.  Nunc aliquet, augue nec adipiscing interdum, lacus tellus
+malesuada massa, quis varius mi purus     non odio.  Pellentesque condimentum,
+
+magna ut suscipit hendrerit, ipsum augue ornare nulla,  non luctus diam neque
+
+sit amet urna.  Curabitur vulputate vestibulum lorem.  Fusce sagittis, libero
+  non molestie mollis, magna orci ultrices dolor, at vulputate neque nulla
+lacinia eros.
+";
+
+  my $expected_res = "Aliquam posuere. Nunc aliquet, augue nec adipiscing interdum, lacus tellus malesuada massa, quis varius mi purus non odio. Pellentesque condimentum, magna ut suscipit hendrerit, ipsum augue ornare nulla, non luctus diam neque sit amet urna. Curabitur vulputate vestibulum lorem. Fusce sagittis, libero non molestie mollis, magna orci ultrices dolor, at vulputate neque nulla lacinia eros.";
+
+  return 1 if (flatten $test_str) ne $expected_res;
+  return 0;
+
+}
+
+exit (check_subst || check_flatten);
