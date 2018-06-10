@@ -17,15 +17,15 @@ while( <> )
 {
 	#Finding label word in the current line as every node and edge description 
 	#contains label property. The value of label is extracted.
-	if(m/label=\"(.*)\"/)
+	if( m/label=\"(.*)\"/ )
 	{
 		my $token = $1;
 		#Every edge is denoted as state_number -> state_number . The current 
 		#line is searched for this and to and from state number are extracted.
-		if(m/(\d+) -> (\d+)/)
+		if( m/(\d+) -> (\d+)/ )
 		{
 			# "$end" token is replaced with end.
-			if($token eq "\$end")
+			if( $token eq "\$end" )
 			{
 				$table[ $1 ]{ end } = $2;
 			}
@@ -37,7 +37,7 @@ while( <> )
 		#The line describing the node contains State word in its description 
 		#followed by state number. The state number is extracted and its value 
 		#is stored.
-		elsif(m/State (\d+)\\n/)
+		elsif( m/State (\d+)\\n/ )
 		{
 			$labels[ $1 ] = $token;
 		}
@@ -46,7 +46,7 @@ while( <> )
 	#state_number -> state_number R production_number.
 	#production_number denotes the production by which reduction is to happen. 
 	#It is extracted from the label value of the specified state.
-	elsif(m/(\d+) -> "\d+R(\d+)"/)
+	elsif( m/(\d+) -> "\d+R(\d+)"/ )
 	{
 		my $state_number = $1;
 		my $production_number = $2;
@@ -57,7 +57,7 @@ while( <> )
 		#with value equal to an array having number of words on right side and 
 		#function with name of the value of left side.
 		$labels[$state_number] =~ m/$production_number (.+): (.+)\.\\l/;
-		if($1 eq "\$accept")
+		if( $1 eq "\$accept" )
 		{
 			$table[ $state_number ] = {};
 			$acceptstate = $state_number;
@@ -78,7 +78,7 @@ for my $href ( @table )
 	my @hashval;
 	for my $key ( keys %$href )
 	{
-		if($key eq "reduce")
+		if( $key eq "reduce" )
 		{
 			push @hashval , sprintf( "$key => [%s]",join(", ",@{ $href -> { $key } }));
 		}
