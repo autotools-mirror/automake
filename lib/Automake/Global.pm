@@ -43,17 +43,17 @@ use vars qw (@ISA @EXPORT);
     %sourceflags %required_targets $am_file $configure_ac $ac_gettext_location
     $seen_maint_mode $package_version_location $required_conf_file_queue
     $relative_dir $output_deps_greatest_timestamp $output_vars $output_all
-    $output_header $output_rules $output_trailer @cond_stack @include_stack
-    @all @check @check_tests %clean_files %compile_clean_files
-    %libtool_clean_directories @sources @dist_sources %object_map
-    %object_compilation_map %directory_map %dep_files @dist_targets @proglist
-    @liblist @ltliblist @dup_shortnames %known_programs %known_libraries
-    %extension_seen %language_scratch %lang_specific_files @dist_common
-    $handle_dist_run %linkers_used $need_link $must_handle_compiled_objects
-    %transformed_files %am_file_cache AC_CANONICAL_BUILD AC_CANONICAL_HOST
-    AC_CANONICAL_TARGET MOSTLY_CLEAN CLEAN DIST_CLEAN MAINTAINER_CLEAN
-    LANG_IGNORE LANG_PROCESS LANG_SUBDIR COMPILE_LIBTOOL COMPILE_ORDINARY
-    INTERNAL QUEUE_MESSAGE QUEUE_CONF_FILE QUEUE_LOCATION QUEUE_STRING);
+    $output_header $output_rules $output_trailer @include_stack @all @check
+    @check_tests %clean_files %compile_clean_files %libtool_clean_directories
+    @sources @dist_sources %object_map %object_compilation_map %directory_map
+    %dep_files @dist_targets @proglist @liblist @ltliblist @dup_shortnames
+    %known_programs %known_libraries %extension_seen %language_scratch
+    %lang_specific_files @dist_common $handle_dist_run %linkers_used
+    $need_link $must_handle_compiled_objects %transformed_files %am_file_cache
+    AC_CANONICAL_BUILD AC_CANONICAL_HOST AC_CANONICAL_TARGET MOSTLY_CLEAN
+    CLEAN DIST_CLEAN MAINTAINER_CLEAN LANG_IGNORE LANG_PROCESS LANG_SUBDIR
+    COMPILE_LIBTOOL COMPILE_ORDINARY INTERNAL QUEUE_MESSAGE QUEUE_CONF_FILE
+    QUEUE_LOCATION QUEUE_STRING);
 
 ## ----------- ##
 ## Constants.  ##
@@ -374,10 +374,6 @@ our $output_all;
 our $output_header;
 our $output_rules;
 our $output_trailer;
-
-# This is the conditional stack, updated on if/else/endif, and
-# used to build Condition objects.
-our @cond_stack;
 
 # This holds the set of included files.
 our @include_stack;

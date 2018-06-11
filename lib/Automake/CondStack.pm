@@ -27,7 +27,12 @@ use Automake::ChannelDefs;
 use vars qw (@ISA @EXPORT);
 
 @ISA = qw (Exporter);
-@EXPORT = qw (cond_stack_if cond_stack_else cond_stack_endif);
+@EXPORT = qw (@cond_stack &cond_stack_if &cond_stack_else &cond_stack_endif);
+
+
+# This is the conditional stack, updated on if/else/endif, and
+# used to build Condition objects.
+our @cond_stack;
 
 my %_am_macro_for_cond =
   (
