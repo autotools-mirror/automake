@@ -36,8 +36,21 @@ use Automake::Variable;
 use vars qw (@ISA @EXPORT);
 
 @ISA = qw (Exporter);
-@EXPORT = qw (define_standard_variables);
+@EXPORT = qw (%configure_vars %ignored_configure_vars $output_vars
+    &define_standard_variables);
 
+# Hash table of discovered configure substitutions.  Keys are names,
+# values are 'FILE:LINE' strings which are used by error message
+# generation.
+our %configure_vars = ();
+
+# Ignored configure substitutions (i.e., variables not to be output in
+# Makefile.in)
+our %ignored_configure_vars = ();
+
+# This variable is used when generating each Makefile.in. It holds the
+# Makefile.in vars until the file is ready to be printed
+our $output_vars;
 
 sub _define_configure_variable ($)
 {

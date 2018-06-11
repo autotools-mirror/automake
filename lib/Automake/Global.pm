@@ -37,23 +37,22 @@ use vars qw (@ISA @EXPORT);
     $seen_gettext $seen_gettext_external $seen_gettext_intl
     @extra_recursive_targets %libtool_tags $libtool_new_api $seen_canonical
     $package_version $seen_ar %required_aux_file $seen_init_automake
-    $seen_automake_version %configure_vars %ignored_configure_vars
-    @configure_deps $configure_deps_greatest_timestamp %configure_cond
-    %extension_map @configure_dist_common %languages %link_languages
-    %sourceflags %required_targets $am_file $configure_ac $ac_gettext_location
-    $seen_maint_mode $package_version_location $required_conf_file_queue
-    $relative_dir $output_deps_greatest_timestamp $output_vars $output_all
-    $output_header $output_rules $output_trailer @include_stack @all @check
-    @check_tests %clean_files %compile_clean_files %libtool_clean_directories
-    @sources @dist_sources %object_map %object_compilation_map %directory_map
-    %dep_files @dist_targets @proglist @liblist @ltliblist @dup_shortnames
-    %known_programs %known_libraries %extension_seen %language_scratch
-    %lang_specific_files @dist_common $handle_dist_run %linkers_used
-    $need_link $must_handle_compiled_objects %transformed_files %am_file_cache
-    AC_CANONICAL_BUILD AC_CANONICAL_HOST AC_CANONICAL_TARGET MOSTLY_CLEAN
-    CLEAN DIST_CLEAN MAINTAINER_CLEAN LANG_IGNORE LANG_PROCESS LANG_SUBDIR
-    COMPILE_LIBTOOL COMPILE_ORDINARY INTERNAL QUEUE_MESSAGE QUEUE_CONF_FILE
-    QUEUE_LOCATION QUEUE_STRING);
+    $seen_automake_version @configure_deps $configure_deps_greatest_timestamp
+    %configure_cond %extension_map @configure_dist_common %languages
+    %link_languages %sourceflags %required_targets $am_file $configure_ac
+    $ac_gettext_location $seen_maint_mode $package_version_location
+    $required_conf_file_queue $relative_dir $output_deps_greatest_timestamp
+    $output_all $output_header $output_rules $output_trailer @include_stack
+    @all @check @check_tests %clean_files %compile_clean_files
+    %libtool_clean_directories @sources @dist_sources %object_map
+    %object_compilation_map %directory_map %dep_files @dist_targets @proglist
+    @liblist @ltliblist @dup_shortnames %known_programs %known_libraries
+    %extension_seen %language_scratch %lang_specific_files @dist_common
+    $handle_dist_run %linkers_used $need_link $must_handle_compiled_objects
+    %transformed_files %am_file_cache AC_CANONICAL_BUILD AC_CANONICAL_HOST
+    AC_CANONICAL_TARGET MOSTLY_CLEAN CLEAN DIST_CLEAN MAINTAINER_CLEAN
+    LANG_IGNORE LANG_PROCESS LANG_SUBDIR COMPILE_LIBTOOL COMPILE_ORDINARY
+    INTERNAL QUEUE_MESSAGE QUEUE_CONF_FILE QUEUE_LOCATION QUEUE_STRING);
 
 ## ----------- ##
 ## Constants.  ##
@@ -277,15 +276,6 @@ our $seen_init_automake = 0;
 # TRUE if we've seen AM_AUTOMAKE_VERSION.
 our $seen_automake_version = 0;
 
-# Hash table of discovered configure substitutions.  Keys are names,
-# values are 'FILE:LINE' strings which are used by error message
-# generation.
-our %configure_vars = ();
-
-# Ignored configure substitutions (i.e., variables not to be output in
-# Makefile.in)
-our %ignored_configure_vars = ();
-
 # Files included by $configure_ac.
 our @configure_deps = ();
 
@@ -369,7 +359,6 @@ our $output_deps_greatest_timestamp;
 
 # These variables are used when generating each Makefile.in.
 # They hold the Makefile.in until it is ready to be printed.
-our $output_vars;
 our $output_all;
 our $output_header;
 our $output_rules;
