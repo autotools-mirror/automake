@@ -50,6 +50,7 @@ t/pm/Cond2.pl \
 t/pm/Cond3.pl \
 t/pm/Condition.pl \
 t/pm/Condition-t.pl \
+t/pm/CondStack.pl \
 t/pm/DisjCon2.pl \
 t/pm/DisjCon3.pl \
 t/pm/DisjConditions.pl \
