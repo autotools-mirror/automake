@@ -1674,17 +1674,6 @@ sub transform_variable_recursively ($$$$$&;%)
   return $res;
 }
 
-
-=back
-
-=head1 SEE ALSO
-
-L<Automake::VarDef>, L<Automake::Condition>,
-L<Automake::DisjConditions>, L<Automake::Location>.
-
-=cut
-
-
 # _verbose_private_var (NAME)
 # --------------------------
 # The naming policy for the private variables for silent rules.
@@ -1694,10 +1683,12 @@ sub _verbose_private_var ($)
     return 'am__v_' . $name;
 }
 
+=item C<verbose_var ($name)>
 
-# verbose_var (NAME)
-# ------------------
-# The public variable stem used to implement silent rules.
+The public variable stem used to implement silent rules.
+
+=cut
+
 sub verbose_var ($)
 {
     my ($name) = @_;
@@ -1705,11 +1696,14 @@ sub verbose_var ($)
 }
 
 
-# define_verbose_var (NAME, VAL-IF-SILENT, [VAL-IF-VERBOSE])
-# ----------------------------------------------------------
-# For  silent rules, setup VAR and dispatcher, to expand to
-# VAL-IF-SILENT if silent, to VAL-IF-VERBOSE (defaulting to
-# empty) if not.
+=item C<define_verbose_var ($name, $var-if-silent, [$var-if-verbose]>
+
+For silent rules, setup C<$var> and dispatcher, to expand to
+C<$val-if-silent> if silent, to C<$val-if-verbose> (defaulting to empty)
+if not.
+
+=cut
+
 sub define_verbose_var ($$;$)
 {
     my ($name, $silent_val, $verbose_val) = @_;
@@ -1734,24 +1728,29 @@ sub define_verbose_var ($$;$)
 }
 
 
-# define_verbose_tagvar (NAME)
-# ----------------------------
-# Engage the needed silent rules machinery for tag NAME.
+=item C<define_verbose_tagvar ($name)
+
+Engage the needed silent rules machinery for tag C<$name>.
+
+=cut
+
 sub define_verbose_tagvar ($)
 {
   my ($name) = @_;
   define_verbose_var ($name, '@echo "  '. $name . ' ' x (8 - length ($name)) . '" $@;');
 }
 
+=item C<define_pretty_variable ($var, $cond, $where, @value)>
 
-# define_pretty_variable ($VAR, $COND, $WHERE, @VALUE)
-# ----------------------------------------------------
-# Like define_variable, but the value is a list, and the variable may
-# be defined conditionally.  The second argument is the condition
-# under which the value should be defined; this should be the empty
-# string to define the variable unconditionally.  The third argument
-# is a list holding the values to use for the variable.  The value is
-# pretty printed in the output file.
+Like C<define_variable>, but the C<$value> is a list, and the variable
+may be defined conditionally.  The second argument is the condition
+under which the value should be defined; this should be the empty string
+to define the variable unconditionally.  The third argument is a list
+holding the values to use for the variable.  The C<$value> is pretty
+printed in the output file.
+
+=cut
+
 sub define_pretty_variable ($$$@)
 {
     my ($var, $cond, $where, @value) = @_;
@@ -1764,22 +1763,26 @@ sub define_pretty_variable ($$$@)
     }
 }
 
+=item C<define_variable ($var, $value, $where)
 
-# define_variable ($VAR, $VALUE, $WHERE)
-# --------------------------------------
-# Define a new Automake Makefile variable VAR to VALUE, but only if
-# not already defined.
+Define a new Automake Makefile variable C<$var> to C<$value>, but only
+if not already defined.
+
+=cut
+
 sub define_variable ($$$)
 {
     my ($var, $value, $where) = @_;
     define_pretty_variable ($var, TRUE, $where, $value);
 }
 
+=item C<define_files_variable ($var, \@basename, $extension, $where)>
 
-# define_files_variable ($VAR, \@BASENAME, $EXTENSION, $WHERE)
-# ------------------------------------------------------------
-# Define the $VAR which content is the list of file names composed of
-# a @BASENAME and the $EXTENSION.
+Define the $VAR which content is the list of file names composed of a
+C<@basename> and the C<$extension>.
+
+=cut
+
 sub define_files_variable ($\@$$)
 {
   my ($var, $basename, $extension, $where) = @_;
@@ -1788,5 +1791,14 @@ sub define_files_variable ($\@$$)
 		   $where);
 }
 
+
+=back
+
+=head1 SEE ALSO
+
+L<Automake::VarDef>, L<Automake::Condition>,
+L<Automake::DisjConditions>, L<Automake::Location>.
+
+=cut
 
 1;
