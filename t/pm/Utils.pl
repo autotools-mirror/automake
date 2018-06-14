@@ -54,7 +54,14 @@ lacinia eros.
 
   return 1 if (flatten $test_str) ne $expected_res;
   return 0;
+}
 
+sub check_locate_aux_dir
+{
+  locate_aux_dir;
+  # The install-sh script is located in $(top_scrdir)/lib/
+  return 1 if ($am_config_aux_dir ne "$(top_srcdir)/lib/");
+  return 0;
 }
 
 exit (check_subst || check_flatten);

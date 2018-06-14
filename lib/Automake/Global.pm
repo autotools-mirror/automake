@@ -32,27 +32,26 @@ use vars qw (@ISA @EXPORT);
     %standard_prefix $force_generation $symlink_exists $add_missing
     $copy_missing $force_missing %libsources @config_headers @config_links
     @input_files %output_files @configure_input_files @other_input_files
-    %ac_config_files_location %ac_config_files_condition $config_aux_dir
-    $config_aux_dir_set_in_configure_ac $am_config_aux_dir $config_libobj_dir
+    %ac_config_files_location %ac_config_files_condition $config_libobj_dir
     $seen_gettext $seen_gettext_external $seen_gettext_intl
-    @extra_recursive_targets %libtool_tags $libtool_new_api $seen_canonical
-    $package_version $seen_ar %required_aux_file $seen_init_automake
-    $seen_automake_version @configure_deps $configure_deps_greatest_timestamp
-    %configure_cond %extension_map @configure_dist_common %languages
-    %link_languages %sourceflags %required_targets $am_file $configure_ac
-    $ac_gettext_location $seen_maint_mode $package_version_location
-    $required_conf_file_queue $relative_dir $output_deps_greatest_timestamp
-    $output_all $output_header $output_rules $output_trailer @include_stack
-    @all @check @check_tests %clean_files %compile_clean_files
-    %libtool_clean_directories @sources @dist_sources %object_map
-    %object_compilation_map %directory_map %dep_files @dist_targets @proglist
-    @liblist @ltliblist @dup_shortnames %known_programs %known_libraries
-    %extension_seen %language_scratch %lang_specific_files @dist_common
-    $handle_dist_run %linkers_used $need_link $must_handle_compiled_objects
-    %transformed_files %am_file_cache AC_CANONICAL_BUILD AC_CANONICAL_HOST
-    AC_CANONICAL_TARGET MOSTLY_CLEAN CLEAN DIST_CLEAN MAINTAINER_CLEAN
-    LANG_IGNORE LANG_PROCESS LANG_SUBDIR COMPILE_LIBTOOL COMPILE_ORDINARY
-    INTERNAL QUEUE_MESSAGE QUEUE_CONF_FILE QUEUE_LOCATION QUEUE_STRING);
+    @extra_recursive_targets %libtool_tags $libtool_new_api $package_version
+    $seen_ar %required_aux_file $seen_init_automake $seen_automake_version
+    @configure_deps $configure_deps_greatest_timestamp %configure_cond
+    %extension_map @configure_dist_common %languages %link_languages
+    %sourceflags %required_targets $am_file $configure_ac $ac_gettext_location
+    $package_version_location $required_conf_file_queue $relative_dir
+    $output_deps_greatest_timestamp $output_all $output_header $output_rules
+    $output_trailer @include_stack @all @check @check_tests %clean_files
+    %compile_clean_files %libtool_clean_directories @sources @dist_sources
+    %object_map %object_compilation_map %directory_map %dep_files
+    @dist_targets @proglist @liblist @ltliblist @dup_shortnames
+    %known_programs %known_libraries %extension_seen %language_scratch
+    %lang_specific_files @dist_common $handle_dist_run %linkers_used
+    $need_link $must_handle_compiled_objects %transformed_files
+    AC_CANONICAL_BUILD AC_CANONICAL_HOST AC_CANONICAL_TARGET MOSTLY_CLEAN
+    CLEAN DIST_CLEAN MAINTAINER_CLEAN LANG_IGNORE LANG_PROCESS LANG_SUBDIR
+    COMPILE_LIBTOOL COMPILE_ORDINARY INTERNAL QUEUE_MESSAGE QUEUE_CONF_FILE
+    QUEUE_LOCATION QUEUE_STRING);
 
 ## ----------- ##
 ## Constants.  ##
@@ -220,16 +219,6 @@ our %ac_config_files_location = ();
 # The condition under which AC_CONFIG_FOOS appears.
 our %ac_config_files_condition = ();
 
-# Directory to search for configure-required files.  This
-# will be computed by locate_aux_dir() and can be set using
-# AC_CONFIG_AUX_DIR in configure.ac.
-# $CONFIG_AUX_DIR is the 'raw' directory, valid only in the source-tree.
-our $config_aux_dir = '';
-our $config_aux_dir_set_in_configure_ac = 0;
-# $AM_CONFIG_AUX_DIR is prefixed with $(top_srcdir), so it can be used
-# in Makefiles.
-our $am_config_aux_dir = '';
-
 # Directory to search for AC_LIBSOURCE files, as set by AC_CONFIG_LIBOBJ_DIR
 # in configure.ac.
 our $config_libobj_dir = '';
@@ -251,12 +240,6 @@ our %libtool_tags = ();
 # 1 if Libtool uses LT_SUPPORTED_TAG.  If it does, then it also
 # uses AC_REQUIRE_AUX_FILE.
 our $libtool_new_api = 0;
-
-# Most important AC_CANONICAL_* macro seen so far.
-our $seen_canonical = 0;
-
-# Where AM_MAINTAINER_MODE appears.
-our $seen_maint_mode;
 
 # Actual version we've seen.
 our $package_version = '';
@@ -349,9 +332,6 @@ our $am_file = 'BUG';
 ## ------------------------------------------ ##
 ## Variables reset by &initialize_per_input.  ##
 ## ------------------------------------------ ##
-
-# Relative dir of the output makefile.
-our $relative_dir;
 
 # Greatest timestamp of the output's dependencies (excluding
 # configure's dependencies).
@@ -462,16 +442,5 @@ our $must_handle_compiled_objects;
 # Record each file processed by make_paragraphs.
 our %transformed_files;
 
-################################################################
-
-## ---------------------------------------------- ##
-## Variables not reset by &initialize_per_input.  ##
-## ---------------------------------------------- ##
-
-# Cache each file processed by make_paragraphs.
-# (This is different from %transformed_files because
-# %transformed_files is reset for each file while %am_file_cache
-# it global to the run.)
-our %am_file_cache;
 
 1;

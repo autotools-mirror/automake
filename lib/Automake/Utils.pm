@@ -29,8 +29,39 @@ use Automake::Rule;
 use vars qw (@ISA @EXPORT);
 
 @ISA = qw (Exporter);
-@EXPORT = qw (var_SUFFIXES_trigger locate_aux_dir subst
-	      make_paragraphs flatten);
+
+@EXPORT = qw ($config_aux_dir $am_config_aux_dir
+    $config_aux_dir_set_in_configure_ac $seen_maint_mode $relative_dir
+    $seen_canonical $am_file_cache &var_SUFFIXES_trigger &locate_aux_dir
+    &subst &make_paragraphs &flatten);
+
+# Directory to search for configure-required files.  This
+# will be computed by locate_aux_dir() and can be set using
+# AC_CONFIG_AUX_DIR in configure.ac.
+# $CONFIG_AUX_DIR is the 'raw' directory, valid only in the source-tree.
+our $config_aux_dir = '';
+
+# $AM_CONFIG_AUX_DIR is prefixed with $(top_srcdir), so it can be used
+# in Makefiles.
+our $am_config_aux_dir;
+
+our $config_aux_dir_set_in_configure_ac = 0;
+
+# Where AM_MAINTAINER_MODE appears.
+our $seen_maint_mode;
+
+# Relative dir of the output makefile.
+our $relative_dir;
+
+# Most important AC_CANONICAL_* macro seen so far.
+our $seen_canonical = 0;
+
+# Cache each file processed by make_paragraphs.
+# (This is different from %transformed_files because
+# %transformed_files is reset for each file while %am_file_cache
+# it global to the run.)
+our %am_file_cache;
+
 
 # var_SUFFIXES_trigger ($TYPE, $VALUE)
 # ------------------------------------
@@ -45,6 +76,7 @@ sub var_SUFFIXES_trigger
     my ($type, $value) = @_;
     accept_extensions (split (' ', $value));
 }
+
 
 # Find the aux dir.  This should match the algorithm used by
 # ./configure. (See the Autoconf documentation for for
@@ -71,6 +103,7 @@ sub locate_aux_dir
     '$(top_srcdir)' . ($config_aux_dir eq '.' ? "" : "/$config_aux_dir");
   $am_config_aux_dir =~ s,/*$,,;
 }
+
 
 # subst ($TEXT)
 # -------------
