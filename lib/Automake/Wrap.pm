@@ -19,7 +19,9 @@ use 5.006;
 use strict;
 
 require Exporter;
+
 use vars '@ISA', '@EXPORT_OK';
+
 @ISA = qw/Exporter/;
 @EXPORT_OK = qw/wrap makefile_wrap/;
 

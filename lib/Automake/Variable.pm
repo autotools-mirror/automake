@@ -19,23 +19,23 @@ use 5.006;
 use strict;
 use Carp;
 
-use Automake::Channels;
 use Automake::ChannelDefs;
+use Automake::Channels;
+use Automake::Condition qw (TRUE FALSE);
 use Automake::Config;
 use Automake::Configure_ac;
-use Automake::Item;
-use Automake::VarDef;
-use Automake::Condition qw (TRUE FALSE);
 use Automake::DisjConditions;
-use Automake::General 'uniq';
-use Automake::Wrap 'makefile_wrap';
-use Automake::Global;
-use Automake::Location;
-use Automake::Utils;
 use Automake::File;
-
+use Automake::General 'uniq';
+use Automake::Global;
+use Automake::Item;
+use Automake::Location;
+use Automake::VarDef;
+use Automake::Wrap 'makefile_wrap';
 require Exporter;
+
 use vars '@ISA', '@EXPORT', '@EXPORT_OK';
+
 @ISA = qw/Automake::Item Exporter/;
 @EXPORT = qw (err_var msg_var msg_cond_var reject_var
 	      var rvar vardef rvardef

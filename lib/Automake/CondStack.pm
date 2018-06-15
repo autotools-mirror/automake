@@ -18,11 +18,11 @@ package Automake::CondStack;
 use 5.006;
 use strict;
 
-use Exporter;
-use Automake::Condition qw (TRUE FALSE);
-use Automake::Global;
-use Automake::Channels;
 use Automake::ChannelDefs;
+use Automake::Condition qw (TRUE FALSE);
+use Automake::Channels;
+use Automake::Global;
+use Exporter;
 
 use vars qw (@ISA @EXPORT);
 

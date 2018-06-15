@@ -19,15 +19,16 @@ use 5.006;
 use strict;
 use Carp;
 
-use Automake::Item;
-use Automake::RuleDef;
 use Automake::ChannelDefs;
 use Automake::Channels;
-use Automake::Options;
 use Automake::Condition qw (TRUE FALSE);
 use Automake::DisjConditions;
+use Automake::Item;
+use Automake::Options;
+use Automake::RuleDef;
 require Exporter;
-use vars '@ISA', '@EXPORT', '@EXPORT_OK';
+
+use vars '@ISA', '@EXPORT';
 @ISA = qw/Automake::Item Exporter/;
 @EXPORT = qw (reset register_suffix_rule next_in_suffix_chain
 	      suffixes rules $KNOWN_EXTENSIONS_PATTERN

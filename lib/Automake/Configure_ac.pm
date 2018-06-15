@@ -22,9 +22,10 @@ package Automake::Configure_ac;
 
 use 5.006;
 use strict;
-use Exporter;
+
 use Automake::Channels;
 use Automake::ChannelDefs;
+use Exporter;
 
 use vars qw (@ISA @EXPORT);
 

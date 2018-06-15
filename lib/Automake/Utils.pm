@@ -17,14 +17,15 @@ package Automake::Utils;
 
 use 5.006;
 use strict;
-use Exporter;
+
 use Automake::Global;
 use Automake::Location;
 use Automake::Options;
 use Automake::XFile;
 use Automake::ChannelDefs;
-use Automake::Variable;
+use Automake::Variable 'var';
 use Automake::Rule;
+use Exporter;
 
 use vars qw (@ISA @EXPORT);
 

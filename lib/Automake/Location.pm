@@ -17,6 +17,14 @@ package Automake::Location;
 
 use 5.006;
 
+use Exporter;
+
+use vars qw (@ISA @EXPORT);
+
+@ISA = qw (Exporter);
+
+@EXPORT = qw (INTERNAL);
+
 =head1 NAME
 
 Automake::Location - a class for location tracking, with a stack of contexts
@@ -86,6 +94,18 @@ You can pass a C<Location> to C<Automake::Channels::msg>.
 
 =cut
 
+=head2 Constants
+
+=over
+
+=item C<INTERNAL>
+
+We can't always associate a location to a variable or a rule, when it's
+defined by Automake.  We use C<INTERNAL> in this case.
+
+=cut
+
+
 =head2 Methods
 
 =over
@@ -106,6 +126,8 @@ sub new ($;$)
   bless $self, $class;
   return $self;
 }
+
+use constant INTERNAL => new Automake::Location;
 
 =item C<$location-E<gt>set ($position)>
 

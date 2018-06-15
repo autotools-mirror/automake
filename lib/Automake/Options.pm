@@ -17,11 +17,12 @@ package Automake::Options;
 
 use 5.006;
 use strict;
-use Exporter;
-use Automake::Config;
+
 use Automake::ChannelDefs;
 use Automake::Channels;
+use Automake::Config;
 use Automake::Version;
+use Exporter;
 
 use vars qw (@ISA @EXPORT);
 

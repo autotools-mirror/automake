@@ -15,6 +15,7 @@
 
 package Automake::ChannelDefs;
 
+use Automake::Channels;
 use Automake::Config;
 BEGIN
 {
@@ -24,7 +25,6 @@ BEGIN
       import threads;
     }
 }
-use Automake::Channels;
 
 =head1 NAME
 

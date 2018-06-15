@@ -17,6 +17,7 @@ package Automake::Version;
 
 use 5.006;
 use strict;
+
 use Automake::ChannelDefs;
 
 =head1 NAME

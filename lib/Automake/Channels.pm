@@ -68,8 +68,9 @@ etc.) that can also be overridden on a per-message basis.
 
 use 5.006;
 use strict;
-use Exporter;
 use Carp;
+
+use Exporter;
 use File::Basename;
 
 use vars qw (@ISA @EXPORT %channels $me);

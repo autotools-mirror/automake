@@ -17,9 +17,8 @@ package Automake::Global;
 
 use 5.006;
 use strict;
-use Exporter;
 
-use Automake::Location;
+use Exporter;
 
 use vars qw (@ISA @EXPORT);
 
@@ -50,7 +49,7 @@ use vars qw (@ISA @EXPORT);
     $need_link $must_handle_compiled_objects %transformed_files
     AC_CANONICAL_BUILD AC_CANONICAL_HOST AC_CANONICAL_TARGET MOSTLY_CLEAN
     CLEAN DIST_CLEAN MAINTAINER_CLEAN LANG_IGNORE LANG_PROCESS LANG_SUBDIR
-    COMPILE_LIBTOOL COMPILE_ORDINARY INTERNAL QUEUE_MESSAGE QUEUE_CONF_FILE
+    COMPILE_LIBTOOL COMPILE_ORDINARY QUEUE_MESSAGE QUEUE_CONF_FILE
     QUEUE_LOCATION QUEUE_STRING);
 
 ## ----------- ##
@@ -156,10 +155,6 @@ use constant LANG_SUBDIR  => 2;
 # by two different paths.
 use constant COMPILE_LIBTOOL  => 1;
 use constant COMPILE_ORDINARY => 2;
-
-# We can't always associate a location to a variable or a rule,
-# when it's defined by Automake.  We use INTERNAL in this case.
-use constant INTERNAL => new Automake::Location;
 
 # Serialization keys for message queues.
 use constant QUEUE_MESSAGE   => "msg";

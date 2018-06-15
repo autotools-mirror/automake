@@ -71,17 +71,18 @@ and C<getlines> methods to translate C<\r\n> to C<\n>.
 
 use 5.006;
 use strict;
-use vars qw($VERSION @EXPORT @EXPORT_OK $AUTOLOAD @ISA);
 use Carp;
 use Errno;
-use IO::File;
-use File::Basename;
+
 use Automake::ChannelDefs;
 use Automake::Channels qw(msg);
 use Automake::FileUtils;
-
-require Exporter;
 require DynaLoader;
+require Exporter;
+use File::Basename;
+use IO::File;
+
+use vars qw($VERSION @EXPORT @EXPORT_OK $AUTOLOAD @ISA);
 
 @ISA = qw(IO::File Exporter DynaLoader);
 

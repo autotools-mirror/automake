@@ -18,11 +18,13 @@ package Automake::RuleDef;
 use 5.006;
 use strict;
 use Carp;
+
 use Automake::ChannelDefs;
 use Automake::ItemDef;
-
 require Exporter;
+
 use vars '@ISA', '@EXPORT';
+
 @ISA = qw/Automake::ItemDef Exporter/;
 @EXPORT = qw (&RULE_AUTOMAKE &RULE_USER);
 

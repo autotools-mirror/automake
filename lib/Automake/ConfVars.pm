@@ -18,7 +18,6 @@ package Automake::ConfVars;
 use 5.006;
 use strict;
 
-use Exporter;
 use Automake::ChannelDefs;
 use Automake::Channels;
 use Automake::Condition qw (TRUE FALSE);
@@ -29,6 +28,7 @@ use Automake::Location;
 use Automake::Utils;
 use Automake::VarDef;
 use Automake::Variable;
+use Exporter;
 
 use vars qw (@ISA @EXPORT);
 

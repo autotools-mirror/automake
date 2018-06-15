@@ -36,11 +36,12 @@ This perl module provides various general purpose file handling functions.
 
 use 5.006;
 use strict;
+
+use Automake::Channels;
+use Automake::ChannelDefs;
 use Exporter;
 use File::stat;
 use IO::File;
-use Automake::Channels;
-use Automake::ChannelDefs;
 
 use vars qw (@ISA @EXPORT);
 

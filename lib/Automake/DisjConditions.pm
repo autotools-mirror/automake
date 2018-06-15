@@ -18,6 +18,7 @@ package Automake::DisjConditions;
 use 5.006;
 use strict;
 use Carp;
+
 use Automake::Condition qw/TRUE FALSE/;
 
 =head1 NAME
