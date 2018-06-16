@@ -39,10 +39,7 @@ sub lex($$)
 				{
 					if($val =~ m/^##/)
 					{
-						if($vals[ -1 ] eq '\\')
-						{
-							$multiline = 'automake_comment';
-						}
+						$multiline = 'automake_comment' if $vals[ -1 ] eq '\\';
 						$_ = undef;
 						last;
 					}
@@ -55,10 +52,7 @@ sub lex($$)
 						$comment .= " ".$val;
 					}
 				}
-				if( $comment )
-				{
-					push @tokens, [ "comment" , $comment ];
-				}
+				push @tokens, [ "comment" , $comment ] if $comment;
 				if($vals[ -1 ] ne '\\')
 				{
 					$multiline = undef;
@@ -80,27 +74,18 @@ sub lex($$)
 			{
 				if( $val =~ m/^##/ )
 				{
-					if($vals[ -1 ] eq '\\' )
-					{
-						$multiline = 'automake_comment';
-					}
+					$multiline = 'automake_comment' if $vals[ -1 ] eq '\\';
 					$_ = undef;
 					last;
 				}
 				elsif( $val =~ m/^#(.*)/ )
 				{
-					if($vals[ -1 ] eq '\\' )
-					{
-						$multiline = 'comment';
-					}
+					$multiline = 'comment' if $vals[ -1 ] eq '\\';
 					$comment .= " ".$1;
 				}
 				elsif( $val =~ m/\\/ )
 				{
-					if( !$multiline )
-					{
-						$multiline = 'rhsval';
-					}
+					$multiline = 'rhsval' if !$multiline;
 				}
 				elsif( $comment )
 				{
@@ -111,14 +96,8 @@ sub lex($$)
 					push @tokens, [ "rhsval" , $val];
 				}
 			}
-			if( $comment )
-			{
-				push @tokens, [ "comment" , $comment];
-			}
-			if( !$multiline )
-			{
-				push @tokens, [ "newline" ];
-			}
+			push @tokens, [ "comment" , $comment] if $comment;
+			push @tokens, [ "newline" ] if !$multiline;
 			$_ = undef;
 		}
 		elsif( s/^##.*\n$//o )
@@ -138,7 +117,7 @@ sub lex($$)
 				push @tokens, [ "newline" ];
 			}
 		}
-		elsif( s/^(PROGRAMS|LIBRARIES|LTLIBRARIES|LISP|PYTHON|JAVA|SCRIPTS|DATA|HEADERS|MASN|TEXINFOS)//o)
+		elsif( s/^(PROGRAMS|LIBRARIES|LTLIBRARIES|LISP|PYTHON|JAVA|SCRIPTS|DATA|HEADERS|MASN|TEXINFOS|if|else|endif)//o)
 		{
 			push @tokens, [$1];
 		}

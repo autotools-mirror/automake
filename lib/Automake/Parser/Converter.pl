@@ -1,6 +1,16 @@
 #!/usr/bin/perl
 use strict;
 
+my %hashx;
+
+while ( <> )
+{
+	last if m/^Terminals, with /o;
+	$hashx{$1}=$2 if m/^\s+(\d+) (.*?): %empty\n/;
+}
+
+close ARGV;
+
 #Stores the parser table. Its an array of hashes. Each index corresponds 
 #to ith state. Every key in hash corresponds to a token, value corresponds 
 #to next state. reduce key specifies the reduction of token and its 
@@ -61,6 +71,10 @@ while( <> )
 		{
 			$table[ $state_number ] = {};
 			$acceptstate = $state_number;
+		}
+		elsif($1 eq $1+0)
+		{
+			$table[$state_number]{reduce}=[0," \\&$hashx{$production_number}"];
 		}
 		else
 		{
