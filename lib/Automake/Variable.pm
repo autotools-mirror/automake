@@ -30,6 +30,7 @@ use Automake::General 'uniq';
 use Automake::Global;
 use Automake::Item;
 use Automake::Location;
+use Automake::VarAppend;
 use Automake::VarDef;
 use Automake::Wrap 'makefile_wrap';
 require Exporter;
@@ -146,6 +147,8 @@ my $_VARIABLE_PATTERN = '^' . $_VARIABLE_CHARACTERS . "\$";
 my $_VARIABLE_RECURSIVE_PATTERN =
     '^([.A-Za-z0-9_@]|\$[({]' . $_VARIABLE_CHARACTERS . '[})]?)+' . "\$";
 
+# Count of helper variables used to implement conditional '+='.
+my $_appendvar;
 # The order in which variables should be output.  (May contain
 # duplicates -- only the first occurrence matters.)
 my @_var_order;
@@ -180,7 +183,7 @@ my %_am_macro_for_var =
    pyexecdir => 'AM_PATH_PYTHON',
    PYTHON => 'AM_PATH_PYTHON',
    pythondir => 'AM_PATH_PYTHON',
-   );
+  );
 
 # Macros shipped with Autoconf.
 my %_ac_macro_for_var =
@@ -202,7 +205,7 @@ my %_ac_macro_for_var =
    UPC => 'AM_PROG_UPC',
    UPCFLAGS => 'AM_PROG_UPC',
    YACC => 'AC_PROG_YACC',
-   );
+  );
 
 # The name of the configure.ac file.
 my $configure_ac;
@@ -215,9 +218,6 @@ my %_silent_variable_override =
    DEJATOOL => 1,
    JAVAC => 1,
    JAVAROOT => 1);
-
-# Count of helper variables used to implement conditional '+='.
-my $_appendvar;
 
 # Each call to C<Automake::Variable::traverse_recursively> gets an
 # unique label. This is used to detect recursively defined variables.
@@ -354,9 +354,9 @@ other internal data.
 
 sub reset ()
 {
+  $_appendvar = 0;
   %_variable_dict = ();
   %_primary_dict = ();
-  $_appendvar = 0;
   @_var_order = ();
   %_gen_varname = ();
   %_gen_varname_n = ();
@@ -804,159 +804,6 @@ sub check_variable_expansions ($$)
 }
 
 
-# _append_var_cur_cond ($self, $var, $owner, $where, $def, $value, $comment)
-# --------------------------------------------------
-# Append $value to an existing $var defined for the current condition.
-# This is only used in the define method of this file.
-sub _append_var_cur_cond ($$$$$$$)
-{
-  my ($self, $var, $owner, $where, $def, $value, $comment) = @_;
-  $def->append ($value, $comment);
-  $self->{'last-append'} = [];
-
-  # Only increase owners.  A VAR_CONFIGURE variable augmented in a
-  # Makefile.am becomes a VAR_MAKEFILE variable.
-  $def->set_owner ($owner, $where->clone)
-      if $owner > $def->owner;
-}
-
-# _append_var_other_cond ($self, $var, $cond, $owner, $where, $def, $value, $pretty, $comment, $new_var)
-# -----------------------------------------------------------------------------
-# We declare a helper variable conditionally when $cond is not TRUE.
-# Example for:
-#     FOO = foo
-#     if COND
-#       FOO += bar
-#     endif
-# We do:
-#     FOO = foo $(am__append_1)
-#     @COND_TRUE@am__append_1 = bar
-# When $cond is TRUE however, we do not need this variable.
-
-sub _append_var_other_cond ($$$$$$$$$$)
-{
-  my ($self, $var, $cond, $owner, $where, $def, $value, $pretty, $comment, $new_var) = @_;
-  my $lastappend = [];
-  # Do we need an helper variable?
-  if ($cond != TRUE)
-    {
-      # Can we reuse the helper variable created for the previous
-      # append?  (We cannot reuse older helper variables because
-      # we must preserve the order of items appended to the
-      # variable.)
-      my $condstr = $cond->string;
-      my $key = "$var:$condstr";
-      my ($appendvar, $appendvarcond) = @{$self->{'last-append'}};
-      if ($appendvar && $condstr eq $appendvarcond)
-        {
-          $var = $appendvar;
-          $owner = VAR_AUTOMAKE;
-          $self = var ($var);
-          $def = $self->rdef ($cond);
-          $new_var = 0;
-        }
-      else
-        {
-          my $num = ++$_appendvar;
-          my $hvar = "am__append_$num";
-          $lastappend = [$hvar, $condstr];
-          &define ($hvar, VAR_AUTOMAKE, '+',
-                   $cond, $value, $comment, $where, $pretty);
-
-          $comment = '';
-          $value = "\$($hvar)";
-        }
-    }
-
-  foreach my $vcond ($self->conditions->conds)
-    {
-      my $undef_cond = $self->not_always_defined_in_cond ($cond);
-      if (! $undef_cond->false)
-        {
-          error ($where,
-                 "cannot apply '+=' because '$var' is not defined "
-                 . "in\nthe following conditions:\n  "
-                 . join ("\n  ", map { $_->human } $undef_cond->conds)
-                 . "\neither define '$var' in these conditions,"
-                 . " or use\n'+=' in the same conditions as"
-                 . " the definitions.");
-        }
-      else
-        {
-          &define ($var, $owner, '+', $vcond, $value, $comment,
-                   $where, $pretty);
-        }
-    }
-  $self->{'last-append'} = $lastappend;
-  # We return the variables we modified
-  return ($self, $var, $value);
-}
-
-# _first_assign_var ($sefl, $var, $cond, $owner, $where, $def, $value, $pretty, $comment, $new_var, $type)
-# ---------------------------------------------------
-# Method that assign a value to a variable for the first time or for
-# total redefinition of an Automake variable or an AC_SUBST variable for
-# an existing condition.
-
-sub _first_assign_var ($$$$$$$$$$$)
-{
-  my ($self, $var, $cond, $owner, $where, $def, $value, $pretty, $comment, $new_var, $type) = @_;
-  _check_ambiguous_condition ($self, $cond, $where)
-      unless (!$new_var
-              && (($def->owner == VAR_AUTOMAKE && $owner != VAR_AUTOMAKE)
-                  || $def->owner == VAR_CONFIGURE));
-
-  # Never decrease an owner.
-  $owner = $def->owner
-      if ! $new_var && $owner < $def->owner;
-
-  # Assignments to a macro set its location.  We don't adjust
-  # locations for '+='.  Ideally I suppose we would associate
-  # line numbers with random bits of text.
-  $def = new Automake::VarDef ($var, $value, $comment, $where->clone,
-                              $type, $owner, $pretty);
-      $self->set ($cond, $def);
-  push @_var_order, $var;
-}
-
-# _am_check_definitions ($self, $var, $cond, $def, $value, $type, $where)
-# ----------
-# Additional checks for Automake definitions
-sub _am_check_definitions ($$$$$$$)
-{
-  my ($self, $var, $cond, $def, $value, $type, $where) = @_;
-  # An Automake variable must be consistently defined with the same
-  # sign by Automake.
-  if ($def->type ne $type && $def->owner == VAR_AUTOMAKE)
-    {
-      error ($def->location,
-             "Automake variable '$var' was set with '"
-             . $def->type . "=' here ...", partial => 1);
-      error ($where, "... and is now set with '$type=' here.");
-      prog_error ("Automake variable assignments should be consistently\n"
-                  . "defined with the same sign");
-    }
-
-  # If Automake tries to override a value specified by the user,
-  # just don't let it do.
-  if ($def->owner != VAR_AUTOMAKE)
-    {
-      if (! exists $_silent_variable_override{$var})
-        {
-          my $condmsg = ($cond == TRUE
-                         ? '' : (" in condition '" . $cond->human . "'"));
-          msg_cond_var ('override', $cond, $var,
-                        "user variable '$var' defined here$condmsg ...",
-                        partial => 1);
-          msg ('override', $where,
-               "... overrides Automake variable '$var' defined here");
-        }
-      verb ("refusing to override the user definition of:\n"
-            . $self->dump ."with '" . $cond->human . "' => '$value'");
-      return -1;
-    }
-  return 0;
-}
 =item C<Automake::Variable::define($varname, $owner, $type, $cond, $value, $comment, $where, $pretty)>
 
 Define or append to a new variable.
@@ -1039,32 +886,136 @@ sub define ($$$$$$$$)
   # Additional checks for Automake definitions.
   if ($owner == VAR_AUTOMAKE && ! $new_var)
     {
-      return if (-1 == _am_check_definitions ($self, $var, $cond, $def, $value, $type,
-                                              $where));
+      am_check_definitions ($var, $cond, $def, $type, $where);
+      # If Automake tries to override a value specified by the user,
+      # just don't let it do.
+      if ($def->owner != VAR_AUTOMAKE)
+	{
+	  if (! exists $_silent_variable_override{$var})
+	    {
+	      my $condmsg = ($cond == TRUE
+			     ? '' : (" in condition '" . $cond->human . "'"));
+	      msg_cond_var ('override', $cond, $var,
+			    "user variable '$var' defined here$condmsg ...",
+			    partial => 1);
+	      msg ('override', $where,
+		   "... overrides Automake variable '$var' defined here");
+	    }
+	  verb ("refusing to override the user definition of:\n"
+		. $self->dump ."with '" . $cond->human . "' => '$value'");
+	  return;
+	}
     }
-
   # Differentiate assignment types.
 
   # 1. append (+=) to a variable defined for current condition
   if ($type eq '+' && ! $new_var)
     {
-      _append_var_cur_cond ($self, $var, $owner, $where, $def, $value,
+      append_var_cur_cond ($self, $var, $owner, $where, $def, $value,
                             $comment);
     }
   # 2. append (+=) to a variable defined for *another* condition
   elsif ($type eq '+' && ! $self->conditions->false)
     {
-      # We get back some variables that will be needed later
-      ($var, $value) = _append_var_other_cond ($self, $var, $cond,
-                                               $owner, $where, $def,
-                                               $value, $pretty,
-                                               $comment, $new_var);
+      # * Generally, $cond is not TRUE.  For instance:
+      #     FOO = foo
+      #     if COND
+      #       FOO += bar
+      #     endif
+      #   In this case, we declare an helper variable conditionally,
+      #   and append it to FOO:
+      #     FOO = foo $(am__append_1)
+      #     @COND_TRUE@am__append_1 = bar
+      #   Of course if FOO is defined under several conditions, we add
+      #   $(am__append_1) to each definitions.
+      #
+      # * If $cond is TRUE, we don't need the helper variable.  E.g., in
+      #     if COND1
+      #       FOO = foo1
+      #     else
+      #       FOO = foo2
+      #     endif
+      #     FOO += bar
+      #   we can add bar directly to all definition of FOO, and output
+      #     @COND_TRUE@FOO = foo1 bar
+      #     @COND_FALSE@FOO = foo2 bar
+
+      my $lastappend = [];
+      # Do we need an helper variable?
+      if ($cond != TRUE)
+        {
+	  # Can we reuse the helper variable created for the previous
+	  # append?  (We cannot reuse older helper variables because
+	  # we must preserve the order of items appended to the
+	  # variable.)
+	  my $condstr = $cond->string;
+	  my $key = "$var:$condstr";
+	  my ($appendvar, $appendvarcond) = @{$self->{'last-append'}};
+	  if ($appendvar && $condstr eq $appendvarcond)
+	    {
+	      # Yes, let's simply append to it.
+	      $var = $appendvar;
+	      $owner = VAR_AUTOMAKE;
+	      $self = var ($var);
+	      $def = $self->rdef ($cond);
+	      $new_var = 0;
+	    }
+	  else
+	    {
+	      # No, create it.
+	      my $num = ++$_appendvar;
+	      my $hvar = "am__append_$num";
+	      $lastappend = [$hvar, $condstr];
+	      &define ($hvar, VAR_AUTOMAKE, '+',
+		       $cond, $value, $comment, $where, $pretty);
+
+	      # Now HVAR is to be added to VAR.
+	      $comment = '';
+	      $value = "\$($hvar)";
+	    }
+	}
+
+      # Add VALUE to all definitions of SELF.
+      foreach my $vcond ($self->conditions->conds)
+        {
+	  # We have a bit of error detection to do here.
+	  # This:
+	  #   if COND1
+	  #     X = Y
+	  #   endif
+	  #   X += Z
+	  # should be rejected because X is not defined for all conditions
+	  # where '+=' applies.
+	  my $undef_cond = $self->not_always_defined_in_cond ($cond);
+	  if (! $undef_cond->false)
+	    {
+	      error ($where,
+		     "cannot apply '+=' because '$var' is not defined "
+		     . "in\nthe following conditions:\n  "
+		     . join ("\n  ", map { $_->human } $undef_cond->conds)
+		     . "\neither define '$var' in these conditions,"
+		     . " or use\n'+=' in the same conditions as"
+		     . " the definitions.");
+	    }
+	  else
+	    {
+	      &define ($var, $owner, '+', $vcond, $value, $comment,
+		       $where, $pretty);
+	    }
+	}
+      $self->{'last-append'} = $lastappend;
     }
   # 3. first assignment (=, :=, or +=)
   else
     {
-      _first_assign_var ($self, $var, $cond, $owner, $where, $def,
-                         $value, $pretty, $comment, $new_var, $type);
+      _check_ambiguous_condition ($self, $cond, $where)
+	unless (!$new_var
+		&& (($def->owner == VAR_AUTOMAKE && $owner != VAR_AUTOMAKE)
+		    || $def->owner == VAR_CONFIGURE));
+
+      first_assign_var ($self, $var, $cond, $owner, $where, $def,
+                        $value, $pretty, $comment, $new_var, $type);
+      push @_var_order, $var;
     }
 
   # Call any defined hook.  This helps to update some internal state

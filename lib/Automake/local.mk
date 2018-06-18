@@ -41,6 +41,7 @@ dist_perllib_DATA = \
   %D%/Rule.pm \
   %D%/RuleDef.pm \
   %D%/Utils.pm \
+  %D%/VarAppend.pm \
   %D%/Variable.pm \
   %D%/VarDef.pm \
   %D%/Version.pm \
