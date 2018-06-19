@@ -1,4 +1,4 @@
-# Copyright (C) 2018  Matthias Paulmier
+# Copyright (C) 2018  Free Software Foundation, Inc
 
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -40,13 +40,12 @@ This package provides methods for appending values to variables.
 
 It is used by the C<Automake::Variable> class in its C<define> function.
 
-=head2 Functions
+=head2 FUNCTIONS
 
 =item C<append_var_cur_cond ($self, $var, $owner, $where, $def, $value,
 $comment)>
 
-Append $value to an existing $var defined for the current condition.  This is
-only used in the define method of this file.
+Append $value to an existing $var defined for the current condition.
 
 =cut
 
