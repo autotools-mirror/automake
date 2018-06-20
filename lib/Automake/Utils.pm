@@ -26,6 +26,7 @@ use Automake::ChannelDefs;
 use Automake::Variable 'var';
 use Automake::Rule;
 use Exporter;
+use File::Basename;
 
 use vars qw (@ISA @EXPORT);
 
@@ -34,7 +35,8 @@ use vars qw (@ISA @EXPORT);
 @EXPORT = qw ($config_aux_dir $am_config_aux_dir
     $config_aux_dir_set_in_configure_ac $seen_maint_mode $relative_dir
     $seen_canonical $am_file_cache &var_SUFFIXES_trigger &locate_aux_dir
-    &subst &make_paragraphs &flatten);
+    &subst &make_paragraphs &flatten &canonicalize &push_dist_common
+    &is_make_dir);
 
 # Directory to search for configure-required files.  This
 # will be computed by locate_aux_dir() and can be set using
@@ -296,5 +298,51 @@ sub flatten
   return $_;
 }
 
+
+# Canonicalize the input parameter.
+sub canonicalize
+{
+    my ($string) = @_;
+    $string =~ tr/A-Za-z0-9_\@/_/c;
+    return $string;
+}
+
+
+# Push a list of files onto '@dist_common'.
+sub push_dist_common
+{
+  prog_error "push_dist_common run after handle_dist"
+    if $handle_dist_run;
+  push @dist_common, @_;
+}
+
+# Each key in this hash is the name of a directory holding a
+# Makefile.in.  These variables are local to 'is_make_dir'.
+my %make_dirs = ();
+my $make_dirs_set = 0;
+
+# is_make_dir ($DIRECTORY)
+# ------------------------
+sub is_make_dir
+{
+    my ($dir) = @_;
+    if (! $make_dirs_set)
+    {
+	foreach my $iter (@configure_input_files)
+	{
+	    $make_dirs{dirname ($iter)} = 1;
+	}
+	# We also want to notice Makefile.in's.
+	foreach my $iter (@other_input_files)
+	{
+	    if ($iter =~ /Makefile\.in$/)
+	    {
+		$make_dirs{dirname ($iter)} = 1;
+	    }
+	}
+	$make_dirs_set = 1;
+    }
+    return defined $make_dirs{$dir};
+}
 
 1;
