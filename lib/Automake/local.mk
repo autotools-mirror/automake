@@ -36,11 +36,14 @@ dist_perllib_DATA = \
   %D%/Getopt.pm \
   %D%/Item.pm \
   %D%/ItemDef.pm \
+  %D%/LangHandling.pm \
   %D%/Language.pm \
   %D%/Location.pm \
   %D%/Options.pm \
+  %D%/Requires.pm \
   %D%/Rule.pm \
   %D%/RuleDef.pm \
+  %D%/SilentRules.pm \
   %D%/Utils.pm \
   %D%/VarAppend.pm \
   %D%/Variable.pm \
