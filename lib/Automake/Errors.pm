@@ -81,3 +81,13 @@ sub err_ac
 {
   _msg_ac ('error', @_);
 }
+
+=back
+
+=head1 SEE ALSO
+
+L<Automake::Channels>, L<Automake::ChannelDefs>
+
+=cut
+
+1;
