@@ -28,11 +28,10 @@ use Automake::Location;
 use Automake::Utils;
 use Automake::VarDef;
 use Automake::Variable;
-use Exporter;
+use Exporter 'import';
 
-use vars qw (@ISA @EXPORT);
+use vars qw (@EXPORT);
 
-@ISA = qw (Exporter);
 @EXPORT = qw (%configure_vars %ignored_configure_vars $output_vars
     &define_standard_variables);
 

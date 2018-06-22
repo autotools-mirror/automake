@@ -22,11 +22,10 @@ use Automake::ChannelDefs;
 use Automake::Channels;
 use Automake::Config;
 use Automake::Version;
-use Exporter;
+use Exporter 'import';
 
-use vars qw (@ISA @EXPORT);
+use vars qw (@EXPORT);
 
-@ISA = qw (Exporter);
 @EXPORT = qw (option global_option
               set_option set_global_option
               unset_option unset_global_option

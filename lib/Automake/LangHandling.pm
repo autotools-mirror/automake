@@ -28,12 +28,10 @@ use Automake::Utils;
 use Automake::Variable;
 use Automake::VarDef;
 use Automake::Wrap qw (makefile_wrap);
-use Exporter;
+use Exporter 'import';
 use File::Basename;
 
-use vars '@ISA', '@EXPORT';
-
-@ISA = qw (Exporter);
+use vars qw (@EXPORT);
 
 @EXPORT = qw (check_user_variables lang_sub_obj lang_header_rewrite
 	      lang_vala_rewrite lang_yacc_rewrite lang_yaccxx_rewrite

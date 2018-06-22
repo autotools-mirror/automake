@@ -25,12 +25,10 @@ use Automake::XFile;
 use Automake::ChannelDefs;
 use Automake::Variable 'var';
 use Automake::Rule;
-use Exporter;
+use Exporter 'import';
 use File::Basename;
 
-use vars qw (@ISA @EXPORT);
-
-@ISA = qw (Exporter);
+use vars qw (@EXPORT);
 
 @EXPORT = qw ($config_aux_dir $am_config_aux_dir
     $config_aux_dir_set_in_configure_ac $seen_maint_mode $relative_dir

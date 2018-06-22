@@ -57,11 +57,10 @@ shorthand function to output on specific channels.
 
 use 5.006;
 use strict;
-use Exporter;
+use Exporter 'import';
 
-use vars qw (@ISA @EXPORT);
+use vars qw (@EXPORT);
 
-@ISA = qw (Exporter);
 @EXPORT = qw (&prog_error &error &fatal &verb
 	      &switch_warning &parse_WARNINGS &parse_warnings);
 

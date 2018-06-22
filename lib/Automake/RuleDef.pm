@@ -21,11 +21,11 @@ use Carp;
 
 use Automake::ChannelDefs;
 use Automake::ItemDef;
-require Exporter;
+use Exporter 'import';
 
-use vars '@ISA', '@EXPORT';
+use vars qw (@ISA @EXPORT);
 
-@ISA = qw/Automake::ItemDef Exporter/;
+@ISA = qw (Automake::ItemDef);
 @EXPORT = qw (&RULE_AUTOMAKE &RULE_USER);
 
 =head1 NAME

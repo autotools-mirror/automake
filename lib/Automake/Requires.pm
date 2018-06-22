@@ -28,11 +28,9 @@ use Automake::Utils;
 use Automake::Variable;
 use File::Basename;
 
-use Exporter;
+use Exporter 'import';
 
-use vars '@ISA', '@EXPORT';
-
-@ISA = qw (Exporter);
+use vars qw (@EXPORT);
 
 @EXPORT = qw (require_file require_file_with_macro
     require_libsource_with_macro require_queued_file_check_or_copy

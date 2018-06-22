@@ -22,11 +22,10 @@ use Automake::ChannelDefs;
 use Automake::Condition qw (TRUE FALSE);
 use Automake::Channels;
 use Automake::Global;
-use Exporter;
+use Exporter 'import';
 
-use vars qw (@ISA @EXPORT);
+use vars qw (@EXPORT);
 
-@ISA = qw (Exporter);
 @EXPORT = qw (@cond_stack &cond_stack_if &cond_stack_else &cond_stack_endif);
 
 

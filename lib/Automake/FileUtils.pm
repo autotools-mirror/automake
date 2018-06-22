@@ -39,13 +39,12 @@ use strict;
 
 use Automake::Channels;
 use Automake::ChannelDefs;
-use Exporter;
+use Exporter 'import';
 use File::stat;
 use IO::File;
 
-use vars qw (@ISA @EXPORT);
+use vars qw (@EXPORT);
 
-@ISA = qw (Exporter);
 @EXPORT = qw (&contents
 	      &find_file &mtime
 	      &update_file &up_to_date_p

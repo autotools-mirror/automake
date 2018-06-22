@@ -18,12 +18,11 @@ package Automake::General;
 use 5.006;
 use strict;
 
-use Exporter;
+use Exporter 'import';
 use File::Basename;
 
-use vars qw (@ISA @EXPORT);
+use vars qw (@EXPORT);
 
-@ISA = qw (Exporter);
 @EXPORT = qw (&uniq &none $me);
 
 # Variable we share with the main package.  Be sure to have a single

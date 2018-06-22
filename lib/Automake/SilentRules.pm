@@ -17,15 +17,12 @@ package Automake::SilentRules;
 
 use Automake::Utils;
 use Automake::Variable;
-use Exporter;
+use Exporter 'import';
 
-use vars '@ISA', '@EXPORT';
-
-@ISA = qw (Exporter);
+use vars qw (@EXPORT);
 
 @EXPORT = qw (verbose_flag verbose_nodep_flag silent_flag
-	      define_verbose_texinfo define_verbose_libtool
-	      handle_silent);
+    define_verbose_texinfo define_verbose_libtool handle_silent);
 
 # Silent rules handling functions.
 

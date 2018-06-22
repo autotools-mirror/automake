@@ -25,11 +25,10 @@ use strict;
 
 use Automake::Channels;
 use Automake::ChannelDefs;
-use Exporter;
+use Exporter 'import';
 
-use vars qw (@ISA @EXPORT);
+use vars qw (@EXPORT);
 
-@ISA = qw (Exporter);
 @EXPORT = qw (&find_configure_ac &require_configure_ac);
 
 =head1 NAME

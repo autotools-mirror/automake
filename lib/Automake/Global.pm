@@ -18,11 +18,9 @@ package Automake::Global;
 use 5.006;
 use strict;
 
-use Exporter;
+use Exporter 'import';
 
-use vars qw (@ISA @EXPORT);
-
-@ISA = qw (Exporter);
+use vars qw (@EXPORT);
 
 @EXPORT = qw ($IGNORE_PATTERN $WHITE_PATTERN $COMMENT_PATTERN $RULE_PATTERN
     $ASSIGNMENT_PATTERN $GNITS_VERSION_PATTERN $IF_PATTERN $ELSE_PATTERN

@@ -33,11 +33,11 @@ use Automake::Location;
 use Automake::VarAppend;
 use Automake::VarDef;
 use Automake::Wrap 'makefile_wrap';
-require Exporter;
+use Exporter 'import';
 
 use vars '@ISA', '@EXPORT', '@EXPORT_OK';
 
-@ISA = qw/Automake::Item Exporter/;
+@ISA = qw (Automake::Item);
 @EXPORT = qw (err_var msg_var msg_cond_var reject_var
 	      var rvar vardef rvardef
 	      variables

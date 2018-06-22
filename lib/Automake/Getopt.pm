@@ -36,12 +36,12 @@ use warnings FATAL => 'all';
 use Carp qw/croak confess/;
 
 use Automake::ChannelDefs qw/fatal/;
-use Exporter ();
+use Exporter 'import';
 use Getopt::Long ();
 
-use vars qw (@ISA @EXPORT);
-@ISA = qw (Exporter);
-@EXPORT= qw/getopt/;
+use vars qw (@EXPORT);
+
+@EXPORT= qw (getopt);
 
 =item C<parse_options (%option)>
 

@@ -20,11 +20,9 @@ use 5.006;
 
 use Automake::Channels;
 use Automake::Global;
-use Exporter;
+use Exporter 'import';
 
-use vars '@ISA', '@EXPORT';
-
-@ISA = qw (Exporter);
+use vars qw (@EXPORT);
 
 @EXPORT = qw (err_am err_ac);
 

@@ -30,11 +30,10 @@ use Automake::RuleDef;
 use Automake::Utils;
 use Automake::VarDef;
 use Automake::Variable;
-use Exporter;
+use Exporter 'import';
 
-use vars qw (@ISA @EXPORT);
+use vars qw (@EXPORT);
 
-@ISA = qw (Exporter);
 @EXPORT = qw (file_contents_internal file_contents);
 
 # ($COMMENT, $VARIABLES, $RULES)

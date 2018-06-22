@@ -70,12 +70,11 @@ use 5.006;
 use strict;
 use Carp;
 
-use Exporter;
+use Exporter 'import';
 use File::Basename;
 
-use vars qw (@ISA @EXPORT %channels $me);
+use vars qw (@EXPORT %channels $me);
 
-@ISA = qw (Exporter);
 @EXPORT = qw ($exit_code $warnings_are_errors
 	      &reset_local_duplicates &reset_global_duplicates
 	      &register_channel &msg &exists_channel &channel_type

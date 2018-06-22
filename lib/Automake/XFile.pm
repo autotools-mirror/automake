@@ -78,13 +78,13 @@ use Automake::ChannelDefs;
 use Automake::Channels qw(msg);
 use Automake::FileUtils;
 require DynaLoader;
-require Exporter;
+use Exporter 'import';
 use File::Basename;
 use IO::File;
 
 use vars qw($VERSION @EXPORT @EXPORT_OK $AUTOLOAD @ISA);
 
-@ISA = qw(IO::File Exporter DynaLoader);
+@ISA = qw(IO::File DynaLoader);
 
 $VERSION = "1.2";
 

@@ -22,11 +22,11 @@ use Automake::Channels;
 use Automake::Condition qw (TRUE FALSE);
 use Automake::Item;
 use Automake::VarDef;
-use Exporter;
+use Exporter 'import';
 
-use vars '@ISA', '@EXPORT';
+use vars qw (@ISA @EXPORT);
 
-@ISA = qw (Automake::Item Exporter);
+@ISA = qw (Automake::Item);
 
 @EXPORT = qw (append_var_cur_cond first_assign_var am_check_definitions);
 

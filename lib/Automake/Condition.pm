@@ -19,9 +19,10 @@ use 5.006;
 use strict;
 use Carp;
 
-require Exporter;
-use vars '@ISA', '@EXPORT_OK';
-@ISA = qw/Exporter/;
+use Exporter 'import';
+
+use vars qw (@EXPORT_OK);
+
 @EXPORT_OK = qw/TRUE FALSE reduce_and reduce_or/;
 
 =head1 NAME

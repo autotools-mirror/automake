@@ -26,16 +26,16 @@ use Automake::DisjConditions;
 use Automake::Item;
 use Automake::Options;
 use Automake::RuleDef;
-require Exporter;
+use Exporter 'import';
 
-use vars '@ISA', '@EXPORT';
-@ISA = qw/Automake::Item Exporter/;
-@EXPORT = qw (reset register_suffix_rule next_in_suffix_chain
-	      suffixes rules $KNOWN_EXTENSIONS_PATTERN
-	      depend %dependencies %actions register_action
-	      accept_extensions
-	      reject_rule msg_rule msg_cond_rule err_rule err_cond_rule
-	      rule rrule ruledef rruledef);
+use vars qw (@ISA @EXPORT);
+
+@ISA = qw (Automake::Item);
+
+@EXPORT = qw (reset register_suffix_rule next_in_suffix_chain suffixes rules
+    $KNOWN_EXTENSIONS_PATTERN depend %dependencies %actions register_action
+    accept_extensions reject_rule msg_rule msg_cond_rule err_rule
+    err_cond_rule rule rrule ruledef rruledef);
 
 =head1 NAME
 

@@ -17,11 +17,9 @@ package Automake::Location;
 
 use 5.006;
 
-use Exporter;
+use Exporter 'import';
 
-use vars qw (@ISA @EXPORT);
-
-@ISA = qw (Exporter);
+use vars qw (@EXPORT);
 
 @EXPORT = qw (INTERNAL);
 
