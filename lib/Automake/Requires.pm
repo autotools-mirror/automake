@@ -19,11 +19,9 @@ use vars '@ISA', '@EXPORT';
 
 @ISA = qw (Exporter);
 
-@EXPORT = qw (push_required_file required_file_check_or_copy
-    require_file_internal require_file require_file_with_macro
-    require_libsource_with_macro queue_required_file_check_or_copy
-    require_queued_file_check_or_copy require_conf_file
-    require_conf_file_with_macro require_build_directory
+@EXPORT = qw (require_file require_file_with_macro
+    require_libsource_with_macro require_queued_file_check_or_copy
+    require_conf_file require_conf_file_with_macro require_build_directory
     require_build_directory_maybe);
 
 # push_required_file ($DIR, $FILE, $FULLFILE)

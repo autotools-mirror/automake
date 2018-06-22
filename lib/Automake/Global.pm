@@ -38,7 +38,7 @@ use vars qw (@ISA @EXPORT);
     @configure_deps $configure_deps_greatest_timestamp %configure_cond
     %extension_map @configure_dist_common %languages %link_languages
     %sourceflags %required_targets $am_file $configure_ac $ac_gettext_location
-    $package_version_location $required_conf_file_queue $relative_dir
+    $package_version_location $required_conf_file_queue
     $output_deps_greatest_timestamp $output_all $output_header $output_rules
     $output_trailer @include_stack @all @check @check_tests %clean_files
     %compile_clean_files %libtool_clean_directories @sources @dist_sources
