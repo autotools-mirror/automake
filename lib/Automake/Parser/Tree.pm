@@ -4,7 +4,7 @@ use Exporter;
 
 our @ISA = qw(Exporter);
 our @EXPORT = qw(input stmts stmt automakerule makerule conditional ifblock 
-optionalelse optionalrhs optionalcomments lhs rhs commentlist primaries 
+optionalelse optionalcond optionalrhs optionalcomments lhs rhs commentlist primaries 
 optionlist traverse printgraph);
 
 # Grammar Rule : (1) input => stmts
@@ -26,12 +26,12 @@ sub stmts($$;$)
 	my ( $val1, $val2, $val3) = @_;
 	if($val3 == undef)
 	{
-		my %node=(name=>stmts,childs=>[$val1]);
+		my %node=(name => stmts, childs => [ $val1 ]);
 		return \%node;
 	}
 	else
 	{
-		push @{$val1->{childs}},$val2;
+		push @{$val1 -> { childs }}, $val2;
 		return $val1;
 	}
 }
@@ -44,18 +44,29 @@ sub stmts($$;$)
 # Create a node with corresponding child node.
 sub stmt($)
 {
-	my ( $val1) = @_;
+	my ( $val1 ) = @_;
 	my %node = ( name => stmt , childs => [ $val1 ]);
 	return \%node;
 }
 
 # Grammar Rule : (1) automakerule => lhs '=' optionalrhs optionalcomments
+# 				 (2) automakerule => lhs '+' '=' optionalrhs optionalcomments
 # Create a node for automake rule.
-sub automakerule($$$$)
+sub automakerule($$$$;$)
 {
-	my ( $val1, $val2, $val3, $val4 ) = @_;
-	my %node = (name => automakerule, childs => [ $val1,$val3 ]);
-	push @{ $node{ childs }}, $val4 if $val4;
+	my ( $val1, $val2, $val3, $val4, $val5 ) = @_;
+	my %node = (name => automakerule, childs => [ $val1 ]);
+	if($val2 == '=')
+	{
+		push @{ $node{ childs }}, $val3;
+		push @{ $node{ childs }}, $val4 if $val4;
+	}
+	else
+	{
+		push @{ $node{ childs }}, $val4;
+		push @{ $node{ childs }}, $val5 if $val5;
+		$node{ append } = true;
+	}
 	return \%node;
 }
 
@@ -106,7 +117,7 @@ sub optionalcomments(;$)
 	return \%node;
 }
 
-# Grammar Rule : (1) conditional => ifblock optionalelse endif
+# Grammar Rule : (1) conditional => ifblock optionalelse endif optionalcond
 # Create a node for conditional statement.
 sub conditional($$$)
 {
@@ -115,7 +126,7 @@ sub conditional($$$)
 	return \%node;
 }
 
-# Grammar Rule : (1) ifblock => if value newline automakerule newline
+# Grammar Rule : (1) ifblock => if value newline stmts
 # Create a node for if block.
 sub ifblock($$$$$)
 {
@@ -126,7 +137,7 @@ sub ifblock($$$$$)
 
 # Grammar Rule : (1) optionalelse =>
 # Create an empty node.
-#				 (2) optionalelse => else newline automakerule newline
+#				 (2) optionalelse => else newline stmts
 # Create a node with child as automakerule.
 sub optionalelse(;$$$$)
 {
@@ -139,6 +150,25 @@ sub optionalelse(;$$$$)
 	else
 	{
 		$node{ childs } = [ $val3 ];
+	}
+	return \%node;
+}
+
+# Grammar Rule : (1) optionalcond =>
+# Create an empty node.
+#				 (2) optionalcond => value
+# Create a node with child as automakerule.
+sub optionalcond(;$)
+{
+	my ( $val1 ) = @_;
+	my %node = ( name => optionalcond );
+	if( $val1 == undef )
+	{
+		$node{ empty } = 1;
+	}
+	else
+	{
+		$node{ value } = $val1->[1];
 	}
 	return \%node;
 }

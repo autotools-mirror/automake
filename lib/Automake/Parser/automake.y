@@ -12,15 +12,19 @@ stmt  : automakerule
 		| conditional
 ;
 automakerule : lhs '=' optionalrhs optionalcomments
+			 | lhs '+' '=' optionalrhs optionalcomments
 ;
 makerule : value ':' rhs
 ;
-conditional : ifblock optionalelse endif
+conditional : ifblock optionalelse endif optionalcond
 ;
-ifblock : if value newline automakerule newline
+ifblock : if value newline stmts
 ;
 optionalelse:
-			| else newline automakerule newline
+			| else newline stmts
+;
+optionalcond:
+			| value
 ;
 optionalrhs : 
 		    | rhs

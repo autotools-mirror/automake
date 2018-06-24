@@ -21,49 +21,32 @@ sub lex($$)
 	{
 		if( $multiline )
 		{
-			my @vals = split;
-			if( $multiline eq 'automake_comment' )
+			if( $multiline eq 'comment' )
 			{
-				if( $vals[ -1 ] ne '\\' )
-				{
-					$multiline = undef;
-					push @tokens, [ "newline" ];
-				}
-				$_ = undef;
-				last;
-			}
-			elsif( $multiline eq 'comment' )
-			{
-			    my $comment;
-				foreach my $val ( @vals )
-				{
-					if($val =~ m/^##/)
-					{
-						$multiline = 'automake_comment' if $vals[ -1 ] eq '\\';
-						$_ = undef;
-						last;
-					}
-					elsif( $val eq '\\' )
-					{
-						last;
-					}
-					else
-					{
-						$comment .= " ".$val;
-					}
-				}
-				push @tokens, [ "comment" , $comment ] if $comment;
-				if($vals[ -1 ] ne '\\')
-				{
-					$multiline = undef;
-					push @tokens, [ "newline" ];
-				}
+				die 'comment following trailing backslash' if m/^#/o;
+				die 'blank line following trailing backslash' if m/^\s*$/;
+				chomp;
+				$multiline = undef unless s/\\//o;
+				push @tokens, [ "comment" , $_ ];
+				push @tokens, [ "newline" ] unless $multiline;
 				$_ = undef;
 			}
 			else
 			{
-				$multiline = undef;
-				$rhs = 1;
+				if( m/^##/ )
+				{
+					$_ = undef;
+					last;
+				}
+				elsif( m/^#/ )
+				{
+					die 'comment following trailing backslash';
+				}
+				else
+				{
+					$multiline = undef;
+					$rhs = 1;
+				}
 			}
 		}
 		elsif( $rhs  )
@@ -72,20 +55,14 @@ sub lex($$)
 			my $comment;
 			foreach my $val ( @vals )
 			{
-				if( $val =~ m/^##/ )
-				{
-					$multiline = 'automake_comment' if $vals[ -1 ] eq '\\';
-					$_ = undef;
-					last;
-				}
-				elsif( $val =~ m/^#(.*)/ )
+				if( $val =~ m/^#(.*)/ )
 				{
 					$multiline = 'comment' if $vals[ -1 ] eq '\\';
 					$comment .= " ".$1;
 				}
 				elsif( $val =~ m/\\/ )
 				{
-					$multiline = 'rhsval' if !$multiline;
+					$multiline = 'rhsval' unless$multiline;
 				}
 				elsif( $comment )
 				{
@@ -97,7 +74,7 @@ sub lex($$)
 				}
 			}
 			push @tokens, [ "comment" , $comment] if $comment;
-			push @tokens, [ "newline" ] if !$multiline;
+			push @tokens, [ "newline" ] unless $multiline;
 			$_ = undef;
 		}
 		elsif( s/^##.*\n$//o )
@@ -106,7 +83,7 @@ sub lex($$)
 		elsif( s/^#(.*)\n$//o )
 		{
 			my $val = $1;
-			if($val =~ m/(.*?)\\/o)
+			if( $val =~ m/(.*?)\\/o )
 			{
 				push @tokens, [ "comment" , substr( $1 , 0 , -1 )];
 				$multiline = 'comment';
@@ -125,6 +102,12 @@ sub lex($$)
 		{
 			push @tokens, ["value",$1];
 		}
+		elsif( s/^(\+=)//o )
+		{
+			push @tokens,['+'];
+			push @tokens,['='];
+			$rhs = 1;
+		}
 		elsif( s/^(=)//o )
 		{
 			push @tokens, [$1];
@@ -136,10 +119,10 @@ sub lex($$)
 		}
 		elsif( s/^\n//o )
 		{
-			push @tokens, ["newline"];
+			push @tokens, ["newline"] if $#tokens > -1;
 			$multiline = undef;
 		}
-		elsif( s/^(\r|\s*)//o )
+		elsif( s/^(\r|\s+)//o )
 		{
 		}
 		else
