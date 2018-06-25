@@ -21,6 +21,7 @@
 # FIXME: to verify that some incorrect usages of our perl libraries
 # FIXME: raise an error.  We should find a cleaner way to check that.
 perl_fake_XFAIL_TESTS = \
+t/pm/Channels.pl \
 t/pm/Cond2.pl \
 t/pm/Cond3.pl \
 t/pm/DisjCon2.pl \
@@ -46,6 +47,7 @@ t/remake-m4-pr10111.sh \
 $(perl_fake_XFAIL_TESTS)
 
 perl_TESTS = \
+t/pm/Channels.pl \
 t/pm/Cond2.pl \
 t/pm/Cond3.pl \
 t/pm/Condition.pl \
