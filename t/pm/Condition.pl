@@ -253,8 +253,32 @@ sub test_merge ()
   return 0;
 }
 
+sub test_bad_declarations ()
+{
+  my $failed = 0;
+
+  # Catch error:
+  # A condition object passed to 'new'
+  my $cond1 = new Automake::Condition ('TRUE');
+  eval { new Automake::Condition ($cond1) };
+
+  warn $@ if $@;
+  $failed = 1 unless $@;
+  $@ = '';
+
+  # Catch common programming error:
+  # A Condition passed as a string to 'new'.
+  my $cond2 = new Automake::Condition ("COND1_TRUE");
+  eval { new Automake::Condition ("$cond2") };
+
+  warn $@ if $@;
+  $failed = 1 unless $@;
+  return $failed;
+}
+
 exit (test_basics
       || test_true_when
       || test_reduce_and
       || test_reduce_or
-      || test_merge);
+      || test_merge
+      || test_bad_declarations);

@@ -380,8 +380,32 @@ sub test_ambig ()
   return 0;
 }
 
+sub test_bad_declarations
+{
+  my $failed;
+  my $cond = new Automake::Condition ('TRUE');
+  my $cond2 = new Automake::DisjConditions ($cond);
+
+  eval { new Automake::DisjConditions ($cond2) };
+
+  warn $@ if $@;
+  $failed = 1 unless $@;
+
+  $@ = '';
+
+  my $cond3 = new Automake::Condition ("COND1_TRUE");
+
+  eval { new Automake::DisjConditions ("$cond3") };
+
+  warn $@ if $@;
+  $failed = 1 unless $@;
+
+  return $failed;
+}
+
 exit (test_basics
       || test_invert
       || test_simplify
       || test_sub_conditions
-      || test_ambig);
+      || test_ambig
+      || test_bad_declarations);

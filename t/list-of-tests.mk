@@ -31,25 +31,18 @@ t/objext-pr10128.sh \
 t/remake-timing-bug-pr8365.sh \
 t/lex-subobj-nodep.sh \
 t/remake-am-pr10111.sh \
-t/remake-m4-pr10111.sh \
-$(perl_fake_XFAIL_TESTS)
+t/remake-m4-pr10111.sh
 
 perl_TESTS = \
 t/pm/Channels.pl \
-t/pm/Cond2.pl \
-t/pm/Cond3.pl \
 t/pm/Condition.pl \
 t/pm/Condition-t.pl \
 t/pm/CondStack.pl \
-t/pm/DisjCon2.pl \
-t/pm/DisjCon3.pl \
 t/pm/DisjConditions.pl \
 t/pm/DisjConditions-t.pl \
 t/pm/General.pl \
 t/pm/Utils.pl \
 t/pm/Version.pl \
-t/pm/Version2.pl \
-t/pm/Version3.pl \
 t/pm/Wrap.pl
 
 perf_TESTS = \

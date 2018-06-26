@@ -65,6 +65,21 @@ sub test_bad_versions
   }
 }
 
+sub test_bad_declarations
+{
+  eval { Automake::Version::check ('', '1.2.3') };
+
+  warn $@ if $@;
+  $failed = 1 unless $@;
+
+  $@ = '';
+
+  eval { Automake::Version::check ('1.2.3', '') };
+
+  warn $@ if $@;
+  $failed = 1 unless $@;
+}
+
 my @tests = (
 # basics
   ['1.0', '2.0', -1],
