@@ -21,4 +21,10 @@ use Automake::DisjConditions;
 
 my $cond = new Automake::Condition ('TRUE');
 my $cond2 = new Automake::DisjConditions ($cond);
-new Automake::DisjConditions ($cond2);
+
+eval { new Automake::DisjConditions ($cond2) };
+
+warn $@ if $@;
+
+exit 0 if $@;
+exit 1;

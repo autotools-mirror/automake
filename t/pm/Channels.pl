@@ -18,4 +18,9 @@
 use Automake::Channels;
 use Automake::Location;
 
-msg ('test-fatal', new Automake::Location ('.'), "Test Message");
+eval { msg ('test-fatal', new Automake::Location ('.'), "Test Message") };
+
+warn $@ if $@;
+
+exit 0 if $@;
+exit 1;

@@ -19,4 +19,9 @@
 use Automake::Condition;
 
 my $cond = new Automake::Condition ("COND1_TRUE");
-new Automake::Condition ("$cond");
+eval { new Automake::Condition ("$cond") };
+
+warn $@ if $@;
+
+exit 0 if $@;
+exit 1;

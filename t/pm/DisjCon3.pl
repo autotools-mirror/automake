@@ -20,4 +20,10 @@ use Automake::Condition qw/TRUE FALSE/;
 use Automake::DisjConditions;
 
 my $cond = new Automake::Condition ("COND1_TRUE");
-new Automake::DisjConditions ("$cond");
+
+eval { new Automake::DisjConditions ("$cond") };
+
+warn $@ if $@;
+
+exit 0 if $@;
+exit 1;

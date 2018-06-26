@@ -17,4 +17,9 @@
 
 use Automake::Version;
 
-Automake::Version::check ('1.2.3', '');
+eval { Automake::Version::check ('1.2.3', '') };
+
+warn $@ if $@;
+
+exit 0 if $@;
+exit 1;

@@ -17,18 +17,6 @@
 ## You should have received a copy of the GNU General Public License
 ## along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-# FIXME: this "expected failures" are in truth an hack used to
-# FIXME: to verify that some incorrect usages of our perl libraries
-# FIXME: raise an error.  We should find a cleaner way to check that.
-perl_fake_XFAIL_TESTS = \
-t/pm/Channels.pl \
-t/pm/Cond2.pl \
-t/pm/Cond3.pl \
-t/pm/DisjCon2.pl \
-t/pm/DisjCon3.pl \
-t/pm/Version2.pl \
-t/pm/Version3.pl
-
 XFAIL_TESTS = \
 t/all.sh \
 t/auxdir-pr19311.sh \
