@@ -23,6 +23,7 @@ use Automake::Location;
 use Automake::Options;
 use Automake::Requires;
 use Automake::Rule;
+use Automake::RuleDef;
 use Automake::SilentRules;
 use Automake::Utils;
 use Automake::Variable;
