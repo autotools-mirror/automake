@@ -87,7 +87,6 @@ use Carp;
 sub am_install_var;
 sub am_primary_prefixes;
 sub append_exeext (&$);
-sub backname;
 sub check_canonical_spelling;
 sub check_directories_in_var;
 sub check_directory;
@@ -102,7 +101,6 @@ sub define_objects_from_sources;
 sub define_per_target_linker_variable;
 sub do_check_merge_target ();
 sub generate_makefile;
-sub get_number_of_threads ();
 sub handle_ALLOCA;
 sub handle_LIBOBJS;
 sub handle_LIBOBJS_or_ALLOCA;
@@ -144,7 +142,6 @@ sub handle_tests_dejagnu ();
 sub handle_user_recursion ();
 sub initialize_per_input ();
 sub is_valid_test_extension;
-sub locate_am;
 sub parse_arguments ();
 sub prepend_srcdir;
 sub print_autodist_files;
@@ -587,39 +584,6 @@ register_language ('name' => 'java',
 		   'ld' => '$(GCJ)',
 		   'pure' => 1,
 		   'extensions' => ['.java', '.class', '.zip', '.jar']);
-
-################################################################
-
-
-
-################################################################
-
-
-# $BACKPATH
-# backname ($RELDIR)
-# -------------------
-# If I "cd $RELDIR", then to come back, I should "cd $BACKPATH".
-# For instance 'src/foo' => '../..'.
-# Works with non strictly increasing paths, i.e., 'src/../lib' => '..'.
-sub backname
-{
-    my ($file) = @_;
-    my @res;
-    foreach (split (/\//, $file))
-    {
-	next if $_ eq '.' || $_ eq '';
-	if ($_ eq '..')
-	{
-	    pop @res
-	      or prog_error ("trying to reverse path '$file' pointing outside tree");
-	}
-	else
-	{
-	    push (@res, '..');
-	}
-    }
-    return join ('/', @res) || '.';
-}
 
 
 ################################################################
@@ -4003,27 +3967,6 @@ sub split_config_file_spec
   return ($output, @inputs);
 }
 
-# $input
-# locate_am (@POSSIBLE_SOURCES)
-# -----------------------------
-# AC_CONFIG_FILES allow specifications such as Makefile:top.in:mid.in:bot.in
-# This functions returns the first *.in file for which a *.am exists.
-# It returns undef otherwise.
-sub locate_am
-{
-  my (@rest) = @_;
-  my $input;
-  foreach my $file (@rest)
-    {
-      if (($file =~ /^(.*)\.in$/) && -f "$1.am")
-	{
-	  $input = $file;
-	  last;
-	}
-    }
-  return $input;
-}
-
 my %make_list;
 
 # scan_autoconf_config_files ($WHERE, $CONFIG-FILES)
@@ -5658,24 +5601,6 @@ sub handle_makefiles_serial ()
     {
       handle_makefile ($file);
     }
-}
-
-# Logic for deciding how many worker threads to use.
-sub get_number_of_threads ()
-{
-  my $nthreads = $ENV{'AUTOMAKE_JOBS'} || 0;
-
-  $nthreads = 0
-    unless $nthreads =~ /^[0-9]+$/;
-
-  # It doesn't make sense to use more threads than makefiles,
-  my $max_threads = @input_files;
-
-  if ($nthreads > $max_threads)
-    {
-      $nthreads = $max_threads;
-    }
-  return $nthreads;
 }
 
 # handle_makefiles_threaded ($NTHREADS)

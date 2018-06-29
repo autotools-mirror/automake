@@ -34,7 +34,7 @@ use vars qw (@EXPORT);
     $config_aux_dir_set_in_configure_ac $seen_maint_mode $relative_dir
     $seen_canonical $am_file_cache &var_SUFFIXES_trigger &locate_aux_dir
     &subst &make_paragraphs &flatten &canonicalize &push_dist_common
-    &is_make_dir);
+    &is_make_dir &backname &get_number_of_threads &locate_am);
 
 # Directory to search for configure-required files.  This
 # will be computed by locate_aux_dir() and can be set using
@@ -342,5 +342,75 @@ sub is_make_dir
     }
     return defined $make_dirs{$dir};
 }
+
+
+# $BACKPATH
+# backname ($RELDIR)
+# -------------------
+# If I "cd $RELDIR", then to come back, I should "cd $BACKPATH".
+# For instance 'src/foo' => '../..'.
+# Works with non strictly increasing paths, i.e., 'src/../lib' => '..'.
+sub backname
+{
+    my ($file) = @_;
+    my @res;
+    foreach (split (/\//, $file))
+    {
+	next if $_ eq '.' || $_ eq '';
+	if ($_ eq '..')
+	{
+	    pop @res
+	      or prog_error ("trying to reverse path '$file' pointing outside tree");
+	}
+	else
+	{
+	    push (@res, '..');
+	}
+    }
+    return join ('/', @res) || '.';
+}
+
+
+# Logic for deciding how many worker threads to use.
+sub get_number_of_threads ()
+{
+  my $nthreads = $ENV{'AUTOMAKE_JOBS'} || 0;
+
+  $nthreads = 0
+    unless $nthreads =~ /^[0-9]+$/;
+
+  # It doesn't make sense to use more threads than makefiles,
+  my $max_threads = @input_files;
+
+  if ($nthreads > $max_threads)
+    {
+      $nthreads = $max_threads;
+    }
+  return $nthreads;
+}
+
+
+
+# $input
+# locate_am (@POSSIBLE_SOURCES)
+# -----------------------------
+# AC_CONFIG_FILES allow specifications such as Makefile:top.in:mid.in:bot.in
+# This functions returns the first *.in file for which a *.am exists.
+# It returns undef otherwise.
+sub locate_am
+{
+  my (@rest) = @_;
+  my $input;
+  foreach my $file (@rest)
+    {
+      if (($file =~ /^(.*)\.in$/) && -f "$1.am")
+	{
+	  $input = $file;
+	  last;
+	}
+    }
+  return $input;
+}
+
 
 1;
