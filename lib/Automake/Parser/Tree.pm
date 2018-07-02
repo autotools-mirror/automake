@@ -7,12 +7,25 @@ our @EXPORT = qw(input stmts stmt automakerule makerule conditional ifblock
 optionalelse optionalcond optionalrhs optionalcomments lhs rhs commentlist primaries 
 optionlist traverse printgraph);
 
+my $isSubdir = 0 , @subdirnodes = ();
+
 # Grammar Rule : (1) input => stmts
 # Create a node having child as stmts.
 sub input($)
 {
 	my ( $val ) = @_;
-	my %node = (name => input, childs => [ $val ]);
+	my %node = ( name => input, childs => [ $val ] );
+	push @{$node -> {childs}}, subdirNode() if $#subdirnodes > -1;
+	return \%node;
+}
+
+# Creates a Node having all the sub directories which are to be recursed.
+sub subdirNode()
+{
+	my %node = ( name => subdir, empty => 1 );
+	my @subdir = ();
+	push @subdir, @{ $_ -> { value }} foreach @subdirnodes;
+	$node{ subdirs } = \@subdir;
 	return \%node;
 }
 
@@ -26,7 +39,7 @@ sub stmts($$;$)
 	my ( $val1, $val2, $val3) = @_;
 	if($val3 == undef)
 	{
-		my %node=(name => stmts, childs => [ $val1 ]);
+		my %node = ( name => stmts, childs => [ $val1 ]);
 		return \%node;
 	}
 	else
@@ -56,7 +69,7 @@ sub automakerule($$$$;$)
 {
 	my ( $val1, $val2, $val3, $val4, $val5 ) = @_;
 	my %node = (name => automakerule, childs => [ $val1 ]);
-	if($val2 == '=')
+	if($val2->[0] eq '=')
 	{
 		push @{ $node{ childs }}, $val3;
 		push @{ $node{ childs }}, $val4 if $val4;
@@ -94,7 +107,9 @@ sub optionalrhs(;$)
 	else
 	{
 		$node{ childs } = [ $val ];
+		push @subdirnodes, $val if $isSubdir;
 	}
+	$isSubdir = 0;
 	return \%node;
 }
 
@@ -186,6 +201,7 @@ sub lhs($;$)
 	if( $val2 == undef )
 	{
 		$node{ value } = $val1 -> [1];
+		$isSubdir = 1 if $node{value} eq 'SUBDIRS';
 	}
 	else
 	{
@@ -227,7 +243,7 @@ sub commentlist($;$)
 	}
 	else
 	{
-		push @{ $val1 -> {value}} , $val2 -> [1];
+		push @{ $val1 -> { value }} , $val2 -> [1];
 		return $val1;
 	}
 }
@@ -251,11 +267,11 @@ sub primaries($)
 	my %node = ( name => primaries );
 	if( $val -> [0] eq 'value')
 	{
-		$node{value}= $val -> [1];
+		$node{ value } = $val -> [1];
 	}
 	else
 	{
-		$node{value}= $val;
+		$node{ value } = $val;
 	}
 	return \%node;
 }
@@ -291,7 +307,7 @@ sub printgraph($)
 }
 
 #Stores the next id to be alloted to new node.
-my $id=0;
+my $id = 0;
 
 # traverse(Hash, Parent Id)
 # Traverses the tree recursively. Prints the information about the current node to Standard Output. Call all its child with Parent Id equal to current Node Id.
@@ -323,7 +339,7 @@ sub traverse($$)
 		my $val1 = $node{childs};
 		foreach $child (@$val1)
 		{
-			traverse($child,$curr_id);
+			traverse( $child, $curr_id );
 		}
 	}
 }

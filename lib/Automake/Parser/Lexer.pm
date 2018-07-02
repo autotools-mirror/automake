@@ -98,7 +98,7 @@ sub lex($$)
 		{
 			push @tokens, [$1];
 		}
-		elsif( s/^([a-zA-Z0-9]+)//o )
+		elsif( s/^([a-zA-Z0-9_]+)//o )
 		{
 			push @tokens, ["value",$1];
 		}
@@ -113,7 +113,7 @@ sub lex($$)
 			push @tokens, [$1];
 			$rhs = 1;
 		}
-		elsif( s/^(:|_)//o )
+		elsif( s/^(:|_|!)//o )
 		{
 			push @tokens, [$1];
 		}

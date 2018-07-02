@@ -2,7 +2,7 @@
 all: ast.png
 
 ast.png: Lexer.pm Tree.pm ParserTable.pm parser.pl input.txt
-	perl -I. parser.pl input.txt > ast.gv
+	perl -I. Parser.pl input.txt > ast.gv
 	unflatten -f -l 10 -c 10 -o ast1.gv ast.gv
 	dot -Tpng ast1.gv > ast.png
 	rm ast.gv ast1.gv	
