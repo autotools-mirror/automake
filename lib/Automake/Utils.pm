@@ -18,6 +18,7 @@ package Automake::Utils;
 use 5.006;
 use strict;
 
+use Automake::Channels;
 use Automake::Global;
 use Automake::Location;
 use Automake::Options;
@@ -34,7 +35,9 @@ use vars qw (@EXPORT);
     $config_aux_dir_set_in_configure_ac $seen_maint_mode $relative_dir
     $seen_canonical $am_file_cache &var_SUFFIXES_trigger &locate_aux_dir
     &subst &make_paragraphs &flatten &canonicalize &push_dist_common
-    &is_make_dir &backname &get_number_of_threads &locate_am);
+    &is_make_dir &backname &get_number_of_threads &locate_am &prepend_srcdir
+    &rewrite_inputs_into_dependencies &substitute_ac_subst_variables
+    &check_directory);
 
 # Directory to search for configure-required files.  This
 # will be computed by locate_aux_dir() and can be set using
@@ -410,6 +413,142 @@ sub locate_am
 	}
     }
   return $input;
+}
+
+
+# @DEPENDENCIES
+# prepend_srcdir (@INPUTS)
+# ------------------------
+# Prepend $(srcdir) or $(top_srcdir) to all @INPUTS.  The idea is that
+# if an input file has a directory part the same as the current
+# directory, then the directory part is simply replaced by $(srcdir).
+# But if the directory part is different, then $(top_srcdir) is
+# prepended.
+sub prepend_srcdir
+{
+  my (@inputs) = @_;
+  my @newinputs;
+
+  foreach my $single (@inputs)
+    {
+      if (dirname ($single) eq $relative_dir)
+	{
+	  push (@newinputs, '$(srcdir)/' . basename ($single));
+	}
+      else
+	{
+	  push (@newinputs, '$(top_srcdir)/' . $single);
+	}
+    }
+  return @newinputs;
+}
+
+
+# Helper function for 'substitute_ac_subst_variables'.
+sub substitute_ac_subst_variables_worker
+{
+  my ($token) = @_;
+  return "\@$token\@" if var $token;
+  return "\${$token\}";
+}
+
+
+# substitute_ac_subst_variables ($TEXT)
+# -------------------------------------
+# Replace any occurrence of ${FOO} in $TEXT by @FOO@ if FOO is an AC_SUBST
+# variable.
+sub substitute_ac_subst_variables
+{
+  my ($text) = @_;
+  $text =~ s/\$[{]([^ \t=:+{}]+)}/substitute_ac_subst_variables_worker ($1)/ge;
+  return $text;
+}
+
+
+# @DEPENDENCIES
+# rewrite_inputs_into_dependencies ($OUTPUT, @INPUTS)
+# ---------------------------------------------------
+# Compute a list of dependencies appropriate for the rebuild
+# rule of
+#   AC_CONFIG_FILES($OUTPUT:$INPUT[0]:$INPUTS[1]:...)
+# Also distribute $INPUTs which are not built by another AC_CONFIG_FOOs.
+sub rewrite_inputs_into_dependencies
+{
+  my ($file, @inputs) = @_;
+  my @res = ();
+
+  for my $i (@inputs)
+    {
+      # We cannot create dependencies on shell variables.
+      next if (substitute_ac_subst_variables $i) =~ /\$/;
+
+      if (exists $ac_config_files_location{$i} && $i ne $file)
+	{
+	  my $di = dirname $i;
+	  if ($di eq $relative_dir)
+	    {
+	      $i = basename $i;
+	    }
+	  # In the top-level Makefile we do not use $(top_builddir), because
+	  # we are already there, and since the targets are built without
+	  # a $(top_builddir), it helps BSD Make to match them with
+	  # dependencies.
+	  elsif ($relative_dir ne '.')
+	    {
+	      $i = '$(top_builddir)/' . $i;
+	    }
+	}
+      else
+	{
+	  msg ('error', $ac_config_files_location{$file},
+	       "required file '$i' not found")
+	    unless $i =~ /\$/ || exists $output_files{$i} || -f $i;
+	  ($i) = prepend_srcdir ($i);
+	  push_dist_common ($i);
+	}
+      push @res, $i;
+    }
+  return @res;
+}
+
+
+# check_directory ($NAME, $WHERE [, $RELATIVE_DIR = "."])
+# -------------------------------------------------------
+# Ensure $NAME is a directory (in $RELATIVE_DIR), and that it uses a sane
+# name.  Use $WHERE as a location in the diagnostic, if any.
+sub check_directory
+{
+  my ($dir, $where, $reldir) = @_;
+  $reldir = '.' unless defined $reldir;
+
+  error $where, "required directory $reldir/$dir does not exist"
+    unless -d "$reldir/$dir";
+
+  # If an 'obj/' directory exists, BSD make will enter it before
+  # reading 'Makefile'.  Hence the 'Makefile' in the current directory
+  # will not be read.
+  #
+  #  % cat Makefile
+  #  all:
+  #          echo Hello
+  #  % cat obj/Makefile
+  #  all:
+  #          echo World
+  #  % make      # GNU make
+  #  echo Hello
+  #  Hello
+  #  % pmake     # BSD make
+  #  echo World
+  #  World
+  msg ('portability', $where,
+       "naming a subdirectory 'obj' causes troubles with BSD make")
+    if $dir eq 'obj';
+
+  # 'aux' is probably the most important of the following forbidden name,
+  # since it's tempting to use it as an AC_CONFIG_AUX_DIR.
+  msg ('portability', $where,
+       "name '$dir' is reserved on W32 and DOS platforms")
+    if grep (/^\Q$dir\E$/i, qw/aux lpt1 lpt2 lpt3 com1 com2 com3 com4 con prn/);
 }
 
 

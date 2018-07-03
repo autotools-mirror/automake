@@ -33,10 +33,9 @@ use vars qw (@EXPORT);
     $seen_gettext $seen_gettext_external $seen_gettext_intl
     @extra_recursive_targets %libtool_tags $libtool_new_api $package_version
     $seen_ar %required_aux_file $seen_init_automake $seen_automake_version
-    @configure_deps $configure_deps_greatest_timestamp %configure_cond
-    %extension_map @configure_dist_common %languages %link_languages
-    %sourceflags %required_targets $am_file $configure_ac $ac_gettext_location
-    $package_version_location $required_conf_file_queue
+    %configure_cond %extension_map @configure_dist_common %languages
+    %link_languages %sourceflags %required_targets $am_file $configure_ac
+    $ac_gettext_location $package_version_location $required_conf_file_queue
     $output_deps_greatest_timestamp $output_all $output_header $output_rules
     $output_trailer @include_stack @all @check @check_tests %clean_files
     %compile_clean_files %libtool_clean_directories @sources @dist_sources
@@ -251,12 +250,6 @@ our $seen_init_automake = 0;
 
 # TRUE if we've seen AM_AUTOMAKE_VERSION.
 our $seen_automake_version = 0;
-
-# Files included by $configure_ac.
-our @configure_deps = ();
-
-# Greatest timestamp of configure's dependencies.
-our $configure_deps_greatest_timestamp = 0;
 
 # Hash table of AM_CONDITIONAL variables seen in configure.
 our %configure_cond = ();

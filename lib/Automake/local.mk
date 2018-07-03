@@ -34,6 +34,7 @@ dist_perllib_DATA = \
   %D%/General.pm \
   %D%/Global.pm \
   %D%/Getopt.pm \
+  %D%/HandleConfigure.pm \
   %D%/Item.pm \
   %D%/ItemDef.pm \
   %D%/LangHandling.pm \
