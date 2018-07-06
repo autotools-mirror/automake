@@ -15,6 +15,7 @@
 
 package Automake::LangHandling;
 
+use Automake::TmpModule;
 use Automake::Condition qw (TRUE FALSE);
 use Automake::ChannelDefs;
 use Automake::Global;
@@ -35,14 +36,13 @@ use File::Basename;
 use vars qw (@EXPORT);
 
 @EXPORT = qw (check_user_variables lang_sub_obj lang_header_rewrite
-	      lang_vala_rewrite lang_yacc_rewrite lang_yaccxx_rewrite
-	      lang_lex_rewrite lang_lexxx_rewrite lang_java_rewrite
-	      lang_vala_finish_target lang_vala_finish
-	      lang_vala_target_hook lang_yacc_target_hook
-	      lang_lex_target_hook yacc_lex_finish_helper
-	      lang_yacc_finish lang_lex_finish resolve_linker
-	      saw_extension register_language derive_suffix
-	      pretty_print_rule);
+    lang_vala_rewrite lang_yacc_rewrite lang_yaccxx_rewrite lang_lex_rewrite
+    lang_lexxx_rewrite lang_java_rewrite lang_vala_finish_target
+    lang_vala_finish lang_vala_target_hook lang_yacc_target_hook
+    lang_lex_target_hook yacc_lex_finish_helper lang_yacc_finish
+    lang_lex_finish resolve_linker saw_extension register_language
+    derive_suffix pretty_print_rule handle_emacs_lisp handle_python
+    handle_java);
 
 # check_user_variables (@LIST)
 # ----------------------------
@@ -479,5 +479,81 @@ sub pretty_print_rule
 {
     $output_rules .= makefile_wrap (shift, shift, @_);
 }
+
+
+sub handle_emacs_lisp ()
+{
+  my @elfiles = am_install_var ('-candist', 'lisp', 'LISP',
+                                'lisp', 'noinst');
+
+  return if ! @elfiles;
+
+  define_pretty_variable ('am__ELFILES', TRUE, INTERNAL,
+			  map { $_->[1] } @elfiles);
+  define_pretty_variable ('am__ELCFILES', TRUE, INTERNAL,
+			  '$(am__ELFILES:.el=.elc)');
+  # This one can be overridden by users.
+  define_pretty_variable ('ELCFILES', TRUE, INTERNAL, '$(LISP:.el=.elc)');
+
+  push @all, '$(ELCFILES)';
+
+  require_variables ($elfiles[0][0], "Emacs Lisp sources seen", TRUE,
+		     'EMACS', 'lispdir');
+}
+
+sub handle_python ()
+{
+  my @pyfiles = am_install_var ('-defaultdist', 'python', 'PYTHON',
+                                'noinst');
+  return if ! @pyfiles;
+
+  require_variables ($pyfiles[0][0], "Python sources seen", TRUE, 'PYTHON');
+  require_conf_file ($pyfiles[0][0], FOREIGN, 'py-compile');
+  define_variable ('py_compile', "$am_config_aux_dir/py-compile", INTERNAL);
+}
+
+sub handle_java ()
+{
+    my @sourcelist = am_install_var ('-candist',
+                                     'java', 'JAVA',
+                                     'noinst', 'check');
+    return if ! @sourcelist;
+
+    my @prefixes = am_primary_prefixes ('JAVA', 1,
+				        'noinst', 'check');
+
+    my $dir;
+    my @java_sources = ();
+    foreach my $prefix (@prefixes)
+      {
+        (my $curs = $prefix) =~ s/^(?:nobase_)?(?:dist_|nodist_)?//;
+
+	next
+	  if $curs eq 'EXTRA';
+
+        push @java_sources, '$(' . $prefix . '_JAVA' . ')';
+
+	if (defined $dir)
+	  {
+	    err_var "${curs}_JAVA", "multiple _JAVA primaries in use"
+	     unless $curs eq $dir;
+	  }
+
+	$dir = $curs;
+      }
+
+    define_pretty_variable ('am__java_sources', TRUE, INTERNAL,
+                            "@java_sources");
+
+    if ($dir eq 'check')
+      {
+        push (@check, "class$dir.stamp");
+      }
+    else
+      {
+        push (@all, "class$dir.stamp");
+      }
+}
+
 
 1;

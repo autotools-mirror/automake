@@ -19,6 +19,7 @@ use 5.006;
 use strict;
 
 use Automake::Channels;
+use Automake::ConfVars;
 use Automake::Global;
 use Automake::Location;
 use Automake::Options;
