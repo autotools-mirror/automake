@@ -5,18 +5,25 @@ use Exporter;
 our @ISA = qw(Exporter);
 our @EXPORT = qw(lex);
 
+# Store end token.
+my @end_tok = ["end"];
+
 # lex(string,multiline)
 # Takes as input a string of line and multiline variable deciding whether 
 # current line is related to the previous line. Divides it into tokens as 
 # specified by Regex and outputs an array of Tokens. Every Token is an 
 # array having two values: token name and its value. If its an operator, 
 # it has only one value.
-sub lex($$)
+sub lex($)
 {
-	my ( $curr_line , $multiline ) = @_;
+	my ( $multiline ) = @_;
 	my @tokens;
 	my $rhs = 0;
-	$_ = $curr_line;
+    $_ = scalar <>;
+	
+	# Send an end token when EOF is reached.
+	return ( \@end_tok, $multiline ) unless $_;
+	
 	while( $_ )
 	{
 		if( $multiline )
@@ -130,6 +137,10 @@ sub lex($$)
 			die "Incorrect input $_";
 		}
 	}
+	
+	# Returns undef when no tokens.
+	return ( undef, $multiline ) if !@tokens;
+	
 	return ( \@tokens , $multiline );
 }
 
