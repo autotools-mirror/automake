@@ -5,7 +5,7 @@ use Exporter;
 our @ISA = qw(Exporter);
 our @EXPORT = qw(input stmts stmt automakerule makerule conditional ifblock 
 optionalelse optionalcond optionalrhs optionalcomments lhs rhs commentlist primaries 
-optionlist traverse printgraph);
+optionlist traverse printgraph recursesubdirs);
 
 my $isSubdir = 0 , @subdirnodes = ();
 
@@ -15,7 +15,7 @@ sub input($)
 {
 	my ( $val ) = @_;
 	my %node = ( name => input, childs => [ $val ] );
-	push @{$node -> {childs}}, subdirNode() if $#subdirnodes > -1;
+	push @{$node{childs}}, subdirNode() if $#subdirnodes > -1;
 	return \%node;
 }
 
@@ -340,6 +340,25 @@ sub traverse($$)
 		foreach $child (@$val1)
 		{
 			traverse( $child, $curr_id );
+		}
+	}
+}
+
+# Recurse into sub directories to generate AST 
+sub recursesubdirs($)
+{
+	my ($ref) = @_;
+	my %node= %$ref;
+	if( scalar @{ $node{childs} } == 2)
+	{
+		my $subdirRef = $node{childs} -> [1];
+		my %subdirNode = %$subdirRef;
+		foreach $val ( @{ $subdirNode{subdirs} } )
+		{
+			system( "perl -I. Parser.pl $val/Makefile.am > $val/ast.gv" );
+			system( "unflatten -f -l 10 -c 10 -o $val/ast1.gv $val/ast.gv" );
+			system( "dot -Tpng $val/ast1.gv > $val/ast.png" );
+			system( "rm $val/ast.gv $val/ast1.gv" );
 		}
 	}
 }

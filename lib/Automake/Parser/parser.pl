@@ -22,6 +22,7 @@ while ( @stack )
 	{
 		print STDERR "Complete\n";
 		printgraph( $stack[-4] );
+		recursesubdirs( $stack[-4] );
 		last;
 	}
 	while( !@tokens )
