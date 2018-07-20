@@ -65,10 +65,13 @@ sub _define_configure_variable ($)
 sub define_standard_variables ()
 {
   my $saved_output_vars = $output_vars;
-  my ($comments, undef, $rules) =
-    file_contents_internal (1, "$libdir/am/header-vars.am",
-			    new Automake::Location);
+  my $filename = "$libdir/am/header-vars.am";
 
+  my @paragraphs = make_paragraphs ($filename);
+
+  my ($comments, undef, $rules) =
+      file_contents_internal (1, $filename, new Automake::Location,
+                              \@paragraphs);
   foreach my $var (sort keys %configure_vars)
     {
       _define_configure_variable ($var);
