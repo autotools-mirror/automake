@@ -1,4 +1,4 @@
-%token value rhsval comment PROGRAMS LIBRARIES LTLIBRARIES LISP PYTHON JAVA SCRIPTS DATA HEADERS MASN TEXINFOS newline if else endif
+%token value rhsval comment PROGRAMS LIBRARIES LTLIBRARIES LISP PYTHON JAVA SCRIPTS DATA HEADERS MASN TEXINFOS newline if else endif include
 %%
 
 input : stmts
@@ -10,11 +10,14 @@ stmt  : automakerule
 		| makerule
 		| commentlist
 		| conditional
+		| includerule
 ;
 automakerule : lhs '=' optionalrhs optionalcomments
 			 | lhs '+' '=' optionalrhs optionalcomments
 ;
 makerule : value ':' rhs
+;
+includerule : include value
 ;
 conditional : ifblock optionalelse endif optionalcond
 ;

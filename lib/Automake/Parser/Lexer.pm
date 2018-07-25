@@ -101,7 +101,7 @@ sub lex($)
 				push @tokens, [ "newline" ];
 			}
 		}
-		elsif( s/^(PROGRAMS|LIBRARIES|LTLIBRARIES|LISP|PYTHON|JAVA|SCRIPTS|DATA|HEADERS|MASN|TEXINFOS|if|else|endif)//o)
+		elsif( s/^(PROGRAMS|LIBRARIES|LTLIBRARIES|LISP|PYTHON|JAVA|SCRIPTS|DATA|HEADERS|MASN|TEXINFOS|if|else|endif|include)//o)
 		{
 			push @tokens, [$1];
 		}

@@ -54,6 +54,7 @@ sub stmts($$;$)
 #				 (2) stmt => makerule
 #				 (3) stmt => commentlist
 #				 (4) stmt => conditional
+#				 (5) stmt => includerule
 # Create a node with corresponding child node.
 sub stmt($)
 {
@@ -293,6 +294,14 @@ sub optionlist($$;$)
 		push @{$val1 -> {val}},$val2 -> [1];
 		return $val1;
 	}
+}
+
+sub includerule($$)
+{
+	my ( $val1, $val2 ) = @_;
+	print STDERR $val2;
+	my %node = (name => includerule, value => $val2);
+	return \%node;
 }
 
 # printgraph(Hash)
