@@ -43,11 +43,11 @@ use vars qw (@EXPORT);
     @dist_targets @proglist @liblist @ltliblist @dup_shortnames
     %known_programs %known_libraries %extension_seen %language_scratch
     %lang_specific_files @dist_common $handle_dist_run %linkers_used
-    $need_link $must_handle_compiled_objects %transformed_files
-    AC_CANONICAL_BUILD AC_CANONICAL_HOST AC_CANONICAL_TARGET MOSTLY_CLEAN
-    CLEAN DIST_CLEAN MAINTAINER_CLEAN LANG_IGNORE LANG_PROCESS LANG_SUBDIR
-    COMPILE_LIBTOOL COMPILE_ORDINARY QUEUE_MESSAGE QUEUE_CONF_FILE
-    QUEUE_LOCATION QUEUE_STRING);
+    $need_link $must_handle_compiled_objects AC_CANONICAL_BUILD
+    AC_CANONICAL_HOST AC_CANONICAL_TARGET MOSTLY_CLEAN CLEAN DIST_CLEAN
+    MAINTAINER_CLEAN LANG_IGNORE LANG_PROCESS LANG_SUBDIR COMPILE_LIBTOOL
+    COMPILE_ORDINARY QUEUE_MESSAGE QUEUE_CONF_FILE QUEUE_LOCATION
+    QUEUE_STRING);
 
 ## ----------- ##
 ## Constants.  ##
@@ -424,9 +424,6 @@ our $need_link;
 # Does the generated Makefile have to build some compiled object
 # (for binary programs, or plain or libtool libraries)?
 our $must_handle_compiled_objects;
-
-# Record each file processed by make_paragraphs.
-our %transformed_files;
 
 
 1;

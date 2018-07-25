@@ -33,10 +33,10 @@ use File::Basename;
 use vars qw (@EXPORT);
 
 @EXPORT = qw ($config_aux_dir $am_config_aux_dir
-    $config_aux_dir_set_in_configure_ac $seen_maint_mode $relative_dir
-    $seen_canonical $am_file_cache &var_SUFFIXES_trigger &locate_aux_dir
-    &subst &make_paragraphs &flatten &canonicalize &push_dist_common
-    &is_make_dir &backname &get_number_of_threads &locate_am &prepend_srcdir
+    $config_aux_dir_set_in_configure_ac $relative_dir
+    &var_SUFFIXES_trigger &locate_aux_dir &subst &flatten
+    &canonicalize &push_dist_common &is_make_dir &backname &transform
+    &get_number_of_threads &locate_am &prepend_srcdir
     &rewrite_inputs_into_dependencies &substitute_ac_subst_variables
     &check_directory);
 
@@ -52,21 +52,8 @@ our $am_config_aux_dir;
 
 our $config_aux_dir_set_in_configure_ac = 0;
 
-# Where AM_MAINTAINER_MODE appears.
-our $seen_maint_mode;
-
 # Relative dir of the output makefile.
 our $relative_dir;
-
-# Most important AC_CANONICAL_* macro seen so far.
-our $seen_canonical = 0;
-
-# Cache each file processed by make_paragraphs.
-# (This is different from %transformed_files because
-# %transformed_files is reset for each file while %am_file_cache
-# it global to the run.)
-our %am_file_cache;
-
 
 # var_SUFFIXES_trigger ($TYPE, $VALUE)
 # ------------------------------------
@@ -169,119 +156,6 @@ sub transform ($\%)
     {
       prog_error "Unknown request format: $token";
     }
-}
-
-
-# $TEXT
-# preprocess_file ($MAKEFILE, [%TRANSFORM])
-# -----------------------------------------
-# Load a $MAKEFILE, apply the %TRANSFORM, and return the result.
-# No extra parsing or post-processing is done (i.e., recognition of
-# rules declaration or of make variables definitions).
-sub preprocess_file
-{
-  my ($file, %transform) = @_;
-
-  # Complete %transform with global options.
-  # Note that %transform goes last, so it overrides global options.
-  %transform = ( 'MAINTAINER-MODE'
-		 => $seen_maint_mode ? subst ('MAINTAINER_MODE_TRUE') : '',
-
-		 'XZ'          => !! option 'dist-xz',
-		 'LZIP'        => !! option 'dist-lzip',
-		 'BZIP2'       => !! option 'dist-bzip2',
-		 'COMPRESS'    => !! option 'dist-tarZ',
-		 'GZIP'        =>  ! option 'no-dist-gzip',
-		 'SHAR'        => !! option 'dist-shar',
-		 'ZIP'         => !! option 'dist-zip',
-
-		 'INSTALL-INFO' =>  ! option 'no-installinfo',
-		 'INSTALL-MAN'  =>  ! option 'no-installman',
-		 'CK-NEWS'      => !! option 'check-news',
-
-		 'SUBDIRS'      => !! Automake::Variable::var ('SUBDIRS'),
-		 'TOPDIR_P'     => $relative_dir eq '.',
-
-		 'BUILD'    => ($seen_canonical >= AC_CANONICAL_BUILD),
-		 'HOST'     => ($seen_canonical >= AC_CANONICAL_HOST),
-		 'TARGET'   => ($seen_canonical >= AC_CANONICAL_TARGET),
-
-		 'LIBTOOL'      => !! Automake::Variable::var ('LIBTOOL'),
-		 'NONLIBTOOL'   => 1,
-		%transform);
-
-  if (! defined ($_ = $am_file_cache{$file}))
-    {
-      verb "reading $file";
-      # Swallow the whole file.
-      my $fc_file = new Automake::XFile "< $file";
-      my $saved_dollar_slash = $/;
-      undef $/;
-      $_ = $fc_file->getline;
-      $/ = $saved_dollar_slash;
-      $fc_file->close;
-      # Remove ##-comments.
-      # Besides we don't need more than two consecutive new-lines.
-      s/(?:$IGNORE_PATTERN|(?<=\n\n)\n+)//gom;
-      # Remember the contents of the just-read file.
-      $am_file_cache{$file} = $_;
-    }
-
-  # Substitute Automake template tokens.
-  s/(?: % \?? [\w\-]+ %
-      | \? !? [\w\-]+ \?
-    )/transform($&, %transform)/gex;
-  # transform() may have added some ##%-comments to strip.
-  # (we use '##%' instead of '##' so we can distinguish ##%##%##% from
-  # ####### and do not remove the latter.)
-  s/^[ \t]*(?:##%)+.*\n//gm;
-
-  return $_;
-}
-
-
-# @PARAGRAPHS
-# make_paragraphs ($MAKEFILE, [%TRANSFORM])
-# -----------------------------------------
-# Load a $MAKEFILE, apply the %TRANSFORM, and return it as a list of
-# paragraphs.
-sub make_paragraphs
-{
-  my ($file, %transform) = @_;
-  $transform{FIRST} = !$transformed_files{$file};
-  $transformed_files{$file} = 1;
-
-  my @lines = split /(?<!\\)\n/, preprocess_file ($file, %transform);
-  my @res;
-
-  while (defined ($_ = shift @lines))
-    {
-      my $paragraph = $_;
-      # If we are a rule, eat as long as we start with a tab.
-      if (/$RULE_PATTERN/smo)
-	{
-	  while (defined ($_ = shift @lines) && $_ =~ /^\t/)
-	    {
-	      $paragraph .= "\n$_";
-	    }
-	  unshift (@lines, $_);
-	}
-
-      # If we are a comments, eat as much comments as you can.
-      elsif (/$COMMENT_PATTERN/smo)
-	{
-	  while (defined ($_ = shift @lines)
-		 && $_ =~ /$COMMENT_PATTERN/smo)
-	    {
-	      $paragraph .= "\n$_";
-	    }
-	  unshift (@lines, $_);
-	}
-
-      push @res, $paragraph;
-    }
-
-  return @res;
 }
 
 
