@@ -25,7 +25,6 @@ use Automake::Condition qw (TRUE FALSE);
 use Automake::Config;
 use Automake::Configure_ac;
 use Automake::DisjConditions;
-use Automake::File;
 use Automake::General 'uniq';
 use Automake::Global;
 use Automake::Item;
