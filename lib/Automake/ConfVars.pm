@@ -67,7 +67,8 @@ sub define_standard_variables ()
   my $saved_output_vars = $output_vars;
   my $filename = "$libdir/am/header-vars.am";
 
-  my @paragraphs = make_paragraphs ($filename);
+  my $preprocessed_file = preprocess_file ($filename);
+  my @paragraphs = make_paragraphs ($preprocessed_file);
 
   my ($comments, undef, $rules) =
       file_contents_internal (1, $filename, new Automake::Location,

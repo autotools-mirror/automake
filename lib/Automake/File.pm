@@ -65,6 +65,9 @@ sub preprocess_file
 {
   my ($file, %transform) = @_;
 
+  $transform{FIRST} = !$transformed_files{$file};
+  $transformed_files{$file} = 1;
+
   # Complete %transform with global options.
   # Note that %transform goes last, so it overrides global options.
   %transform = ( 'MAINTAINER-MODE'
@@ -124,17 +127,13 @@ sub preprocess_file
 
 
 # @PARAGRAPHS
-# make_paragraphs ($MAKEFILE, [%TRANSFORM])
-# -----------------------------------------
-# Load a $MAKEFILE, apply the %TRANSFORM, and return it as a list of
-# paragraphs.
+# make_paragraphs ($MAKEFILE)
+# ---------------------------
+# Load a preprocessed $MAKEFILE and return it as a list of paragraphs
 sub make_paragraphs
 {
-  my ($file, %transform) = @_;
-  $transform{FIRST} = !$transformed_files{$file};
-  $transformed_files{$file} = 1;
-
-  my @lines = split /(?<!\\)\n/, preprocess_file ($file, %transform);
+  my ($preprocessed_file) = shift;
+  my @lines = split /(?<!\\)\n/, $preprocessed_file;
   my @res;
 
   while (defined ($_ = shift @lines))
@@ -229,7 +228,7 @@ sub file_contents_internal
             {
               my $filename = ($is_am ? "$libdir/am/" : '') . $1;
               $where->push_context ("'$filename' included from here");
-              my @paragraphs = make_paragraphs ($filename, %transform);
+              my @paragraphs = make_paragraphs (preprocess_file ($filename, %transform));
               # N-ary '.=' fails.
               my ($com, $vars, $rules) =
                   file_contents_internal ($is_am, $filename, $where,
@@ -373,7 +372,7 @@ sub file_contents_internal
 sub file_contents
 {
   my ($basename, $where, %transform) = @_;
-  my @paragraphs = make_paragraphs ("$libdir/am/$basename.am", %transform);
+  my @paragraphs = make_paragraphs (preprocess_file ("$libdir/am/$basename.am", %transform));
   my ($comments, $variables, $rules) =
       file_contents_internal (1, $basename, $where,
                               \@paragraphs, %transform);
