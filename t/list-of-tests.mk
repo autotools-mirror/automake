@@ -33,6 +33,9 @@ t/lex-subobj-nodep.sh \
 t/remake-am-pr10111.sh \
 t/remake-m4-pr10111.sh
 
+perl_tap_TESTS = \
+t/pm/File.plt
+
 perl_TESTS = \
 t/pm/Channels.pl \
 t/pm/Condition.pl \
@@ -56,6 +59,7 @@ t/perf/testsuite-summary.sh
 # concurrent testsuite runs.
 handwritten_TESTS = \
 t/get-sysconf.sh \
+$(perl_tap_TESTS) \
 $(perl_TESTS) \
 t/instspc.tap \
 t/aclocal.sh \
