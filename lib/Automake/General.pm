@@ -19,33 +19,10 @@ use 5.006;
 use strict;
 
 use Exporter 'import';
-use File::Basename;
 
 use vars qw (@EXPORT);
 
-@EXPORT = qw (&uniq &none $me);
-
-# Variable we share with the main package.  Be sure to have a single
-# copy of them: using 'my' together with multiple inclusion of this
-# package would introduce several copies.
-use vars qw ($me);
-$me = basename ($0);
-
-# END
-# ---
-# Exit nonzero whenever closing STDOUT fails.
-sub END
-{
-  # This is required if the code might send any output to stdout
-  # E.g., even --version or --help.  So it's best to do it unconditionally.
-  if (! close STDOUT)
-    {
-      print STDERR "$me: closing standard output: $!\n";
-      $? = 74; # EX_IOERR
-      return;
-    }
-}
-
+@EXPORT = qw (&uniq &none);
 
 # @RES
 # uniq (@LIST)
