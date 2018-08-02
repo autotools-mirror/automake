@@ -1,3 +1,4 @@
+# -*- mode:perl -*-
 # Copyright (C) 2003-2018 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
@@ -14,8 +15,7 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use Automake::Wrap qw/wrap makefile_wrap/;
-
-my $failed = 0;
+use Test::Simple tests => 9;
 
 sub test_wrap
 {
@@ -25,20 +25,21 @@ sub test_wrap
   if ($out ne $exp_out)
     {
       print STDERR "For: @$in\nGot:\n$out\nInstead of:\n$exp_out\n---\n";
-      ++$failed;
+      return 1;
     }
+  return 0;
 }
 
 sub test_makefile_wrap
 {
   my ($in, $exp_out) = @_;
-
   my $out = &makefile_wrap (@$in);
   if ($out ne $exp_out)
     {
       print STDERR "For: @$in\nGot:\n$out\nInstead of:\n$exp_out\n---\n";
-      ++$failed;
+      return 1;
     }
+  return 0;
 }
 
 my @tests = (
@@ -89,7 +90,13 @@ my @makefile_tests = (
 \tunlike in the second line
 "]);
 
-test_wrap (@{$_}) foreach @tests;
-test_makefile_wrap (@{$_}) foreach @makefile_tests;
+ok (test_wrap (@{$tests[0]}) == 0, 'test_wrap 0');
+ok (test_wrap (@{$tests[1]}) == 0, 'test_wrap 1');
+ok (test_wrap (@{$tests[2]}) == 0, 'test_wrap 2');
+ok (test_wrap (@{$tests[3]}) == 0, 'test_wrap 3');
+ok (test_wrap (@{$tests[4]}) == 0, 'test_wrap 4');
 
-exit $failed;
+ok (test_makefile_wrap (@{$makefile_tests[0]}) == 0, 'test_makefile_wrap 0');
+ok (test_makefile_wrap (@{$makefile_tests[1]}) == 0, 'test_makefile_wrap 1');
+ok (test_makefile_wrap (@{$makefile_tests[2]}) == 0, 'test_makefile_wrap 2');
+ok (test_makefile_wrap (@{$makefile_tests[3]}) == 0, 'test_makefile_wrap 3');

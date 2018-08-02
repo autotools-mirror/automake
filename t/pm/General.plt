@@ -1,3 +1,4 @@
+# -*- mode:perl -*-
 # Copyright (C) 2018 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
@@ -14,14 +15,11 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use Automake::General;
-
-my $failed = 0;
+use Test::Simple tests => 2;
 
 # Check 'none'.
 my $none_positive = none { $_[0] < 0 } (1, 7, 3, 8, 9);
-$failed = 1 if ($none_positive == 0);
+ok ($none_positive != 0, 'Test none on positive values');
 
 my $none_gt_8 = none { $_[0] >= 8 } (1, 7, 3, 8, 9);
-$failed = 1 if ($none_gt_8 == 1);
-
-exit $failed;
+ok ($none_gt_8 == 0, 'Test none on values > 8');

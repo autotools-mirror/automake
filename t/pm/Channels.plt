@@ -1,3 +1,4 @@
+# -*- mode:perl -*-
 # Copyright (C) 2018  Matthias Paulmier
 
 # This program is free software; you can redistribute it and/or
@@ -17,10 +18,10 @@
 
 use Automake::Channels;
 use Automake::Location;
+use Test::Simple tests => 1;
 
 eval { msg ('test-fatal', new Automake::Location ('.'), "Test Message") };
 
 warn $@ if $@;
 
-exit 0 if $@;
-exit 1;
+ok ($@, "Test fatal error");

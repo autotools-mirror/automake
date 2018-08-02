@@ -1,3 +1,4 @@
+# -*- mode:perl -*-
 # Copyright (C) 2001-2018 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
@@ -14,6 +15,7 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use Automake::Condition qw/TRUE FALSE/;
+use Test::Simple tests => 6;
 
 sub test_basics ()
 {
@@ -262,7 +264,6 @@ sub test_bad_declarations ()
   my $cond1 = new Automake::Condition ('TRUE');
   eval { new Automake::Condition ($cond1) };
 
-  warn $@ if $@;
   $failed = 1 unless $@;
   $@ = '';
 
@@ -271,14 +272,13 @@ sub test_bad_declarations ()
   my $cond2 = new Automake::Condition ("COND1_TRUE");
   eval { new Automake::Condition ("$cond2") };
 
-  warn $@ if $@;
   $failed = 1 unless $@;
   return $failed;
 }
 
-exit (test_basics
-      || test_true_when
-      || test_reduce_and
-      || test_reduce_or
-      || test_merge
-      || test_bad_declarations);
+ok (test_basics == 0, 'Test basic conditions');
+ok (test_true_when == 0, 'Test implied conditions when declaring a new one');
+ok (test_reduce_and == 0, 'Test "and" reduction');
+ok (test_reduce_or == 0, 'Test "or" reduction');
+ok (test_merge == 0, 'Test the merge method');
+ok (test_bad_declarations == 0, 'Test bad condition declarations');

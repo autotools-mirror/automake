@@ -1,3 +1,4 @@
+# -*- mode:perl -*-
 # Copyright (C) 2001-2018 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
@@ -28,6 +29,7 @@ BEGIN {
     }
 }
 use Automake::Condition qw/TRUE FALSE/;
+use Test::Simple tests => 5;
 
 sub test_basics ()
 {
@@ -303,8 +305,8 @@ sub test_merge ()
   return 0;
 }
 
-exit (test_basics
-      || test_true_when
-      || test_reduce_and
-      || test_reduce_or
-      || test_merge);
+ok (test_basics == 0, 'Test basic conditions');
+ok (test_true_when == 0, 'Test implied conditions when declaring a new one');
+ok (test_reduce_and == 0, 'Test "and" reduction');
+ok (test_reduce_or == 0, 'Test "or" reduction');
+ok (test_merge == 0, 'Test the merge method');

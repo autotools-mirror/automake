@@ -1,3 +1,4 @@
+# -*- mode:perl -*-
 # Copyright (C) 2001-2018 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
@@ -29,6 +30,7 @@ BEGIN {
 }
 use Automake::Condition qw/TRUE FALSE/;
 use Automake::DisjConditions;
+use Test::Simple tests => 5;
 
 sub test_basics ()
 {
@@ -437,8 +439,8 @@ sub test_ambig ()
   return $failed;
 }
 
-exit (test_basics
-      || test_invert
-      || test_simplify
-      || test_sub_conditions
-      || test_ambig);
+ok (test_basics == 0, 'Basic tests');
+ok (test_invert == 0, 'Test inverts');
+ok (test_simplify == 0, 'Test condition simplifications');
+ok (test_sub_conditions == 0, 'Test sub conditions');
+ok (test_ambig == 0, 'Test ambiguous conditions');

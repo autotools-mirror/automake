@@ -1,3 +1,4 @@
+# -*- mode:perl -*-
 # Copyright (C) 2018  Free Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or
@@ -14,25 +15,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 use Automake::Utils;
+use Test::Simple tests => 3;
 
-sub check_subst
-{
-  my @inputs = qw (AC_FOO AC_BAR AC_BAZ);
-  my @expected_outputs = map {
-    (my $exp = $_) =~ s/(.*)/\@$1\@/;
-    $exp;
-  } @inputs;
+ok (subst 'AC_FOO' eq '@AC_FOO@', 'subst');
 
-  for my $i (0 .. $#inputs)
-    {
-      return 1 if (subst $inputs[$i]) ne $expected_outputs[$i];
-    }
-  return 0;
-}
+##########################################
 
-sub check_flatten
-{
-  my $test_str = "\
+my $test_str = "\
 
   Aliquam posuere.  Nunc aliquet, augue nec adipiscing interdum, lacus tellus
 malesuada massa, quis varius mi purus     non odio.  Pellentesque condimentum,
@@ -44,24 +33,19 @@ sit amet urna.  Curabitur vulputate vestibulum lorem.  Fusce sagittis, libero
 lacinia eros.
 ";
 
-  my $expected_res = "Aliquam posuere. Nunc aliquet, augue nec adipiscing " .
-      "interdum, lacus tellus malesuada massa, quis varius mi purus non " .
-      "odio. Pellentesque condimentum, magna ut suscipit hendrerit, ipsum " .
-      "augue ornare nulla, non luctus diam neque sit amet urna. Curabitur " .
-      "vulputate vestibulum lorem. Fusce sagittis, libero non molestie " .
-      "mollis, magna orci ultrices dolor, at vulputate neque nulla lacinia " .
-      "eros.";
+my $expected_res = "Aliquam posuere. Nunc aliquet, augue nec adipiscing " .
+    "interdum, lacus tellus malesuada massa, quis varius mi purus non " .
+    "odio. Pellentesque condimentum, magna ut suscipit hendrerit, ipsum " .
+    "augue ornare nulla, non luctus diam neque sit amet urna. Curabitur " .
+    "vulputate vestibulum lorem. Fusce sagittis, libero non molestie " .
+    "mollis, magna orci ultrices dolor, at vulputate neque nulla lacinia " .
+    "eros.";
 
-  return 1 if (flatten $test_str) ne $expected_res;
-  return 0;
-}
+ok ((flatten $test_str) eq $expected_res, 'flatten');
 
-sub check_locate_aux_dir
-{
-  locate_aux_dir;
-  # The install-sh script is located in $(top_scrdir)/lib/
-  return 1 if ($am_config_aux_dir ne "$(top_srcdir)/lib/");
-  return 0;
-}
+#####################################################
 
-exit (check_subst || check_flatten);
+locate_aux_dir;
+# The install-sh script is located in $(top_scrdir)/lib/
+print "$am_config_aux_dir\n";
+ok ($am_config_aux_dir eq '$(top_srcdir)', 'locate_aux_dir');

@@ -34,19 +34,17 @@ t/remake-am-pr10111.sh \
 t/remake-m4-pr10111.sh
 
 perl_tap_TESTS = \
-t/pm/File.plt
-
-perl_TESTS = \
-t/pm/Channels.pl \
-t/pm/Condition.pl \
-t/pm/Condition-t.pl \
-t/pm/CondStack.pl \
-t/pm/DisjConditions.pl \
-t/pm/DisjConditions-t.pl \
-t/pm/General.pl \
-t/pm/Utils.pl \
-t/pm/Version.pl \
-t/pm/Wrap.pl
+t/pm/Channels.plt \
+t/pm/Condition.plt \
+t/pm/Condition-t.plt \
+t/pm/DisjConditions.plt \
+t/pm/DisjConditions-t.plt \
+t/pm/File.plt \
+t/pm/General.plt \
+t/pm/SilentRules.plt \
+t/pm/Utils.plt \
+t/pm/Version.plt \
+t/pm/Wrap.plt
 
 perf_TESTS = \
 t/perf/cond.sh \
