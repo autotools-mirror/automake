@@ -1,11 +1,10 @@
 
-all: ast.png
+all: install
 
-ast.png: Lexer.pm Tree.pm ParserTable.pm parser.pl input.txt
-	perl -I. Parser.pl input.txt > ast.gv
-	unflatten -f -l 10 -c 10 -o ast1.gv ast.gv
-	dot -Tpng ast1.gv > ast.png
-	rm ast.gv ast1.gv	
+install: Lexer.pm Tree.pm ParserTable.pm parser.pl
+	mkdir -p /tmp/parser
+	cp *.pm /tmp/parser/
+	cp parser.pl /usr/bin/	
 	
 build: ParserTable.pm
 

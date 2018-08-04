@@ -3,8 +3,7 @@ testfile()
 {
 	filename=$1
 	echo $filename
-	echo `pwd`
-	perl parser.pl $filename > $filename.gv
+	parser.pl $filename > $filename.gv
 	unflatten -f -l 10 -c 10 -o $filename1.gv $filename.gv
 	dot -Tpng $filename1.gv > $filename.png
 	rm $filename.gv $filename1.gv
@@ -12,7 +11,8 @@ testfile()
 
 if [ $# -eq 0 ]
 then
-	for entry in t/*.txt
+	cd t
+	for entry in *.txt
 	do
 		testfile $entry
 	done

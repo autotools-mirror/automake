@@ -1,1 +1,1 @@
-bin_PROGRAMS=apple
+bin_PROGRAMS=apple ball

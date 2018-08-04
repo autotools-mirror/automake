@@ -305,7 +305,8 @@ sub includerule($$)
 }
 
 # printgraph(Hash)
-# prints the AST to Standard Output by traversing the tree starting at node pointed by hash.
+# prints the AST to Standard Output by traversing the tree starting at node
+# pointed by hash.
 sub printgraph($)
 {
 	print "graph graphname {\n";
@@ -319,7 +320,8 @@ sub printgraph($)
 my $id = 0;
 
 # traverse(Hash, Parent Id)
-# Traverses the tree recursively. Prints the information about the current node to Standard Output. Call all its child with Parent Id equal to current Node Id.
+# Traverses the tree recursively. Prints the information about the current node
+# to Standard Output. Call all its child with Parent Id equal to current Node Id.
 sub traverse($$)
 {
 	my ( $ref,$parent ) = @_;
@@ -353,10 +355,11 @@ sub traverse($$)
 	}
 }
 
+# recursesubdirs(Basedir, Reference)
 # Recurse into sub directories to generate AST 
-sub recursesubdirs($)
+sub recursesubdirs($$)
 {
-	my ($ref) = @_;
+	my ( $basedir , $ref) = @_;
 	my %node= %$ref;
 	if( scalar @{ $node{childs} } == 2)
 	{
@@ -364,10 +367,10 @@ sub recursesubdirs($)
 		my %subdirNode = %$subdirRef;
 		foreach $val ( @{ $subdirNode{subdirs} } )
 		{
-			system( "perl -I. Parser.pl $val/Makefile.am > $val/ast.gv" );
-			system( "unflatten -f -l 10 -c 10 -o $val/ast1.gv $val/ast.gv" );
-			system( "dot -Tpng $val/ast1.gv > $val/ast.png" );
-			system( "rm $val/ast.gv $val/ast1.gv" );
+			system( "parser.pl $basedir/$val/Makefile.am > $basedir/$val/ast.gv" );
+			system( "unflatten -f -l 10 -c 10 -o $basedir/$val/ast1.gv $basedir/$val/ast.gv" );
+			system( "dot -Tpng $basedir/$val/ast1.gv > $basedir/$val/ast.png" );
+			system( "rm $basedir/$val/ast.gv $basedir/$val/ast1.gv" );
 		}
 	}
 }
