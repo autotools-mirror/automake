@@ -3,11 +3,16 @@ package Tree;
 use Exporter;
 
 our @ISA = qw(Exporter);
-our @EXPORT = qw(input stmts stmt automakerule makerule conditional ifblock 
-optionalelse optionalcond optionalrhs optionalcomments lhs rhs commentlist primaries 
+our @EXPORT = qw(basedir input stmts stmt automakerule makerule conditional ifblock 
+optionalelse optionalcond optionalrhs optionalcomments includerule lhs rhs commentlist primaries 
 optionlist traverse printgraph recursesubdirs);
 
+# Stores whether subdir directive is used or not. If used array
+# consist of subdirectories.
 my $isSubdir = 0 , @subdirnodes = ();
+
+# Stores the value recieved by Parser.pl
+our $basedir;
 
 # Grammar Rule : (1) input => stmts
 # Create a node having child as stmts.
@@ -15,7 +20,7 @@ sub input($)
 {
 	my ( $val ) = @_;
 	my %node = ( name => input, childs => [ $val ] );
-	push @{$node{childs}}, subdirNode() if $#subdirnodes > -1;
+	push @{ $node{ childs } }, subdirNode() if $#subdirnodes > -1;
 	return \%node;
 }
 
@@ -44,7 +49,7 @@ sub stmts($$;$)
 	}
 	else
 	{
-		push @{$val1 -> { childs }}, $val2;
+		push @{ $val1 -> { childs } }, $val2;
 		return $val1;
 	}
 }
@@ -70,7 +75,7 @@ sub automakerule($$$$;$)
 {
 	my ( $val1, $val2, $val3, $val4, $val5 ) = @_;
 	my %node = (name => automakerule, childs => [ $val1 ]);
-	if($val2->[0] eq '=')
+	if($val2 -> [0] eq '=')
 	{
 		push @{ $node{ childs }}, $val3;
 		push @{ $node{ childs }}, $val4 if $val4;
@@ -89,7 +94,7 @@ sub automakerule($$$$;$)
 sub makerule($$$)
 {
 	my ( $val1, $val2, $val3 ) = @_;
-	my %node = (name => makerule, childs => [ $val1,$val3 ]);
+	my %node = ( name => makerule, childs => [ $val1,$val3 ]);
 	return \%node;
 }
 
@@ -296,11 +301,19 @@ sub optionlist($$;$)
 	}
 }
 
+# Grammar Rule : (1) includerule : include value
+# Create a node having the tree after parsing the included value.
+# String recieved as standard input is evaled to generate corresponding
+# tree.
 sub includerule($$)
 {
 	my ( $val1, $val2 ) = @_;
-	print STDERR $val2;
-	my %node = (name => includerule, value => $val2);
+	my $VAL1;
+	my $file = $val2 -> [1];
+	my $data = `parser.pl -include $basedir/$file`;
+	my %node = %{ eval( $data ) };
+	$node{ name } = includerule;
+	$node{ file } = $val2;
 	return \%node;
 }
 
@@ -312,7 +325,7 @@ sub printgraph($)
 	print "graph graphname {\n";
 	my ( $ref ) = @_;
 	print "0 [label=\"Root\"];";
-	traverse( $ref, 0);
+	traverse( $ref, 0 );
 	print "}\n";
 }
 
@@ -324,9 +337,9 @@ my $id = 0;
 # to Standard Output. Call all its child with Parent Id equal to current Node Id.
 sub traverse($$)
 {
-	my ( $ref,$parent ) = @_;
+	my ( $ref , $parent ) = @_;
 	my %node = %$ref;
-	return if $node{empty};
+	return if $node{ empty };
 	$id++;
 	my $curr_id = $id;
 	print "$parent--$id;\n";
@@ -355,12 +368,12 @@ sub traverse($$)
 	}
 }
 
-# recursesubdirs(Basedir, Reference)
+# recursesubdirs( Tree Reference)
 # Recurse into sub directories to generate AST 
-sub recursesubdirs($$)
+sub recursesubdirs($)
 {
-	my ( $basedir , $ref) = @_;
-	my %node= %$ref;
+	my ( $ref ) = @_;
+	my %node = %$ref;
 	if( scalar @{ $node{childs} } == 2)
 	{
 		my $subdirRef = $node{childs} -> [1];

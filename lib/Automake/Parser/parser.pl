@@ -12,10 +12,20 @@ use Lexer;
 use Tree;
 use ParserTable;
 use File::Basename;
+use Data::Dumper;
+
+# Checks if the parser is called on a file included using include
+# directive in parent file.
+my $isinclude = 0;
+if( $ARGV[0] eq '-include' )
+{	
+	$isinclude = 1;
+	shift @ARGV;
+}
 
 # Stores the relative path of the Makefile.am file with respect to 
 # current working directory
-my $basedir = File::Basename::dirname($ARGV[0]);
+$Tree::basedir = File::Basename::dirname($ARGV[0]);
 
 # To enable debug mode, use 1 . Prints the parser stack at each 
 # iteration
@@ -34,9 +44,17 @@ while ( @stack )
 {
 	if($stack[-1] == $ParserTable::accept)
 	{
-		print STDERR "Complete\n";
-		printgraph( $stack[-4] );
-		recursesubdirs( $basedir, $stack[-4] );
+		if($isinclude)
+		{
+			# Dump the tree to standard output.
+			print Dumper( $stack[-4] );
+		}
+		else
+		{
+			print STDERR "Complete\n";
+			printgraph( $stack[-4] );
+			recursesubdirs( $stack[-4] );
+		}
 		last;
 	}
 	while( !@tokens )

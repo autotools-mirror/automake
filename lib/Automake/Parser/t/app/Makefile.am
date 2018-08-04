@@ -1,2 +1,2 @@
 bin_PROGRAMS=apple
-SUBDIRS = app3
+SUBDIRS = app

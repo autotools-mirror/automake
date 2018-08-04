@@ -1,0 +1,1 @@
+include app/Makefile.am

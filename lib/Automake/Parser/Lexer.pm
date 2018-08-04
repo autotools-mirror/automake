@@ -6,7 +6,7 @@ our @ISA = qw(Exporter);
 our @EXPORT = qw(lex);
 
 # Store end token.
-my @end_tok = ["end"];
+my @end_tok = [ "end" ];
 
 # lex(string,multiline)
 # Takes as input a string of line and multiline variable deciding whether 
@@ -84,6 +84,13 @@ sub lex($)
 			push @tokens, [ "newline" ] unless $multiline;
 			$_ = undef;
 		}
+		elsif( $include )
+		{
+			push @tokens, [ "value" , $1] if m/^\s+(.+)/;
+			push @tokens, [ "newline" ];
+			$include = 0;
+			last;
+		}
 		elsif( s/^##.*\n$//o )
 		{
 		}
@@ -104,6 +111,7 @@ sub lex($)
 		elsif( s/^(PROGRAMS|LIBRARIES|LTLIBRARIES|LISP|PYTHON|JAVA|SCRIPTS|DATA|HEADERS|MASN|TEXINFOS|if|else|endif|include)//o)
 		{
 			push @tokens, [$1];
+			$include = 1 if ( $1 eq 'include' );			
 		}
 		elsif( s/^([a-zA-Z0-9_]+)//o )
 		{
