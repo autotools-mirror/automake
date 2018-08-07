@@ -15,8 +15,8 @@
 
 package Automake::LangHandling;
 
-use Automake::TmpModule;
 use Automake::Condition qw (TRUE FALSE);
+use Automake::ConfVars;
 use Automake::ChannelDefs;
 use Automake::Global;
 use Automake::Language;

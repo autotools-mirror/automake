@@ -21,7 +21,6 @@
 perllibdir = $(pkgvdatadir)/Automake
 
 dist_perllib_DATA = \
-  %D%/TmpModule.pm \
   %D%/ChannelDefs.pm \
   %D%/Channels.pm \
   %D%/Condition.pm \

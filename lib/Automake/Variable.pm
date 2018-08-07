@@ -34,26 +34,16 @@ use Automake::VarDef;
 use Automake::Wrap 'makefile_wrap';
 use Exporter 'import';
 
-use vars '@ISA', '@EXPORT', '@EXPORT_OK';
+use vars '@ISA', '@EXPORT';
 
 @ISA = qw (Automake::Item);
-@EXPORT = qw (err_var msg_var msg_cond_var reject_var
-	      var rvar vardef rvardef
-	      variables
-	      scan_variable_expansions check_variable_expansions
-	      variable_delete
-	      variables_dump
-	      set_seen
-	      require_variables
-	      variable_value
-	      output_variables
-	      transform_variable_recursively
-	      verbose_var
-	      define_verbose_var
-	      define_verbose_tagvar
-	      define_pretty_variable
-	      define_variable
-	      define_files_variable);
+@EXPORT = qw (err_var msg_var msg_cond_var reject_var var rvar vardef rvardef
+    variables scan_variable_expansions check_variable_expansions
+    variable_delete variables_dump set_seen require_variables variable_value
+    output_variables transform_variable_recursively append_exeext verbose_var
+    define_verbose_var define_verbose_tagvar define_pretty_variable
+    define_variable define_files_variable am_primary_prefixes
+    shadow_unconditionally);
 
 =head1 NAME
 
@@ -1644,6 +1634,31 @@ sub transform_variable_recursively ($$$$$&;%)
   return $res;
 }
 
+=item C<append_exeext { PREDICATE } $MACRO>
+
+Append $(EXEEXT) to each filename in $F appearing in the Makefile variable
+$MACRO if &PREDICATE($F) is true.  @substitutions@ are ignored.
+
+This is typically used on all filenames of *_PROGRAMS, and filenames of TESTS
+that are programs.
+
+=cut
+sub append_exeext (&$)
+{
+  my ($pred, $macro) = @_;
+
+  transform_variable_recursively
+    ($macro, $macro, 'am__EXEEXT', 0, INTERNAL,
+     sub {
+       my ($subvar, $val, $cond, $full_cond) = @_;
+       # Append $(EXEEXT) unless the user did it already, or it's a
+       # @substitution@.
+       $val .= '$(EXEEXT)'
+	 if $val !~ /(?:\$\(EXEEXT\)$|^[@]\w+[@]$)/ && &$pred ($val);
+       return $val;
+     });
+}
+
 # _verbose_private_var (NAME)
 # --------------------------
 # The naming policy for the private variables for silent rules.
@@ -1761,6 +1776,104 @@ sub define_files_variable ($\@$$)
 		   $where);
 }
 
+=item C<am_primary_prefixes ($PRIMARY, $CAN_DIST, @PREFIXES)>
+
+Find all variable prefixes that are used for install directories.  A
+prefix 'zar' qualifies iff:
+
+* 'zardir' is a variable.
+* 'zar_PRIMARY' is a variable.
+
+As a side effect, it looks for misspellings.  It is an error to have
+a variable ending in a "reserved" suffix whose prefix is unknown, e.g.
+"bni_PROGRAMS".  However, unusual prefixes are allowed if a variable
+of the same name (with "dir" appended) exists.  For instance, if the
+variable "zardir" is defined, then "zar_PROGRAMS" becomes valid.
+This is to provide a little extra flexibility in those cases which
+need it.
+
+=cut
+sub am_primary_prefixes
+{
+  my ($primary, $can_dist, @prefixes) = @_;
+
+  local $_;
+  my %valid = map { $_ => 0 } @prefixes;
+  $valid{'EXTRA'} = 0;
+  foreach my $var (variables $primary)
+    {
+      # Automake is allowed to define variables that look like primaries
+      # but which aren't.  E.g. INSTALL_sh_DATA.
+      # Autoconf can also define variables like INSTALL_DATA, so
+      # ignore all configure variables (at least those which are not
+      # redefined in Makefile.am).
+      # FIXME: We should make sure that these variables are not
+      # conditionally defined (or else adjust the condition below).
+      my $def = $var->def (TRUE);
+      next if $def && $def->owner != VAR_MAKEFILE;
+
+      my $varname = $var->name;
+
+      if ($varname =~ /^(nobase_)?(dist_|nodist_)?(.*)_[[:alnum:]]+$/)
+	{
+	  my ($base, $dist, $X) = ($1 || '', $2 || '', $3 || '');
+	  if ($dist ne '' && ! $can_dist)
+	    {
+	      err_var ($var,
+		       "invalid variable '$varname': 'dist' is forbidden");
+	    }
+	  # Standard directories must be explicitly allowed.
+	  elsif (! defined $valid{$X} && exists $standard_prefix{$X})
+	    {
+	      err_var ($var,
+		       "'${X}dir' is not a legitimate directory " .
+		       "for '$primary'");
+	    }
+	  # A not explicitly valid directory is allowed if Xdir is defined.
+	  elsif (! defined $valid{$X} &&
+		 $var->requires_variables ("'$varname' is used", "${X}dir"))
+	    {
+	      # Nothing to do.  Any error message has been output
+	      # by $var->requires_variables.
+	    }
+	  else
+	    {
+	      # Ensure all extended prefixes are actually used.
+ $valid{"$base$dist$X"} = 1;
+	    }
+	}
+      else
+	{
+	  prog_error "unexpected variable name: $varname";
+	}
+    }
+
+  # Return only those which are actually defined.
+  return sort grep { var ($_ . '_' . $primary) } keys %valid;
+}
+
+=item C<shadow_unconditionally ($varname, $where)>
+
+Return a $(variable) that contains all possible values
+$varname can take.
+If the VAR wasn't defined conditionally, return $(VAR).
+Otherwise we create an am__VAR_DIST variable which contains
+all possible values, and return $(am__VAR_DIST).
+
+=cut
+
+sub shadow_unconditionally
+{
+  my ($varname, $where) = @_;
+  my $var = var $varname;
+  if ($var->has_conditional_contents)
+    {
+      $varname = "am__${varname}_DIST";
+      my @files = uniq ($var->value_as_list_recursive);
+      define_pretty_variable ($varname, TRUE, $where, @files);
+    }
+  return "\$($varname)"
+}
 
 =back
 
