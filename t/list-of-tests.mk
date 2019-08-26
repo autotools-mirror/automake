@@ -1214,6 +1214,7 @@ t/txinfo-no-clutter.sh \
 t/txinfo-no-extra-dist.sh \
 t/txinfo-no-installinfo.sh \
 t/txinfo-no-repeated-targets.sh \
+t/txinfo-no-setfilename.sh \
 t/txinfo-other-suffixes.sh \
 t/txinfo-override-infodeps.sh \
 t/txinfo-override-texinfo-tex.sh \
