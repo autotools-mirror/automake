@@ -277,6 +277,7 @@ sub _is_valid_easy_option ($)
     dist-lzip
     dist-xz
     dist-zip
+    dist-zstd
     info-in-builddir
     no-define
     no-dependencies
