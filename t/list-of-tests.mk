@@ -1188,6 +1188,7 @@ t/tap-summary-color.sh \
 t/tags.sh \
 t/tags2.sh \
 t/tagsub.sh \
+t/tags-lisp-space.sh \
 t/tags-pr12372.sh \
 t/tar-ustar.sh \
 t/tar-pax.sh \
