@@ -17,12 +17,16 @@
 # Check that the version.texi file is automatically created and distributed
 # if @included into a texi source.  Also check that is correctly defined
 # @values definitions it is advertised to.
-# See also the related test 'txinfo-vtexi4.sh', which does similar checks,
+# See also the related test 'txinfo-vtexi3.sh', which does similar checks,
 # but for more vers*.texi files, and does not require makeinfo, tex and
 # texi2dvi.
 
 required='makeinfo tex texi2dvi grep-nonprint'
 . test-init.sh
+
+# We must use UTC since mdate-sh does, else the UPDATED values might
+# differ depending on local time.
+TZ=UTC0; export TZ
 
 test $(LC_ALL=C date '+%u') -gt 0 && test $(LC_ALL=C date '+%u') -lt 8 \
   && day=$(LC_ALL=C date '+%d')   && test -n "$day" \
