@@ -95,7 +95,8 @@ lint: maintainer-check
 sc_sanity_gnu_grep:
 	$(AM_V_GEN)grep --version | grep 'GNU grep' >/dev/null 2>&1 \
 	  && ab=$$(printf 'a\nb') \
-	  && test "$$(printf 'xa\nb\nc' | grep -Pzo 'a\nb')" = "$$ab" \
+	  && test "$$(printf 'xa\nb\nc' | grep -Pzo 'a\nb' | tr -d '\0')" \
+	       = "$$ab" \
 	  || { \
 	    echo "Syntax checks recipes require a modern GNU grep" >&2; \
 	    exit 1; \
@@ -111,11 +112,11 @@ sc_perl_protos:
 	$(srcdir)/maintainer/check-perl-protos <$(srcdir)/bin/automake.in
 
 # These check avoids accidental configure substitutions in the source.
-# There are exactly 8 lines that should be modified from automake.in to
-# automake, and 9 lines that should be modified from aclocal.in to
+# There are exactly 7 lines that should be modified from automake.in to
+# automake, and 8 lines that should be modified from aclocal.in to
 # aclocal.
-automake_diff_no = 8
-aclocal_diff_no = 9
+automake_diff_no = 7
+aclocal_diff_no = 8
 sc_diff_automake sc_diff_aclocal: in=$($*_in)
 sc_diff_automake sc_diff_aclocal: out=$($*_script)
 sc_diff_automake sc_diff_aclocal: sc_diff_% :
