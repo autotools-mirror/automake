@@ -20,6 +20,23 @@
 required=emacs
 . test-init.sh
 
+# The story here is that at least in Emacs 21, -L foo -L bar ends up
+# with bar before foo in load-path. The invocation in the .el.elc rule
+# in lisp.am correctly uses -L $(builddir) -L $(srcdir), and thus the
+# test below ends up failing. So skip the test on such old Emacs; no
+# need to work around in the code.
+#
+# At least as of Emacs 24, -L foo -L bar preserves command line order,
+# so foo is before bar in load-path, and all is well.
+#
+# Situation with Emacs 22 and 23 is unknown, so play it safe and skip
+# the test for them too.
+#
+emacs_major=$(${EMACS-emacs} --version | sed -e 's/.* //;s/\..*$//;1q')
+if test -z "$emacs_major" || test "$emacs_major" -le 23; then
+  exit 77
+fi
+
 cat >> configure.ac << 'END'
 AM_PATH_LISPDIR
 AC_OUTPUT
