@@ -19,7 +19,7 @@
 . test-init.sh
 
 # Simulate no emacs and no python (it shouldn't be needed in this test).
-EMACS="no" PYTHON=":"; export EMCAS PYTHON
+EMACS="no" PYTHON=":"; export EMACS PYTHON
 
 cat >> configure.ac << 'END'
 AM_PATH_LISPDIR
