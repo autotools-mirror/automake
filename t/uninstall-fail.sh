@@ -24,7 +24,7 @@
 
 mkdir d
 : > d/f
-chmod a-w d || skip "cannot make directories unwritable"
+chmod a-w d || skip_ "cannot make directories unwritable"
 
 # On Solaris 10, if '/bin/rm' is run with the '-f' option, it doesn't
 # print any error message when failing to remove a file (due to e.g.,

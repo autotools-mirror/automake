@@ -32,9 +32,13 @@ required=emacs
 # Situation with Emacs 22 and 23 is unknown, so play it safe and skip
 # the test for them too.
 #
+# Meanwhile, Emacs sets the EMACS envvar to t in subshells.
+# If that's what we've got, use "emacs" instead.
+test "$EMACS" = t && EMACS=emacs || :
+
 emacs_major=$(${EMACS-emacs} --version | sed -e 's/.* //;s/\..*$//;1q')
 if test -z "$emacs_major" || test "$emacs_major" -le 23; then
-  exit 77
+  skip_ "emacs version $emacs_major may reverse -L ordering"
 fi
 
 cat >> configure.ac << 'END'
