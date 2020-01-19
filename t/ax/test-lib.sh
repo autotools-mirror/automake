@@ -197,7 +197,27 @@ seq_ ()
 rm_rf_ ()
 {
   test $# -gt 0 || return 0
-  $PERL "$am_testaux_srcdir"/deltree.pl "$@"
+  chmod -R u+rwx "$@" || :
+  rm -rf "$@" # if it fails, ok, we fail
+  _am_rmrf_status=$?
+  #
+  # In the past, we ran this Perl script instead of the above
+  # chmod && rm.  See the ChangeLog for details.
+  #$PERL "$am_testaux_srcdir"/deltree.pl "$@"
+  #
+  # Let's fail up front if anything remains after the supposed removal.
+  for _am_rmrf_v
+  do
+    if test -e "$_am_rmrf_v"; then
+      echo "$me (test-lib.sh:rm_rf_): tree not removed: $_am_rmrf_v" >&2
+      echo "$me (test-lib.sh:rm_rf_): ls -alR follows:" >&2
+      ls -alR $_am_rmrf_v >&2 # should always be there
+      echo "$me (test-lib.sh:rm_rf_): " \
+           "end ls of tree not removed ($_am_rmrf_v)." >&2
+      _am_rmrf_status=2
+    fi
+  done
+  return $_am_rmrf_status
 }
 
 commented_sed_unindent_prog='
