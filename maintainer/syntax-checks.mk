@@ -80,8 +80,8 @@ sc_tabs_in_texi \
 sc_at_in_texi
 
 $(syntax_check_rules): bin/automake bin/aclocal
-maintainer-check: $(syntax_check_rules)
-.PHONY: maintainer-check $(syntax_check_rules)
+maintainer-check syntax-check: $(syntax_check_rules)
+.PHONY: maintainer-check syntax-check $(syntax_check_rules)
 
 # Check that the list of tests given in the Makefile is equal to the
 # list of all test scripts in the Automake testsuite.
