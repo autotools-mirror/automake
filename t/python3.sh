@@ -42,6 +42,5 @@ cd build
 $MAKE install
 py_installed inst/my/one.py
 py_installed inst/my/one.pyc
-py_installed inst/my/one.pyo
 
 :

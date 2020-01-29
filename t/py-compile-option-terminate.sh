@@ -27,17 +27,12 @@ cp "$am_scriptdir/py-compile" . \
 : > ./--foo.py
 ./py-compile -- -o.py --foo.py
 py_installed ./-o.pyc
-py_installed ./-o.pyo
 py_installed ./--foo.pyc
-py_installed ./--foo.pyo
 rm -f ./-*.py[co]
 : > x.py
 ./py-compile x.py -o.py --foo.py
 py_installed ./x.pyc
-py_installed ./x.pyo
 py_installed ./-o.pyc
-py_installed ./-o.pyo
 py_installed ./--foo.pyc
-py_installed ./--foo.pyo
 
 :

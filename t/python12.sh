@@ -44,11 +44,10 @@ $MAKE install DESTDIR=$destdir
 
 # Perfunctory test that the files were created.
 test -f "$destdir/usr/share/my/my.py"
-pyo=$(pyc_location -p "$destdir/usr/share/my/my.pyo")
 pyc=$(pyc_location -p "$destdir/usr/share/my/my.pyc")
 
 # If DESTDIR has made it into the byte compiled files, fail the test.
-st=0; $FGREP "$destdir" "$pyc" "$pyo" || st=$?
+st=0; $FGREP "$destdir" "$pyc" || st=$?
 test $st -eq 1
 
 :

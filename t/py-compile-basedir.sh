@@ -40,11 +40,10 @@ for d in foo foo/bar "$(pwd)/foo" . .. ../foo ''; do
   ./py-compile --basedir "$d" "$f.py" "sub/$f.py"
   find "$d2" # For debugging.
   py_installed "$d2/$f.pyc"
-  py_installed "$d2/$f.pyo"
   py_installed "$d2/sub/$f.pyc"
-  py_installed "$d2/sub/$f.pyo"
   files=$(find "$d2" | grep '\.py[co]$')
-  test $(echo "$files" | wc -l) -eq 4
+  # with new-enough Python3, there are six files.
+  test $(echo "$files" | wc -l) -eq 4 || $(echo "$files" | wc -l) -eq 6
   case $d2 in
     .|..) rm -f $files;;
        *) rm -rf "$d2";;

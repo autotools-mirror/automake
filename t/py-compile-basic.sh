@@ -61,10 +61,7 @@ mkdir -p 1/_/2/_/3/_
 
 ./py-compile foo.py sub/bar.py 1/_/2/_/3/_/0.py
 py_installed foo.pyc
-py_installed foo.pyo
 py_installed sub/bar.pyc
-py_installed sub/bar.pyo
 py_installed 1/_/2/_/3/_/0.pyc
-py_installed 1/_/2/_/3/_/0.pyo
 
 :

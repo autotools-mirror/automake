@@ -34,13 +34,11 @@ echo 'def bar (): return "bar"' > $destdir/sub/bar.py
 
 find $destdir # For debugging.
 st=0
-for x in c o; do
-  for b in foo sub/bar; do
-    f=$(pyc_location -p "$destdir/$b.py$x")
-    test -f "$f"
-    strings "$f" || : # For debugging.
-    $FGREP $destdir $f && { echo BAD: $f; st=1; }
-  done
+for b in foo sub/bar; do
+  f=$(pyc_location -p "$destdir/$b.pyc")
+  test -f "$f"
+  strings "$f" || : # For debugging.
+  $FGREP $destdir $f && { echo BAD: $f; st=1; }
 done
 exit $st
 
