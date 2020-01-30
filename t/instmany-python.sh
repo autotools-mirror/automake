@@ -21,7 +21,7 @@
 required='python'
 . test-init.sh
 
-limit=2500
+limit=4500
 subdir=long_subdir_name_with_many_characters
 nfiles=81
 list=$(seq_ 1 $nfiles)
