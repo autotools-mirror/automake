@@ -244,11 +244,21 @@ check-parallel:
 test_subdirs = %D% %D%/pm contrib/%D%
 include %D%/CheckListOfTests.am
 
-# Run the testsuite with the installed aclocal and automake.
+# Run the testsuite with the installed aclocal and automake without using
+# the 'pre-inst-env' wrapper script.
 installcheck-local: installcheck-testsuite
 installcheck-testsuite:
 	$(AM_V_GEN)$(MAKE) $(AM_MAKEFLAGS) check \
+	  LOG_COMPILER=$(AM_TEST_RUNNER_SHELL) \
+	  PL_LOG_COMPILER=$(PERL) \
 	  am_running_installcheck=yes
+
+# Ensure that the installed Automake perl modules are found when running 'installcheck' target
+AM_TESTS_ENVIRONMENT += \
+  if test "$${am_running_installcheck}" = yes; then \
+    PERL5LIB="$(DESTDIR)$(pkgvdatadir)/$${PERL5LIB:+$(PATH_SEPARATOR)}$$PERL5LIB"; \
+  fi; \
+  export PERL5LIB;
 
 # Performance tests.
 .PHONY: perf
