@@ -463,13 +463,13 @@ AS_IF([test x"$GXX" = x"yes"], [am_CXX_is_GNU=yes], [am_CXX_is_GNU=no])
 
 _AM_COMPILER_CAN_FAIL([AC_PROG_FC(dnl
   [xlf95 f95 fort ifort ifc efc pgfortran pgf95 lf95 ftn nagfor] dnl
-  [xlf90 f90 pgf90 pghpf epcf90 g95 gfortran])],
+  [xlf90 f90 armflang flang pgf90 pghpf epcf90 g95 gfortran])],
   [FC=false; _AM_SKIP_COMP_TESTS([Fortran])])
 
 AS_IF([test x"$GFC" = x"yes"], [am_FC_is_GNU=yes], [am_FC_is_GNU=no])
 
 _AM_COMPILER_CAN_FAIL([AC_PROG_F77(dnl
-  [xlf f77 frt pgf77 cf77 fort77 fl32 af77 g77 gfortran])],
+  [xlf f77 frt pgf77 cf77 fort77 fl32 af77 g77 armflang flang gfortran])],
   [F77=false; _AM_SKIP_COMP_TESTS([Fortran 77])])
 
 AS_IF([test x"$G77" = x"yes"], [am_F77_is_GNU=yes], [am_F77_is_GNU=no])
