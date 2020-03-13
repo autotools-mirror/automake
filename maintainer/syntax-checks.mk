@@ -36,9 +36,10 @@ xdefs = \
   $(srcdir)/t/ax/test-lib.sh \
   $(srcdir)/t/ax/test-defs.in
 
+# Must prune test dirs since some are intentionally unreadable.
 ams := $(shell find $(srcdir) -name '*.dir' -prune -o -name '*.am' -print)
 
-# Some simple checks, and then ordinary check.  These are only really
+# Some simple checks, and then ordinary checks.  These are only really
 # guaranteed to work on my machine.
 syntax_check_rules = \
 $(sc_tests_plain_check_rules) \
@@ -105,7 +106,7 @@ sc_sanity_gnu_grep:
 $(syntax_check_rules): sc_sanity_gnu_grep
 
 # Check that every subroutine in perl scripts has a corresponding
-# prototype
+# prototype.
 sc_perl_protos:
 	$(AM_V_GEN)$(srcdir)/maintainer/check-perl-protos \
 	  <$(srcdir)/bin/aclocal.in && \
@@ -489,9 +490,11 @@ sc_tests_logs_duplicate_prefixes: sc_ensure_testsuite_has_run
 	fi
 
 # Ensure variables are listed before rules in Makefile.in files we generate.
+# (Do not descend into test dirs that are unreadable.)
 sc_tests_makefile_variable_order: sc_ensure_testsuite_has_run
 	@st=0; \
-	for file in `find t -name Makefile.in -print`; do \
+	for file in `find t ! -perm -o+r -prune -o -name Makefile.in -print`; \
+	do \
 	  latevars=`sed -n \
 	    -e :x -e 's/#.*//' \
 	    -e '/\\\\$$/{' -e N -e 'b x' -e '}' \
