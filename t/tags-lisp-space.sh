@@ -18,7 +18,7 @@
 # if there are CONFIG_HEADERS.
 # See automake bug#38139.
 
-required=''
+required=etags
 . test-init.sh
 
 # some AC_CONFIG_FILES header is needed to trigger the bug.
