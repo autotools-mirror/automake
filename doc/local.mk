@@ -50,6 +50,41 @@ update_mans = \
 %D%/automake-$(APIVERSION).1: $(automake_script) lib/Automake/Config.pm
 	$(update_mans) automake-$(APIVERSION)
 
+## This target is not invoked as a dependency of anything. It exists
+## merely to make checking the links in automake.texi (that is,
+## automake.html) more convenient. We use a slightly-enhanced version of
+## W3C checklink to do this. We intentionally do not have automake.html
+## as a dependency, as it seems more convenient to have its regeneration
+## under manual control. See https://debbugs.gnu.org/10371.
+##
+checklinkx = $(top_srcdir)/contrib/checklinkx
+# that 4-second sleep seems to be what gnu.org likes.
+chlx_args = -v --sleep 8 #--exclude-url-file=/tmp/xf
+# Explanation of excludes:
+# - w3.org dtds, they are fine (and slow).
+# - mailto urls, they are always forbidden.
+# - vala, redirects to a Gnome subpage and returns 403 to us.
+# - cfortran, forbidden by site's robots.txt.
+# - search.cpan.org, gets 
+# - debbugs.gnu.org/automake, forbidden by robots.txt.
+# - autoconf.html, forbidden by robots.txt (since served from savannah).
+# - https://fsf.org redirects to https://www.fsf.org and nothing to do
+#   (it's in the FDL).  --suppress-redirect options do not suppress the msg.
+#
+chlx_excludes = \
+    -X 'http.*w3\.org/.*dtd' \
+    -X 'mailto:.*' \
+    -X 'https://www\.vala-project\.org/' \
+    -X 'https://www-zeus\.desy\.de/~burow/cfortran/' \
+    -X 'http://xsearch\.cpan\.org/~mschwern/Test-Simple/lib/Test/More\.pm' \
+    -X 'https://debbugs\.gnu\.org/automake' \
+    -X 'https://www\.gnu\.org/software/autoconf/manual/autoconf\.html' \
+    -X 'https://fsf\.org/'
+chlx_file = $(top_srcdir)/doc/automake.html
+.PHONY: checklinkx
+checklinkx:
+	$(checklinkx) $(chlx_args) $(chlx_excludes) $(chlx_file)
+
 ## ---------------------------- ##
 ##  Example package "amhello".  ##
 ## ---------------------------- ##

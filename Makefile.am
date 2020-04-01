@@ -93,6 +93,7 @@ ChangeLog:
 EXTRA_DIST += \
   contrib/tap-driver.pl \
   contrib/check-html.am \
+  contrib/checklinkx \
   contrib/multilib/README \
   contrib/multilib/config-ml.in \
   contrib/multilib/symlink-tree \
