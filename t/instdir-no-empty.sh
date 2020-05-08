@@ -17,6 +17,7 @@
 # An empty "foo_PRIMARY" declaration should *not* cause "make install"
 # to create directory $(foodir).  See automake bug#10997 and bug#11030.
 
+required='makeinfo tex texi2dvi dvips'
 . test-init.sh
 
 cat >> configure.ac <<'END'
