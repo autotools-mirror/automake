@@ -52,6 +52,8 @@ use vars qw (@ISA @EXPORT);
 	      &dir_has_case_matching_file &reset_dir_cache
 	      &set_dir_cache_file);
 
+=over 4
+
 =item C<find_file ($file_name, @include)>
 
 Return the first path for a C<$file_name> in the C<include>s.
@@ -176,34 +178,6 @@ sub update_file ($$;$)
 	or fatal "cannot rename $from as $to: $!";
       msg 'note', "'$to' is created";
     }
-}
-
-
-=item C<up_to_date_p ($file, @dep)>
-
-Is C<$file> more recent than C<@dep>?
-
-=cut
-
-# $BOOLEAN
-# &up_to_date_p ($FILE, @DEP)
-# ---------------------------
-sub up_to_date_p ($@)
-{
-  my ($file, @dep) = @_;
-  my $mtime = mtime ($file);
-
-  foreach my $dep (@dep)
-    {
-      if ($mtime < mtime ($dep))
-	{
-	  verb "up_to_date ($file): outdated: $dep";
-	  return 0;
-	}
-    }
-
-  verb "up_to_date ($file): up to date";
-  return 1;
 }
 
 
@@ -404,5 +378,7 @@ sub set_dir_cache_file ($$)
   $_directory_cache{$dirname}{$file_name} = 1
     if exists $_directory_cache{$dirname};
 }
+
+=back
 
 1; # for require
