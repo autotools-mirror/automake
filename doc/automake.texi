@@ -1231,7 +1231,7 @@ work:
 @itemize @bullet
 @item
 It attempts a full compilation of the package (@pxref{Basic
-Installation}), unpacking the newly constructed tarball, running
+Installation}): unpacking the newly constructed tarball, running
 @code{make}, @code{make dvi}, @code{make check}, @code{make install},
 as well as @code{make installcheck}, and even @code{make dist},
 @item
@@ -1243,12 +1243,13 @@ uninstall} do not omit any file (@pxref{Standard Targets}),
 and it checks that @code{DESTDIR} installations work (@pxref{DESTDIR}).
 @end itemize
 
-All of these actions are performed in a temporary directory, so that no
-root privileges are required.  Please note that the exact location and the
-exact structure of such a subdirectory (where the extracted sources are
-placed, how the temporary build and install directories are named and how
-deeply they are nested, etc.) is to be considered an implementation detail,
-which can change at any time; so do not rely on it.
+All of these actions are performed in a temporary directory, so that
+no root privileges are required.  The exact location and the exact
+structure of such a subdirectory (where the extracted sources are
+placed, how the temporary build and install directories are named and
+how deeply they are nested, etc.) is to be considered an
+implementation detail, which can change at any time; so do not rely on
+it.
 
 Releasing a package that fails @code{make distcheck} means that one of
 the scenarios we presented will not work and some users will be
@@ -8045,7 +8046,6 @@ The name of the command that builds a @file{.ps} file out of a
 @file{.dvi} file.  This defaults to @samp{dvips}.
 
 @item TEXINFO_TEX
-
 If your package has Texinfo files in many directories, you can use the
 variable @code{TEXINFO_TEX} to tell Automake where to find the canonical
 @file{texinfo.tex} for your package.  The value of this variable should
@@ -8569,11 +8569,13 @@ dist} was run, not to any sub-packages involved.
 Automake also generates a @code{distcheck} rule that can be of help
 to ensure that a given distribution will actually work.  Simplifying
 a bit, we can say this rule first makes a distribution, and then,
-@emph{operating from it}, takes the following steps:
+@emph{operating from it}, takes the following steps (in this order):
 @itemize
 @item
 tries to do a @code{VPATH} build (@pxref{VPATH Builds}), with the
 @code{srcdir} and all its content made @emph{read-only};
+@item
+tries to make the printable documentation, if any (with @command{make dvi}),
 @item
 runs the test suite (with @command{make check}) on this fresh build;
 @item
@@ -8588,12 +8590,12 @@ finally, makes another tarball to ensure the distribution is
 self-contained.
 @end itemize
 
-All of these actions are performed in a temporary directory.  Please
-note that the exact location and the exact structure of such a directory
-(where the read-only sources are placed, how the temporary build and
-install directories are named and how deeply they are nested, etc.) is
-to be considered an implementation detail, which can change at any time;
-so do not rely on it.
+All of these actions are performed in a temporary directory.  The
+exact location and the exact structure of such a directory (where the
+read-only sources are placed, how the temporary build and install
+directories are named and how deeply they are nested, etc.) is to be
+considered an implementation detail, which can change at any time; so
+do not rely on it.
 
 @vindex AM_DISTCHECK_CONFIGURE_FLAGS
 @vindex DISTCHECK_CONFIGURE_FLAGS
@@ -8626,6 +8628,30 @@ variable to stress-test the use of @option{--program-prefix=g}, since at
 one point the @command{m4} build system had a bug where @command{make
 installcheck} was wrongly assuming it could blindly test "@command{m4}",
 rather than the just-installed "@command{gm4}".
+
+@trindex dvi
+@subheading dvi and distcheck
+@cindex @code{eps} images
+Ordinarily, @command{make distcheck} runs @command{make dvi}.  It does
+nothing if the distribution contains no Texinfo sources.  If the
+distribution does contain a Texinfo manual, by default the @code{dvi}
+target will run @TeX{} to make sure it can be successfully processed
+(@pxref{Texinfo}).
+
+However, you may wish to test the manual by producing @code{pdf}
+(e.g., if your manual uses images in formats other than @code{eps}),
+@code{html} (if you don't have @TeX{} at all), some other format, or
+just skip the test entirely (not recommended).  You can change the
+target that is run by setting the variable
+@code{AM_DISTCHECK_DVI_TARGET} in your @code{Makefile.am}; for
+example,
+
+@example
+AM_DISTCHECK_DVI_TARGET = pdf
+@end example
+
+To make @code{dvi} into a do-nothing target, see the example for
+@code{EMPTY_AUTOMAKE_TARGETS} in @ref{Third-Party Makefiles}.
 
 @trindex distcheck-hook
 @subheading distcheck-hook
@@ -11440,11 +11466,20 @@ OK to have a rule that does nothing, so if you are integrating a
 third-party project with no documentation or tag support, you could
 simply augment its @file{Makefile} as follows:
 
+@vindex EMPTY_AUTOMAKE_TARGETS
+@cindex Automake targets, no-op
+@cindex do-nothing Automake targets
+@cindex empty Automake targets
+@cindex no-op Automake targets
+@cindex targets, making into no-op
 @example
 EMPTY_AUTOMAKE_TARGETS = dvi pdf ps info html tags ctags
 .PHONY: $(EMPTY_AUTOMAKE_TARGETS)
 $(EMPTY_AUTOMAKE_TARGETS):
 @end example
+
+To be clear, there is nothing special about the variable name
+@code{EMPTY_AUTOMAKE_TARGETS}; the name could be anything.
 
 Another aspect of integrating third-party build systems is whether
 they support VPATH builds (@pxref{VPATH Builds}).  Obviously if the

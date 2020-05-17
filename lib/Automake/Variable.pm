@@ -198,7 +198,8 @@ my $configure_ac;
 
 # Variables that can be overridden without complaint from -Woverride
 my %_silent_variable_override =
-  (AM_MAKEINFOHTMLFLAGS => 1,
+  (AM_DISTCHECK_DVI_TARGET => 1,
+   AM_MAKEINFOHTMLFLAGS => 1,
    AR => 1,
    ARFLAGS => 1,
    DEJATOOL => 1,
