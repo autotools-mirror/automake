@@ -12750,11 +12750,28 @@ data.c: data.foo
         foo data.foo
 data.h: data.c
 ## Recover from the removal of $@@
+        @@test -f $@@ || rm -f data.c
+        @@test -f $@@ || $(MAKE) $(AM_MAKEFLAGS) data.c
+@end example
+
+It is tempting to use a single test as follows:
+
+@example
+data.h: data.c
+## Recover from the removal of $@@
         @@if test -f $@@; then :; else \
           rm -f data.c; \
           $(MAKE) $(AM_MAKEFLAGS) data.c; \
         fi
 @end example
+
+@noindent
+but that would break @samp{make -n}: at least GNU @command{make} and
+Solaris @command{make} execute recipes containing the @samp{$(MAKE)}
+string even when they are running in dry mode.  So if we didn't break
+the recipe above in two invocations, the file @file{data.c} would be
+removed even upon @samp{make -n}.  Not nice.
+
 
 The above scheme can be extended to handle more outputs and more
 inputs.  One of the outputs is selected to serve as a witness to the
@@ -12768,10 +12785,8 @@ data.c: data.foo data.bar
         foo data.foo data.bar
 data.h data.w data.x: data.c
 ## Recover from the removal of $@@
-        @@if test -f $@@; then :; else \
-          rm -f data.c; \
-          $(MAKE) $(AM_MAKEFLAGS) data.c; \
-        fi
+        @@test -f $@@ || rm -f data.c
+        @@test -f $@@ || $(MAKE) $(AM_MAKEFLAGS) data.c
 @end example
 
 However there are now three minor problems in this setup.  One is related
@@ -12801,13 +12816,10 @@ A simple riposte is to fix the timestamps when this happens.
 data.c: data.foo data.bar
         foo data.foo data.bar
 data.h data.w data.x: data.c
-        @@if test -f $@@; then \
-          touch $@@; \
-        else \
+        @@test ! -f $@@ || touch $@@
 ## Recover from the removal of $@@
-          rm -f data.c; \
-          $(MAKE) $(AM_MAKEFLAGS) data.c; \
-        fi
+        @@test -f $@@ || rm -f data.c
+        @@test -f $@@ || $(MAKE) $(AM_MAKEFLAGS) data.c
 @end example
 
 Another solution is to use a different and dedicated file as witness,
@@ -12821,10 +12833,8 @@ data.stamp: data.foo data.bar
         @@mv -f data.tmp $@@
 data.c data.h data.w data.x: data.stamp
 ## Recover from the removal of $@@
-        @@if test -f $@@; then :; else \
-          rm -f data.stamp; \
-          $(MAKE) $(AM_MAKEFLAGS) data.stamp; \
-        fi
+        @@test -f $@@ || rm -f data.stamp
+        @@test -f $@@ || $(MAKE) $(AM_MAKEFLAGS) data.stamp
 @end example
 
 @file{data.tmp} is created before @command{foo} is run, so it has a
