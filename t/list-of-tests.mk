@@ -817,6 +817,7 @@ t/tests-environment-backcompat.sh \
 t/testsuite-summary-color.sh \
 t/testsuite-summary-count.sh \
 t/testsuite-summary-count-many.sh \
+t/testsuite-summary-header.sh \
 t/testsuite-summary-reference-log.sh \
 t/test-driver-acsubst.sh \
 t/test-driver-cond.sh \

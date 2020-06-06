@@ -15,7 +15,7 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 # Check the testsuite summary with the parallel test harness.  This
-# script is meant to be sourced by other test script, so that it can
+# script is meant to be sourced by other test scripts, so that it can
 # be used to check different scenarios (colorized and non-colorized
 # testsuite output, packages with and without bug-report addresses,
 # testsuites in subdirectories, ...)
