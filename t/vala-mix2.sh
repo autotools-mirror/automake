@@ -44,7 +44,7 @@ int main ()
 END
 
 cat > foo.h <<'END'
-int foo;
+extern int foo;
 int bar (void);
 int baz (void);
 END
@@ -56,7 +56,7 @@ END
 
 cat > baz.c <<'END'
 #include "foo.h"
-extern int foo = 0;
+int foo = 0;
 int baz (void) { return 0; }
 END
 
