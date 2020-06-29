@@ -47,7 +47,7 @@ use vars qw (@ISA @EXPORT);
 @ISA = qw (Exporter);
 @EXPORT = qw (&contents
 	      &find_file &mtime
-	      &update_file &up_to_date_p
+	      &update_file
 	      &xsystem &xsystem_hint &xqx
 	      &dir_has_case_matching_file &reset_dir_cache
 	      &set_dir_cache_file);
