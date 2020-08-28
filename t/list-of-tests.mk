@@ -832,6 +832,7 @@ t/test-driver-strip-vpath.sh \
 t/test-driver-trs-suffix-registered.sh \
 t/test-driver-fail.sh \
 t/test-driver-is-distributed.sh \
+t/test-extensions-empty.sh \
 t/test-harness-vpath-rewrite.sh \
 t/test-log.sh \
 t/test-logs-repeated.sh \
