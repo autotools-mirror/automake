@@ -17,12 +17,14 @@ package Automake::Condition;
 
 use 5.006;
 use strict;
-use Carp;
+use warnings FATAL => 'all';
 
-require Exporter;
-use vars '@ISA', '@EXPORT_OK';
-@ISA = qw/Exporter/;
-@EXPORT_OK = qw/TRUE FALSE reduce_and reduce_or/;
+use Carp;
+use Exporter;
+
+use vars qw (@EXPORT_OK @ISA);
+@ISA = qw (Exporter);
+@EXPORT_OK = qw (TRUE FALSE reduce_and reduce_or);
 
 =head1 NAME
 

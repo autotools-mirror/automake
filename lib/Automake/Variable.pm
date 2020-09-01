@@ -17,7 +17,10 @@ package Automake::Variable;
 
 use 5.006;
 use strict;
+use warnings FATAL => 'all';
+
 use Carp;
+use Exporter;
 
 use Automake::Channels;
 use Automake::ChannelDefs;
@@ -29,9 +32,8 @@ use Automake::DisjConditions;
 use Automake::General 'uniq';
 use Automake::Wrap 'makefile_wrap';
 
-require Exporter;
-use vars '@ISA', '@EXPORT', '@EXPORT_OK';
-@ISA = qw/Automake::Item Exporter/;
+use vars qw (@EXPORT @EXPORT_OK @ISA);
+@ISA = qw (Automake::Item Exporter);
 @EXPORT = qw (err_var msg_var msg_cond_var reject_var
 	      var rvar vardef rvardef
 	      variables

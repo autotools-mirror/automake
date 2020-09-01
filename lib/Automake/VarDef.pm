@@ -17,13 +17,16 @@ package Automake::VarDef;
 
 use 5.006;
 use strict;
+use warnings FATAL => 'all';
+
 use Carp;
+use Exporter;
+
 use Automake::ChannelDefs;
 use Automake::ItemDef;
 
-require Exporter;
-use vars '@ISA', '@EXPORT';
-@ISA = qw/Automake::ItemDef Exporter/;
+use vars qw (@ISA @EXPORT);
+@ISA = qw (Automake::ItemDef Exporter);
 @EXPORT = qw (&VAR_AUTOMAKE &VAR_CONFIGURE &VAR_MAKEFILE
 	      &VAR_ASIS &VAR_PRETTY &VAR_SILENT &VAR_SORTED);
 

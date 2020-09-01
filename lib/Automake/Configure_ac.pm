@@ -22,12 +22,14 @@ package Automake::Configure_ac;
 
 use 5.006;
 use strict;
+use warnings FATAL => 'all';
+
 use Exporter;
-use Automake::Channels;
+
 use Automake::ChannelDefs;
+use Automake::Channels;
 
-use vars qw (@ISA @EXPORT);
-
+use vars qw (@EXPORT @ISA);
 @ISA = qw (Exporter);
 @EXPORT = qw (&find_configure_ac &require_configure_ac);
 

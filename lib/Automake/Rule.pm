@@ -17,7 +17,10 @@ package Automake::Rule;
 
 use 5.006;
 use strict;
+use warnings FATAL => 'all';
+
 use Carp;
+use Exporter;
 
 use Automake::Item;
 use Automake::RuleDef;
@@ -26,9 +29,9 @@ use Automake::Channels;
 use Automake::Options;
 use Automake::Condition qw (TRUE FALSE);
 use Automake::DisjConditions;
-require Exporter;
-use vars '@ISA', '@EXPORT', '@EXPORT_OK';
-@ISA = qw/Automake::Item Exporter/;
+
+use vars qw (@EXPORT @EXPORT_OK @ISA);
+@ISA = qw (Automake::Item Exporter);
 @EXPORT = qw (reset register_suffix_rule next_in_suffix_chain
 	      suffixes rules $KNOWN_EXTENSIONS_PATTERN
 	      depend %dependencies %actions register_action

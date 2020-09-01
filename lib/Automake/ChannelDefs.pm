@@ -15,17 +15,6 @@
 
 package Automake::ChannelDefs;
 
-use Automake::Config;
-BEGIN
-{
-  if ($perl_threads)
-    {
-      require threads;
-      import threads;
-    }
-}
-use Automake::Channels;
-
 =head1 NAME
 
 Automake::ChannelDefs - channel definitions for Automake and helper functions
@@ -57,10 +46,22 @@ shorthand function to output on specific channels.
 
 use 5.006;
 use strict;
+use warnings FATAL => 'all';
+
 use Exporter;
 
-use vars qw (@ISA @EXPORT);
+use Automake::Channels;
+use Automake::Config;
+BEGIN
+{
+  if ($perl_threads)
+    {
+      require threads;
+      import threads;
+    }
+}
 
+use vars qw (@EXPORT @ISA);
 @ISA = qw (Exporter);
 @EXPORT = qw (&prog_error &error &fatal &verb
 	      &switch_warning &parse_WARNINGS &parse_warnings);

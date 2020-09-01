@@ -17,10 +17,12 @@ package Automake::General;
 
 use 5.006;
 use strict;
+use warnings FATAL => 'all';
+
 use Exporter;
 use File::Basename;
 
-use vars qw (@ISA @EXPORT);
+use vars qw (@EXPORT @ISA);
 
 @ISA = qw (Exporter);
 @EXPORT = qw (&uniq &none $me);

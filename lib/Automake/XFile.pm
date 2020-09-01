@@ -71,23 +71,20 @@ and C<getlines> methods to translate C<\r\n> to C<\n>.
 
 use 5.006;
 use strict;
-use vars qw($VERSION @EXPORT @EXPORT_OK $AUTOLOAD @ISA);
-use Carp;
+use warnings FATAL => 'all';
+
 use Errno;
+use Exporter;
 use IO::File;
-use File::Basename;
+
 use Automake::ChannelDefs;
-use Automake::Channels qw(msg);
+use Automake::Channels qw (msg);
 use Automake::FileUtils;
 
-require Exporter;
-require DynaLoader;
-
-@ISA = qw(IO::File Exporter DynaLoader);
-
-$VERSION = "1.2";
-
+use vars qw ($AUTOLOAD @EXPORT @EXPORT_OK @ISA $VERSION);
+@ISA = qw(Exporter IO::File);
 @EXPORT = @IO::File::EXPORT;
+$VERSION = "1.2";
 
 eval {
   # Make all Fcntl O_XXX and LOCK_XXX constants available for importing

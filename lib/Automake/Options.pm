@@ -17,14 +17,16 @@ package Automake::Options;
 
 use 5.006;
 use strict;
+use warnings FATAL => 'all';
+
 use Exporter;
+
 use Automake::Config;
 use Automake::ChannelDefs;
 use Automake::Channels;
 use Automake::Version;
 
-use vars qw (@ISA @EXPORT);
-
+use vars qw (@EXPORT @ISA);
 @ISA = qw (Exporter);
 @EXPORT = qw (option global_option
               set_option set_global_option
