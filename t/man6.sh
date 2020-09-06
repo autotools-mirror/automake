@@ -64,8 +64,10 @@ mkdir build
 cd build
 
 ../configure
-# Sanity check.
-grep '^HELP2MAN *=.*/missing help2man' Makefile
+# Sanity check. The line we're matching looks like this:
+#   HELP2MAN = ${SHELL} '/am/checkout/t/man6.dir/missing' help2man
+# so let's not try to match the exact intervening quote.
+grep '^HELP2MAN *=.*/missing.* help2man' Makefile
 
 $MAKE
 $FGREP foobar ../foobar.1
@@ -83,8 +85,8 @@ cd ..
 rm -f *.1 # Remove leftover generated manpages.
 
 ./configure
-# Sanity check.
-grep '^HELP2MAN *=.*/missing help2man' Makefile
+# Sanity check again, same as above.
+grep '^HELP2MAN *=.*/missing.* help2man' Makefile
 
 $MAKE
 $FGREP foobar  foobar.1
