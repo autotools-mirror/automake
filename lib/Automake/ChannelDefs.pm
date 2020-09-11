@@ -23,7 +23,7 @@ Automake::ChannelDefs - channel definitions for Automake and helper functions
 
   use Automake::ChannelDefs;
 
-  Automake::ChannelDefs::usage ();
+  print Automake::ChannelDefs::usage (), "\n";
   prog_error ($MESSAGE, [%OPTIONS]);
   error ($WHERE, $MESSAGE, [%OPTIONS]);
   error ($MESSAGE);
@@ -32,12 +32,12 @@ Automake::ChannelDefs - channel definitions for Automake and helper functions
   verb ($MESSAGE, [%OPTIONS]);
   switch_warning ($CATEGORY);
   parse_WARNINGS ();
-  parse_warnings ($OPTION, $ARGUMENT);
+  parse_warnings ($OPTION, @ARGUMENT);
   Automake::ChannelDefs::set_strictness ($STRICTNESS_NAME);
 
 =head1 DESCRIPTION
 
-This packages defines channels that can be used in Automake to
+This package defines channels that can be used in Automake to
 output diagnostics and other messages (via C<msg()>).  It also defines
 some helper function to enable or disable these channels, and some
 shorthand function to output on specific channels.
@@ -98,6 +98,10 @@ Errors related to GNITS Standards (silent by default).
 
 Internal errors.  Use C<&prog_error> to send messages over this channel.
 
+=item C<cross>
+
+Constructs compromising the cross-compilation of the package.
+
 =item C<gnu>
 
 Warnings related to GNU Coding Standards.
@@ -114,6 +118,14 @@ variables (silent by default).
 =item C<portability>
 
 Warnings about non-portable constructs.
+
+=item C<portability-recursive>
+
+Warnings about recursive variable expansions (C<$(foo$(x))>).
+These are not universally supported, but are more portable than
+the other non-portable constructs diagnosed by C<-Wportability>.
+These warnings are turned on by C<-Wportability> but can then be
+turned off separately by C<-Wno-portability-recursive>.
 
 =item C<extra-portability>
 
@@ -155,11 +167,12 @@ register_channel 'automake', type => 'fatal', backtrace => 1,
   footer => "\nPlease contact <$PACKAGE_BUGREPORT>.",
   uniq_part => UP_NONE, ordered => 0;
 
-register_channel 'extra-portability', type => 'warning', silent => 1;
+register_channel 'cross', type => 'warning', silent => 1;
 register_channel 'gnu', type => 'warning';
 register_channel 'obsolete', type => 'warning';
 register_channel 'override', type => 'warning', silent => 1;
 register_channel 'portability', type => 'warning', silent => 1;
+register_channel 'extra-portability', type => 'warning', silent => 1;
 register_channel 'portability-recursive', type => 'warning', silent => 1;
 register_channel 'syntax', type => 'warning';
 register_channel 'unsupported', type => 'warning';
@@ -178,26 +191,26 @@ setup_channel_type 'fatal', header => 'error: ';
 
 =item C<usage ()>
 
-Display warning categories.
+Return the warning category descriptions.
 
 =cut
 
 sub usage ()
 {
-  print <<EOF;
-Warning categories include:
-  gnu                GNU coding standards (default in gnu and gnits modes)
-  obsolete           obsolete features or constructions
-  override           user redefinitions of Automake rules or variables
-  portability        portability issues (default in gnu and gnits modes)
-  extra-portability  extra portability issues related to obscure tools
-  syntax             dubious syntactic constructs (default)
-  unsupported        unsupported or incomplete features (default)
-  all                all the warnings
-  no-CATEGORY        turn off warnings in CATEGORY
-  none               turn off all the warnings
-  error              treat warnings as errors
-EOF
+  return "Warning categories include:
+  cross                  cross compilation issues
+  gnu                    GNU coding standards (default in gnu and gnits modes)
+  obsolete               obsolete features or constructions (default)
+  override               user redefinitions of Automake rules or variables
+  portability            portability issues (default in gnu and gnits modes)
+  portability-recursive  nested Make variables (default with -Wportability)
+  extra-portability      extra portability issues related to obscure tools
+  syntax                 dubious syntactic constructs (default)
+  unsupported            unsupported or incomplete features (default)
+  all                    all the warnings
+  no-CATEGORY            turn off warnings in CATEGORY
+  none                   turn off all the warnings
+  error                  treat warnings as errors";
 }
 
 =item C<prog_error ($MESSAGE, [%OPTIONS])>
@@ -258,7 +271,7 @@ sub verb ($;%)
 =item C<switch_warning ($CATEGORY)>
 
 If C<$CATEGORY> is C<mumble>, turn on channel C<mumble>.
-If it's C<no-mumble>, turn C<mumble> off.
+If it is C<no-mumble>, turn C<mumble> off.
 Else handle C<all> and C<none> for completeness.
 
 =cut
@@ -349,21 +362,22 @@ sub parse_WARNINGS ()
     }
 }
 
-=item C<parse_warnings ($OPTION, $ARGUMENT)>
+=item C<parse_warnings ($OPTION, @ARGUMENT)>
 
 Parse the argument of C<--warning=CATEGORY> or C<-WCATEGORY>.
 
-C<$OPTIONS> is C<"--warning"> or C<"-W">, C<$ARGUMENT> is C<CATEGORY>.
+C<$OPTIONS> is C<"--warning"> or C<"-W">, C<@ARGUMENT> is a list of
+C<CATEGORY>.
 
-This is meant to be used as an argument to C<Getopt>.
+This can be used as an argument to C<Getopt>.
 
 =cut
 
-sub parse_warnings ($$)
+sub parse_warnings ($@)
 {
-  my ($opt, $categories) = @_;
+  my ($opt, @categories) = @_;
 
-  foreach my $cat (split (',', $categories))
+  foreach my $cat (map { split ',' } @categories)
     {
       msg 'unsupported', "unknown warning category '$cat'"
 	if switch_warning $cat;
@@ -426,3 +440,20 @@ Written by Alexandre Duret-Lutz E<lt>F<adl@gnu.org>E<gt>.
 =cut
 
 1;
+
+### Setup "GNU" style for perl-mode and cperl-mode.
+## Local Variables:
+## perl-indent-level: 2
+## perl-continued-statement-offset: 2
+## perl-continued-brace-offset: 0
+## perl-brace-offset: 0
+## perl-brace-imaginary-offset: 0
+## perl-label-offset: -2
+## cperl-indent-level: 2
+## cperl-brace-offset: 0
+## cperl-continued-brace-offset: 0
+## cperl-label-offset: -2
+## cperl-extra-newline-before-brace: t
+## cperl-merge-trailing-else: nil
+## cperl-continued-statement-offset: 2
+## End:
