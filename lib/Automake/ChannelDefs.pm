@@ -352,36 +352,62 @@ Parse the WARNINGS environment variable.
 
 =cut
 
+# Used to communicate from parse_WARNINGS to parse_warnings.
+our $_werror = 0;
+
 sub parse_WARNINGS ()
 {
   if (exists $ENV{'WARNINGS'})
     {
       # Ignore unknown categories.  This is required because WARNINGS
       # should be honored by many tools.
-      switch_warning $_ foreach (split (',', $ENV{'WARNINGS'}));
+      # For the same reason, do not turn on -Werror at this point, just
+      # record that we saw it; parse_warnings will turn on -Werror after
+      # the command line has been processed.
+      foreach (split (',', $ENV{'WARNINGS'}))
+        {
+          if (/^(no-)?error$/)
+            {
+              $_werror = !defined $1;
+            }
+          else
+            {
+              switch_warning $_;
+            }
+        }
     }
 }
 
-=item C<parse_warnings ($OPTION, @ARGUMENT)>
+=item C<parse_warnings (@CATEGORIES)>
 
 Parse the argument of C<--warning=CATEGORY> or C<-WCATEGORY>.
+C<@CATEGORIES> is the accumulated set of warnings categories.
+Use like this:
 
-C<$OPTIONS> is C<"--warning"> or C<"-W">, C<@ARGUMENT> is a list of
-C<CATEGORY>.
-
-This can be used as an argument to C<Getopt>.
+    Automake::GetOpt::parse_options (
+        # ...
+        'W|warnings=s' => \@warnings,
+    )
+    # possibly call set_strictness here
+    parse_warnings @warnings;
 
 =cut
 
-sub parse_warnings ($@)
+sub parse_warnings (@)
 {
-  my ($opt, @categories) = @_;
-
-  foreach my $cat (map { split ',' } @categories)
+  foreach my $cat (map { split ',' } @_)
     {
-      msg 'unsupported', "unknown warning category '$cat'"
-	if switch_warning $cat;
+      if ($cat =~ /^(no-)?error$/)
+        {
+          $_werror = !defined $1;
+        }
+      elsif (switch_warning $cat)
+        {
+          msg 'unsupported', "unknown warning category '$cat'";
+        }
     }
+
+  switch_warning ($_werror ? 'error' : 'no-error');
 }
 
 =item C<set_strictness ($STRICTNESS_NAME)>
