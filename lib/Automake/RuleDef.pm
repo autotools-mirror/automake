@@ -25,9 +25,8 @@ use Exporter;
 use Automake::ChannelDefs;
 use Automake::ItemDef;
 
-use vars qw (@EXPORT @ISA);
-@ISA = qw (Automake::ItemDef Exporter);
-@EXPORT = qw (&RULE_AUTOMAKE &RULE_USER);
+our @ISA = qw (Automake::ItemDef Exporter);
+our @EXPORT = qw (&RULE_AUTOMAKE &RULE_USER);
 
 =head1 NAME
 

@@ -22,9 +22,8 @@ use warnings FATAL => 'all';
 use Carp;
 use Exporter;
 
-use vars qw (@EXPORT_OK @ISA);
-@ISA = qw (Exporter);
-@EXPORT_OK = qw (TRUE FALSE reduce_and reduce_or);
+our @ISA = qw (Exporter);
+our @EXPORT_OK = qw (TRUE FALSE reduce_and reduce_or);
 
 =head1 NAME
 
@@ -169,7 +168,7 @@ both create the C<"FALSE"> condition).
 # Keys in this hash are conditional strings. Values are the
 # associated object conditions.  This is used by 'new' to reuse
 # Condition objects with identical conditionals.
-use vars '%_condition_singletons';
+our %_condition_singletons;
 # Do NOT reset this hash here.  It's already empty by default,
 # and any setting would otherwise occur AFTER the 'TRUE' and 'FALSE'
 # constants definitions.

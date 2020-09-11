@@ -22,16 +22,13 @@ use warnings FATAL => 'all';
 use Exporter;
 use File::Basename;
 
-use vars qw (@EXPORT @ISA);
-
-@ISA = qw (Exporter);
-@EXPORT = qw (&uniq &none $me);
+our @ISA = qw (Exporter);
+our @EXPORT = qw (&uniq &none $me);
 
 # Variable we share with the main package.  Be sure to have a single
 # copy of them: using 'my' together with multiple inclusion of this
 # package would introduce several copies.
-use vars qw ($me);
-$me = basename ($0);
+our $me = basename ($0);
 
 # END
 # ---

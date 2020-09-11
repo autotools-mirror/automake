@@ -21,9 +21,8 @@ use warnings FATAL => 'all';
 
 use Exporter;
 
-use vars qw (@EXPORT_OK @ISA);
-@ISA = qw (Exporter);
-@EXPORT_OK = qw (wrap makefile_wrap);
+our @ISA = qw (Exporter);
+our @EXPORT_OK = qw (wrap makefile_wrap);
 
 =head1 NAME
 

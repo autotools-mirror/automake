@@ -40,9 +40,8 @@ use Getopt::Long ();
 
 use Automake::ChannelDefs qw (fatal);
 
-use vars qw (@EXPORT @ISA);
-@ISA = qw (Exporter);
-@EXPORT = qw (getopt);
+our @ISA = qw (Exporter);
+our @EXPORT = qw (getopt);
 
 =item C<parse_options (%option)>
 

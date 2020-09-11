@@ -141,7 +141,7 @@ ignored.
 # Keys in this hash are DisjConditions strings. Values are the
 # associated object DisjConditions.  This is used by 'new' to reuse
 # DisjConditions objects with identical conditions.
-use vars '%_disjcondition_singletons';
+our %_disjcondition_singletons;
 
 sub new ($;@)
 {
