@@ -39,7 +39,8 @@ fi
 py_version_post=$(python -V)
 
 # Sanity check.
-test "$py_version_pre" = "$py_version_post"
+test "$py_version_pre" = "$py_version_post" \
+  || skip_ "virtualenv $py_version_post != $py_version_pre"
 
 cwd=$(pwd) || fatal_ "getting current working directory"
 py_version=$(python -c 'import sys; print("%u.%u" % tuple(sys.version_info[:2]))')
