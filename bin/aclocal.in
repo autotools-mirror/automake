@@ -762,22 +762,19 @@ sub trace_used_macros ()
   my %files = map { $map{$_} => 1 } keys %macro_seen;
   %files = strip_redundant_includes %files;
 
-  # When AC_CONFIG_MACRO_DIRS is used, avoid possible spurious warnings
-  # from autom4te about macros being "m4_require'd but not m4_defun'd";
-  # for more background, see:
-  # https://lists.gnu.org/archive/html/autoconf-patches/2012-11/msg00004.html
-  # as well as autoconf commit 'v2.69-44-g1ed0548', "warn: allow aclocal
-  # to silence m4_require warnings".
-  my $early_m4_code .= "m4_define([m4_require_silent_probe], [-])";
+  # Suppress all warnings from this invocation of autom4te.
+  # In particular we want to avoid spurious warnings about
+  # macros being "m4_require'd but not m4_defun'd" because
+  # aclocal.m4 is not yet available.
+  local $ENV{WARNINGS} = 'none';
 
   my $traces = ($ENV{AUTOM4TE} || '@am_AUTOM4TE@');
   $traces .= " --language Autoconf-without-aclocal-m4 ";
-  $traces = "echo '$early_m4_code' | $traces - ";
 
   # Support AC_CONFIG_MACRO_DIRS also with older autoconf.
   # Note that we can't use '$ac_config_macro_dirs_fallback' here, because
-  # a bug in option parsing code of autom4te 2.68 and earlier will cause
-  # it to read standard input last, even if the "-" argument is specified
+  # a bug in option parsing code of autom4te 2.68 and earlier would cause
+  # it to read standard input last, even if the "-" argument was specified
   # early.
   # FIXME: To be removed in Automake 2.0, once we can assume autoconf
   #        2.70 or later.
@@ -807,7 +804,7 @@ sub trace_used_macros ()
 		   # characters (like newlines).
 		   (map { "--trace='$_:\$f::\$n'" } (keys %macro_seen)));
 
-  verb "running $traces $configure_ac";
+  verb "running WARNINGS=$ENV{WARNINGS} $traces $configure_ac";
 
   my $tracefh = new Automake::XFile ("$traces $configure_ac |");
 
