@@ -118,7 +118,6 @@ section entitled ``GNU Free Documentation License.''
 * Include::                     Including extra files in an Automake template
 * Conditionals::                Conditionals
 * Silencing Make::              Obtain less verbose output from @command{make}
-* Gnits::                       The effect of @option{--gnu} and @option{--gnits}
 * Not Enough::                  When Automake is not Enough
 * Distributing::                Distributing the Makefile.in
 * API Versioning::              About compatibility between Automake versions
@@ -1913,7 +1912,9 @@ It is customary to make the first line of @file{Makefile.am} read:
 
 @node Strictness
 @section Strictness
-
+@c "Gnits" used to be a separate section.
+@c This @anchor allows old links to still work.
+@anchor{Gnits}
 @cindex Non-GNU packages
 
 While Automake is intended to be used by maintainers of GNU packages, it
@@ -1921,44 +1922,107 @@ does make some effort to accommodate those who wish to use it, but do
 not want to use all the GNU conventions.
 
 @cindex Strictness, defined
-@cindex Strictness, @option{foreign}
-@cindex @option{foreign} strictness
-@cindex Strictness, @option{gnu}
-@cindex @option{gnu} strictness
-@cindex Strictness, @option{gnits}
-@cindex @option{gnits} strictness
+To this end, Automake supports three levels of @dfn{strictness}---how
+stringently Automake should enforce conformance with GNU conventions.
+Each strictness level can be selected using an option of the same name;
+see @ref{Options}.
 
-To this end, Automake supports three levels of @dfn{strictness}---the
-strictness indicating how stringently Automake should check standards
-conformance.
-
-The valid strictness levels are:
+The strictness levels are:
 
 @table @option
+@item gnu
+@cindex Strictness, @option{gnu}
+@cindex @option{gnu} strictness
+@opindex --gnu
+This is the default level of strictness.  Automake will check for
+basic compliance with the GNU standards for software packaging.
+@xref{Top,,, standards, The GNU Coding Standards} for full details
+of these standards.  Currently the following checks are made:
+
+@itemize @bullet
+@item
+The files @file{INSTALL}, @file{NEWS}, @file{README}, @file{AUTHORS},
+and @file{ChangeLog}, plus one of @file{COPYING.LIB}, @file{COPYING.LESSER}
+or @file{COPYING}, are required at the topmost directory of the package.
+
+If the @option{--add-missing} option is given, @command{automake} will
+add a generic version of the @file{INSTALL} file as well as the
+@file{COPYING} file containing the text of the current version of the
+GNU General Public License existing at the time of this Automake release
+(version 3 as this is written,
+@uref{https://www.gnu.org/@/copyleft/@/gpl.html}).
+However, an existing @file{COPYING} file will never be overwritten by
+@command{automake}.
+
+@item
+The options @option{no-installman} and @option{no-installinfo} are
+prohibited.
+@end itemize
+
+Future versions of Automake will add more checks at this level of
+strictness; it is advisable to be familiar with the precise requirements
+of the GNU standards.
+
+Future versions of Automake may, at this level of strictness, require
+certain non-standard GNU tools to be available to maintainer-only
+Makefile rules.  For instance, in the future @command{pathchk}
+(@pxref{pathchk invocation,,, coreutils, GNU Coreutils})
+may be required to run @samp{make dist}.
+
 @item foreign
+@cindex Strictness, @option{foreign}
+@cindex @option{foreign} strictness
+@opindex --foreign
 Automake will check for only those things that are absolutely
 required for proper operation.  For instance, whereas GNU standards
 dictate the existence of a @file{NEWS} file, it will not be required in
 this mode.  This strictness will also turn off some warnings by default
 (among them, portability warnings).
-The name comes from the fact that Automake is intended to be
-used for GNU programs; these relaxed rules are not the standard mode of
-operation.
-
-@item gnu
-Automake will check---as much as possible---for compliance to the GNU
-standards for packages.  This is the default.
 
 @item gnits
+@cindex Strictness, @option{gnits}
+@cindex @option{gnits} strictness
+@opindex --gnits
 Automake will check for compliance to the as-yet-unwritten @dfn{Gnits
 standards}.  These are based on the GNU standards, but are even more
 detailed.  Unless you are a Gnits standards contributor, it is
 recommended that you avoid this option until such time as the Gnits
 standard is actually published (which may never happen).
+
+Currently, @option{--gnits} does all the checks that
+@option{--gnu} does, and checks the following as well:
+
+@itemize @bullet
+@item
+@samp{make installcheck} will check to make sure that the @option{--help}
+and @option{--version} really print a usage message and a version string,
+respectively.  This is the @option{std-options} option (@pxref{Options}).
+
+@item
+@samp{make dist} will check to make sure the @file{NEWS} file has been
+updated to the current version.
+
+@item
+@code{VERSION} is checked to make sure its format complies with Gnits
+standards.
+@c FIXME xref when standards are finished
+
+@item
+@cindex @file{README-alpha}
+If @code{VERSION} indicates that this is an alpha release, and the file
+@file{README-alpha} appears in the topmost directory of a package, then
+it is included in the distribution.  This is done in @option{--gnits}
+mode, and no other, because this mode is the only one where version
+number formats are constrained, and hence the only mode where Automake
+can automatically determine whether @file{README-alpha} should be
+included.
+
+@item
+The file @file{THANKS} is required.
+@end itemize
+
 @end table
 
-@xref{Gnits}, for more information on the precise implications of the
-strictness level.
 
 
 @node Uniform
@@ -2632,12 +2696,12 @@ Set the global strictness to @option{foreign}.  For more information, see
 @item --gnits
 @opindex --gnits
 Set the global strictness to @option{gnits}.  For more information, see
-@ref{Gnits}.
+@ref{Strictness}.
 
 @item --gnu
 @opindex --gnu
 Set the global strictness to @option{gnu}.  For more information, see
-@ref{Gnits}.  This is the default strictness.
+@ref{Strictness}.  This is the default strictness.
 
 @item --help
 @opindex --help
@@ -2682,45 +2746,55 @@ created.
 @opindex --version
 Print the version number of Automake and exit.
 
-@item -W CATEGORY
-@itemx --warnings=@var{category}
+@item -W @var{category}[,@var{category}...]
+@itemx --warnings=@var{category}[,@var{category}...]
 @opindex -W
 @opindex --warnings
-Output warnings falling in @var{category}.  @var{category} can be
-one of:
+Output warnings about a @var{category} of potential problems with the
+package.  @var{category} can be any of:
+
 @table @code
+@item cross
+Constructs compromising the ability to cross-compile the package.
 @item gnu
-warnings related to the GNU Coding Standards
+Minor deviations from the GNU Coding Standards
 (@pxref{Top, , , standards, The GNU Coding Standards}).
 @item obsolete
-obsolete features or constructions
+Obsolete features or constructions.
 @item override
-user redefinitions of Automake rules or variables
+Redefinitions of Automake rules or variables.
 @item portability
-portability issues (e.g., use of @command{make} features that are
-known to be not portable)
+Portability issues (e.g., use of @command{make} features that are
+known to be not portable).
+@item portability-recursive
+Recursive, or nested, Make variable expansions (@code{$(foo$(x))}).
+These are not universally supported, but are more portable than the
+other non-portable constructs diagnosed by @option{-Wportability}.
+These warnings are turned on by @option{-Wportability} but can then be
+turned off specifically by @option{-Wno-portability-recursive}.
 @item extra-portability
-extra portability issues related to obscure tools.  One example of such
-a tool is the Microsoft @command{lib} archiver.
+Extra portability issues, related to rarely-used tools such as
+the Microsoft @command{lib} archiver.
 @item syntax
-weird syntax, unused variables, typos
+Questionable syntax, unused variables, typos, etc.
 @item unsupported
-unsupported or incomplete features
+Unsupported or incomplete features.
 @item all
-all the warnings
+Turn on all the above categories of warnings.
 @item none
-turn off all the warnings
+Turn off all the above categories of warnings.
 @item error
-treat warnings as errors
+Treat warnings as errors.
 @end table
 
 A category can be turned off by prefixing its name with @samp{no-}.  For
 instance, @option{-Wno-syntax} will hide the warnings about unused
 variables.
 
-The categories output by default are @samp{obsolete}, @samp{syntax} and
-@samp{unsupported}.  Additionally, @samp{gnu} and @samp{portability}
-are enabled in @option{--gnu} and @option{--gnits} strictness.
+Warnings in the @samp{gnu}, @samp{obsolete}, @samp{portability},
+@samp{syntax}, and @samp{unsupported} categories are turned on by
+default.  The @samp{gnu} and @samp{portability} categories are turned
+off in @option{--foreign} strictness.
 
 @c Checked by extra-portability.sh
 Turning off @samp{portability} will also turn off @samp{extra-portability},
@@ -2728,13 +2802,17 @@ and similarly turning on @samp{extra-portability} will also turn on
 @samp{portability}.  However, turning on @samp{portability} or turning
 off @samp{extra-portability} will not affect the other category.
 
+Unknown warning categories supplied as an argument to @option{-W} will
+themselves produce a warning, in the @samp{unsupported} category.  This
+warning is never treated as an error.
+
 @vindex WARNINGS
 The environment variable @env{WARNINGS} can contain a comma separated
-list of categories to enable.  It will be taken into account before the
-command-line switches, this way @option{-Wnone} will also ignore any
-warning category enabled by @env{WARNINGS}.  This variable is also used
-by other tools like @command{autoconf}; unknown categories are ignored
-for this reason.
+list of categories to enable.  @option{-W} settings on the command line
+take precedence; for instance, @option{-Wnone} also turns off any
+warning categories enabled by @env{WARNINGS}.
+
+Unknown warning categories named in @env{WARNINGS} are silently ignored.
 
 @end table
 
@@ -10172,8 +10250,9 @@ then @samp{portability} warnings will be @emph{disabled} in
 @opindex gnu
 @opindex foreign
 
-Set the strictness as appropriate.  The @option{gnits} option also
-implies options @option{readme-alpha} and @option{check-news}.
+Set the strictness as appropriate.  @xref{Strictness}.
+The @option{gnits} option also implies options @option{readme-alpha} and
+@option{check-news}.
 
 @item @option{check-news}
 @cindex Option, @option{check-news}
@@ -11128,77 +11207,6 @@ As a final note, observe that, even when silent rules are enabled,
 the @option{--no-print-directory} option is still required with GNU
 @command{make} if the ``@i{Entering/Leaving directory ...}'' messages
 are to be disabled.
-
-@node Gnits
-@chapter The effect of @option{--gnu} and @option{--gnits}
-
-@cindex @option{--gnu}, required files
-@cindex @option{--gnu}, complete description
-
-The @option{--gnu} option (or @option{gnu} in the
-@code{AUTOMAKE_OPTIONS} variable) causes @command{automake} to check
-the following:
-
-@itemize @bullet
-@item
-The files @file{INSTALL}, @file{NEWS}, @file{README}, @file{AUTHORS},
-and @file{ChangeLog}, plus one of @file{COPYING.LIB}, @file{COPYING.LESSER}
-or @file{COPYING}, are required at the topmost directory of the package.
-
-If the @option{--add-missing} option is given, @command{automake} will
-add a generic version of the @file{INSTALL} file as well as the
-@file{COPYING} file containing the text of the current version of the
-GNU General Public License existing at the time of this Automake release
-(version 3 as this is written, @uref{https://www.gnu.org/@/copyleft/@/gpl.html}).
-However, an existing @file{COPYING} file will never be overwritten by
-@command{automake}.
-
-@item
-The options @option{no-installman} and @option{no-installinfo} are
-prohibited.
-@end itemize
-
-Note that this option will be extended in the future to do even more
-checking; it is advisable to be familiar with the precise requirements
-of the GNU standards.  Also, @option{--gnu} can require certain
-non-standard GNU programs to exist for use by various maintainer-only
-rules; for instance, in the future @command{pathchk} might be required for
-@samp{make dist}.
-
-@cindex @option{--gnits}, complete description
-
-The @option{--gnits} option does everything that @option{--gnu} does, and
-checks the following as well:
-
-@itemize @bullet
-@item
-@samp{make installcheck} will check to make sure that the @option{--help}
-and @option{--version} really print a usage message and a version string,
-respectively.  This is the @option{std-options} option (@pxref{Options}).
-
-@item
-@samp{make dist} will check to make sure the @file{NEWS} file has been
-updated to the current version.
-
-@item
-@code{VERSION} is checked to make sure its format complies with Gnits
-standards.
-@c FIXME xref when standards are finished
-
-@item
-@cindex @file{README-alpha}
-If @code{VERSION} indicates that this is an alpha release, and the file
-@file{README-alpha} appears in the topmost directory of a package, then
-it is included in the distribution.  This is done in @option{--gnits}
-mode, and no other, because this mode is the only one where version
-number formats are constrained, and hence the only mode where Automake
-can automatically determine whether @file{README-alpha} should be
-included.
-
-@item
-The file @file{THANKS} is required.
-@end itemize
-
 
 @node Not Enough
 @chapter When Automake Isn't Enough
