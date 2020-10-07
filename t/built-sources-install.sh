@@ -49,7 +49,7 @@ cat > dir/Makefile.am << 'END'
 BUILT_SOURCES = built2
 built2:
 ## The next line ensures that command1.inc has been built before
-## recurring into the subdir.
+## recursing into the subdir.
 	cp ../built1 $@
 CLEANFILES = built2
 END

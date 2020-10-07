@@ -203,6 +203,7 @@ t/built-sources-check.sh \
 t/built-sources-cond.sh \
 t/built-sources-fork-bomb.sh \
 t/built-sources-install.sh \
+t/built-sources-install-exec.sh \
 t/built-sources-subdir.sh \
 t/built-sources.sh \
 t/candist.sh \

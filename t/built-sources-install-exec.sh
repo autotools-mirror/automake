@@ -14,54 +14,28 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-# Make sure 'check:' honors $(BUILT_SOURCES).
-# PR/359.
+# Test that 'install-exec:' honors $(BUILT_SOURCES);
+# https://bugs.gnu.org/43683.
 
-# For gen-testsuite-part: ==> try-with-serial-tests <==
 . test-init.sh
 
 cat >> configure.ac << 'END'
-AC_CONFIG_FILES([dir/Makefile])
 AC_OUTPUT
 END
 
-mkdir dir
-
 cat > Makefile.am << 'END'
-BUILT_SOURCES = command1.inc
-SUBDIRS = dir
-TESTS = subrun.sh
-subrun.sh:
-	(echo '#! /bin/sh'; cat command1.inc) > $@
-	chmod +x $@
-command1.inc:
-	echo 'dir/echo.sh' > $@
-CLEANFILES = subrun.sh command1.inc
-END
-
-cat > dir/Makefile.am << 'END'
-BUILT_SOURCES = command2.inc
-check_SCRIPTS = echo.sh
-echo.sh:
-## The next line ensures that command1.inc has been built before
-## recursing into the subdir.
-	test -f ../command1.inc
-	(echo '#! /bin/sh'; cat command2.inc) > $@
-	chmod +x $@
-command2.inc:
-	echo 'echo Hello' > $@
-CLEANFILES = echo.sh command2.inc
+BUILT_SOURCES = built1
+built1:
+	echo ok > $@
 END
 
 $ACLOCAL
 $AUTOCONF
-$AUTOMAKE -a
+$AUTOMAKE
 ./configure --prefix "$(pwd)/inst"
 
-run_make -O check
-grep '^PASS: subrun\.sh *$' stdout
-grep 'PASS.*echo\.sh' stdout && exit 1
-
-$MAKE distcheck
+# Make sure this file is rebuilt by make install-exec.
+$MAKE install-exec
+test -f built1
 
 :
