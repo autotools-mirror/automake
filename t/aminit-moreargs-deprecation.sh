@@ -25,6 +25,7 @@ cat > configure.ac <<'END'
 AC_INIT([Makefile.am])
 AM_INIT_AUTOMAKE([twoargs], [1.0])
 AC_CONFIG_FILES([Makefile])
+AC_OUTPUT
 END
 
 $ACLOCAL
