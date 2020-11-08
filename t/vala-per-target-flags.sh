@@ -86,8 +86,8 @@ test -f src/xfoo.c
 test -f src/xbar.c
 
 $MAKE distclean
-test -f src/xfoo.c
-test -f src/xbar.c
+test ! -e src/xfoo.c
+test ! -e src/xbar.c
 
 # Re-create Makefile.
 mv config.sav config.status

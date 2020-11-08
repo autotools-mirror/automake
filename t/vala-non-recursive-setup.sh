@@ -86,7 +86,8 @@ $AUTOMAKE -a
 ./configure || skip_ "configure failure"
 $MAKE
 $MAKE distcheck
-$MAKE distclean
+$MAKE maintainer-clean
+
 mkdir build
 cd build
 ../configure

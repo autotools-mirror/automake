@@ -64,8 +64,8 @@ cd build
 ../configure
 $MAKE -j6
 ls -l . .. # For debugging.
-for x in main 1 2 3 4 5 6; do test -f ../$x.c; done
-test -f ../zardoz_vala.stamp
+for x in main 1 2 3 4 5 6; do test -f $x.c; done
+test -f ./zardoz_vala.stamp
 
 $MAKE distcheck -j4
 

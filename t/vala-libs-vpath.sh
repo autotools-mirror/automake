@@ -12,36 +12,47 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Building libraries (libtool and static) from Vala sources.
 # And use of vapi files to call C code from Vala.
 
 required="valac cc pkg-config libtoolize GNUmake"
+am_create_testdir=empty
 . test-init.sh
 
 cat >> configure.ac << 'END'
-AC_PROG_CC
+AC_INIT([valalibs],[0.1])
+
+AC_CONFIG_MACRO_DIR([m4])
+
+AM_INIT_AUTOMAKE
 AM_PROG_AR
-AC_PROG_RANLIB
-AC_PROG_LIBTOOL
+LT_INIT
+
+AC_PROG_CC
+
 AM_PROG_VALAC([0.7.3])
 PKG_CHECK_MODULES([GOBJECT], [gobject-2.0 >= 2.4])
+
+AC_CONFIG_FILES([Makefile src/Makefile])
 AC_OUTPUT
 END
 
+
 cat > Makefile.am << 'END'
+SUBDIRS=src
+END
+
+mkdir src
+
+cat > src/Makefile.am << 'END'
 AUTOMAKE_OPTIONS = subdir-objects
-lib_LIBRARIES = libservice.a
-lib_LTLIBRARIES = src/libzardoz.la
-libservice_a_SOURCES = service.vala cservice.c cservice.h
-libservice_a_CPPFLAGS = -DOKOKIMDEFINED=1
-libservice_a_VALAFLAGS = --vapidir=$(srcdir) --pkg cservice --library service
+lib_LTLIBRARIES = libservice.la
+libservice_la_SOURCES = service.vala cservice.c cservice.h
+libservice_la_CPPFLAGS = -DOKOKIMDEFINED=1
+libservice_la_VALAFLAGS = --vapidir=$(srcdir) --pkg cservice --library service
 AM_CFLAGS = $(GOBJECT_CFLAGS)
-src_libzardoz_la_LIBADD = $(GOBJECT_LIBS)
-src_libzardoz_la_SOURCES = src/zardoz-foo.vala src/zardoz-bar.vala
-src/zardoz-bar.vala: src/zardoz-foo.vala
-	sed 's/Foo/Bar/g' $< >$@
 END
 
 libtoolize
@@ -49,9 +60,7 @@ $ACLOCAL
 $AUTOCONF
 $AUTOMAKE -a
 
-./configure
-
-cat > cservice.c << 'END'
+cat > src/cservice.c << 'END'
 #include "cservice.h"
 int c_service_mu_call (void)
 {
@@ -59,11 +68,11 @@ int c_service_mu_call (void)
 }
 END
 
-cat > cservice.h << 'END'
+cat > src/cservice.h << 'END'
 int c_service_mu (void);
 END
 
-cat > cservice.vapi <<'END'
+cat > src/cservice.vapi <<'END'
 namespace CService {
   public class Mu {
     [CCode (cheader_filename = "cservice.h", cname = "c_service_mu_call")]
@@ -72,7 +81,7 @@ namespace CService {
 }
 END
 
-cat > service.vala << 'END'
+cat > src/service.vala << 'END'
 namespace CService {
 public class Generator : Object {
 	public Generator () {
@@ -85,25 +94,13 @@ public class Generator : Object {
 }
 END
 
-mkdir -p src
-cat > src/zardoz-foo.vala << 'END'
-using GLib;
-public class Foo {
-  public static void zap () {
-    stdout.printf ("FooFooFoo!\n");
-  }
-}
-END
+mkdir build
+cd build
+../configure
 
 $MAKE
-test -f libservice.a
-test -f src/libzardoz.la
-$FGREP "construct generator" service.c
-$FGREP "FooFooFoo" src/zardoz-foo.c
-$FGREP "BarBarBar" src/zardoz-bar.c
-test -f libservice_a_vala.stamp
-test -f src_libzardoz_la_vala.stamp
-
-$MAKE distcheck
+pwd
+test -f src/libservice_la_vala.stamp
+test -f src/libservice.la
 
 :

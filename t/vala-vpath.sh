@@ -47,16 +47,16 @@ cp hello.vala goodbye.vala
 
 $ACLOCAL
 $AUTOCONF
-$AUTOMAKE
+$AUTOMAKE -a
 
 mkdir build
 cd build
 ../configure
 $MAKE
-test -f ../foo_vala.stamp
-test -f ../bar_vala.stamp
-grep foofoofoo ../hello.c
-test -f ../zardoz.h
+test -f ./foo_vala.stamp
+test -f ./bar_vala.stamp
+grep foofoofoo ./hello.c
+test -f ./zardoz.h
 $MAKE distcheck
 
 # Rebuild rules work also in VPATH builds.
@@ -70,9 +70,10 @@ int main ()
 END
 
 $MAKE
-test -f ../foo_vala.stamp
-test -f ../bar_vala.stamp
-grep barbarbar ../hello.c
+test -f ./foo_vala.stamp
+test -f ./bar_vala.stamp
+grep barbarbar ./hello.c
+$MAKE distcheck
 
 # Rebuild rules are not uselessly triggered.
 $MAKE -q
@@ -80,14 +81,14 @@ $MAKE -n | grep '\.stamp' && exit 1
 
 # Cleanup rules work also in VPATH builds.
 $MAKE clean
-test -f ../foo_vala.stamp
-test -f ../bar_vala.stamp
-test -f ../zardoz.h
-test -f ../hello.c
+test -f ./foo_vala.stamp
+test -f ./bar_vala.stamp
+test -f ./zardoz.h
+test -f ./hello.c
 $MAKE maintainer-clean
-test ! -e ../zardoz.h
-test ! -e ../hello.c
-test ! -e ../foo_vala.stamp
-test ! -e ../bar_vala.stamp
+test ! -e ./zardoz.h
+test ! -e ./hello.c
+test ! -e ./foo_vala.stamp
+test ! -e ./bar_vala.stamp
 
 :
