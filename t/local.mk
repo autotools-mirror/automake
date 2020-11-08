@@ -91,12 +91,13 @@ $(srcdir)/%D%/testsuite-part.am:
 	$(AM_V_at)mv -f %D%/testsuite-part.tmp $@
 EXTRA_DIST += gen-testsuite-part
 
-# The dependecies declared here are not truly complete, but such
+# The dependencies declared here are not truly complete, but such
 # completeness would cause more issues than it would solve.  See
-# automake bug#11347.
+# automake bug#11347 and #44458.
 $(generated_TESTS): $(srcdir)/gen-testsuite-part
 $(srcdir)/%D%/testsuite-part.am: $(srcdir)/gen-testsuite-part
 $(srcdir)/%D%/testsuite-part.am: Makefile.am
+$(srcdir)/%D%/testsuite-part.am: %D%/list-of-tests.mk
 
 # Hand-written tests for stuff in 'contrib/'.
 include $(srcdir)/contrib/%D%/local.mk
