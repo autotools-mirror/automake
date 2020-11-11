@@ -1252,6 +1252,8 @@ t/vala-configure.sh \
 t/vala-grepping.sh \
 t/vala-headers.sh \
 t/vala-libs.sh \
+t/vala-libs-distcheck.sh \
+t/vala-libs-vpath.sh \
 t/vala-mix.sh \
 t/vala-mix2.sh \
 t/vala-non-recursive-setup.sh \
