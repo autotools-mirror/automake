@@ -531,6 +531,7 @@ t/installdir.sh \
 t/add-missing-install-sh.sh \
 t/install-sh-unittests.sh \
 t/install-sh-option-C.sh \
+t/install-sh-option-S.sh \
 t/instdat.sh \
 t/instdat2.sh \
 t/instdir.sh \
