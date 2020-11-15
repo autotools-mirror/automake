@@ -24,7 +24,7 @@ AC_INIT([test], [0.0])
 AM_AUX_DIR_EXPAND
 printf '%s\n' "ac_aux_dir: '$ac_aux_dir'"
 printf '%s\n' "am_aux_dir: '$am_aux_dir'"
-test "$ac_aux_dir" = . || AS_EXIT([1])
+test "${ac_aux_dir%/}" = . || AS_EXIT([1])
 test "$am_aux_dir" = "`pwd`" || AS_EXIT([1])
 AS_EXIT([0])
 END
