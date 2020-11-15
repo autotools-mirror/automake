@@ -18,6 +18,7 @@
 
 . test-init.sh
 
+: > ar-lib
 cat >> configure.ac << 'END'
 AM_PROG_AR
 END

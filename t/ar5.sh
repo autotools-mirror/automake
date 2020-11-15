@@ -18,6 +18,7 @@
 
 . test-init.sh
 
+: > ar-lib
 cat >> configure.ac << 'END'
 AM_PROG_AR([
   echo spy > bad-archiver-interface-detected
