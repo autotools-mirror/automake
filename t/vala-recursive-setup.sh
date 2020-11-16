@@ -89,7 +89,7 @@ $MAKE distcheck
 
 # Test rebuild rules from builddir.
 
-rm src/zardoz.h
+rm -f src/zardoz.h
 $MAKE -C src zardoz.h
 test -f src/zardoz.h
 
