@@ -21,6 +21,13 @@ am_create_testdir=empty
 required=cc
 . test-init.sh
 
+ver=$($AUTOCONF --version | sed -n '1s/.* //p')
+case $ver in
+  2.69[d-z]) ;;
+  2.70*) ;;
+  *) skip_ 'this test passes with autoconf-2.69d and newer'
+esac
+
 cat > configure.ac <<END
 AC_INIT([$me], [1.0])
 AC_PROG_CC
