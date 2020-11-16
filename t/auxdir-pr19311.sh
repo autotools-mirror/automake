@@ -23,8 +23,9 @@ required=cc
 
 ver=$($AUTOCONF --version | sed -n '1s/.* //p')
 case $ver in
-  2.69[d-z]) ;;
-  2.70*) ;;
+  2.69[d-z]*) ;;
+  2.[7-9][0-9]*) ;;
+  [3-9].*) ;;
   *) skip_ 'this test passes with autoconf-2.69d and newer'
 esac
 
