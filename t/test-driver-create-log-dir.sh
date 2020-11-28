@@ -42,6 +42,13 @@ check-local: $(TEST_SUITE_LOG)
 	test -f sub/foo.trs
 	test -f sub/subsub/bar.trs
 	test -f sub1/baz.trs
+
+# Tell GNU make not to parallelize, since the two tests under sub/
+# can result in, for example:
+#   fatal: making test-suite.log: failed to create sub/foo.trs
+#   fatal: making test-suite.log: failed to create sub/foo.log
+# No evident way to debug or reliably reproduce.
+.NOTPARALLEL:
 END
 
 echo "#!$AM_TEST_RUNNER_SHELL" > checkdir-driver
