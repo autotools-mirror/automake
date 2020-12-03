@@ -50,8 +50,8 @@ grep "option 'subdir-objects' is disabled" stderr
 # Verbose tips should be given, but not too many times.
 for msg in \
   "possible forward-incompatibility" \
+  "For now,.* corresponding" \
   "advi[sc]e.* 'subdir-objects' option throughout" \
-  "unconditionally.* object file.* same subdirectory" \
 ; do
   test $(grep -c "$msg" stderr) -eq 1
 done
