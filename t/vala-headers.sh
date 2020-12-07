@@ -45,6 +45,12 @@ zardoz_VALAFLAGS = \
 
 AM_CFLAGS = $(GOBJECT_CFLAGS)
 LDADD = $(GOBJECT_LIBS)
+
+# Tell GNU make not to parallelize, since the tests can result in, for example:
+#   mv: cannot stat 'quux_vala.stamp-t': No such file or directory
+#   make[1]: *** [Makefile:438: quux_vala.stamp] Error 1
+# No evident way to debug or reliably reproduce.
+.NOTPARALLEL:
 END
 
 headers='HDR.h hello.vapi foo.h foo2.h foo3.vapi'

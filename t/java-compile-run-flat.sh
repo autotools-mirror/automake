@@ -175,6 +175,14 @@ TESTS = \
 XFAIL_TESTS = badarg.test
 
 EXTRA_DIST += $(TESTS)
+
+# Tell GNU make not to parallelize, since the tests can result in, for example:
+#  /usr/bin/install: cannot change permissions of '/tmp/am-dc-13378//u/karl/gnu/src/akarl/t/java-compile-run-flat.dir/java-compile-run-flat-1.0/_inst/share/java-compile-run-flat/java/HelloStream.class': No such file or directory
+#  /usr/bin/install: cannot create regular file '/tmp/am-dc-13378//u/karl/gnu/src/akarl/t/java-compile-run-flat.dir/java-compile-run-flat-1.0/_inst/share/java-compile-run-flat/java/PkgLocation.class': File exists
+#  make[2]: *** [Makefile:393: install-dist_javaJAVA] Error 1
+#  make[2]: Leaving directory '/u/karl/gnu/src/akarl/t/java-compile-run-flat.dir/java-compile-run-flat-1.0/_build/sub'
+# No evident way to debug or reliably reproduce.
+.NOTPARALLEL:
 END
 
 cat > simple.test <<'END'

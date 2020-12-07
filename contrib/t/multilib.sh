@@ -61,6 +61,11 @@ check-all:
 	test -f debug/libbar/libbar.a
 	test -f libfoo/libfoo.a
 	test -f libbar/libbar.a
+# Tell GNU make not to parallelize, since the tests can result in, for example:
+#   make[5]: *** No rule to make target 'mostlyclean'.  Stop.
+#   make[5]: Leaving directory '/u/karl/gnu/src/akarl/contrib/t/multilib.dir/build/debug/libbar/sub'
+# No evident way to debug or reliably reproduce.
+.NOTPARALLEL:
 EOF
 
 # libfoo tests multilib supports when there are no subdirectories
