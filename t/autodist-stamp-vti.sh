@@ -32,6 +32,10 @@ test: all distdir
 	ls -l $(distdir)
 	echo ' ' $(DIST_COMMON) ' ' | grep '[ /]stamp-vti '
 	test -f $(distdir)/stamp-vti
+
+# The test can fail under a parallel make, so disable.
+# No evident way to debug or reliably reproduce.
+.NOTPARALLEL:
 END
 
 cat > foo.texi << 'END'

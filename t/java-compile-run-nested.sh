@@ -70,6 +70,10 @@ check-local: test-built
 installcheck-local: test-installed run-installed
 
 .PHONY: test-built test-installed run-installed
+
+# The test can fail under a parallel make, so disable.
+# No evident way to debug or reliably reproduce.
+.NOTPARALLEL:
 END
 
 ## WRAPPER SCRIPT ##

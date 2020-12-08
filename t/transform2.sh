@@ -45,6 +45,10 @@ test-install-foo: install
 	test ! -f inst/bin/s2.sh
 	test ! -f inst/man/man/m1.1
 	test ! -f inst/man/man/m2.1
+
+# The test can fail under a parallel make, so disable.
+# No evident way to debug or reliably reproduce.
+.NOTPARALLEL:
 EOF
 
 cat >p1.c <<'EOF'

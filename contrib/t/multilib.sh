@@ -94,6 +94,10 @@ cat >libfoo/Makefile.am <<'END'
 noinst_LIBRARIES = libfoo.a
 libfoo_a_SOURCES = foo.c
 include $(top_srcdir)/multilib.am
+
+# The test can fail under a parallel make, so disable.
+# No evident way to debug or reliably reproduce.
+.NOTPARALLEL:
 END
 
 : > libfoo/foo.c
@@ -121,6 +125,10 @@ SUBDIRS = sub
 noinst_LIBRARIES = libbar.a
 libbar_a_SOURCES = bar.c
 include $(top_srcdir)/multilib.am
+
+# The test can fail under a parallel make, so disable.
+# No evident way to debug or reliably reproduce.
+.NOTPARALLEL:
 END
 
 mkdir libbar/sub
