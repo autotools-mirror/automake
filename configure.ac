@@ -123,7 +123,9 @@ fi
 
 AC_CACHE_CHECK([whether autoconf works], [am_cv_autoconf_works],
 [mkdir conftest
-echo 'AC''_INIT' > conftest/conftest.ac
+printf '%s\n' > conftest/conftest.ac \
+  'AC''_INIT([smoke-test], [1])' \
+  'AC''_OUTPUT'
 if AM_RUN_LOG([cd conftest && $am_AUTOCONF -o /dev/null conftest.ac]);
 then
   am_cv_autoconf_works=yes
@@ -139,7 +141,10 @@ fi
 AC_CACHE_CHECK([whether autoconf is recent enough], [am_cv_autoconf_version],
 [mkdir conftest
 dnl Creative quoting required to avoid spurious expansion of AC_PREREQ macro
-echo 'AC'"_PREREQ([[$required_autoconf_version]])" > conftest/conftest.ac
+printf '%s\n' > conftest/conftest.ac \
+  'AC'"_PREREQ([[$required_autoconf_version]])" \
+  'AC''_INIT([smoke-test], [1])' \
+  'AC''_OUTPUT'
 if AM_RUN_LOG([cd conftest && $am_AUTOCONF -o /dev/null conftest.ac]);
 then
   am_cv_autoconf_version=yes

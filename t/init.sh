@@ -25,6 +25,7 @@ for ac_init_args in '' '([x])'; do
     unindent >configure.ac <<END
       AC_INIT$ac_init_args
       AM_INIT_AUTOMAKE$am_init_args
+      AC_OUTPUT
 END
     cat configure.ac # For debugging.
     # The error message should mention AC_INIT, not AC_PACKAGE_VERSION.
