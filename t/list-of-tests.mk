@@ -926,6 +926,7 @@ t/python-am-path-iftrue.sh \
 t/python-missing.sh \
 t/python-too-old.sh \
 t/python-dist.sh \
+t/python-prefix.sh \
 t/python-vars.sh \
 t/python-virtualenv.sh \
 t/python-pr10995.sh \
