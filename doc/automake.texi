@@ -25,7 +25,7 @@ This manual is for GNU Automake (version @value{VERSION},
 @value{UPDATED}), a program that creates GNU standards-compliant
 Makefiles from template files.
 
-Copyright @copyright{} 1995--2020 Free Software Foundation, Inc.
+Copyright @copyright{} 1995--2021 Free Software Foundation, Inc.
 
 @quotation
 Permission is granted to copy, distribute and/or modify this document
@@ -7801,31 +7801,34 @@ This variable is a shell expression that is used to set the
 
 Automake provides support for Python compilation with the
 @code{PYTHON} primary.  A typical setup is to call
-@code{AM_PATH_PYTHON} in @file{configure.ac} and use a line like the
-following in @file{Makefile.am}:
+@code{AM_PATH_PYTHON} in @file{configure.ac} and use a line like this
+in @file{Makefile.am}:
 
 @example
 python_PYTHON = tree.py leave.py
 @end example
 
-Any files listed in a @code{_PYTHON} variable will be byte-compiled
-with @command{py-compile} at install time.  @command{py-compile}
-actually creates both standard (@file{.pyc}) and optimized
-(@file{.pyo}) byte-compiled versions of the source files.  Note that
-because byte-compilation occurs at install time, any files listed in
-@code{noinst_PYTHON} will not be compiled.  Python source files are
-included in the distribution by default; prepend @code{nodist_} (as in
-@code{nodist_python_PYTHON}) to omit them.
+Python source files are included in the distribution by default;
+prepend @code{nodist_} (as in @code{nodist_python_PYTHON}) to omit
+them.
 
-Automake ships with an Autoconf macro called @code{AM_PATH_PYTHON}
-that will determine some Python-related directory variables (see
-below).  If you have called @code{AM_PATH_PYTHON} from
-@file{configure.ac}, then you may use the variables
+@cindex @file{.pyc}, @file{.pyo} files
+At install time, any files listed in a @code{_PYTHON} variable will be
+byte-compiled with @command{py-compile}.  @command{py-compile} creates
+both standard (@file{.pyc}) and optimized (@file{.pyo}) byte-compiled
+versions of the source files.  Because byte-compilation occurs at
+install time, files listed in @code{noinst_PYTHON} will not be
+compiled.
+
+Automake ships with an Autoconf macro named @code{AM_PATH_PYTHON} that
+determines some Python-related directory variables (see below).  If
+you have called @code{AM_PATH_PYTHON} from @file{configure.ac}, then
+you may use the variables
 @c Keep in sync with primary-prefix-couples-documented-valid.sh
-@code{python_PYTHON} or @code{pkgpython_PYTHON} to list Python source
-files in your @file{Makefile.am}, depending on where you want your files
-installed (see the definitions of @code{pythondir} and
-@code{pkgpythondir} below).
+@code{python_PYTHON} and @code{pkgpython_PYTHON} to list Python source
+files in your @file{Makefile.am}, depending on whether you want your
+files installed in @code{pythondir} or @code{pkgpythondir},
+respectively.
 
 @defmac AM_PATH_PYTHON (@ovar{version}, @ovar{action-if-found},
   @ovar{action-if-not-found})
@@ -7839,15 +7842,15 @@ If an interpreter is found and satisfies @var{version}, then
 run.
 
 If @var{action-if-not-found} is not specified, as in the following
-example, the default is to abort @command{configure}.
+example, the default is to abort @command{configure}:
 
 @example
-AM_PATH_PYTHON([2.2])
+AM_PATH_PYTHON([2.5])
 @end example
 
 @noindent
 This is fine when Python is an absolute requirement for the package.
-If Python >= 2.5 was only @emph{optional} to the package,
+If Python @geq{} 2.5 was only @emph{optional} for the package,
 @code{AM_PATH_PYTHON} could be called as follows.
 
 @example
@@ -7858,7 +7861,7 @@ If the @env{PYTHON} variable is set when @code{AM_PATH_PYTHON} is
 called, then that will be the only Python interpreter that is tried.
 
 @code{AM_PATH_PYTHON} creates the following output variables based on
-the Python installation found during configuration.
+the Python installation found during configuration:
 @end defmac
 
 @vtable @code
@@ -7877,26 +7880,33 @@ AM_CONDITIONAL([HAVE_PYTHON], [test "$PYTHON" != :])
 @end example
 
 @item PYTHON_VERSION
+@vindex sys.version_info @r{Python variable}
 The Python version number, in the form @var{major}.@var{minor}
-(e.g., @samp{2.5}).  This is currently the value of
+(e.g., @samp{2.5}).  This is set to be the value of
 @samp{'%u.%u' % sys.version_info[:2]}.
 
 @item PYTHON_PREFIX
-The string @samp{$@{prefix@}}.  This term may be used in future work
-that needs the contents of Python's @samp{sys.prefix}, but general
-consensus is to always use the value from @command{configure}.
-
-@item PYTHON_EXEC_PREFIX
-The string @samp{$@{exec_prefix@}}.  This term may be used in future work
-that needs the contents of Python's @samp{sys.exec_prefix}, but general
-consensus is to always use the value from @command{configure}.
+@itemx PYTHON_EXEC_PREFIX
+@opindex --with-python_prefix
+@opindex --with-python_exec_prefix
+@vindex sys.prefix @r{Python variable}
+@vindex sys.exec_prefix @r{Python variable}
+The value of Python's @samp{sys.prefix} (resp.@:
+@samp{sys.exec_prefix}) variable. Sometimes the same as the standard
+@samp{$@{prefix@}} (@samp{$@{exec_prefix@}}), but differs on some
+platforms such as Mac@tie{}OS@tie{}x (where Python is usually
+installed as a Framework).  Can be set explicitly with the
+@option{--with-python_prefix} (@option{--with-python_exec_prefix})
+@file{configure} option.
 
 @item PYTHON_PLATFORM
+@vindex sys.platform @r{Python variable}
 The canonical name used by Python to describe the operating system, as
 given by @samp{sys.platform}.  This value is sometimes needed when
 building Python extensions.
 
 @item pythondir
+@cindex @file{site-packages} Python directory
 The directory name for the @file{site-packages} subdirectory of the
 standard Python install tree.
 
@@ -7922,9 +7932,9 @@ This is a convenience variable that is defined as
 @samp{$(pyexecdir)/$(PACKAGE)}.
 @end vtable
 
-All of these directory variables have values that start with either
-@samp{$@{prefix@}} or @samp{$@{exec_prefix@}} unexpanded.  This works
-fine in @file{Makefiles}, but it makes these variables hard to use in
+All of these directory variables have values that can start with either
+@samp{$@{prefix@}} or @samp{$@{exec_prefix@}}, unexpanded.  This works
+fine in @file{Makefile}s, but it makes these variables hard to use in
 @file{configure}.  This is mandated by the GNU coding standards, so
 that the user can run @samp{make prefix=/foo install}.  The Autoconf
 manual has a section with more details on this topic

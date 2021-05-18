@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2011-2020 Free Software Foundation, Inc.
+# Copyright (C) 2011-2021 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,17 +23,17 @@ required=python
 # In case the user's config.site defines pythondir or pyexecdir.
 CONFIG_SITE=/dev/null; export CONFIG_SITE
 
-# Update the definition below if the documentation changes.
-# Note that the value of the 'pythondir' and 'pyexecdir' variables can
-# vary among different python installations, so we need more relaxed
-# and ad-hoc checks for them.  Also, more proper "functional" checks
-# on them should be done in the 'python-virtualenv.sh' test.
+# Update the definition below if the documentation changes. The values
+# of the 'pythondir' and 'pyexecdir' variables vary among different
+# python installations, so we need more relaxed and ad-hoc checks for
+# them. Also, more proper "functional" checks on them should be done in
+# the 'python-virtualenv.sh' test.
 # 
 # This version identification is duplicated in python.m4 (and the manual).
-PYTHON_VERSION=$($PYTHON -c 'import sys; print("%u.%u" % sys.version_info[:2])') || exit 1
-PYTHON_PLATFORM=$($PYTHON -c 'import sys; print(sys.platform)') || exit 1
-PYTHON_EXEC_PREFIX='${exec_prefix}'
-PYTHON_PREFIX='${prefix}'
+PYTHON_VERSION=$($PYTHON -c 'import sys; print ("%u.%u" % sys.version_info[:2])') || exit 1
+PYTHON_PLATFORM=$($PYTHON -c 'import sys; print (sys.platform)') || exit 1
+PYTHON_EXEC_PREFIX=$($PYTHON -c 'import sys; print (sys.exec_prefix)') || exit 1
+PYTHON_PREFIX=$($PYTHON -c 'import sys; print (sys.prefix)') || exit 1
 pkgpythondir="\${pythondir}/$me"
 pkgpyexecdir="\${pyexecdir}/$me"
 
@@ -62,17 +62,17 @@ check-local: test-in test-am
 
 test-in:
 	cat pythondir
-	case `cat pythondir` in '$${prefix}'/*);; *) exit 1;; esac
+	case `cat pythondir` in '$${PYTHON_PREFIX}'/*);; *) exit 1;; esac
 	cat pyexecdir
-	case `cat pyexecdir` in '$${exec_prefix}'/*);; *) exit 1;; esac
+	case `cat pyexecdir` in '$${PYTHON_EXEC_PREFIX}'/*);; *) exit 1;; esac
 	cat $(srcdir)/vars-exp
 	cat $(builddir)/vars-got
 	diff $(srcdir)/vars-exp $(builddir)/vars-got
 
 ## Note: this target's rules will be extended in the "for" loop below.
 test-am:
-	case '$(pythondir)' in '$(prefix)'/*);; *) exit 1;; esac
-	case '$(pyexecdir)' in '$(exec_prefix)'/*);; *) exit 1;; esac
+	case '$(pythondir)' in '$(PYTHON_PREFIX)'/*);; *) exit 1;; esac
+	case '$(pyexecdir)' in '$(PYTHON_EXEC_PREFIX)'/*);; *) exit 1;; esac
 END
 
 echo @pythondir@ > pythondir.in
@@ -85,7 +85,7 @@ for var in $pyvars; do
   eval val=\$$var
   echo "var=$val" >> vars-exp
   echo "var=@$var@" >> vars-got.in
-  echo "${tab}test x'\$($var)' = x'$val'" >> Makefile.am
+  echo "${tab}test x'\$($var)' = x'$val' || test \"\$NO_CHECK_PYTHON_PREFIX\"" >> Makefile.am
 done
 
 cat Makefile.am
@@ -98,10 +98,15 @@ for var in pythondir pyexecdir $pyvars; do
   grep "^$var *=" Makefile.in
 done
 
+instdir=$(pwd)/inst
+
 $AUTOCONF
-./configure PYTHON="$PYTHON"
+./configure --prefix="$instdir" PYTHON="$PYTHON"
 
 $MAKE test-in test-am
-$MAKE distcheck
+# This tries to install to $PYTHON_PREFIX, which may not be writable.
+# Override it to something safe, but then of course we have to skip
+# checking that it is what we originally set it to.
+$MAKE distcheck PYTHON_PREFIX="$instdir" NO_CHECK_PYTHON_PREFIX=1
 
 :
