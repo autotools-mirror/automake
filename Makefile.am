@@ -36,6 +36,7 @@ EXTRA_DIST += \
   bootstrap \
   GNUmakefile \
   HACKING \
+  NEWS-2.0 \
   PLANS
 
 # We want a handful of substitutions to be fully-expanded by make;
