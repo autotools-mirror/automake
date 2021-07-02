@@ -8515,60 +8515,91 @@ We recommend that you follow this same set of heuristics in your
 @vindex VERSION
 @trindex dist
 The @code{dist} rule in the generated @file{Makefile.in} can be used
-to generate a gzipped @code{tar} file and other flavors of archive for
-distribution.  The file is named based on the @code{PACKAGE} and
+to generate a gzipped @code{tar} file and/or other flavors of archives
+for distribution.  The file is named based on the @code{PACKAGE} and
 @code{VERSION} variables automatically defined by either the
 @code{AC_INIT} invocation or by a @emph{deprecated} two-arguments
-invocation of the @code{AM_INIT_AUTOMAKE} macro (see @ref{Public Macros}
-for how these variables get their values, from either defaults or explicit
-values---it's slightly trickier than one would expect).
-More precisely the gzipped @code{tar} file is named
+invocation of the @code{AM_INIT_AUTOMAKE} macro (see @ref{Public
+Macros} for how these variables get their values, from either defaults
+or explicit values---it's slightly trickier than one would expect).
+More precisely, the gzipped @code{tar} file is named
 @samp{$@{PACKAGE@}-$@{VERSION@}.tar.gz}.
-
-@vindex GZIP_ENV
-You can use the @command{make} variable @code{GZIP_ENV} to control how gzip
-is run.  The default setting is @option{--best}.
 
 @c See automake #9822.
 @vindex TAR
 You can set the environment variable @code{TAR} to override the tar
-program used; it defaults to @code{tar}.
+program used; it defaults to @code{tar}.  @xref{The Types of
+Distributions}, for how to generate other kinds of archives.
+
+For the most part, the files to distribute are automatically found by
+Automake:
+
+@itemize @bullet
+@item
+All source files are automatically included in a distribution, as are
+all @file{Makefile.am} and @file{Makefile.in} files.
+
+@acindex AC_CONFIG_FILES
+@item
+Files that are read by @command{configure} are automatically
+distributed.  These are the source files as specified in various
+Autoconf macros such as @code{AC_CONFIG_FILES} and siblings.
 
 @cindex @code{m4_include}, distribution
 @cindex @code{include}, distribution
 @acindex m4_include
 @cmindex include
-For the most part, the files to distribute are automatically found by
-Automake: all source files are automatically included in a
-distribution, as are all @file{Makefile.am} and @file{Makefile.in}
-files.  Automake also has a built-in list of commonly used files that
-are automatically included if they are found in the current directory
-(either physically, or as the target of a @file{Makefile.am} rule);
-this list is printed by @samp{automake --help}.  However, some files
-in this list are distributed only if other certain conditions hold
-(for example,
+@item
+Files included in a @file{Makefile.am} (using @code{include}) or in
+@file{configure.ac} (using @code{m4_include}).
+
+@item
+Automake has a built-in list of commonly used files automatically
+included in the distribution if they are found in the current
+directory (either physically, or as the target of a @file{Makefile.am}
+rule).  Some common examples: @file{ABOUT-GNU}, @file{COPYING},
+@file{TODO}.
+
+This list also includes helper scripts installed with @samp{automake
+--add-missing}.  Some common examples: @file{compile},
+@file{config.guess}, @file{config.rpath}, @file{config.sub},
+@file{texinfo.tex}.
+
+@item
+Automake has another built-in list of files automatically distributed
+if they are found either with the plain name, or with extension
+@file{.md} (presumably MarkDown, though this not checked).  They are
+checked for in that order, so the plain name is preferred.  These are:
+@file{AUTHORS ChangeLog INSTALL NEWS README README-alpha THANKS}.
+
+@item
+A final built-in list of files are those distributed only if other
+certain conditions hold. For example,
 @c Keep in sync with autodist-config-headers.sh
-the @file{config.h.top} and @file{config.h.bot} files are automatically
-distributed only if, e.g., @samp{AC_CONFIG_HEADERS([config.h])} is used
-in @file{configure.ac}).  Also, files that are read by @command{configure}
-(i.e., the source files corresponding to the files specified in various
-Autoconf macros such as @code{AC_CONFIG_FILES} and siblings) are
-automatically distributed.  Files included in a @file{Makefile.am} (using
-@code{include}) or in @file{configure.ac} (using @code{m4_include}), and
-helper scripts installed with @samp{automake --add-missing} are also
-distributed.
+the files @file{config.h.top} and @file{config.h.bot} are
+automatically distributed only if, e.g.,
+@samp{AC_CONFIG_HEADERS([config.h])} is used in @file{configure.ac}).
+@file{README-alpha} is another such file, with @file{README-alpha.md}
+distributed if that is what is available; @pxref{Strictness}, for its
+conditions for distribution.
+
+@end itemize
+
+@noindent
+These three lists of files are given in their entirety in the output
+from @code{automake --help}.
 
 @vindex EXTRA_DIST
-Still, sometimes there are files that must be distributed, but which
-are not covered in the automatic rules.  These files should be listed in
-the @code{EXTRA_DIST} variable.  You can mention files from
-subdirectories in @code{EXTRA_DIST}.
+Despite all this automatic inclusion, it is still common to have files
+to be distributed which are not found by the automatic rules.  You
+should listed these files in the @code{EXTRA_DIST} variable.  You can
+mention files in subdirectories in @code{EXTRA_DIST}.
 
-You can also mention a directory in @code{EXTRA_DIST}; in this case the
-entire directory will be recursively copied into the distribution.
-Please note that this will also copy @emph{everything} in the directory,
-including, e.g., Subversion's @file{.svn} private directories or CVS/RCS
-version control files; thus we recommend against using this feature
+You can also mention a directory in @code{EXTRA_DIST}; in this case
+the entire directory will be recursively copied into the distribution.
+To emphasize, this copies @emph{everything} in the directory,
+including temporary editor files, intermediate build files, version
+control files, etc.; thus we recommend against using this feature
 as-is.  However, you can use the @code{dist-hook} feature to
 ameliorate the problem; @pxref{The dist Hook}.
 
@@ -8623,20 +8654,20 @@ a directory in @code{EXTRA_DIST}:
 EXTRA_DIST = doc
 dist-hook:
         chmod -R u+w $(distdir)/doc
-        rm -rf `find $(distdir)/doc -type d -name .svn`
+        rm -rf `find $(distdir)/doc -type d -name RCS`
 @end example
 
 @c The caveats described here should be documented in 'disthook.sh'.
 @noindent
-Note that the @code{dist-hook} recipe shouldn't assume that the regular
-files in the distribution directory are writable; this might not be the
-case if one is packaging from a read-only source tree, or when a
-@code{make distcheck} is being done.  For similar reasons, the recipe
-shouldn't assume that the subdirectories put into the distribution
-directory as an effect of having them listed in @code{EXTRA_DIST} are
-writable.  So, if the @code{dist-hook} recipe wants to modify the
-content of an existing file (or @code{EXTRA_DIST} subdirectory) in the
-distribution directory, it should explicitly to make it writable first:
+The @code{dist-hook} recipe should not assume that the regular files
+in the distribution directory are writable; this might not be the case
+if one is packaging from a read-only source tree, or when a @code{make
+distcheck} is being done.  Similarly, the recipe should not assume
+that the subdirectories put into the distribution directory as a
+result of being listed in @code{EXTRA_DIST} are writable.  So, if the
+@code{dist-hook} recipe wants to modify the content of an existing
+file (or @code{EXTRA_DIST} subdirectory) in the distribution
+directory, it should explicitly to make it writable first:
 
 @example
 EXTRA_DIST = README doc
@@ -8656,16 +8687,17 @@ will copy files from the current directory before creating the
 tarball.  If you are at the top-level directory, then @samp{distdir =
 $(PACKAGE)-$(VERSION)}.  When used from subdirectory named
 @file{foo/}, then @samp{distdir = ../$(PACKAGE)-$(VERSION)/foo}.
-@samp{$(distdir)} can be a relative or absolute path, do not assume
-any form.
+@samp{$(distdir)} can be either a relative or absolute path; do not
+assume a particular form.
 
 @samp{$(top_distdir)} always points to the root directory of the
-distributed tree.  At the top-level it's equal to @samp{$(distdir)}.
-In the @file{foo/} subdirectory
-@samp{top_distdir = ../$(PACKAGE)-$(VERSION)}.
-@samp{$(top_distdir)} too can be a relative or absolute path.
+distributed tree.  At the top level it's equal to @samp{$(distdir)}.
+In the @file{foo/} subdirectory @samp{top_distdir =
+../$(PACKAGE)-$(VERSION)}.  @samp{$(top_distdir)} can also be either a
+relative or absolute path.
 
-Note that when packages are nested using @code{AC_CONFIG_SUBDIRS}
+@acindex AC_CONFIG_SUBDIRS
+When packages are nested using @code{AC_CONFIG_SUBDIRS}
 (@pxref{Subpackages}), then @samp{$(distdir)} and
 @samp{$(top_distdir)} are relative to the package where @samp{make
 dist} was run, not to any sub-packages involved.
@@ -8855,70 +8887,89 @@ distributions in various formats.  Their targets are:
 
 @table @asis
 @item @code{dist-gzip}
-Generate a @samp{gzip} tar archive of the distribution.  This is the
-only format enabled by default.
 @trindex dist-gzip
+@cmindex gzip
+@vindex GZIP_ENV
+Generate a @samp{gzip} tar archive of the distribution.  This is the
+only format enabled by default.  By default, this rule makes
+@command{gzip} use a compression option of @option{--best}.  To make
+it use a different one, set the @env{GZIP_ENV} environment variable.
+For example, @samp{make dist-gzip GZIP_ENV=-7}.
 
-@vindex BZIP2
 @item @code{dist-bzip2}
-Generate a @samp{bzip2} tar archive of the distribution.  bzip2 archives
-are frequently smaller than gzipped archives.
-By default, this rule makes @samp{bzip2} use a compression option of @option{-9}.
-To make it use a different one, set the @env{BZIP2} environment variable.
-For example, @samp{make dist-bzip2 BZIP2=-7}.
 @trindex dist-bzip2
+@cmindex bzip2
+@vindex BZIP2
+Generate a @samp{bzip2} tar archive of the distribution.  bzip2
+archives are usually smaller than gzipped archives.  By default, this
+rule makes @samp{bzip2} use a compression option of @option{-9}.  To
+make it use a different one, set the @env{BZIP2} environment variable.
 
 @item @code{dist-lzip}
-Generate an @samp{lzip} tar archive of the distribution.  @command{lzip}
-archives are frequently smaller than @command{bzip2}-compressed archives.
 @trindex dist-lzip
+@cmindex lzip
+@vindex LZIP_OPT
+Generate an @samp{lzip} tar archive of the distribution.
+@command{lzip} archives are usually smaller than
+@command{bzip2}-compressed archives.  By default, this rule makes
+@samp{lzip} use a compression option of @option{-9}.  To make it use a
+different one, set the @env{LZIP_OPT} environment variable.
 
-@vindex XZ_OPT
 @item @code{dist-xz}
+@trindex dist-xz
+@cmindex xz
+@vindex XZ_OPT
 Generate an @samp{xz} tar archive of the distribution.  @command{xz}
-archives are frequently smaller than @command{bzip2}-compressed archives.
+archives are usually smaller than @command{bzip2}-compressed archives.
 By default, this rule makes @samp{xz} use a compression option of
 @option{-e}.  To make it use a different one, set the @env{XZ_OPT}
 environment variable.  For example, run this command to use the
-default compression ratio, but with a progress indicator:
-@samp{make dist-xz XZ_OPT=-ve}.
-@trindex dist-xz
+default compression ratio, but with a progress indicator: @samp{make
+dist-xz XZ_OPT=-ve}.
 
+@trindex dist-zip
+@cmindex zip
 @item @code{dist-zip}
 Generate a @samp{zip} archive of the distribution.
-@trindex dist-zip
 
-@item @code{dist-tarZ}
-Generate a tar archive of the distribution, compressed with the
-historical (and obsolescent) program @command{compress}.  This
-option is deprecated, and it and the corresponding functionality
-will be removed altogether in Automake 2.0.
-@trindex dist-tarZ
+@item @code{dist-zstd}
+@trindex dist-zstd
+@cmindex zstd
+@vindex ZSTD_OPT
+@vindex ZSTD_CLEVEL
+Generate a @code{zstd} tar archive of the distribution.  By default,
+this rule makes @command{zstd} use a compression option of
+@option{-19}.  To use a different setting, set the @env{ZSTD_OPT}
+environment variable.  For example, run this command to use the
+default compression ratio, but with a progress indicator: @samp{make
+dist-zstd ZSTD_OPT=-19v}.  However, note that for compatibility with
+@command{zstd} itself, you may instead set the @env{ZSTD_CLEVEL}
+environment variable, in which case, any @env{ZSTD_OPT} setting is
+ignored.
 
 @item @code{dist-shar}
+@trindex dist-shar
+@cmindex shar
 Generate a @samp{shar} archive of the distribution.  This format
 archive is obsolescent, and use of this option is deprecated.
 It and the corresponding functionality will be removed altogether
 in Automake 2.0.
-@trindex dist-shar
 
-@vindex ZSTD_OPT
-@vindex ZSTD_CLEVEL
-@item @code{dist-zstd}
-Generate a @samp{zstd} tar archive of the distribution.  By default, this
-rule makes @samp{zstd} use a compression option of @option{-19}.  To
-make it use a different one, set the @env{ZSTD_OPT} environment variable.
-For example, run this command to use the default compression ratio,
-but with a progress indicator: @samp{make dist-zstd ZSTD_OPT=-19v}.
-However, note that for compatibility with zstd itself, you may instead set the @env{ZSTD_CLEVEL} environment variable, in which case, any @env{ZSTD_OPT} setting is ignored.
-@trindex dist-zstd
+@item @code{dist-tarZ}
+@trindex dist-tarZ
+@cmindex compress
+Generate a tar archive of the distribution, compressed with the
+historical (and obsolescent) program @command{compress}.  This
+option is deprecated, and it and the corresponding functionality
+will be removed altogether in Automake 2.0.
 
 @end table
 
+@trindex dist-all
 The rule @code{dist} (and its historical synonym @code{dist-all})
 will create archives in all the enabled formats (@pxref{List of
 Automake options} for how to change this list).  By default, only
-the @code{dist-gzip} target is hooked to @code{dist}.
+the @code{dist-gzip} target is enabled by @code{dist}.
 
 
 @node Tests
