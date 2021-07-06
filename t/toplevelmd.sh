@@ -65,4 +65,3 @@ $AUTOMAKE
 $MAKE check
 test -f works
 
-exit 33
