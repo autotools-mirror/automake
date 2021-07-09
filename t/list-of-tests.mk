@@ -410,6 +410,7 @@ t/dist-missing-m4.sh \
 t/dist-readonly.sh \
 t/dist-repeated.sh \
 t/dist-pr109765.sh \
+t/dist-no-built-sources.sh \
 t/dist-vs-built-sources.sh \
 t/distcleancheck.sh \
 t/distcom2.sh \

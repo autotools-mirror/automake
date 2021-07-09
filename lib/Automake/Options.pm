@@ -283,12 +283,14 @@ sub _is_valid_easy_option ($)
     no-define
     no-dependencies
     no-dist
+    no-dist-built-sources
     no-dist-gzip
     no-exeext
     no-installinfo
     no-installman
     no-texinfo.tex
     nostdinc
+    pure-dist
     readme-alpha
     serial-tests
     parallel-tests
