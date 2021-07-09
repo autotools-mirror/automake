@@ -61,7 +61,7 @@ EOF
   ! tar tf "${pkg_ver}".tar.gz "${pkg_ver}"/x.c
   tar tf "${pkg_ver}".tar.gz "${pkg_ver}"/y.c
 
-  # And x.c should only have been built for the built-sources version.
+  # And x.c should have been built only for the built-sources version.
   if test "$testopt" = no-built-sources; then
     # no-built-sources should not have generated this
     ! test -e x.c
