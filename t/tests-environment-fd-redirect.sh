@@ -70,6 +70,15 @@ case $SHELL in
 esac
 
 for sh in "$SHELL" "$bin_ksh"; do
+
+  # The following hangs with Fedora 34's ksh-20120801-255:
+  # (seq --format=z%g= 121; echo "eval ': \`(set) 2>&1\`'")|env -i ksh
+  # yet terminates if it emits one fewer variable assignment.
+  # Using that ksh here would make this test hang: the above is
+  # derived from the configure script generated for this test.
+  # Reported as https://github.com/ksh93/ksh/issues/316
+  case $sh in */ksh) skip_ "skipping $sh to avoid hang"; continue;; esac
+
   test "$sh" = : && continue
   for pfx in AM_ ''; do
     unindent > Makefile.am <<END
