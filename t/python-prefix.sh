@@ -67,7 +67,7 @@ py_installed "$py_inst_site"/one.pyc
 py_installed "$py_inst_site"/python-prefix/pkgtwo.py
 py_installed "$py_inst_site"/python-prefix/pkgtwo.pyc
 #
-test "`$MAKE echo-python-exec-prefix`" = "$(pwd)/inst"
+test "$($MAKE echo-python-exec-prefix)" = "$(pwd)/inst"
 
 #  Second test: specify different --with-python_prefix
 # and --with-python_exec_prefix values.
@@ -86,6 +86,6 @@ py_installed "$py_inst_site"/one.pyc
 py_installed "$py_inst_site"/python-prefix/pkgtwo.py
 py_installed "$py_inst_site"/python-prefix/pkgtwo.pyc
 #
-test "`$MAKE echo-python-exec-prefix`" = "$(pwd)/instexec"
+test "$($MAKE echo-python-exec-prefix)" = "$(pwd)/instexec"
 
 :

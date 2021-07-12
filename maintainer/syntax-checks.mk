@@ -415,7 +415,7 @@ sc_tests_overriding_macros_on_cmdline:
 	        -e 's/ exp="[^"]*"/ /' \
 	        -e 's/ exp=[^ ]/ /' \
 	      $(filter-out %/am-test-lib.sh,$(xtests)) \
-	        | grep '\$$MAKE .*='; then \
+	        | grep -E '\$$MAKE .*\S+='; then \
 	  echo 'Rewrite "$$MAKE foo=bar" as "run_make foo=bar" in the lines above,'; \
 	  echo 'it is more portable.'; \
 	  exit 1; \

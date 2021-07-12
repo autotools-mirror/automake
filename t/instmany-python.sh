@@ -119,11 +119,11 @@ cd build
 test -n "$orig_INSTALL"
 $MAKE
 # Try whether native install (or install-sh) works.
-$MAKE install PYTHON_PREFIX="$instdir"
+run_make install PYTHON_PREFIX="$instdir"
 test -n "$(find "$instdir" -name python1.py)"
 # Multiple uninstall should work, too.
-$MAKE uninstall PYTHON_PREFIX="$instdir"
-$MAKE uninstall PYTHON_PREFIX="$instdir"
+run_make uninstall PYTHON_PREFIX="$instdir"
+run_make uninstall PYTHON_PREFIX="$instdir"
 test $(find "$instdir" -type f -print | wc -l) -eq 0
 
 # Try whether we don't exceed the low limit.
@@ -143,14 +143,14 @@ for file in python3.py python$nfiles.py
 do
   chmod a-r $srcdir/$file
   test ! -r $srcdir/$file || skip_ "cannot drop file read permissions"
-  $MAKE install PYTHON_PREFIX="$instdir" && exit 1
+  run_make install PYTHON_PREFIX="$instdir" && exit 1
   chmod u+r $srcdir/$file
 done
 
 for file in npython3.py npython$nfiles.py
 do
   chmod a-r $srcdir/$file
-  $MAKE install PYTHON_PREFIX="$instdir" && exit 1
+  run_make install PYTHON_PREFIX="$instdir" && exit 1
   chmod u+r $srcdir/$file
 done
 

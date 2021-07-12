@@ -28,7 +28,7 @@ CONFIG_SITE=/dev/null; export CONFIG_SITE
 # python installations, so we need more relaxed and ad-hoc checks for
 # them. Also, more proper "functional" checks on them should be done in
 # the 'python-virtualenv.sh' test.
-# 
+#
 # This version identification is duplicated in python.m4 (and the manual).
 PYTHON_VERSION=$($PYTHON -c 'import sys; print ("%u.%u" % sys.version_info[:2])') || exit 1
 PYTHON_PLATFORM=$($PYTHON -c 'import sys; print (sys.platform)') || exit 1
@@ -107,6 +107,6 @@ $MAKE test-in test-am
 # This tries to install to $PYTHON_PREFIX, which may not be writable.
 # Override it to something safe, but then of course we have to skip
 # checking that it is what we originally set it to.
-$MAKE distcheck PYTHON_PREFIX="$instdir" NO_CHECK_PYTHON_PREFIX=1
+run_make distcheck PYTHON_PREFIX="$instdir" NO_CHECK_PYTHON_PREFIX=1
 
 :
