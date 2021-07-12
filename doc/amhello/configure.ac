@@ -1,4 +1,4 @@
-# Copyright (C) 2006-2020 Free Software Foundation, Inc.
+# Copyright (C) 2006-2021 Free Software Foundation, Inc.
 # This configure.ac script is free software; the Free Software Foundation
 # gives unlimited permission to copy, distribute and modify it.
 

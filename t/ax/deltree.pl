@@ -2,7 +2,7 @@
 # deltree: recursively removes file and directory,
 # trying to handle permissions and other complications.
 
-# Copyright (C) 2013-2020 Free Software Foundation, Inc.
+# Copyright (C) 2013-2021 Free Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
