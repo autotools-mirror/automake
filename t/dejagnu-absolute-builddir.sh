@@ -21,18 +21,25 @@ required=runtest
 . test-init.sh
 
 cat >> configure.ac << 'END'
+AC_CONFIG_FILES([testsuite/Makefile])
 AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
+SUBDIRS = testsuite
+END
+
+mkdir testsuite
+
+cat > testsuite/Makefile.am << 'END'
 AUTOMAKE_OPTIONS = dejagnu
 DEJATOOL = tcl env
 EXTRA_DIST = tcl.test/tcl.exp
 END
 
-mkdir tcl.test
+mkdir testsuite/tcl.test
 
-cat > tcl.test/tcl.exp << 'END'
+cat > testsuite/tcl.test/tcl.exp << 'END'
 send_user "tcl_objdir: $objdir\n"
 if { [ regexp "^/" $objdir ] } {
     pass "test_tcl_objdir"
@@ -50,10 +57,10 @@ $AUTOMAKE --add-missing
 $MAKE check
 
 # Sanity check: all tests have run.
-test -f env.log
-test -f env.sum
-test -f tcl.log
-test -f tcl.sum
+test -f testsuite/env.log
+test -f testsuite/env.sum
+test -f testsuite/tcl.log
+test -f testsuite/tcl.sum
 
 $MAKE distcheck
 

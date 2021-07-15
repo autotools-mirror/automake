@@ -29,17 +29,25 @@ END
 chmod +x $package
 
 cat >> configure.ac << 'END'
+AC_CONFIG_FILES([testsuite/Makefile])
 AC_OUTPUT
 END
 
 cat > Makefile.am << END
-AUTOMAKE_OPTIONS = dejagnu
-EXTRA_DIST = $package $package.test/$package.exp
-AM_RUNTESTFLAGS = PACKAGE=\$(srcdir)/$package
+SUBDIRS = testsuite
+EXTRA_DIST = $package
 END
 
-mkdir $package.test
-cat > $package.test/$package.exp << 'END'
+mkdir testsuite
+
+cat > testsuite/Makefile.am << END
+AUTOMAKE_OPTIONS = dejagnu
+EXTRA_DIST = $package.test/$package.exp
+AM_RUNTESTFLAGS = PACKAGE=\$(top_srcdir)/$package
+END
+
+mkdir testsuite/$package.test
+cat > testsuite/$package.test/$package.exp << 'END'
 set test "a_dejagnu_test"
 spawn $PACKAGE
 expect {
@@ -55,8 +63,8 @@ $AUTOMAKE --add-missing
 ./configure
 
 $MAKE check
-test -f $package.log
-test -f $package.sum
+test -f testsuite/$package.log
+test -f testsuite/$package.sum
 
 $MAKE distcheck
 

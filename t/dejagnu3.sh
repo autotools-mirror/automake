@@ -27,19 +27,27 @@ END
 chmod +x hammer
 
 cat >> configure.ac << 'END'
+AC_CONFIG_FILES([testsuite/Makefile])
 AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
-AUTOMAKE_OPTIONS = dejagnu
-DEJATOOL = hammer
-AM_RUNTESTFLAGS = HAMMER=$(srcdir)/hammer
-EXTRA_DIST = hammer hammer.test/hammer.exp
+SUBDIRS = testsuite
+EXTRA_DIST = hammer
 END
 
-mkdir hammer.test
+mkdir testsuite
 
-cat > hammer.test/hammer.exp << 'END'
+cat > testsuite/Makefile.am << 'END'
+AUTOMAKE_OPTIONS = dejagnu
+DEJATOOL = hammer
+AM_RUNTESTFLAGS = HAMMER=$(top_srcdir)/hammer
+EXTRA_DIST = hammer.test/hammer.exp
+END
+
+mkdir testsuite/hammer.test
+
+cat > testsuite/hammer.test/hammer.exp << 'END'
 set test test
 spawn $HAMMER
 expect {
@@ -55,8 +63,8 @@ $AUTOMAKE --add-missing
 ./configure
 
 $MAKE check
-test -f hammer.log
-test -f hammer.sum
+test -f testsuite/hammer.log
+test -f testsuite/hammer.sum
 
 $MAKE distcheck
 

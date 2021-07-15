@@ -26,17 +26,24 @@ END
 chmod +x faildeja
 
 cat >> configure.ac << 'END'
+AC_CONFIG_FILES([testsuite/Makefile])
 AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
-AUTOMAKE_OPTIONS = dejagnu
-DEJATOOL = faildeja
-AM_RUNTESTFLAGS = FAILDEJA=$(srcdir)/faildeja
+SUBDIRS = testsuite
 END
 
-mkdir faildeja.test
-cat > faildeja.test/faildeja.exp << 'END'
+mkdir testsuite
+
+cat > testsuite/Makefile.am << 'END'
+AUTOMAKE_OPTIONS = dejagnu
+DEJATOOL = faildeja
+AM_RUNTESTFLAGS = FAILDEJA=$(top_srcdir)/faildeja
+END
+
+mkdir testsuite/faildeja.test
+cat > testsuite/faildeja.test/faildeja.exp << 'END'
 set test failing_deja_test
 spawn $FAILDEJA
 expect {
@@ -51,8 +58,8 @@ $AUTOMAKE --add-missing
 ./configure
 
 $MAKE check && exit 1
-test -f faildeja.log
-test -f faildeja.sum
-$FGREP 'FAIL: failing_deja_test' faildeja.sum
+test -f testsuite/faildeja.log
+test -f testsuite/faildeja.sum
+$FGREP 'FAIL: failing_deja_test' testsuite/faildeja.sum
 
 :

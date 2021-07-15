@@ -39,23 +39,31 @@ END
 chmod +x spanner
 
 cat >> configure.ac << 'END'
+AC_CONFIG_FILES([testsuite/Makefile])
 AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
+SUBDIRS = testsuite
+EXTRA_DIST = hammer spanner
+END
+
+mkdir testsuite
+
+cat > testsuite/Makefile.am << 'END'
 AUTOMAKE_OPTIONS = dejagnu
 
 DEJATOOL = hammer spanner
 
-AM_RUNTESTFLAGS = HAMMER=$(srcdir)/hammer SPANNER=$(srcdir)/spanner
+AM_RUNTESTFLAGS = HAMMER=$(top_srcdir)/hammer SPANNER=$(top_srcdir)/spanner
 
-EXTRA_DIST  = hammer  hammer.test/hammer.exp
-EXTRA_DIST += spanner spanner.test/spanner.exp
+EXTRA_DIST  = hammer.test/hammer.exp
+EXTRA_DIST += spanner.test/spanner.exp
 END
 
-mkdir hammer.test spanner.test
+mkdir testsuite/hammer.test testsuite/spanner.test
 
-cat > hammer.test/hammer.exp << 'END'
+cat > testsuite/hammer.test/hammer.exp << 'END'
 set test test
 spawn $HAMMER
 expect {
@@ -64,7 +72,7 @@ expect {
 }
 END
 
-cat > spanner.test/spanner.exp << 'END'
+cat > testsuite/spanner.test/spanner.exp << 'END'
 set test test
 spawn $SPANNER
 expect {
@@ -80,10 +88,10 @@ $AUTOMAKE --add-missing
 ./configure
 
 $MAKE check
-test -f hammer.log
-test -f hammer.sum
-test -f spanner.log
-test -f spanner.sum
+test -f testsuite/hammer.log
+test -f testsuite/hammer.sum
+test -f testsuite/spanner.log
+test -f testsuite/spanner.sum
 
 $MAKE distcheck
 
@@ -92,11 +100,12 @@ sed 's/E\(verything\)/Not e\1/' hammer > thammer
 mv -f thammer hammer
 chmod +x hammer
 
-rm -f hammer.log hammer.sum spanner.log spanner.sum
+rm -f testsuite/hammer.log testsuite/hammer.sum
+rm -f testsuite/spanner.log testsuite/spanner.sum
 $MAKE check && exit 1
-test -f hammer.log
-test -f hammer.sum
-test -f spanner.log
-test -f spanner.sum
+test -f testsuite/hammer.log
+test -f testsuite/hammer.sum
+test -f testsuite/spanner.log
+test -f testsuite/spanner.sum
 
 :

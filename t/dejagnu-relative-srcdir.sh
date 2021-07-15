@@ -21,44 +21,52 @@ required=runtest
 . test-init.sh
 
 cat >> configure.ac << 'END'
+AC_CONFIG_FILES([testsuite/Makefile])
 AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
-AUTOMAKE_OPTIONS = dejagnu
-DEJATOOL = tcl env
-EXTRA_DIST = env.test/env.exp tcl.test/tcl.exp lib/tcl.exp
+SUBDIRS = testsuite
 END
 
-mkdir env.test tcl.test lib
+mkdir testsuite
+
+cat > testsuite/Makefile.am << 'END'
+AUTOMAKE_OPTIONS = dejagnu
+DEJATOOL = tcl env
+EXTRA_DIST  = env.test/env.exp tcl.test/tcl.exp
+EXTRA_DIST += lib/tcl.exp
+END
+
+mkdir testsuite/env.test testsuite/tcl.test testsuite/lib
 
 # DejaGnu can change $srcdir behind our backs, so we have to
 # save its original value.  Thanks to Ian Lance Taylor for the
 # suggestion.
-cat > lib/tcl.exp << 'END'
+cat > testsuite/lib/tcl.exp << 'END'
 send_user "tcl_lib_srcdir: $srcdir\n"
 set orig_srcdir $srcdir
 END
 
-cat > env.test/env.exp << 'END'
+cat > testsuite/env.test/env.exp << 'END'
 set env_srcdir $env(srcdir)
 send_user "env_srcdir: $env_srcdir\n"
-if { [ regexp "^\.(\./\.\.)?$" $env_srcdir ] } {
+if { [ regexp {^\.(\./\.\./\.\./testsuite)?$} $env_srcdir ] } {
     pass "test_env_src"
 } else {
     fail "test_env_src"
 }
 END
 
-cat > tcl.test/tcl.exp << 'END'
+cat > testsuite/tcl.test/tcl.exp << 'END'
 send_user "tcl_srcdir: $srcdir\n"
-if { [ regexp "^\.(\./\.\.)?$" $srcdir ] } {
+if { [ regexp {^\.(\./\.\./\.\./testsuite)?$} $srcdir ] } {
     pass "test_tcl_src"
 } else {
     fail "test_tcl_src"
 }
 send_user "tcl_orig_srcdir: $orig_srcdir\n"
-if { [ regexp "^\.(\./\.\.)?$" $orig_srcdir ] } {
+if { [ regexp "^\.(\./\.\./\.\./testsuite)?$" $orig_srcdir ] } {
     pass "test_tcl_orig_src"
 } else {
     fail "test_tcl_orig_src"
@@ -74,10 +82,10 @@ $AUTOMAKE --add-missing
 $MAKE check
 
 # Sanity check: all tests have run.
-test -f env.log
-test -f env.sum
-test -f tcl.log
-test -f tcl.sum
+test -f testsuite/env.log
+test -f testsuite/env.sum
+test -f testsuite/tcl.log
+test -f testsuite/tcl.sum
 
 $MAKE distcheck
 

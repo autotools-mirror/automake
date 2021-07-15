@@ -20,18 +20,25 @@
 . test-init.sh
 
 cat >> configure.ac << 'END'
+AC_CONFIG_FILES([testsuite/Makefile])
 AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
+SUBDIRS = testsuite
+END
+
+mkdir testsuite
+
+cat > testsuite/Makefile.am << 'END'
 AUTOMAKE_OPTIONS = dejagnu
 DEJATOOL = foo
 END
 
 # Deliberately select a variable defined automatically by
 # the Makefile-generated site.exp.
-mkdir foo.test
-cat > foo.test/foo.exp << 'END'
+mkdir testsuite/foo.test
+cat > testsuite/foo.test/foo.exp << 'END'
 send_user "objdir: $objdir\n"
 set pipe "|"
 if { $objdir == "${pipe}objdir${pipe}" } {
@@ -47,21 +54,21 @@ $AUTOMAKE --add-missing
 
 ./configure
 
-$MAKE site.exp
-echo 'set objdir "|objdir|"' >> site.exp
-cat site.exp
+(cd testsuite/ && $MAKE site.exp)
+echo 'set objdir "|objdir|"' >> testsuite/site.exp
+cat testsuite/site.exp
 $sleep
-touch Makefile
-$MAKE site.exp
-cat site.exp
-is_newest site.exp Makefile  # Sanity check.
-grep '|objdir|' site.exp
-test $($FGREP -c '|objdir|' site.exp) -eq 1
+touch testsuite/Makefile
+(cd testsuite/ && $MAKE site.exp)
+cat testsuite/site.exp
+is_newest testsuite/site.exp testsuite/Makefile  # Sanity check.
+grep '|objdir|' testsuite/site.exp
+test $($FGREP -c '|objdir|' testsuite/site.exp) -eq 1
 
 # We can do a "more semantic" check if DejaGnu is available.
 if runtest SOMEPROGRAM=someprogram --version; then
   $MAKE check
-  grep 'PASS: test_obj' foo.sum
+  grep 'PASS: test_obj' testsuite/foo.sum
 fi
 
 :

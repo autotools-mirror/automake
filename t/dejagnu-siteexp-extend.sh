@@ -33,10 +33,17 @@ END
 }
 
 cat >> configure.ac << 'END'
+AC_CONFIG_FILES([testsuite/Makefile])
 AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
+SUBDIRS = testsuite
+END
+
+mkdir testsuite
+
+cat > testsuite/Makefile.am << 'END'
 AUTOMAKE_OPTIONS = dejagnu
 DEJATOOL = tool
 
@@ -46,11 +53,11 @@ EXTRA_DEJAGNU_SITE_CONFIG = foo.exp
 EXTRA_DIST += foo.exp
 END
 
-echo 'set foo "/foo/"' > foo.exp
+echo 'set foo "/foo/"' > testsuite/foo.exp
 
-mkdir tool.test
-write_check_for foo > tool.test/tool.exp
-cat tool.test/tool.exp
+mkdir testsuite/tool.test
+write_check_for foo > testsuite/tool.test/tool.exp
+cat testsuite/tool.test/tool.exp
 
 $ACLOCAL
 $AUTOCONF
@@ -59,31 +66,31 @@ $AUTOMAKE --add-missing
 ./configure
 
 $MAKE check
-cat foo.exp
-cat site.exp
-grep 'PASS: test_foo' tool.sum
+cat testsuite/foo.exp
+cat testsuite/site.exp
+grep 'PASS: test_foo' testsuite/tool.sum
 
-write_check_for bar >> tool.test/tool.exp
-write_check_for baz >> tool.test/tool.exp
-cat tool.test/tool.exp
+write_check_for bar >> testsuite/tool.test/tool.exp
+write_check_for baz >> testsuite/tool.test/tool.exp
+cat testsuite/tool.test/tool.exp
 
 # Ensure that foo.exp will be newer than site.exp, which will
 # thus have to be remade.
 $sleep
 # With this, below we'll also check that settings in files coming later in
 # $(EXTRA_DEJAGNU_SITE_CONFIG) override those in files coming earlier.
-cat >> foo.exp <<'END'
+cat >> testsuite/foo.exp <<'END'
 set bar "/foo/"
 set baz "/foo/"
 set qux "/foo/"
 END
 
-$MAKE check && { cat site.exp; exit 1; }
-grep 'PASS: test_foo' tool.sum
-grep 'FAIL: test_bar' tool.sum
-grep 'FAIL: test_baz' tool.sum
+$MAKE check && { cat testsuite/site.exp; exit 1; }
+grep 'PASS: test_foo' testsuite/tool.sum
+grep 'FAIL: test_bar' testsuite/tool.sum
+grep 'FAIL: test_baz' testsuite/tool.sum
 
-cat >> Makefile.am << 'END'
+cat >> testsuite/Makefile.am << 'END'
 EXTRA_DEJAGNU_SITE_CONFIG += bar bar.dir/bar
 EXTRA_DIST += bar
 DISTCLEANFILES = bar.dir/bar
@@ -92,41 +99,41 @@ bar.dir/bar:
 	echo 'set baz "/baz/"' > $@
 END
 
-echo 'set bar "/bar/"' > bar
+echo 'set bar "/bar/"' > testsuite/bar
 # This will allow us to check one more time that settings in files
 # coming later in $(EXTRA_DEJAGNU_SITE_CONFIG) override those in
 # files coming earlier.
-echo 'set baz "/xyz/"' >> bar
+echo 'set baz "/xyz/"' >> testsuite/bar
 
 # Ensure that the Makefile will be newer than site.exp, which will
 # thus have to be remade.
 $sleep
-$AUTOMAKE Makefile
-./config.status Makefile
+$AUTOMAKE testsuite/Makefile
+./config.status testsuite/Makefile
 
-$MAKE check || { cat site.exp; exit 1; }
-cat site.exp
-cat bar.dir/bar
-$FGREP '/bar/' site.exp
-$FGREP '/baz/' site.exp
-grep 'PASS: test_foo' tool.sum
-grep 'PASS: test_bar' tool.sum
-grep 'PASS: test_baz' tool.sum
+$MAKE check || { cat testsuite/site.exp; exit 1; }
+cat testsuite/site.exp
+cat testsuite/bar.dir/bar
+$FGREP '/bar/' testsuite/site.exp
+$FGREP '/baz/' testsuite/site.exp
+grep 'PASS: test_foo' testsuite/tool.sum
+grep 'PASS: test_bar' testsuite/tool.sum
+grep 'PASS: test_baz' testsuite/tool.sum
 
 # Check that the features we're testing behave well in VPATH builds.
 $MAKE distcheck
 
 # Check that the user can edit the site.exp file, and that his edits
 # are retained.
-write_check_for zardoz >> tool.test/tool.exp
-cat tool.test/tool.exp
-echo 'set zardoz "/zardoz/"' >> site.exp
+write_check_for zardoz >> testsuite/tool.test/tool.exp
+cat testsuite/tool.test/tool.exp
+echo 'set zardoz "/zardoz/"' >> testsuite/site.exp
 
 $MAKE check
-cat site.exp
-grep 'PASS: test_zardoz' tool.sum
+cat testsuite/site.exp
+grep 'PASS: test_zardoz' testsuite/tool.sum
 
-cat >> Makefile.am << 'END'
+cat >> testsuite/Makefile.am << 'END'
 EXTRA_DEJAGNU_SITE_CONFIG += quux.exp
 quux.exp:
 	echo 'set zardoz "/quux/"' > $@
@@ -135,25 +142,25 @@ END
 # Ensure that the Makefile will be newer than on site.exp, which will
 # thus have to be remade.
 $sleep
-$AUTOMAKE Makefile
-./config.status Makefile
-grep 'zardoz.*/quux/' Makefile
+$AUTOMAKE testsuite/Makefile
+./config.status testsuite/Makefile
+grep 'zardoz.*/quux/' testsuite/Makefile
 
-$MAKE site.exp
-cat site.exp
-cat quux.exp
-grep 'zardoz.*/quux/' site.exp
+(cd testsuite/ && $MAKE site.exp)
+cat testsuite/site.exp
+cat testsuite/quux.exp
+grep 'zardoz.*/quux/' testsuite/site.exp
 
 $MAKE check
-grep 'PASS: test_zardoz' tool.sum
-grep 'zardoz: /zardoz/' tool.log
-grep 'zardoz.*quux' tool.log && exit 1
+grep 'PASS: test_zardoz' testsuite/tool.sum
+grep 'zardoz: /zardoz/' testsuite/tool.log
+grep 'zardoz.*quux' testsuite/tool.log && exit 1
 
 # Check that files in $(EXTRA_DEJAGNU_SITE_CONFIG) are not distributed
 # by default.
 $MAKE distdir
 ls -l $distdir
-test ! -e $distdir/bar.dir/bar
-test ! -e $distdir/quux.exp
+test ! -e $distdir/testsuite/bar.dir/bar
+test ! -e $distdir/testsuite/quux.exp
 
 :

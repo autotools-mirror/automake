@@ -30,17 +30,24 @@ END
 chmod +x failtcl
 
 cat >> configure.ac << 'END'
+AC_CONFIG_FILES([testsuite/Makefile])
 AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
-AUTOMAKE_OPTIONS = dejagnu
-DEJATOOL = failtcl
-AM_RUNTESTFLAGS = --status FAILTCL=$(srcdir)/failtcl
+SUBDIRS = testsuite
 END
 
-mkdir failtcl.test
-cat > failtcl.test/failtcl.exp << 'END'
+mkdir testsuite
+
+cat > testsuite/Makefile.am << 'END'
+AUTOMAKE_OPTIONS = dejagnu
+DEJATOOL = failtcl
+AM_RUNTESTFLAGS = --status FAILTCL=$(top_srcdir)/failtcl
+END
+
+mkdir testsuite/failtcl.test
+cat > testsuite/failtcl.test/failtcl.exp << 'END'
 set test test
 spawn $FAILTCL
 expect {
@@ -55,8 +62,8 @@ $AUTOMAKE --add-missing
 ./configure
 
 $MAKE check && exit 1
-test -f failtcl.log
-test -f failtcl.sum
-$FGREP 'missing close-brace' failtcl.sum
+test -f testsuite/failtcl.log
+test -f testsuite/failtcl.sum
+$FGREP 'missing close-brace' testsuite/failtcl.sum
 
 :

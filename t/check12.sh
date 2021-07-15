@@ -22,6 +22,7 @@ required=runtest
 . test-init.sh
 
 cat >> configure.ac << 'END'
+AC_CONFIG_FILES([testsuite/Makefile])
 AC_OUTPUT
 END
 
@@ -56,12 +57,17 @@ B_EXIT_STATUS=0; export B_EXIT_STATUS
 ## DejaGnu tests.
 
 cat >> Makefile.am << 'END'
-AUTOMAKE_OPTIONS += dejagnu
+SUBDIRS = testsuite
+EXTRA_DIST += hammer spanner
+END
+
+mkdir testsuite
+
+cat >> testsuite/Makefile.am << 'END'
+AUTOMAKE_OPTIONS = dejagnu
 DEJATOOL = hammer spanner
-AM_RUNTESTFLAGS = HAMMER=$(srcdir)/hammer SPANNER=$(srcdir)/spanner
-EXTRA_DIST += $(DEJATOOL)
-EXTRA_DIST += hammer.test/hammer.exp
-EXTRA_DIST += spanner.test/spanner.exp
+AM_RUNTESTFLAGS = HAMMER=$(top_srcdir)/hammer SPANNER=$(top_srcdir)/spanner
+EXTRA_DIST = hammer.test/hammer.exp spanner.test/spanner.exp
 END
 
 cat > hammer << 'END'
@@ -77,9 +83,9 @@ echo "I'm a right spanner!"
 END
 chmod +x hammer spanner
 
-mkdir hammer.test spanner.test
+mkdir testsuite/hammer.test testsuite/spanner.test
 
-cat > hammer.test/hammer.exp << 'END'
+cat > testsuite/hammer.test/hammer.exp << 'END'
 set test test_hammer
 spawn $HAMMER
 expect {
@@ -88,7 +94,7 @@ expect {
 }
 END
 
-cat > spanner.test/spanner.exp << 'END'
+cat > testsuite/spanner.test/spanner.exp << 'END'
 set test test_spanner
 spawn $SPANNER
 expect {
@@ -133,10 +139,10 @@ for vpath in : false; do
   $srcdir/configure
 
   $MAKE check
-  test -f hammer.log
-  test -f hammer.sum
-  test -f spanner.log
-  test -f spanner.sum
+  test -f testsuite/hammer.log
+  test -f testsuite/hammer.sum
+  test -f testsuite/spanner.log
+  test -f testsuite/spanner.sum
   if test x"$am_serial_tests" != x"yes"; then
     test -f test-suite.log
     test -f a.log
@@ -147,10 +153,10 @@ for vpath in : false; do
   cp -f config.status config-status.sav
 
   $MAKE distclean
-  test ! -e hammer.log
-  test ! -e hammer.sum
-  test ! -e spanner.log
-  test ! -e spanner.sum
+  test ! -e testsuite/hammer.log
+  test ! -e testsuite/hammer.sum
+  test ! -e testsuite/spanner.log
+  test ! -e testsuite/spanner.sum
   test ! -e test-suite.log
   test ! -e a.log
   test ! -e b.log
@@ -160,12 +166,12 @@ for vpath in : false; do
   ./config.status
 
   NAIL=screw $MAKE check && exit 1
-  test -f hammer.log
-  test -f hammer.sum
-  test -f spanner.log
-  test -f spanner.sum
-  grep 'FAIL: test_hammer' hammer.sum
-  grep 'FAIL:' spanner.sum && exit 1
+  test -f testsuite/hammer.log
+  test -f testsuite/hammer.sum
+  test -f testsuite/spanner.log
+  test -f testsuite/spanner.sum
+  grep 'FAIL: test_hammer' testsuite/hammer.sum
+  grep 'FAIL:' testsuite/spanner.sum && exit 1
 
   B_EXIT_STATUS=1 $MAKE check && exit 1
   if test x"$am_serial_tests" != x"yes"; then
@@ -185,12 +191,12 @@ for vpath in : false; do
 
   # Do not trust the exit status of 'make -k'.
   NAIL=screw B_EXIT_STATUS=23 CHECKLOCAL_EXIT_STATUS=1 $MAKE -k check || :
-  test -f hammer.log
-  test -f hammer.sum
-  test -f spanner.log
-  test -f spanner.sum
-  grep 'FAIL: test_hammer' hammer.sum
-  grep 'FAIL:' spanner.sum && exit 1
+  test -f testsuite/hammer.log
+  test -f testsuite/hammer.sum
+  test -f testsuite/spanner.log
+  test -f testsuite/spanner.sum
+  grep 'FAIL: test_hammer' testsuite/hammer.sum
+  grep 'FAIL:' testsuite/spanner.sum && exit 1
   if test x"$am_serial_tests" != x"yes"; then
     cat test-suite.log
     cat a.log
