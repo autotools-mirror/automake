@@ -27,6 +27,8 @@ bin_PROGRAMS = foo bar baz boo
 foo_LINK = $(LINK)
 bar_LINK = $(LINK)
 bar_LDFLAGS = $(AM_LDFLAGS)
+baz_LINK = $(LINK)
+AM_V_baz_LINK = xyz
 END
 
 $ACLOCAL
@@ -40,5 +42,10 @@ grep '.\$(LINK).*foo' Makefile.in && exit 1
 # IOW, bar_LDFLAGS is useless unless bar_LINK refers to it.
 grep '^ *bar_LINK *=.*bar_LDFLAGS' Makefile.in && exit 1
 grep '.\$(bar_LINK).*bar' Makefile.in
+
+# Silent make rules should use AM_V_GEN unless overriden.
+grep '.\$(AM_V_GEN)\$(foo_LINK)' Makefile.in
+grep '.\$(AM_V_baz_LINK)\$(baz_LINK)' Makefile.in
+grep '.\$(AM_V_GEN)\$(baz_LINK)' Makefile.in && exit 1
 
 exit 0
