@@ -60,7 +60,7 @@ cat > xfail.test << 'END'
 #!/bin/sh
 # The sleep should ensure expected execution order of tests
 # even when make is run in parallel mode.
-# Creative quoting below to plase maintainer-check.
+# Creative quoting below to please maintainer-check.
 sleep '10'
 exit 1
 END

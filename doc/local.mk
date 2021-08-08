@@ -126,7 +126,7 @@ setup_autotools_paths = { \
 $(srcdir)/%D%/amhello-1.0.tar.gz: $(amhello_sources) $(srcdir)/configure.ac
 	$(AM_V_GEN)tmp=amhello-output.tmp \
 	  && $(am__cd) $(srcdir)/%D%/amhello \
-	  && : Make our	aclocal and automake avaiable before system ones. \
+	  && : Make our	aclocal and automake available before system ones. \
 	  && $(setup_autotools_paths) \
 	  && ( \
 	    { $(AM_V_P) || exec 5>&2 >$$tmp 2>&1; } \

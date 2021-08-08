@@ -100,7 +100,7 @@ END
   else
     for f in $required_files; do
       cp "$am_scriptdir"/$f $auxdir/$f \
-        || fatal_ "faild to fetch auxiliary script '$f'"
+        || fatal_ "failed to fetch auxiliary script '$f'"
       # See comments above.
       chmod a-w $auxdir/$f
     done

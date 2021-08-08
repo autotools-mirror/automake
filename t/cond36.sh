@@ -46,7 +46,7 @@ EOF
 
 $ACLOCAL
 
-# Presently Automake doesn't fully support partially overriden rules
+# Presently Automake doesn't fully support partially overridden rules
 # and should complain.
 AUTOMAKE_fails --add-missing
 grep 'tparse\.h.*already defined' stderr

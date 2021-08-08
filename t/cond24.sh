@@ -26,7 +26,7 @@ EOF
 
 cat >Makefile.am <<EOF
 if COND
-## A dummy comment to change line numer.
+## A dummy comment to change line number.
 foo = baz
 endif
 EOF

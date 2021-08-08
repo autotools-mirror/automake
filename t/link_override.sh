@@ -43,7 +43,7 @@ grep '.\$(LINK).*foo' Makefile.in && exit 1
 grep '^ *bar_LINK *=.*bar_LDFLAGS' Makefile.in && exit 1
 grep '.\$(bar_LINK).*bar' Makefile.in
 
-# Silent make rules should use AM_V_GEN unless overriden.
+# Silent make rules should use AM_V_GEN unless overridden.
 grep '.\$(AM_V_GEN)\$(foo_LINK)' Makefile.in
 grep '.\$(AM_V_baz_LINK)\$(baz_LINK)' Makefile.in
 grep '.\$(AM_V_GEN)\$(baz_LINK)' Makefile.in && exit 1
