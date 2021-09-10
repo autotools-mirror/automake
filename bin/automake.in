@@ -8042,13 +8042,26 @@ sub generate_makefile
   handle_all ($makefile);
 
   # FIXME: Gross!
-  if (var ('lib_LTLIBRARIES') && var ('bin_PROGRAMS'))
+  my $have_lt1 = !!var("lib_LTLIBRARIES");
+  my $have_lt2 = !!var("nobase_lib_LTLIBRARIES");
+  for my $var (variables("PROGRAMS"), variables("LTLIBRARIES"))
     {
-      $output_rules .= "install-binPROGRAMS: install-libLTLIBRARIES\n\n";
-    }
-  if (var ('nobase_lib_LTLIBRARIES') && var ('bin_PROGRAMS'))
-    {
-      $output_rules .= "install-binPROGRAMS: install-nobase_libLTLIBRARIES\n\n";
+      if ($var->name eq "lib_LTLIBRARIES"
+          || $var->name eq "nobase_lib_LTLIBRARIES"
+          || substr($var->name, 0, 7) eq "noinst_")
+        {
+          next;
+        }
+      my $shortname = $var->name;
+      $shortname =~ tr{_}{}d;
+      if ($have_lt1)
+        {
+          $output_rules .= "install-$shortname: install-libLTLIBRARIES\n\n";
+        }
+      if ($have_lt2)
+        {
+          $output_rules .= "install-$shortname: install-nobase_libLTLIBRARIES\n\n";
+        }
     }
 
   handle_install;
