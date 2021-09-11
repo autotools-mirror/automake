@@ -73,7 +73,7 @@ END
 
 cat > tparse.y << 'END'
 %{
-void yyerror (char *s) {}
+void yyerror (const char *s) {}
 %}
 %token EOF
 %%

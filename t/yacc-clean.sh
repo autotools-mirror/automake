@@ -66,7 +66,7 @@ END
 cat > sub1/parse.y << 'END'
 %{
 int yylex () { return (getchar ()); }
-void yyerror (char *s) {}
+void yyerror (const char *s) {}
 %}
 %%
 x : 'x' { };

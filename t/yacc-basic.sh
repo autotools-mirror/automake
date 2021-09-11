@@ -42,7 +42,7 @@ cat > parse.y << 'END'
 #include <stdio.h>
 #include <stdlib.h>
 int yylex () { return getchar (); }
-void yyerror (char *s) {}
+void yyerror (const char *s) {}
 %}
 %%
 a : 'a' { exit(0); };

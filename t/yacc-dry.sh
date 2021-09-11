@@ -38,7 +38,7 @@ END
 cat > parse.y << 'END'
 %{
 int yylex () { return 0; }
-void yyerror (char *s) {}
+void yyerror (const char *s) {}
 %}
 %%
 foobar : 'f' 'o' 'o' 'b' 'a' 'r' {};

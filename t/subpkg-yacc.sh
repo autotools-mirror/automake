@@ -88,7 +88,7 @@ EOF
 cat > lib/foo.y << 'END'
 %{
 int yylex (void) { return 0; }
-void yyerror (char *s) {}
+void yyerror (const char *s) {}
 %}
 %%
 foobar : 'f' 'o' 'o' 'b' 'a' 'r' {};

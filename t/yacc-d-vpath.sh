@@ -41,7 +41,7 @@ END
 cat > parse.y << 'END'
 %{
 int yylex () { return 0; }
-void yyerror (char *s) {}
+void yyerror (const char *s) {}
 %}
 %token FOOBAR
 %%
@@ -74,7 +74,7 @@ $sleep
 cat > ../parse.y << 'END'
 %{
 int yylex () { return 0; }
-void yyerror (char *s) {}
+void yyerror (const char *s) {}
 %}
 %token FUBAR
 %%
@@ -94,7 +94,7 @@ $sleep
 cat > ../parse.y << 'END'
 %{
 int yylex () { return 0; }
-void yyerror (char *s) {}
+void yyerror (const char *s) {}
 %}
 %token MAUDE
 %%

@@ -59,7 +59,7 @@ parse.y:
 	:; { : \
 	  && echo "%{" \
 	  && echo "int yylex () { return 0; }" \
-	  && echo "void yyerror (char *s) {}" \
+	  && echo "void yyerror (const char *s) {}" \
 	  && echo "%}" \
 	  && echo "%%" \
 	  && echo "maude : 'm' 'a' 'u' 'd' 'e' {}"; \

@@ -48,7 +48,7 @@ cat > foo/parse.y << 'END'
 %{
 #include "parse.h"
 int yylex () { return 0; }
-void yyerror (char *s) {}
+void yyerror (const char *s) {}
 %}
 %%
 x : 'x' {};

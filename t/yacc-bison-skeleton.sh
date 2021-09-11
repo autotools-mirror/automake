@@ -44,7 +44,7 @@ void yyerror (const char *s);
 foobar : 'f' 'o' 'o' 'b' 'a' 'r' {};
 %%
 int yylex () { return 0; }
-void yyerror (const char *s) { return; }
+void yyerror (const char *s) {}
 END
 
 cat > foo.c << 'END'

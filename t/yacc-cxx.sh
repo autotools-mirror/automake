@@ -48,7 +48,7 @@ cat > parse1.yy << 'END'
 #include <cstdlib>
 // "std::" qualification required by Sun C++ 5.9.
 int yylex (void) { return std::getchar (); }
-void yyerror (const char *s) { return; }
+void yyerror (const char *s) {}
 %}
 %%
 a : 'a' { exit(0); };

@@ -39,7 +39,7 @@ EOF
 
 cat > parse.y <<'EOF'
 %{
-void yyerror (char *s) { return; }
+void yyerror (const char *s) {}
 int yylex (void) { return 0; }
 int main (void) { return 0; }
 %}

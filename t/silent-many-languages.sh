@@ -188,7 +188,7 @@ EOF
 cat > foo6.y <<'EOF'
 %{
 extern int yylex (void);
-void yyerror (char *s) {}
+void yyerror (const char *s) {}
 %}
 %token EOF
 %%

@@ -53,7 +53,7 @@ END
 cat > p.y <<'END'
 %{
 int yylex (void) { int new = 0; return new; }
-void yyerror (char *s) { return; }
+void yyerror (const char *s) {}
 %}
 %token ZARDOZ
 %%
@@ -85,7 +85,7 @@ cat > parse.yy <<'END'
 #include <cstdlib>
 #include "parse.hh"
 int yylex (void) { return 0; }
-void yyerror (const char *s) { return; }
+void yyerror (const char *s) {}
 %}
 %token FOOBAR
 %%
@@ -97,7 +97,7 @@ cat > parse2.y++ <<'END'
 %{
 #include <cstdlib>
 int yylex (void) { return 0; }
-void yyerror (const char *s) { return; }
+void yyerror (const char *s) {}
 %}
 %%
 x : 'x' {};

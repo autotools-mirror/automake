@@ -43,7 +43,7 @@ END
 cat > foo.y << 'END'
 %{
 int yylex () { return 0; }
-void yyerror (char *s) { return; }
+void yyerror (const char *s) {}
 int main () { return 0; }
 %}
 %%

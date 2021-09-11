@@ -51,7 +51,7 @@ EOF
 cat > parse.y << 'END'
 %{
 int yylex () {return 0;}
-void yyerror (char *s) {}
+void yyerror (const char *s) {}
 %}
 %%
 maude : 'm' 'a' 'u' 'd' 'e' {};

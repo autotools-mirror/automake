@@ -70,7 +70,7 @@ cat > sub1/parsefoo.yxx << 'END'
 #include <cstdio>
 // "std::" qualification required by Sun C++ 5.9.
 int yylex (void) { return std::getchar (); }
-void yyerror (const char *s) { return; }
+void yyerror (const char *s) {}
 %}
 %%
 x : 'x' { };
