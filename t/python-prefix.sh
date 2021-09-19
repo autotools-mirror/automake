@@ -15,8 +15,6 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 # Test configure options --with-python_prefix and --with-python_exec_prefix.
-# We can't test with no prefixes specified, since the default is to
-# install in Python's sys.prefix and sys.exec_prefix directories.
 
 required=python
 . test-init.sh

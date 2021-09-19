@@ -15,7 +15,8 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 # Check that AM_PATH_PYTHON correctly sets all the output variables
-# advertised in the manual.
+# advertised in the manual, both with the GNU prefix values and the
+# Python sys.* prefix values.
 
 required=python
 . test-init.sh
@@ -61,16 +62,22 @@ check-local: test-in test-am
 .PHONY: test-in test-am
 
 test-in:
+	@echo "> doing test-in"
+	@echo ">> contents of pythondir:"
 	cat pythondir
 	case `cat pythondir` in '$${PYTHON_PREFIX}'/*);; *) exit 1;; esac
+	@echo ">> contents of pyexecdir:"
 	cat pyexecdir
 	case `cat pyexecdir` in '$${PYTHON_EXEC_PREFIX}'/*);; *) exit 1;; esac
+	@echo ">> contents of vars-exp:"
 	cat $(srcdir)/vars-exp
+	@echo ">> contents of vars-got:"
 	cat $(builddir)/vars-got
 	diff $(srcdir)/vars-exp $(builddir)/vars-got
 
 ## Note: this target's rules will be extended in the "for" loop below.
 test-am:
+	@echo "> doing test-am"
 	case '$(pythondir)' in '$(PYTHON_PREFIX)'/*);; *) exit 1;; esac
 	case '$(pyexecdir)' in '$(PYTHON_EXEC_PREFIX)'/*);; *) exit 1;; esac
 END
@@ -78,35 +85,59 @@ END
 echo @pythondir@ > pythondir.in
 echo @pyexecdir@ > pyexecdir.in
 
-: > vars-exp
-: > vars-got.in
+# This depends on whether we're doing GNU or Python values, per arg.
+setup_vars_file ()
+{
+  vartype=$1
+  : > vars-exp
+  : > vars-got.in
 
-for var in $pyvars; do
-  eval val=\$$var
-  echo "var=$val" >> vars-exp
-  echo "var=@$var@" >> vars-got.in
-  echo "${tab}test x'\$($var)' = x'$val' || test \"\$NO_CHECK_PYTHON_PREFIX\"" >> Makefile.am
-done
+  for var in $pyvars; do
+    if test x"$vartype" = xgnu; then
+      # when not using Python sys.* values, PYTHON_*PREFIX will vary;
+      # the computed value will be (something like) "/usr",
+      # but the expected value will be "${prefix}".
+      if test x"$var" = xPYTHON_PREFIX \
+         || test x"$var" = xPYTHON_EXEC_PREFIX; then
+        continue
+      fi
+    fi
+    eval val=\$$var
+    echo "var=$val  #$var"   >> vars-exp
+    echo "var=@$var@  #$var" >> vars-got.in
+    echo "${tab}test x'\$($var)' = x'$val' || test \"\$NO_CHECK_PYTHON_PREFIX\"" >> Makefile.am
+  done
+}
 
-cat Makefile.am
-cat vars-got.in
+setup_vars_file gnu
 
 $ACLOCAL
 $AUTOMAKE --add-missing
 
+# some debugging output.
 for var in pythondir pyexecdir $pyvars; do
   grep "^$var *=" Makefile.in
 done
 
-instdir=$(pwd)/inst
-
 $AUTOCONF
-./configure --prefix="$instdir" PYTHON="$PYTHON"
 
+# Do GNU values.
+./configure PYTHON="$PYTHON"
 $MAKE test-in test-am
+run_make distcheck
+
+# Do Python values.
+setup_vars_file python
+instdir=$(pwd)/inst
+./configure PYTHON="$PYTHON" --with-python-sys-prefix --prefix="$instdir"
+$MAKE test-in test-am
+#
 # This tries to install to $PYTHON_PREFIX, which may not be writable.
 # Override it to something safe, but then of course we have to skip
 # checking that it is what we originally set it to.
-run_make distcheck PYTHON_PREFIX="$instdir" NO_CHECK_PYTHON_PREFIX=1
+run_make distcheck \
+  PYTHON_PREFIX="$instdir" \
+  NO_CHECK_PYTHON_PREFIX=1 \
+  AM_DISTCHECK_CONFIGURE_FLAGS=--with-python-sys-prefix
 
 :
