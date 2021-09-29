@@ -331,6 +331,10 @@ Simple Tests
 * Serial Test Harness::         Older (and discouraged) serial test harness
 * Parallel Test Harness::       Generic concurrent test harness
 
+Scripts-based Testsuites
+
+* Testsuite Environment Overrides::
+
 Custom Test Drivers
 
 * Overview of Custom Test Drivers Support::
@@ -9229,6 +9233,35 @@ The Autoconf Manual}), and in particular for the @code{distcheck} rule
 (@pxref{Checking the Distribution}).
 
 @vindex TESTS
+Automake ensures that each file listed in @code{TESTS} is built before
+it is run; you can list both source and derived programs (or scripts)
+in @code{TESTS}; the generated rule will look both in @code{srcdir} and
+`@file{..}'.  For instance, you might want to run a C program as a test.
+To do this you would list its name in @code{TESTS} and also in
+@code{check_PROGRAMS}, and then specify it as you would any other
+program.
+
+@vindex check_PROGRAMS
+Programs listed in @code{check_PROGRAMS} (and @code{check_LIBRARIES},
+@code{check_LTLIBRARIES}, ...) are only built during @code{make
+check}, not during @code{make all}.  You should list there any program
+needed by your tests that does not need to be built by @code{make
+all}.  The programs in @code{check_PROGRAMS} are @emph{not}
+automatically added to @code{TESTS} because @code{check_PROGRAMS}
+usually lists programs used by the tests, not the tests themselves.
+If all your programs are in fact test cases, you can set @code{TESTS =
+$(check_PROGRAMS)}.
+
+@menu
+* Testsuite Environment Overrides::
+@end menu
+
+@node Testsuite Environment Overrides
+@subsubsection Testsuite Environment Overrides
+
+@cindex Testsuite environment overrides
+@cindex Overriding testsuite environment
+
 @vindex TESTS_ENVIRONMENT
 @vindex AM_TESTS_ENVIRONMENT
 The @code{AM_TESTS_ENVIRONMENT} and @code{TESTS_ENVIRONMENT} variables can
@@ -9248,7 +9281,7 @@ hurdle is constituted by Korn shells, which usually set the close-on-exec
 flag on file descriptors opened with the @command{exec} builtin, thus
 rendering an idiom like @code{AM_TESTS_ENVIRONMENT = exec 9>&2;}
 ineffectual.  This issue also affects some Bourne shells, such as the
-HP-UX's @command{/bin/sh},
+HP-UX's @command{/bin/sh}.
 
 @c Keep in sync with tests-environment-backcompat.sh
 @example
@@ -9262,6 +9295,7 @@ AM_TESTS_ENVIRONMENT = \
   if test -d /usr/xpg4/bin; then \
     PATH=/usr/xpg4/bin:$$PATH; export PATH; \
   fi;
+
 @c $$ restore font-lock
 ## With this, the test scripts will be able to print diagnostic
 ## messages to the original standard error stream, even if the test
@@ -9270,30 +9304,27 @@ AM_TESTS_ENVIRONMENT = \
 AM_TESTS_FD_REDIRECT = 9>&2
 @end example
 
+@c https://bugs.gnu.org/49309
+As another example, a notice that a test is starting can be emitted
+using @code{AM_TESTS_ENVIRONMENT} (for package maintainers) or
+@code{TESTS_ENVIRONMENT} by users:
+
+@example
+make -j12 ... TESTS_ENVIRONMENT='echo RUNNING: "$$f";' check
+@end example
+
 @noindent
-Note however that @code{AM_TESTS_ENVIRONMENT} is, for historical and
-implementation reasons, @emph{not} supported by the serial harness
-(@pxref{Serial Test Harness}).
+The shell variable @code{$f} contains the test name. (Although
+technically this is not guaranteed, in practice it is extremely
+unlikely to ever change.)  This can be helpful to see when trying to
+debug test failures.
 
-Automake ensures that each file listed in @code{TESTS} is built before
-it is run; you can list both source and derived programs (or scripts)
-in @code{TESTS}; the generated rule will look both in @code{srcdir} and
-'@file{..}'.  For instance, you might want to run a C program as a test.
-To do this you would list its name in @code{TESTS} and also in
-@code{check_PROGRAMS}, and then specify it as you would any other
-program.
-
-Programs listed in @code{check_PROGRAMS} (and @code{check_LIBRARIES},
-@code{check_LTLIBRARIES}...) are only built during @code{make check},
-not during @code{make all}.  You should list there any program needed
-by your tests that does not need to be built by @code{make all}.  Note
-that @code{check_PROGRAMS} are @emph{not} automatically added to
-@code{TESTS} because @code{check_PROGRAMS} usually lists programs used
-by the tests, not the tests themselves.  Of course you can set
-@code{TESTS = $(check_PROGRAMS)} if all your programs are test cases.
+Notwithstanding these benefits, @code{AM_TESTS_ENVIRONMENT} is, for
+historical and implementation reasons, @emph{not} supported by the
+serial harness (@pxref{Serial Test Harness}).
 
 @node Serial Test Harness
-@subsection Older (and discouraged) serial test harness
+@subsection Older (and discouraged) Serial Test Harness
 @cindex @option{serial-tests}, Using
 
 First, note that today the use of this harness is strongly discouraged in
