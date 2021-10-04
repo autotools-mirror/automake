@@ -230,7 +230,7 @@ sc_perl_at_uscore_in_scalar_context:
 
 ## Allow only few variables to be localized in automake and aclocal.
 sc_perl_local:
-	@if egrep -v '^[ \t]*local \$$[_~]( *=|;)' \
+	@if grep -Ev '^[ \t]*local \$$[_~]( *=|;)' \
 	      $(automake_in) $(aclocal_in) | \
 	    grep '^[ \t]*local [^*]'; then \
 	  echo "Please avoid 'local'." 1>&2; \
