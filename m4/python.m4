@@ -108,11 +108,11 @@ AC_DEFUN([AM_PATH_PYTHON],
   dnl and sys.exec_prefix for the corresponding values of PYTHON_PREFIX
   dnl and PYTHON_EXEC_PREFIX. Otherwise, use the GNU ${prefix} and
   dnl ${exec_prefix} variables.
-  dnl 
+  dnl
   dnl The two are made distinct variables so they can be overridden if
   dnl need be, although general consensus is that you shouldn't need
   dnl this separation.
-  dnl 
+  dnl
   dnl Also allow directly setting the prefixes via configure options,
   dnl overriding any default.
   dnl

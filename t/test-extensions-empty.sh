@@ -35,7 +35,7 @@ END
 
 touch foo.test
 
-autoreconf -fi >reconf.out 2>&1 
+autoreconf -fi >reconf.out 2>&1
 grep 'uninitialized value' reconf.out && exit 1
 
 # What we're trying to avoid:
