@@ -12862,6 +12862,13 @@ This section describes a @command{make} idiom that can be used when a
 tool produces multiple output files.  It is not specific to Automake
 and can be used in ordinary @file{Makefile}s.
 
+First, however: GNU @command{make} is able to express rules with
+multiple output files using pattern rules (@pxref{Pattern Examples, ,
+Pattern Rule Examples, make, The GNU Make Manual}).  We do not discuss
+pattern rules here because they are not portable, but if you're able
+to assume GNU @command{make}, they are typically more convenient than
+any of the below approaches.
+
 Suppose we have a program called @command{foo} that will read one file
 called @file{data.foo} and produce two files named @file{data.c} and
 @file{data.h}.  We want to write a @file{Makefile} rule that captures
@@ -12905,36 +12912,14 @@ Another case is when the dependency (here @file{data.foo}) is
 (or depends upon) a phony target.
 @end itemize
 
-A solution that works with parallel @command{make} but not with
-phony dependencies is the following:
+Ideally, we want a scheme that will support any number of output
+files, and that works with parallel @command{make} invocations, and
+that does nothing when @samp{make -n} is run.  It is apparently not
+possible to achieve a perfect solution.  Even an acceptable solution
+for the majority of cases gets complicated, so we will take it step by
+step.
 
-@example
-data.c data.h: data.foo
-        foo data.foo
-data.h: data.c
-@end example
-
-@noindent
-The above rules are equivalent to
-
-@example
-data.c: data.foo
-        foo data.foo
-data.h: data.foo data.c
-        foo data.foo
-@end example
-
-@noindent
-therefore a parallel @command{make} will have to serialize the builds
-of @file{data.c} and @file{data.h}, and will detect that the second is
-no longer needed once the first is over.
-
-Using this pattern is probably enough for most cases.  However it does
-not scale easily to more output files (in this scheme all output files
-must be totally ordered by the dependency relation), so we will
-explore a more complicated solution.
-
-Another idea is to write the following:
+One idea is to write the following:
 
 @example
 # There is still a problem with this one.
@@ -12960,6 +12945,7 @@ What we need is a rule that forces a rebuild when @file{data.h} is
 missing.  Here it is:
 
 @example
+# More or less works, but not easy to generalize.
 data.c: data.foo
         foo data.foo
 data.h: data.c
@@ -12971,6 +12957,7 @@ data.h: data.c
 It is tempting to use a single test as follows:
 
 @example
+# This breaks make -n.
 data.h: data.c
 ## Recover from the removal of $@@
         @@if test -f $@@; then :; else \
@@ -13003,14 +12990,14 @@ data.h data.w data.x: data.c
         @@test -f $@@ || $(MAKE) $(AM_MAKEFLAGS) data.c
 @end example
 
-However there are now three minor problems in this setup.  One is related
-to the timestamp ordering of @file{data.h}, @file{data.w},
-@file{data.x}, and @file{data.c}.  Another one is a race condition
-if a parallel @command{make} attempts to run multiple instances of the
-recover block at once.  Finally, the recursive rule breaks @samp{make -n}
-when run with GNU @command{make} (as well as some other @command{make}
-implementations), as it may remove @file{data.h} even when it should not
-(@pxref{MAKE Variable, , How the @code{MAKE} Variable Works, make,
+However there are now three problems in this setup.  One is related to
+the timestamp ordering of @file{data.h}, @file{data.w}, @file{data.x},
+and @file{data.c}.  A second is a race condition if a parallel
+@command{make} attempts to run multiple instances of the recover block
+at once.  Finally, the recursive rule breaks @samp{make -n} when run
+with GNU @command{make} (as well as some other @command{make}
+implementations), as it may remove @file{data.h} even when it should
+not (@pxref{MAKE Variable, , How the @code{MAKE} Variable Works, make,
 The GNU Make Manual}).
 
 Let us deal with the first problem.  @command{foo} outputs four files,
@@ -13180,13 +13167,6 @@ $(ELCFILES): elc-stamp
           fi; \
         fi
 @end example
-
-For completeness it should be noted that GNU @command{make} is able to
-express rules with multiple output files using pattern rules
-(@pxref{Pattern Examples, , Pattern Rule Examples, make, The GNU Make
-Manual}).  We do not discuss pattern rules here because they are not
-portable, but they can be convenient in packages that assume GNU
-@command{make}.
 
 
 @node Hard-Coded Install Paths
