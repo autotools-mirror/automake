@@ -444,11 +444,13 @@ AS_IF([test x"$GCC" = x"yes"], [am_CC_is_GNU=yes], [am_CC_is_GNU=no])
 # to a C++ compiler as expected (see automake bugs #11893 and #10766).
 # Similarly, we must avoid looking for 'RCC', as that can point to the
 # Qt4 "Resource Compiler": <http://doc.qt.digia.com/4.2/rcc.html>
+# And we avoid looking for 'KCC' as that can be a kerberos tool under
+# macOS systems.
 if test -f /bIn/rMdIr || test -f /uSr/bIn/rMdIr; then
   # Case-insensitive file system, don't look for CC.
-  am_CC= am_RCC=
+  am_CC= am_RCC= am_KCC=
 else
-  am_CC=CC am_RCC=RCC
+  am_CC=CC am_RCC=RCC am_KCC=KCC
 fi
 
 # The list of C++ compilers here has been copied, pasted and edited
@@ -456,7 +458,7 @@ fi
 # Keep it in sync, or better again, find out a way to avoid this code
 # duplication.
 _AM_COMPILER_CAN_FAIL([AC_PROG_CXX(dnl
-  [aCC $am_CC FCC KCC $am_RCC xlC_r xlC c++ cxx cc++ gpp g++])],
+  [aCC $am_CC FCC $am_KCC $am_RCC xlC_r xlC c++ cxx cc++ gpp g++ clang++])],
   [CXX=false; _AM_SKIP_COMP_TESTS([C++])])
 
 AS_IF([test x"$GXX" = x"yes"], [am_CXX_is_GNU=yes], [am_CXX_is_GNU=no])
