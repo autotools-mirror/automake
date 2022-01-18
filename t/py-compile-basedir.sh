@@ -43,7 +43,7 @@ for d in foo foo/bar "$(pwd)/foo" . .. ../foo ''; do
   py_installed "$d2/sub/$f.pyc"
   files=$(find "$d2" | grep '\.py[co]$')
   # with new-enough Python3, there are six files.
-  test $(echo "$files" | wc -l) -eq 4 || $(echo "$files" | wc -l) -eq 6
+  case $(echo "$files" | wc -l) in 4|6) ;; *) false;; esac
   case $d2 in
     .|..) rm -f $files;;
        *) rm -rf "$d2";;
