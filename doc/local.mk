@@ -46,9 +46,9 @@ update_mans = \
 	  && echo ".so man1/$$f-$(APIVERSION).1" > $@
 
 %D%/aclocal-$(APIVERSION).1: $(aclocal_script) lib/Automake/Config.pm
-	$(update_mans) aclocal-$(APIVERSION)
+	$(update_mans) $(aclocal_script)
 %D%/automake-$(APIVERSION).1: $(automake_script) lib/Automake/Config.pm
-	$(update_mans) automake-$(APIVERSION)
+	$(update_mans) $(automake_script)
 
 ## This target is not invoked as a dependency of anything. It exists
 ## merely to make checking the links in automake.texi (that is,
