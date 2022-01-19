@@ -933,6 +933,7 @@ t/python-prefix.sh \
 t/python-vars.sh \
 t/python-virtualenv.sh \
 t/python-pr10995.sh \
+t/ranlib_override.sh \
 t/recurs-user.sh \
 t/recurs-user2.sh \
 t/recurs-user-deeply-nested.sh \
