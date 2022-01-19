@@ -724,6 +724,7 @@ t/no-extra-c-stuff.sh \
 t/no-extra-makefile-code.sh \
 t/no-spurious-install-recursive.sh \
 t/nobase.sh \
+t/nobase-dist.sh \
 t/nobase-libtool.sh \
 t/nobase-python.sh \
 t/nobase-nodist.sh \
