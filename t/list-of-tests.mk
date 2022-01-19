@@ -160,6 +160,7 @@ t/ar2.sh \
 t/ar3.sh \
 t/ar4.sh \
 t/ar5.sh \
+t/ar_override.sh \
 t/asm.sh \
 t/asm2.sh \
 t/asm3.sh \
