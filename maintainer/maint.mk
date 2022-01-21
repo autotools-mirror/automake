@@ -27,9 +27,11 @@ WGET = wget
 
 gitlog_to_changelog_command = $(PERL) $(srcdir)/lib/gitlog-to-changelog
 gitlog_to_changelog_fixes = $(srcdir)/.git-log-fix
-gitlog_to_changelog_options = --amend=$(gitlog_to_changelog_fixes) \
-                              --since='2011-12-28 00:00:00' \
-                              --no-cluster --format '%s%n%n%b'
+gitlog_to_changelog_options = \
+  --srcdir=$(srcdir) \
+  --amend=$(gitlog_to_changelog_fixes) \
+  --since='2011-12-28 00:00:00' \
+  --no-cluster --format '%s%n%n%b'
 
 EXTRA_DIST += lib/gitlog-to-changelog
 EXTRA_DIST += $(gitlog_to_changelog_fixes)
