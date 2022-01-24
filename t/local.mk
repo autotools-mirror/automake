@@ -42,6 +42,11 @@ TESTS =
 # Keep this in sync with the similar list in ax/runtest.in.
 AM_TESTS_ENVIRONMENT = \
   for v in \
+    ACLOCAL \
+    AUTOCONF \
+    AUTOHEADER \
+    AUTOMAKE \
+    AUTOUPDATE \
     required \
     am_test_protocol \
     am_serial_tests \
