@@ -63,7 +63,9 @@ INFO_DEPS += %DEST_INFO_PREFIX%%DEST_SUFFIX%
 ?!GENERIC?%DEST_PREFIX%.dvi: %SOURCE% %DEPS% %DIRSTAMP%
 	%AM_V_TEXI2DVI%TEXINPUTS="$(am__TEXINFO_TEX_DIR)$(PATH_SEPARATOR)$$TEXINPUTS" \
 ## Must set MAKEINFO like this so that version.texi will be found even
-## if it is in srcdir (-I $(srcdir) is set in %MAKEINFOFLAGS%).
+## if it is in srcdir (-I $(srcdir) is set in %MAKEINFOFLAGS%), and in case
+## texi2dvi automatically falls back to using makeinfo for expanding (-E).
+## If texi2dvi doesn't fall back, we also pass %MAKEINFOFLAGS% directly below.
 	MAKEINFO='$(MAKEINFO) $(AM_MAKEINFOFLAGS) $(MAKEINFOFLAGS) %MAKEINFOFLAGS%' \
 ## texi2dvi doesn't silence everything with -q, redirect to /dev/null instead.
 ## We still want -q (%TEXIQUIET%) because it turns on batch mode.
@@ -71,10 +73,10 @@ INFO_DEPS += %DEST_INFO_PREFIX%%DEST_SUFFIX%
 ## by-products are left in there, instead of cluttering the current
 ## directory (see automake bug#11146).  Use a different build-dir for
 ## each file (and distinct from that of the corresponding PDF file) to
-## avoid hitting a Texinfop bug that could cause low-probability racy
+## avoid hitting a Texinfo bug that could cause low-probability racy
 ## failure when doing parallel builds; see:
 ## https://lists.gnu.org/archive/html/automake-patches/2012-06/msg00073.html
-	$(TEXI2DVI) %TEXIQUIET% --build-dir=$(@:.dvi=.t2d) -o $@ %TEXIDEVNULL% \
+	$(TEXI2DVI) %MAKEINFOFLAGS% %TEXIQUIET% --build-dir=$(@:.dvi=.t2d) -o $@ %TEXIDEVNULL% \
 ?GENERIC?	%SOURCE%
 ?!GENERIC?	`test -f '%SOURCE%' || echo '$(srcdir)/'`%SOURCE%
 
@@ -82,7 +84,9 @@ INFO_DEPS += %DEST_INFO_PREFIX%%DEST_SUFFIX%
 ?!GENERIC?%DEST_PREFIX%.pdf: %SOURCE% %DEPS% %DIRSTAMP%
 	%AM_V_TEXI2PDF%TEXINPUTS="$(am__TEXINFO_TEX_DIR)$(PATH_SEPARATOR)$$TEXINPUTS" \
 ## Must set MAKEINFO like this so that version.texi will be found even
-## if it is in srcdir (-I $(srcdir) is set in %MAKEINFOFLAGS%).
+## if it is in srcdir (-I $(srcdir) is set in %MAKEINFOFLAGS%), and in case
+## texi2dvi automatically falls back to using makeinfo for expanding (-E).
+## If texi2dvi doesn't fall back, we also pass %MAKEINFOFLAGS% directly below.
 	MAKEINFO='$(MAKEINFO) $(AM_MAKEINFOFLAGS) $(MAKEINFOFLAGS) %MAKEINFOFLAGS%' \
 ## texi2pdf doesn't silence everything with -q, redirect to /dev/null instead.
 ## We still want -q (%TEXIQUIET%) because it turns on batch mode.
@@ -90,10 +94,10 @@ INFO_DEPS += %DEST_INFO_PREFIX%%DEST_SUFFIX%
 ## by-products are left in there, instead of cluttering the current
 ## directory (see automake bug#11146).  Use a different build-dir for
 ## each file (and distinct from that of the corresponding DVI file) to
-## avoid hitting a Texinfop bug that could cause low-probability racy
+## avoid hitting a Texinfo bug that could cause low-probability racy
 ## failure when doing parallel builds; see:
 ## https://lists.gnu.org/archive/html/automake-patches/2012-06/msg00073.html
-	$(TEXI2PDF) %TEXIQUIET% --build-dir=$(@:.pdf=.t2p) -o $@ %TEXIDEVNULL% \
+	$(TEXI2PDF) %MAKEINFOFLAGS% %TEXIQUIET% --build-dir=$(@:.pdf=.t2p) -o $@ %TEXIDEVNULL% \
 ?GENERIC?	%SOURCE%
 ?!GENERIC?	`test -f '%SOURCE%' || echo '$(srcdir)/'`%SOURCE%
 

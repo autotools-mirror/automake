@@ -57,4 +57,9 @@ $MAKE distcheck
 test -f ../subdir/main.info
 test ! -e subdir/main.info
 
+# Make sure automatic -I flags were added for the subdir.
+grep '\$(MAKEINFO).* -I subdir ' ../Makefile.in
+grep '\$(TEXI2DVI).* -I subdir ' ../Makefile.in
+grep '\$(TEXI2PDF).* -I subdir ' ../Makefile.in
+
 :
