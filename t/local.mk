@@ -51,7 +51,7 @@ AM_TESTS_ENVIRONMENT = \
     am_test_lib_sourced \
     test_lib_sourced \
   ; do \
-    eval test x"\$${$$v}" = x || unset $$v; \
+    eval test x\"\$${$$v}\" = x || unset $$v; \
   done;
 # We want warning messages and explanations for skipped tests to go to
 # the console if possible, so set up 'stderr_fileno_' properly.
