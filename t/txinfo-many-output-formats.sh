@@ -86,6 +86,10 @@ $ACLOCAL
 $AUTOMAKE --add-missing
 $AUTOCONF
 
+# Make sure AM_TEXI2FLAGS is passed down.
+grep '\$(TEXI2DVI).*\$(AM_TEXI2FLAGS)' Makefile.in
+grep '\$(TEXI2PDF).*\$(AM_TEXI2FLAGS)' Makefile.in
+
 # To simplify syncing with sister test 'txinfo-many-output-formats.sh'
 srcdir=.
 
