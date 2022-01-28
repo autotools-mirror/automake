@@ -424,7 +424,7 @@ web-manual-update:
 	$(AM_V_at)mkdir $t
 	$(AM_V_at)cd $t \
 	  && $(CVS) -z3 -d :ext:$(CVS_USER)@$(WEBCVS_ROOT)/$(PACKAGE) \
-	            co $(PACKAGE)
+	            co $(PACKAGE)/manual
 	@# According to the rsync manpage, "a trailing slash on the
 	@# source [...] avoids creating an additional directory
 	@# level at the destination".  So the trailing '/' after
