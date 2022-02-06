@@ -23,15 +23,13 @@ cp "$am_scriptdir/py-compile" . \
 
 cat > my-py <<'END'
 #!/bin/sh
+echo 2
 : > my-py.run
 END
 chmod a+x my-py
 
 mkdir sub1
 cd sub1
-
-PYTHON=: ../py-compile foo.py
-ls | grep . && exit 1
 
 PYTHON=false ../py-compile foo.py && exit 1
 ls | grep . && exit 1
