@@ -131,6 +131,13 @@ case $python_major in
   ;;
 esac
 
+python_minor=`$PYTHON -c 'import sys; print(sys.version_info[1])'`
+
+# NB: When adding support for newer versions, prefer copying & adding new cases
+# rather than try to keep things merged with shell variables.
+
+# First byte compile (no optimization) all the modules.
+# This works for all currently known Python versions.
 $PYTHON -c "
 import sys, os, py_compile, importlib
 
@@ -149,7 +156,10 @@ for file in sys.argv[1:]:
         py_compile.compile(filepath, filepath + 'c', path)
 sys.stdout.write('\n')" "$@" || exit $?
 
-$PYTHON -O -c "
+# Then byte compile w/optimization all the modules.
+case $python_major.$python_minor in
+2.*)
+  $PYTHON -O -c "
 import sys, os, py_compile, importlib
 
 # pypy does not use .pyo optimization
@@ -170,6 +180,51 @@ for file in sys.argv[1:]:
     else:
         py_compile.compile(filepath, filepath + 'o', path)
 sys.stdout.write('\n')" "$@" 2>/dev/null || exit $?
+  ;;
+*)  # Python 3+
+  $PYTHON -O -c "
+import sys, os, py_compile, importlib
+
+print('Byte-compiling python modules (optimized versions) ...')
+for file in sys.argv[1:]:
+    $pathtrans
+    $filetrans
+    if not os.path.exists(filepath) or not (len(filepath) >= 3
+                                            and filepath[-3:] == '.py'):
+	    continue
+    print(file, end=' ', flush=True)
+    if hasattr(sys.implementation, 'cache_tag'):
+        py_compile.compile(filepath, importlib.util.cache_from_source(filepath), path)
+    else:
+        py_compile.compile(filepath, filepath + 'o', path)
+print()" "$@" 2>/dev/null || exit $?
+  ;;
+esac
+
+# Then byte compile w/more optimization.
+case $python_major.$python_minor in
+2.*|3.[0-4])
+  ;;
+*)  # Python 3.5+
+  # See https://bugs.gnu.org/38043 for background.
+  $PYTHON -OO -c "
+import sys, os, py_compile, imp
+
+print('Byte-compiling python modules (-OO version) ...')
+for file in sys.argv[1:]:
+    $pathtrans
+    $filetrans
+    if not os.path.exists(filepath) or not (len(filepath) >= 3
+                                            and filepath[-3:] == '.py'):
+        continue
+    print(file, end=' ', flush=True)
+    if hasattr(imp, 'get_tag'):
+        py_compile.compile(filepath, imp.cache_from_source(filepath), path)
+    else:
+        py_compile.compile(filepath, filepath + 'o', path)
+print()" "$@" 2>/dev/null || exit $?
+  ;;
+esac
 
 # Local Variables:
 # mode: shell-script
