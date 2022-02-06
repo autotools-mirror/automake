@@ -29,8 +29,8 @@ cp "$am_scriptdir/py-compile" . \
 cat stdout
 test -s stderr && { cat stderr >&2; exit 1; }
 grep '^Usage: py-compile .' stdout
-$FGREP ' [--basedir DIR]' stdout
-$FGREP ' [--destdir DIR]' stdout
+$FGREP ' --basedir DIR ' stdout
+$FGREP ' --destdir DIR ' stdout
 
 # --version
 
