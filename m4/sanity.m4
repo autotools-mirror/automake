@@ -6,10 +6,52 @@
 # gives unlimited permission to copy and/or distribute it,
 # with or without modifications, as long as this notice is preserved.
 
+# _AM_SLEEP_FRACTIONAL_SECONDS
+# ----------------------------
+AC_DEFUN([_AM_SLEEP_FRACTIONAL_SECONDS], [dnl
+AC_CACHE_CHECK([whether sleep supports fractional seconds], am_cv_sleep_fractional_seconds, [dnl
+AS_IF([sleep 0.001 2>/dev/null], [am_cv_sleep_fractional_seconds=true], [am_cv_sleep_fractional_seconds=false])
+])])
+
+# _AM_FILESYSTEM_TIMESTAMP_RESOLUTION
+# -----------------------------------
+# Determine the filesystem timestamp resolution.  Modern systems are nanosecond
+# capable, but historical systems could be millisecond, second, or even 2-second
+# resolution.
+AC_DEFUN([_AM_FILESYSTEM_TIMESTAMP_RESOLUTION], [dnl
+AC_REQUIRE([_AM_SLEEP_FRACTIONAL_SECONDS])
+AC_CACHE_CHECK([the filesystem timestamp resolution], am_cv_filesystem_timestamp_resolution, [dnl
+# Use names that lexically sort older-first when the timestamps are equal.
+rm -f conftest.file.a conftest.file.b
+: > conftest.file.a
+AS_IF([$am_cv_sleep_fractional_seconds], [dnl
+  am_try_sleep=0.1 am_try_loops=20
+], [dnl
+  am_try_sleep=1   am_try_loops=2
+])
+am_try=0
+while :; do
+  AS_VAR_ARITH([am_try], [$am_try + 1])
+  echo "timestamp $am_try" > conftest.file.b
+  set X `ls -t conftest.file.a conftest.file.b`
+  if test "$[2]" = conftest.file.b || test $am_try -eq $am_try_loops; then
+    break
+  fi
+  sleep $am_try_sleep
+done
+rm -f conftest.file.a conftest.file.b
+am_cv_filesystem_timestamp_resolution=$am_try
+AS_IF([$am_cv_sleep_fractional_seconds], [dnl
+  AS_VAR_ARITH([am_cv_filesystem_timestamp_resolution], [$am_try / 10])
+  AS_VAR_ARITH([am_fraction], [$am_try % 10])
+  AS_VAR_APPEND([am_cv_filesystem_timestamp_resolution], [.$am_fraction])
+])
+])])
+
 # AM_SANITY_CHECK
 # ---------------
 AC_DEFUN([AM_SANITY_CHECK],
-[dnl
+[AC_REQUIRE([_AM_FILESYSTEM_TIMESTAMP_RESOLUTION])
 rm -f conftest.file
 AC_CACHE_CHECK([whether build environment is sane], am_cv_build_env_is_sane, [dnl
 # Reject unsafe characters in $srcdir or the absolute working directory
@@ -53,7 +95,7 @@ if (
        break
      fi
      # Just in case.
-     sleep 1
+     sleep $am_cv_filesystem_timestamp_resolution
      am_has_slept=yes
    done
    test "$[2]" = conftest.file
@@ -69,7 +111,7 @@ fi
 # generated files are strictly newer.
 am_sleep_pid=
 if ! test -e conftest.file || grep 'slept: no' conftest.file >/dev/null 2>&1; then
-  ( sleep 1 ) &
+  ( sleep $am_cv_filesystem_timestamp_resolution ) &
   am_sleep_pid=$!
 fi
 AC_CONFIG_COMMANDS_PRE(
