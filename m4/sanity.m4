@@ -9,7 +9,9 @@
 # AM_SANITY_CHECK
 # ---------------
 AC_DEFUN([AM_SANITY_CHECK],
-[AC_MSG_CHECKING([whether build environment is sane])
+[dnl
+rm -f conftest.file
+AC_CACHE_CHECK([whether build environment is sane], am_cv_build_env_is_sane, [dnl
 # Reject unsafe characters in $srcdir or the absolute working directory
 # name.  Accept space and tab only in the latter.
 am_lf='
@@ -57,17 +59,16 @@ if (
    test "$[2]" = conftest.file
    )
 then
-   # Ok.
-   :
+  am_cv_build_env_is_sane=yes
 else
    AC_MSG_ERROR([newly created file is older than distributed files!
 Check your system clock])
 fi
-AC_MSG_RESULT([yes])
+])
 # If we didn't sleep, we still need to ensure time stamps of config.status and
 # generated files are strictly newer.
 am_sleep_pid=
-if grep 'slept: no' conftest.file >/dev/null 2>&1; then
+if ! test -e conftest.file || grep 'slept: no' conftest.file >/dev/null 2>&1; then
   ( sleep 1 ) &
   am_sleep_pid=$!
 fi
