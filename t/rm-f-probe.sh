@@ -14,8 +14,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-# Verify our probe that checks that "rm -f" doesn't complain if called
-# without file operands works as expected.  See automake bug#10828.
+# Verify our probe that checks that "rm -f" behavior works.
+# https://bugs.gnu.org/10828
 
 . test-init.sh
 
@@ -40,8 +40,8 @@ while test $# -gt 0; do
   shift
 done
 if test $# -eq 0; then
-  echo "Oops, fake rm called without arguments" >&2
-  exit 1
+  echo "Oops, fake rm called without arguments" >&2 #DELETE
+  exit 1 #CHANGE
 else
   exec rm $rm_opts "$@"
 fi
@@ -54,19 +54,17 @@ export PATH original_PATH
 
 rm -f && exit 99 # Sanity check.
 
-./configure 2>stderr && { cat stderr >&2; exit 1; }
-cat stderr >&2
-
-grep "'rm' program.* unable to run without file operands" stderr
-$FGREP "tell bug-automake@gnu.org about your system" stderr
-$FGREP "install GNU coreutils" stderr
-$EGREP "(^| |')ACCEPT_INFERIOR_RM_PROGRAM($| |')" stderr
-
-ACCEPT_INFERIOR_RM_PROGRAM=yes; export ACCEPT_INFERIOR_RM_PROGRAM
-
+# Check that `rm -f` is detected as broken.
 ./configure
-$MAKE
-$MAKE distcheck
+grep '^am__rm_f_notfound = ""$' Makefile
+
+# Chagne the `rm -f` behavior to work.
+sed -e '/#DELETE/d' -e '/#CHANGE/s:1:0:' bin/rm > bin/rm.tmp
+cat bin/rm.tmp > bin/rm
+
+# Check that `rm -f` is detected as working.
+./configure
+grep '^am__rm_f_notfound = *$' Makefile
 
 # For the sake of our exit trap.
 PATH=$original_PATH; export PATH
