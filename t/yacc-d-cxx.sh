@@ -26,6 +26,9 @@ write_parse ()
   header=$1
   unindent <<END
     %{
+    // Include C header to provide global symbols that flex assumes.
+    // https://bugs.gnu.org/20031
+    #include <stdlib.h>
     // Valid C++, but deliberately invalid C.
     #include <cstdlib>
     #include "$header"
