@@ -857,6 +857,9 @@ sub define ($$$$$$$$)
   msg ('portability', $where, "':='-style assignments are not portable")
     if $type eq ':';
 
+  msg ('portability', $where, "escaping \\# comment markers is not portable")
+    if index ($value, '\#') != -1;
+
   check_variable_expansions ($value, $where);
 
   # If there's a comment, make sure it is \n-terminated.

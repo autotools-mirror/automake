@@ -188,7 +188,7 @@ sub append ($$$)
   #   VAR = foo # com bar
   # Furthermore keeping '#' would not be portable if the variable is
   # output on multiple lines.
-  $val =~ s/ ?#.*//;
+  $val =~ s/ ?(^|[^\\])#.*/$1/;
   # Insert a separator, if required.
   $val .= ' ' if $val;
   $self->{'value'} = $val . $value;

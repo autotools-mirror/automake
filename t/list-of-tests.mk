@@ -265,7 +265,9 @@ t/comment8.sh \
 t/comment9.sh \
 t/commen10.sh \
 t/commen11.sh \
+t/comment12.sh \
 t/comment-block.sh \
+t/comments-escaped-in-var.sh \
 t/comments-in-var-def.sh \
 t/compile.sh \
 t/compile2.sh \
