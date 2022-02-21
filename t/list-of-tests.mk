@@ -188,6 +188,7 @@ t/auxdir-computed.tap \
 t/auxdir-misplaced.sh \
 t/auxdir-nonexistent.sh \
 t/auxdir-pr19311.sh \
+t/auxdir-subsubdir.sh \
 t/auxdir-unportable.tap \
 t/backcompat.sh \
 t/backcompat2.sh \
