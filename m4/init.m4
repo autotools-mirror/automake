@@ -134,7 +134,7 @@ if test -z "$CSCOPE"; then
 fi
 AC_SUBST([CSCOPE])
 
-AC_REQUIRE([AM_SILENT_RULES])dnl
+AC_REQUIRE([_AM_SILENT_RULES])dnl
 dnl The testsuite driver may need to know about EXEEXT, so add the
 dnl 'am__EXEEXT' conditional if _AM_COMPILER_EXEEXT was seen.  This
 dnl macro is hooked onto _AC_COMPILER_EXEEXT early, see below.

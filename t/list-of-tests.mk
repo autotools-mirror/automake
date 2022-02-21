@@ -1015,6 +1015,7 @@ t/sanity.sh \
 t/seenc.sh \
 t/silent-c.sh \
 t/silent-cxx.sh \
+t/silent-defaults.sh \
 t/silent-lt.sh \
 t/silent-f77.sh \
 t/silent-f90.sh \
