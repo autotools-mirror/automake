@@ -74,7 +74,7 @@ do_check ()
     $FGREP 'cp ' output && exit 1
     $FGREP 'generate-header' output && exit 1
     $FGREP 'rm -f' output && exit 1
-    grep '[012]\.h' output && exit 1
+    grep '\bsub/[012]\.h\b' output && exit 1
     grep '^ XGEN    foo$' output
     grep '^ GEN     \[headers\]$' output
   else
