@@ -37,7 +37,7 @@ EXTRA_DIST += %D%/help2man
 update_mans = \
   $(AM_V_GEN): \
     && $(MKDIR_P) %D% \
-    && AUTOMAKE_HELP2MAN=true ./pre-inst-env $(PERL) $(srcdir)/%D%/help2man --output=$@
+    && AUTOMAKE_HELP2MAN=true ./pre-inst-env $(PERL) $(srcdir)/%D%/help2man --output=$@ --info-page=automake
 
 %D%/aclocal.1 %D%/automake.1:
 	$(AM_V_GEN): \
