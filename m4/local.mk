@@ -46,6 +46,7 @@ dist_automake_ac_DATA = \
   %D%/options.m4 \
   %D%/python.m4 \
   %D%/prog-cc-c-o.m4 \
+  %D%/rmf.m4 \
   %D%/runlog.m4 \
   %D%/sanity.m4 \
   %D%/silent.m4 \
@@ -53,7 +54,8 @@ dist_automake_ac_DATA = \
   %D%/substnot.m4 \
   %D%/tar.m4 \
   %D%/upc.m4 \
-  %D%/vala.m4
+  %D%/vala.m4 \
+  %D%/xargsn.m4
 
 dist_system_ac_DATA = %D%/acdir/README
 
