@@ -11,7 +11,7 @@
 
 * The correct response to most actual bugs is to write a new test case
   which demonstrates the bug.  Then fix the bug, re-run the test suite,
-  and check everything in.  Run the test suite in parallel.
+  and check everything in.  Run the test suite in parallel or it takes ages.
 
 * If you incorporate a change from somebody on the net:
   - First, if it is not a tiny change, you must make sure they have
@@ -68,6 +68,12 @@
       python gcc-toolchain gfortran pkg-config vala
 
   For other environments, you'll need to install the equivalent.
+
+* To run the bin/automake or bin/aclocal scripts in a checkout, it is
+  necessary to set PERL5LIB, as in:
+     am=/path/to/automake/checkout
+     env PERL5LIB=$am/lib $am/bin/automake --help
+     env PERL5LIB=$am/lib $am/bin/aclocal --help
 
 ============================================================================
 = Naming
@@ -324,20 +330,33 @@
 
 * See file 't/README' for more information.
 
-* Use "make check" and "make maintainer-check" liberally.
+* Use "make check" and "make maintainer-check" liberally.  It is often
+  useful to set VERBOSE=1 for more reporting on what is being done.
 
 * Export the 'keep_testdirs' environment variable to "yes" to keep
-  test directories for successful tests also.
+  *.dir test directories for successful tests also.
 
-* Use perl coverage information to ensure your new code is thoroughly
+* Use Perl coverage information to ensure your new code is thoroughly
   tested by your new tests.
 
 * To run the tests, you should install expect, shar, language compilers,
   gettext macros.  Anything you don't install won't be tested.  The test
   suite will report on tests skipped due to software not available.
 
-* You can run a single test, with, e.g.,
+* Run the test suite in parallel (e.g., "make -j12 check"), both so it
+  doesn't take forever and because that is what most users will do.  You
+  can also parallelize the makes that run inside each test with, e.g.:
+    make check AM_TESTSUITE_MAKE="make -j$(( 1*$(nproc) + 1 ))"
+  If you like, try different levels of parallelization to see what
+  runs the fastest on your machine.  We'll use -j12 in this document.
 
+* To summarize, here is a typical make check invocation:
+    make -j12 VERBOSE=1 keep_testdirs=yes check
+
+* Then check t/test-suite.log for the overall results.  The directory
+  t/TESTNAME.dir is where the work will be left, if the test fails.
+
+* You can run a single test, with, e.g.,
     make check TESTS='t/aclocal-acdir.sh'
 
   where t/aclocal-acdir.sh can be any t/*.sh test, including a new one
@@ -345,31 +364,20 @@
   make about the many cd commands, and/or env VERBOSE=1 to get more
   information about what make is running.
 
-* Then check t/test-suite.log for the overall results.  The directory
-  t/TESTNAME.dir is where the work will be left, if the test fails.
-  During development of a new test, you want to end it with "exit 33"
-  (or whatever) to make it fail even when it would succeed, so you can
-  inspect the test directory to be sure things worked as expected.
-
-  You can also set keep_testdirs=yes on the command line to keep the
-  *.dir results.
-
-* Run the test suite in parallel (e.g., "make -j12 check"), both so it
-  doesn't take forever and because that is what most users will do.  You
-  can also parallelize the makes that run inside each test with, e.g.:
-
-    make check AM_TESTSUITE_MAKE="make -j$(( 1*$(nproc) + 1 ))"
-
-  If you like, try different levels of parallelization to see what
-  runs the fastest on your machine.
+* Sometimes you may want to see when each test starts running, and not
+  just when they complete.  This can be done by setting TESTS_ENVIRONMENT,
+  as in:
+    make -j12 VERBOSE=1 TESTS_ENVIRONMENT='echo RUNNING: "$$f";' check
 
 * Run "make maintainer-check" before commit.  Watch out for trailing spaces.
+  It may be useful to run it more verbose:
+    make AM_V_GEN= VERBOSE=1 maintainer-check
 
-* It is good to run also run "make -j12 distcheck" before pushing a
-  commit since that exercises yet more testing, after "make -j12 check"
-  succeeds.
+* After "make -j12 check" succeeds. run "make -j12 distcheck" before
+  pushing a commit, since that exercises yet more of the code.
 
-* Use make V=1 to un-silence (some) of what make does.
+* To un-silence (some) of what make does, use make V=1.
+  For yet more verbosity, make VERBOSE=1.
 
 * To set up a new test, first write the test file in t/good-name.sh.
   Choose a name that fits with existing ones, as best you can devise.
@@ -383,6 +391,11 @@
 
   - You can run the new test on its own with
     make check TESTS='t/good-name.sh'
+
+  - During development of a new test, it can be useful to end it with
+    "exit 33" (or whatever random value) to force it to fail even when it
+    would otherwise succeed, so you can inspect the test directory to be
+    sure things worked as expected.
 
   - At some point before releasing, add the test to the appropriate
   variable in t/list-of-tests.mk, most likely the (alphabetical)
@@ -429,12 +442,12 @@
   explicitly described.
 
 * Fetch new versions of the files that are maintained by the FSF by
-  running "make fetch".  In case any file in the automake repository
-  has been updated, commit and re-run the testsuite.
+  running "make fetch".  help2man has to be updated separately.  In case
+  any file in the automake repository has been updated, commit and
+  re-run the testsuite.
 
 * Ensure that the copyright notices of the distributed files are up to
-  date.  The maintainer-only target "update-copyright" can help with
-  this.
+  date.  The maintainer-only target "update-copyright" can help with this.
 
 * Check NEWS; in particular, ensure that all the relevant differences
   with the last release are actually reported.
