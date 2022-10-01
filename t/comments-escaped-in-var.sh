@@ -30,8 +30,11 @@ END
 
 $ACLOCAL
 
-# This should fail due to -Werror.
-$AUTOMAKE && exit 1
+# This should fail due to -Werror, as in:
+#   automake-1.16: warnings are treated as errors
+#   Makefile.am:2: warning: escaping \# comment markers is not portable
+AUTOMAKE_fails
+grep 'escaping.*comment markers.*portable' stderr
 
 # This should pass though.
 $AUTOMAKE -Wno-portability

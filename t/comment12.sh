@@ -40,5 +40,5 @@ $AUTOMAKE
 # For debugging.
 grep '^VAR' Makefile.in
 
-count=`grep '^VAR. = val$' Makefile.in | wc -l`
+count=$(grep '^VAR. = val$' Makefile.in | wc -l)
 [ $count -eq 6 ]

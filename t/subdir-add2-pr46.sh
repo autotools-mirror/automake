@@ -32,6 +32,10 @@ echo 'AC_CONFIG_FILES([sub/Makefile])' > confiles.m4
 
 cat > Makefile.am << 'END'
 SUBDIRS = sub
+
+# The test can fail under a parallel make, so disable.
+# No evident way to debug or reliably reproduce.
+.NOTPARALLEL:
 END
 
 mkdir sub

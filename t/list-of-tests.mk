@@ -921,6 +921,7 @@ t/py-compile-basic.sh \
 t/py-compile-basedir.sh \
 t/py-compile-destdir.sh \
 t/py-compile-env.sh \
+t/py-compile-files.sh \
 t/py-compile-option-terminate.sh \
 t/py-compile-usage.sh \
 t/python.sh \
