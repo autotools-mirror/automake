@@ -41,6 +41,8 @@ test: display
 	test x'$(PACKAGE_VERSION)' = x
 	test x'$(PACKAGE_TARNAME)' = x
 	test x'$(PACKAGE_STRING)' = x
+
+.NOTPARALLEL:
 END
 
 for ac_init in 'AC_INIT' 'AC_INIT([Makefile.am])'; do

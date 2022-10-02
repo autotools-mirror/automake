@@ -40,7 +40,7 @@ END
 
 mkdir sub
 
-: > sub/Makefile.am
+echo .NOTPARALLEL: >sub/Makefile.am
 
 mkdir m4
 echo 'AC_DEFUN([MORE_DEFS], [])' > m4/moredefs.m4
