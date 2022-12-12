@@ -28,6 +28,9 @@ main_TEXINFOS = one.texi two.texi three.texi
 sub_more_TEXINFOS = sub/desc.texi sub/hist.texi
 END
 
+# We avoid apostrophes in the test document since Texinfo
+# turns them into UTF-8, which is not easy to grep.
+#
 cat > main.texi << 'END'
 \input texinfo
 @setfilename main.info
@@ -61,8 +64,8 @@ END
 
 cat > three.texi << 'END'
 @node three
-@chapter Chapter two
-GNU's Not Unix.
+@chapter Chapter three
+Quux quux quux.
 END
 
 mkdir sub
@@ -106,7 +109,7 @@ check_info_contents ()
   srcdir=${1-.}
   $FGREP "Foo bar, baz."                        $srcdir/main.info
   $FGREP "Blah Blah Blah."                      $srcdir/main.info
-  $FGREP "GNU's Not Unix."                      $srcdir/main.info
+  $FGREP "Quux quux quux."                      $srcdir/main.info
   $FGREP 'It does something, really.'           $srcdir/sub/more.info
   $FGREP 'It was written somehow.'              $srcdir/sub/more.info
 }
