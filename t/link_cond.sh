@@ -52,7 +52,7 @@ $AUTOCONF
 rm -f *.c++
 cat > less.c <<'END'
 /* Valid C but deliberately invalid C++ */
-main ()
+int main (void)
 {
   int new = 0;
   return new;
