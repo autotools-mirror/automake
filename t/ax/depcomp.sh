@@ -160,7 +160,7 @@ case $depcomp_with_libtool in
     echo lib_LTLIBRARIES = libfoo.la >> Makefile.am
     make_ok ()
     {
-      run_make -M -- ${1+"$@"}
+      run_make -M -- ${1+"$@"} || return 1
       $FGREP 'unknown directive' output && return 1
       rm -f output
       # Checks for stray files possibly left around by less common
