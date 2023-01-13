@@ -25,7 +25,7 @@
 st=0
 if test -d "$am_top_srcdir"/.git; then
   # We are running from a git checkout.
-  (cd "$am_top_srcdir" && git log -1) || st=1
+  (cd "$am_top_srcdir" && git --no-pager log -1) || st=1
 elif test -f "$am_top_srcdir"/ChangeLog; then
   # We are probably running from a distribution tarball.
   awk '
