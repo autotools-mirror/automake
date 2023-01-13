@@ -20,7 +20,7 @@ required='gettext'
 . test-init.sh
 
 cat >> configure.ac << 'END'
-AM_GNU_GETTEXT
+AM_GNU_GETTEXT([external])
 AC_OUTPUT
 END
 
@@ -31,28 +31,23 @@ mkdir po intl
 $ACLOCAL
 $AUTOCONF
 
-# po/ and intl/ are required.
+# po/ is required.  intl/ may not be used with external gettext.
+# Internal (bundled) was deprecated upstream in gettext 0.18 (2010)
+# and made fatal in gettext 0.20 (2019).
 
 AUTOMAKE_fails --add-missing
 grep 'AM_GNU_GETTEXT.*SUBDIRS' stderr
 
 echo 'SUBDIRS = po' >Makefile.am
-AUTOMAKE_fails --add-missing
-grep 'AM_GNU_GETTEXT.*intl' stderr
+# Should not fail.
+$AUTOMAKE --add-missing
 
 echo 'SUBDIRS = intl' >Makefile.am
 AUTOMAKE_fails --add-missing
 grep 'AM_GNU_GETTEXT.*po' stderr
 
-# Ok.
-
 echo 'SUBDIRS = po intl' >Makefile.am
-$AUTOMAKE --add-missing
-
-# Make sure distcheck runs './configure --with-included-gettext'.
-./configure
-echo distdir: > po/Makefile
-echo distdir: > intl/Makefile
-$MAKE -n distcheck | grep '.*--with-included-gettext'
+AUTOMAKE_fails --add-missing
+grep 'intl.*SUBDIRS.*AM_GNU_GETTEXT' stderr
 
 :

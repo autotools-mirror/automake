@@ -20,14 +20,14 @@ required='gettext'
 . test-init.sh
 
 cat >> configure.ac << 'END'
-AM_GNU_GETTEXT
+AM_GNU_GETTEXT([external])
 # config.rpath is required by versions >= 0.14.3.
 AM_GNU_GETTEXT_VERSION([0.14.3])
 AC_OUTPUT
 END
 
-echo 'SUBDIRS = po intl' >Makefile.am
-mkdir po intl
+echo 'SUBDIRS = po' >Makefile.am
+mkdir po
 
 # If aclocal fails here, it may be that gettext is too old to provide
 # AM_GNU_GETTEXT_VERSION.  Similarly, autopoint will fail if it's

@@ -47,8 +47,8 @@ autopoint_version=$(extract_program_version autopoint) \
 cat > configure.ac <<END
 AC_INIT([foo], [1.0])
 AC_PROG_CC
-# Both required by autopoint.
-AM_GNU_GETTEXT
+# Both required by autopoint.  Newer gettext (0.20+) requires external.
+AM_GNU_GETTEXT([external])
 AM_GNU_GETTEXT_VERSION([$autopoint_version])
 END
 

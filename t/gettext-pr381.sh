@@ -21,7 +21,7 @@ required='gettext'
 . test-init.sh
 
 cat >> configure.ac << 'END'
-AM_GNU_GETTEXT
+AM_GNU_GETTEXT([external])
 AC_OUTPUT
 END
 
