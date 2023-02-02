@@ -15,7 +15,7 @@
 
 package Automake::Wrap;
 
-use 5.006;
+use 5.010;
 use strict;
 use warnings FATAL => 'all';
 
