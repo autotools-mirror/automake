@@ -39,7 +39,7 @@ use strict;
 use warnings FATAL => 'all';
 
 use Exporter;
-use File::stat;
+use Time::HiRes qw(stat);
 use IO::File;
 
 use Automake::Channels;
@@ -115,10 +115,16 @@ sub mtime ($)
   return 0
     if $file eq '-' || ! -f $file;
 
-  my $stat = stat ($file)
+  my ($dev,$ino,$mode,$nlink,$uid,$gid,$rdev,$size,
+    $atime,$mtime,$ctime,$blksize,$blocks) = stat ($file)
     or fatal "cannot stat $file: $!";
 
-  return $stat->mtime;
+  # Unfortunately Time::HiRes converts timestamps to floating-point, and the
+  # rounding error can be hundreds of nanoseconds for circa-2023 timestamps.
+  # Perhaps some day Perl will support accurate file timestamps.
+  # For now, do the best we can without going outside Perl.
+
+  return $mtime;
 }
 
 
