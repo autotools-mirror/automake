@@ -73,9 +73,10 @@ if test -z "$PERL"; then
 fi
 # Save details about the selected perl interpreter in config.log.
 AM_RUN_LOG([$PERL --version])
-$PERL -e 'require 5.010;' || {
+$PERL -e 'require 5.006;' || {
    AC_MSG_ERROR(
-[perl 5.10 (2007) or better is required.  If you have several perl versions
+[perl 5.6 or better is required; perl 5.8.2 or better
+is recommended.  If you have several perl versions
 installed, select the one Automake should use using
   ./configure PERL=/path/to/perl])
 }

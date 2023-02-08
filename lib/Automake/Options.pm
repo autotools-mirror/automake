@@ -15,7 +15,7 @@
 
 package Automake::Options;
 
-use 5.010;
+use 5.006;
 use strict;
 use warnings FATAL => 'all';
 
