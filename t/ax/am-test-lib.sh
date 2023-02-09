@@ -103,13 +103,14 @@ is_blocked_signal ()
   # Use perl, since trying to do this portably in the shell can be
   # very tricky, if not downright impossible.  For reference, see:
   # <https://lists.gnu.org/archive/html/bug-autoconf/2011-09/msg00004.html>
-  if $PERL -w -e '
-    use strict;
-    use warnings FATAL => "all";
-    use POSIX;
-    my %oldsigaction = ();
-    sigaction('"$1"', 0, \%oldsigaction);
-    exit ($oldsigaction{"HANDLER"} eq "IGNORE" ? 0 : 77);
+  if $PERL -Mstrict -Mwarnings=FATAL,all -MPOSIX -Mconstant=SN,"$1" -e '
+    my $new = POSIX::SigAction->new(sub {});
+    my $old = POSIX::SigAction->new();
+    { no warnings q[uninitialized]; sigaction(SN, $new, $old) }
+    my $oldhandler;
+    if ($old->can(q[handler])) { $oldhandler = $old->handler }
+    else { $oldhandler = $old->{HANDLER} }
+    exit ($oldhandler eq "IGNORE" ? 0 : 77);
   '; then
     return 0
   elif test $? -eq 77; then
