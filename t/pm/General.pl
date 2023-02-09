@@ -18,10 +18,10 @@ use Automake::General;
 my $failed = 0;
 
 # Check 'none'.
-my $none_positive = none { $_[0] < 0 } (1, 7, 3, 8, 9);
+my $none_positive = none { $_[0] < 0 } 1, 7, 3, 8, 9;
 $failed = 1 if ($none_positive == 0);
 
-my $none_gt_8 = none { $_[0] >= 8 } (1, 7, 3, 8, 9);
+my $none_gt_8 = none { $_[0] >= 8 } 1, 7, 3, 8, 9;
 $failed = 1 if ($none_gt_8 == 1);
 
 exit $failed;
