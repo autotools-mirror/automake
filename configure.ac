@@ -75,7 +75,7 @@ fi
 AM_RUN_LOG([$PERL --version])
 $PERL -e 'require 5.006;' || {
    AC_MSG_ERROR(
-[perl 5.6 or better is required; perl 5.8.2 or better
+[perl 5.6 or better is required; perl 5.10 or better
 is recommended.  If you have several perl versions
 installed, select the one Automake should use using
   ./configure PERL=/path/to/perl])
