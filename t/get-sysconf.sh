@@ -48,8 +48,10 @@ $PERL -e 'use TAP::Parser; print $TAP::Parser::VERSION, "\n"' || :
 
 $AUTOCONF --version
 $AUTOCONF --help
-libtoolize --version
-libtoolize --help
+
+# It's OK if libtool is missing, as the relevant tests skip.
+libtoolize --version || :
+libtoolize --help || :
 
 # It's OK if the selected Lex and Yacc programs don't know how to print
 # the version number or the help screen; those are usually available only
