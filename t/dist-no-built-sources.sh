@@ -58,8 +58,9 @@ EOF
   # In any case, the tarball should contain y.c, but not x.c.
   # The tarball is always named based on $0, regardless of our options.
   pkg_ver=$me-1.0
-  ! tar tf "${pkg_ver}".tar.gz "${pkg_ver}"/x.c
-  tar tf "${pkg_ver}".tar.gz "${pkg_ver}"/y.c
+  gzip -d "${pkg_ver}".tar.gz
+  ! tar tf "${pkg_ver}".tar "${pkg_ver}"/x.c
+  tar tf "${pkg_ver}".tar "${pkg_ver}"/y.c
 
   # And x.c should have been built only for the built-sources version.
   if test "$testopt" = no-built-sources; then
