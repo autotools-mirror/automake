@@ -70,7 +70,12 @@ AC_PROG_LN_S
 AC_PATH_PROG([PERL], [perl])
 if test -z "$PERL"; then
    AC_MSG_ERROR([perl not found])
+elif test x"`echo $PERL | grep ' '`" != "x"; then
+  AC_MSG_ERROR([The path to your Perl contains spaces.
+This would cause build failures later or unusable programs.
+Please use a path without spaces and try again.])
 fi
+
 # Save details about the selected perl interpreter in config.log.
 AM_RUN_LOG([$PERL --version])
 $PERL -e 'require 5.006;' || {
