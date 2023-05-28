@@ -31,7 +31,8 @@ man1_MANS = \
 $(man1_MANS): $(top_srcdir)/configure.ac
 
 CLEANFILES += $(man1_MANS)
-# XXX: This script should be updated with 'fetch' target.
+# XXX: This script should be updated with 'fetch' target, but isn't;
+# build help2man normally and copy it in manually. Preserve the #! path.
 EXTRA_DIST += %D%/help2man
 
 update_mans = \
@@ -58,7 +59,7 @@ update_mans = \
 ## under manual control. See https://debbugs.gnu.org/10371.
 ##
 checklinkx = $(top_srcdir)/contrib/checklinkx
-# that 4-second sleep seems to be what gnu.org likes.
+# that particular sleep seems to be what gnu.org likes.
 chlx_args = -v --sleep 8 #--exclude-url-file=/tmp/xf
 # Explanation of excludes:
 # - w3.org dtds, they are fine (and slow).
