@@ -36,9 +36,10 @@ CLEANFILES += $(man1_MANS)
 EXTRA_DIST += %D%/help2man
 
 update_mans = \
-  $(AM_V_GEN): \
-    && $(MKDIR_P) %D% \
-    && AUTOMAKE_HELP2MAN=true ./pre-inst-env $(PERL) $(srcdir)/%D%/help2man --output=$@ --info-page=automake
+    $(MKDIR_P) %D% \
+    && AUTOMAKE_HELP2MAN=true ./pre-inst-env \
+       $(PERL) $(srcdir)/%D%/help2man --output=$@ --info-page=automake \
+               --name="$${HELP2MAN_NAME}"
 
 %D%/aclocal.1 %D%/automake.1:
 	$(AM_V_GEN): \
@@ -47,9 +48,9 @@ update_mans = \
 	  && echo ".so man1/$$f-$(APIVERSION).1" > $@
 
 %D%/aclocal-$(APIVERSION).1: $(aclocal_script) lib/Automake/Config.pm
-	$(update_mans) $(aclocal_script)
+	$(AM_V_GEN):; HELP2MAN_NAME="Generate aclocal.m4 by scanning configure.ac"; export HELP2MAN_NAME; $(update_mans) $(aclocal_script)
 %D%/automake-$(APIVERSION).1: $(automake_script) lib/Automake/Config.pm
-	$(update_mans) $(automake_script)
+	$(AM_V_GEN):; HELP2MAN_NAME="Generate Makefile.in files for configure from Makefile.am"; export HELP2MAN_NAME; $(update_mans) $(automake_script)
 
 ## This target is not invoked as a dependency of anything. It exists
 ## merely to make checking the links in automake.texi (that is,
