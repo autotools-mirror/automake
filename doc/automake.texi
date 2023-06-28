@@ -11249,8 +11249,8 @@ error, and in that case it should provide a verbose-enough report to allow
 an easy determination of the error location and causes.
 
 However, calling @command{make} two times in a row might hide errors
-(especially intermittent ones), or subtly change the expected semantics
-of the @command{make} calls --- these things can clearly make
+(especially intermittent ones), or subtly change the expected
+semantics of the @command{make} calls---these things can clearly make
 debugging and error assessment very difficult.
 
 @item @command{make --no-print-directory}
@@ -11368,11 +11368,21 @@ run time:
 Passing @option{--enable-silent-rules} to @command{configure} will cause
 build rules to be less verbose; the option @option{--disable-silent-rules}
 will cause normal verbose output.
+
 @item
 @vindex @code{V}
 At @command{make} run time, the default chosen at @command{configure}
 time may be overridden: @code{make V=1} will produce verbose output,
 @code{make V=0} less verbose output.
+
+Unfortunately, if @code{V} is assigned a value other than 0 or 1,
+errors will result. This is problematic when a third-party program or
+library is built in the same tree and also uses the make variable
+@code{V}, with different values. The best workaround is probably to
+set @code{AM_V_P=true} (or similar), either on the make command line
+or in the @code{V}-using project's @code{Makefile.am}. For more
+discussion:
+@url{https://debbugs.gnu.org/cgi/bugreport.cgi?bug=20077}.
 @end itemize
 
 @cindex default verbosity for silent rules
@@ -11392,19 +11402,14 @@ Users who prefer to have silent rules enabled by default can edit their
 default to @samp{yes}.  This should still allow disabling silent rules
 at @command{configure} time and at @command{make} time.
 
-@c FIXME: is there a need to specify this explicitly?
-For portability to different @command{make} implementations, package authors
-are advised to not set the variable @code{V} inside the @file{Makefile.am}
-file, to allow the user to override the value for subdirectories as well.
-
-To work at its best, the current implementation of this feature normally
-uses nested variable expansion @samp{$(@var{var1}$(V))}, a @file{Makefile}
+To work best, the current implementation of this feature normally uses
+nested variable expansion @samp{$(@var{var1}$(V))}, a @file{Makefile}
 feature that is not required by POSIX 2008 but is widely supported in
-practice.  On the rare @command{make} implementations that do not support
-nested variable expansion, whether rules are silent is always determined at
-configure time, and cannot be overridden at make time.  Future versions of
-POSIX are likely to require nested variable expansion, so this minor
-limitation should go away with time.
+practice.  On the rare @command{make} implementations that do not
+support nested variable expansion, whether rules are silent is always
+determined at configure time, and cannot be overridden at make time.
+Future versions of POSIX are likely to require nested variable
+expansion, so this minor limitation should go away with time.
 
 @vindex @code{AM_V_GEN}
 @vindex @code{AM_V_at}
@@ -11414,7 +11419,6 @@ limitation should go away with time.
 To extend the silent mode to your own rules, you have a few choices:
 
 @itemize @bullet
-
 @item
 You can use the predefined variable @code{AM_V_GEN} as a prefix to
 commands that should output a status line in silent mode, and
@@ -11426,7 +11430,7 @@ will expand to the empty string.
 You can silence a recipe unconditionally with @code{@@}, and then use
 the predefined variable @code{AM_V_P} to know whether make is being run
 in silent or verbose mode; adjust the verbose information your recipe
-displays accordingly:
+displays accordingly. For example:
 
 @example
 generate-headers:
@@ -11436,10 +11440,14 @@ generate-headers:
         rm -f $$headers && generate-header --flags $$headers
 @end example
 
+@code{AM_V_P} is (must) always set to a simple command, not needing
+shell quoting, typically either @code{:} or @code{true} or
+@code{false}.
+
 @item
 You can add your own variables, so strings of your own choice are shown.
 The following snippet shows how you would define your own equivalent of
-@code{AM_V_GEN}:
+@code{AM_V_GEN}, say a string @samp{PKG-GEN}:
 
 @example
 pkg_verbose = $(pkg_verbose_@@AM_V@@)
