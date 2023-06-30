@@ -8621,12 +8621,30 @@ More precisely, the gzipped @code{tar} file is named
 
 @c See automake #9822.
 @vindex TAR
-You can set the environment variable @code{TAR} to override the tar
-program used; it defaults to @code{tar}.  @xref{The Types of
-Distributions}, for how to generate other kinds of archives.
+You can set the environment (or @code{Makefile.am}) variable @code{TAR}
+to override the tar program used; it defaults to @code{tar}.
+@xref{The Types of Distributions}, for how to generate other kinds of
+archives.
 
-For the most part, the files to distribute are automatically found by
-Automake:
+@vindex TAR_OPTIONS
+With GNU tar, you can also set the environment (or @code{Makefile.am})
+variable @code{TAR_OPTIONS} to pass options to @code{tar}.  One common
+case for this is wanting to avoid using the local user's uid and gid
+in the tar file, or the uid being larger than is supported by the tar
+format (not uncommon nowadays). This can be done with, for example>
+
+@example
+TAR_OPTIONS = --owner=0 --group=0
+export TAR_OPTIONS
+@end example
+
+@noindent
+The @code{export} (a GNU make feature) is necessary to pass the
+variable in the environment to the @code{tar} invocation.
+(For more discussion, see @url{https://bugs.gnu.org/19615}.)
+
+For the most part, the files to distribute are automatically
+found by Automake:
 
 @itemize @bullet
 @item
@@ -11376,13 +11394,12 @@ time may be overridden: @code{make V=1} will produce verbose output,
 @code{make V=0} less verbose output.
 
 Unfortunately, if @code{V} is assigned a value other than 0 or 1,
-errors will result. This is problematic when a third-party program or
+errors will result.  This is problematic when a third-party program or
 library is built in the same tree and also uses the make variable
-@code{V}, with different values. The best workaround is probably to
+@code{V}, with different values.  The best workaround is probably to
 set @code{AM_V_P=true} (or similar), either on the make command line
-or in the @code{V}-using project's @code{Makefile.am}. For more
-discussion:
-@url{https://debbugs.gnu.org/cgi/bugreport.cgi?bug=20077}.
+or in the @code{V}-using project's @code{Makefile.am}.  (For more
+discussion, see @url{https://bugs.gnu.org/20077}.)
 @end itemize
 
 @cindex default verbosity for silent rules
