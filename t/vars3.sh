@@ -15,7 +15,8 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 # Check that Automake warns about variables containing spaces
-# and other non-POSIX characters.
+# and other non-POSIX characters, but not about real POSIX
+# variables (see bug#9587).
 
 . test-init.sh
 
@@ -32,6 +33,10 @@ L08$(o u c h): $(wildcard *.c)
 	echo $${ok-this is}
 L11: $(thisis) $(ok)
 	${here}
+just_a_test:
+	echo "$(@F) $(%F) $(?F) $(<F) $(*F) $(@D) $(%D) $(?D) $(<D) $(*D)" > $@
+	echo "$(%) $(?) $(<) $(*)" > $@
+	echo "$% $? $< $*" > $@
 EOF
 
 $ACLOCAL
@@ -59,6 +64,20 @@ grep ':8:.*wildcard' stderr
 grep ':9:.*another Error' stderr
 
 $EGREP 'ok|thisis|here' stderr && exit 1
+grep '@F' stderr && exit 1
+grep '%F' stderr && exit 1
+grep '?F' stderr && exit 1
+grep '<F' stderr && exit 1
+grep '*F' stderr && exit 1
+grep '@D' stderr && exit 1
+grep '%D' stderr && exit 1
+grep '?D' stderr && exit 1
+grep '<D' stderr && exit 1
+grep '*D' stderr && exit 1
+grep ': %: ' stderr && exit 1
+grep ': ?: ' stderr && exit 1
+grep ': <: ' stderr && exit 1
+grep ': *: ' stderr && exit 1
 
 # None of these errors be diagnosed with '-Wno-portability'.
 $AUTOMAKE -Wno-portability

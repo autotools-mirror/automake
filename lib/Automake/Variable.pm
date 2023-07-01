@@ -132,7 +132,9 @@ non-object).
 =cut
 
 my $_VARIABLE_CHARACTERS = '[.A-Za-z0-9_@]+';
-my $_VARIABLE_PATTERN = '^' . $_VARIABLE_CHARACTERS . "\$";
+my $_VARIABLE_PATTERN_EXTRA_POSIX = '[*?<%][DF]?';
+my $_VARIABLE_PATTERN = '^(' . $_VARIABLE_CHARACTERS
+                             . '|' . $_VARIABLE_PATTERN_EXTRA_POSIX . ")\$";
 my $_VARIABLE_RECURSIVE_PATTERN =
     '^([.A-Za-z0-9_@]|\$[({]' . $_VARIABLE_CHARACTERS . '[})]?)+' . "\$";
 
