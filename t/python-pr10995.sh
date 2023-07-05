@@ -17,6 +17,9 @@
 # Test automake bug#10995: am__py_compile doesn't get correctly defined
 # when there a 'noinst_PYTHON' declaration precedes a 'foo_PYTHON'
 # declaration.
+# Test also automake bug#24507: am__pep3147_tweak doesn't get correctly
+# defined when there a 'noinst_PYTHON' declaration precedes a 'foo_PYTHON'
+# declaration and 'make uninstall' fails functionally (just shows errors).
 
 required=python
 . test-init.sh
@@ -52,5 +55,8 @@ py_installed       inst/py/yes.pyc
 py_installed --not inst/py/no.pyc
 
 $MAKE disttest
+
+LC_ALL=C run_make -M uninstall
+grep 'command substitution' output && exit 1
 
 :
