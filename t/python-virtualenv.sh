@@ -100,6 +100,8 @@ test-run:
 	python -c 'from am_foo import foo_func; assert (foo_func () == 12345)'
 	python -c 'from am_virtenv import old_am; assert (old_am () == "AutoMake")'
 all-local: debug
+get-pyexecdir:
+	@echo $(pyexecdir)
 END
 
 cat > am_foo.py << 'END'
@@ -127,8 +129,8 @@ check_install ()
   py_installed "$py_site"/am_foo.pyc
   py_installed "$py_site"/am_virtenv/__init__.py
   py_installed "$py_site"/am_virtenv/__init__.pyc
-  test -f      "$py_site"/libquux.a
-  test -f      "$py_site"/am_virtenv/libzardoz.a
+  test -f      "$($MAKE get-pyexecdir ${1+"$@"})"/libquux.a
+  test -f      "$($MAKE get-pyexecdir ${1+"$@"})"/am_virtenv/libzardoz.a
 }
 
 check_uninstall ()
@@ -139,8 +141,8 @@ check_uninstall ()
   py_installed --not "$py_site"/am_foo.pyc
   test ! -e          "$py_site"/am_virtenv/__init__.py
   py_installed --not "$py_site"/am_virtenv/__init__.pyc
-  test ! -e          "$py_site"/libquux.a
-  test ! -e          "$py_site"/am_virtenv/libzardoz.a
+  test ! -e          "$($MAKE get-pyexecdir ${1+"$@"})"/libquux.a
+  test ! -e          "$($MAKE get-pyexecdir ${1+"$@"})"/am_virtenv/libzardoz.a
 }
 
 $ACLOCAL

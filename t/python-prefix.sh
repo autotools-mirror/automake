@@ -43,7 +43,12 @@ echo-python-exec-prefix:
 	@echo $(PYTHON_EXEC_PREFIX)
 END
 
-py_version=$(python -c 'import sys; print("%u.%u" % sys.version_info[:2])')
+if test -z "$PYTHON"; then
+  py_exec=python
+else
+  py_exec=$PYTHON
+fi
+py_version=$("$py_exec" -c 'import sys; print("%u.%u" % sys.version_info[:2])')
 py_inst_site=inst/lib/python$py_version/site-packages
 py_instexec_site=instexec/lib/python$py_version/site-packages
 
