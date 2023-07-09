@@ -31,6 +31,9 @@ write_parse ()
     #include <stdlib.h>
     // Valid C++, but deliberately invalid C.
     #include <cstdlib>
+    using std::exit;
+    using std::free;
+    using std::malloc;
     #include "$header"
     int yylex (void) { return 0; }
     void yyerror (const char *s) {}

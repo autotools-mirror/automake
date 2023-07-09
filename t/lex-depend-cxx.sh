@@ -44,10 +44,15 @@ test-obj-updated: joe.$(OBJEXT) moe.$(OBJEXT)
 	is_newest moe.$(OBJEXT) my-hdr.hxx
 END
 
+# For the explanation of the conditionals on using extern "C",
+# see https://debbugs.gnu.org/cgi/bugreport.cgi?bug=45205#13.
 cat > joe.ll << 'END'
 %{
 #define YY_DECL int yylex (void)
-extern "C" YY_DECL;
+#if (defined __cplusplus) && ((!defined __sun) || (defined __EXTERN_C__))
+extern "C"
+#endif
+YY_DECL;
 #define YY_NO_UNISTD_H 1
 int isatty (int fd) { return 0; }
 %}

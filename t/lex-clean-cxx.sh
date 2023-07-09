@@ -51,10 +51,15 @@ CLEANFILES = parsebaz.l++ parsequx.lpp
 LDADD = $(LEXLIB)
 END
 
+# For the explanation of the conditionals on using extern "C",
+# see https://debbugs.gnu.org/cgi/bugreport.cgi?bug=45205#13.
 cat > parsefoo.lxx << 'END'
 %{
 #define YY_DECL int yylex (void)
-extern "C" YY_DECL;
+#if (defined __cplusplus) && ((!defined __sun) || (defined __EXTERN_C__))
+extern "C"
+#endif
+YY_DECL;
 #define YY_NO_UNISTD_H 1
 int isatty (int fd) { return 0; }
 %}
@@ -71,7 +76,10 @@ cp parsefoo.lxx parsebar.ll
 
 cat > mainfoo.cc << 'END'
 // This file should contain valid C++ but invalid C.
-extern "C" int yylex (void);
+#if (defined __cplusplus) && ((!defined __sun) || (defined __EXTERN_C__))
+extern "C"
+#endif
+int yylex (void);
 using namespace std;
 int main (int argc, char **argv)
 {
