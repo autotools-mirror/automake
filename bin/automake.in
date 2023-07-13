@@ -3061,11 +3061,24 @@ sub handle_scripts ()
 sub scan_texinfo_file
 {
   my ($filename) = @_;
+  my $orig_filename = $filename;
 
   # If the source file doesn't exist, we'll fall back below.
-  my $source = -e $filename ? $filename : "/dev/null";
-  my $texi = new Automake::XFile "< $source";
-  verb "reading $filename";
+  if (! -e $filename)
+    {
+      if (-e ($filename . '.in'))
+        {
+          # $filename.texi.in exists: assume $filename.texi is generated
+          # and parse $filename.texi.in as the real input.
+          $filename .= '.in';
+        }
+      else
+        {
+          $filename = '/dev/null';
+        }
+    }
+  my $texi = new Automake::XFile "< $filename";
+  verb "reading texinfo_file $filename";
 
   my ($outfile, $vfile);
   while ($_ = $texi->getline)
@@ -3077,6 +3090,18 @@ sub scan_texinfo_file
 	  # to use @setfilename...)
 	  next if $outfile;
 
+	  # Although we notice the @setfilename, and the rules are
+	  # adjusted to sort of use it, they don't actually work.
+	  # Specifically, if foo.texi contains @setfilename bar.info,
+	  # the generated .texi.info suffix rule will not run.
+	  #
+	  # Also, although we change the .info target to be bar.info,
+	  # the HTML(S) variable/etc. is not changed.
+	  #
+	  # Since @setfilename is optional nowadays, doesn't seem worth
+	  # the trouble to handle (which looks to be nontrivial).
+	  # https://bugs.gnu.org/54063
+	  
 	  $outfile = $1;
 	  if (index ($outfile, '.') < 0)
 	    {
@@ -3100,8 +3125,10 @@ sub scan_texinfo_file
 
   if (! $outfile)
     {
-      # Replace a .texi extension with .info
-      $outfile = basename($filename);
+      # If no explicit @setfilename, use the original filename as passed
+      # (not foo.texi.in or /dev/null) in the generated rules, while
+      # replacing any extension (presumably .texi) with .info.
+      $outfile = basename ($orig_filename);
       $outfile =~ s/\.[^.]+$//;
       $outfile .= '.info';
     }
