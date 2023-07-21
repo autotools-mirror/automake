@@ -35,5 +35,10 @@ END
 $ACLOCAL
 $AUTOMAKE
 
-grep '[^F]CC' Makefile.in | grep -v MKDEP && exit 1
+# In bug#64743, explicit rules were added to disable make's default
+# built-in rules, including one for SCCS:
+# %:: SCCS/s.%
+# So don't match that. Meanwhile, MKDEP does not occur in the output
+# any more, but leaving it in in case it comes back.
+grep '[^F]CC' Makefile.in | grep -v MKDEP | grep -v SCCS && exit 1
 exit 0

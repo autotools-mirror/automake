@@ -37,6 +37,6 @@ $ACLOCAL
 $AUTOMAKE
 
 sed 's/printf .*%s//' Makefile.in > Makefile.tmp
-grep '%' Makefile.tmp && exit 1
+grep -v '^%::' Makefile.tmp | grep '%' && exit 1
 
 :
