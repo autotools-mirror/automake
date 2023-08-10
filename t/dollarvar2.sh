@@ -83,4 +83,13 @@ AUTOMAKE_fails -Wno-portability -Wportability-recursive
 grep 'var-with-dash' stderr && exit 1
 grep 'recursive variable expansion' stderr
 
+#
+# Ensure that GNU make function calls give a portability warning
+# under a certain condition that older automake missed.
+#
+cat >Makefile.am <<'EOF'
+x = $$$(y z)
+EOF
+AUTOMAKE_fails -Wportability
+
 :
