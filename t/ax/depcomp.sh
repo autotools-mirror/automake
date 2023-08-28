@@ -243,6 +243,8 @@ cat > sub/subfoo.h <<'END'
 #include <stdio.h>
 extern int subfoo (void);
 END
+# Save subfoo.h so we can restore it below; see #60962.
+cp sub/subfoo.h sub/subfoo.save
 
 cat > src/baz.c <<'END'
 #include "baz.h"
@@ -399,8 +401,7 @@ do_test ()
       && rewrite "$srcdir"/sub/subfoo.h echo 'choke me' \
       && not $MAKE \
       && delete "$srcdir"/sub/subfoo.h \
-      && edit "$srcdir"/sub/subfoo.c -e 1d \
-      && edit "$srcdir"/foo.h -e 2d \
+      && cp "$srcdir"/sub/subfoo.save "$srcdir"/sub/subfoo.h \
       && make_ok \
       || r='not ok'
     result_ "$r" "$pfx dependency tracking works"
