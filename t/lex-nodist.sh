@@ -61,6 +61,8 @@ CLEANFILES = $(nodist_prog_SOURCES)
 END
 
 cat > main.c << 'END'
+extern int yylex (void);
+
 int main ()
 {
   return yylex ();

@@ -73,6 +73,8 @@ void print (void)
 END
 
 cat > main.c <<'END'
+extern void print(void);
+
 int main (void)
 {
   print();

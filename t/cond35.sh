@@ -71,6 +71,8 @@ END
 
 cat > tparse.y << 'END'
 %{
+extern int yylex(void);
+
 void yyerror (const char *s) {}
 %}
 %token EOF

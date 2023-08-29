@@ -53,7 +53,8 @@ noinst_PROGRAMS = zap
 zap_SOURCES = zardoz.pc
 END
 
-echo 'int main(void) [ return bar(1); ]' > foo-main.pc
+echo 'extern int bar(int);' > foo-main.pc
+echo 'int main(void) [ return bar(1); ]' >> foo-main.pc
 echo 'int bar(int x) { return !x; }' > barbar.c
 echo 'int m@in(void) { return 0; }' > sub/zardoz.pc
 

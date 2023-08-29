@@ -91,6 +91,12 @@ echo 'int sub22 () { return 22; }' > sub2/sub22/sub22.c
 
 cat >test.c <<'EOF'
 #include <stdio.h>
+
+extern int sub1 (void);
+extern int sub2 (void);
+extern int sub21 (void);
+extern int sub22 (void);
+
 int main ()
 {
   if (1 != sub1 ())

@@ -113,6 +113,7 @@ test -f build-aux/compile # We have per-target flags on C sources.
 ./configure --enable-dependency-tracking
 
 cat > src/main.c << 'END'
+#include <stdio.h>
 #include "foo.h"
 #include "bar.h"
 int main (void)

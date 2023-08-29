@@ -83,7 +83,15 @@ libfoo_la_SOURCES = \
 END
 
 mkdir sub1 sub2
-echo 'int libmain (void)' > main.c
+
+echo "/* Subobj clean: libtool case*/" > main.c
+for i in 1 2; do
+  for j in a b c d e f; do
+    echo "extern void $j$i (void);" >> main.c
+  done
+done
+
+echo 'int libmain (void)' >> main.c
 echo '{' >> main.c
 for i in 1 2; do
   for j in a b c d e f; do

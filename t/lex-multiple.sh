@@ -58,6 +58,10 @@ cat > main.c << 'END'
 #include <stdlib.h>
 #include <string.h>
 
+extern int yylex (void);
+extern int foolex (void);
+extern int bar_lex (void);
+
 int main (int argc, char *argv[])
 {
   if (argc != 2)

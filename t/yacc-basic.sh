@@ -51,6 +51,7 @@ a : 'a' { exit(0); };
 END
 
 cat > foo.c << 'END'
+extern int yyparse(void);
 int main () { yyparse (); return 1; }
 END
 

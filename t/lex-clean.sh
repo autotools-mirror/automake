@@ -60,6 +60,7 @@ cat > lexer.l << 'END'
 END
 
 cat > main.c << 'END'
+extern int yylex (void);
 int main (void)
 {
   return yylex ();

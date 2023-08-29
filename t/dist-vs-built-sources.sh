@@ -41,6 +41,7 @@ foo_SOURCES = foo.c
 END
 
 cat > foo.c << 'END'
+#include <stdio.h>
 #include "h.h"
 int main (void) { printf ("%s\n", F); return 0; }
 END

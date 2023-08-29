@@ -67,6 +67,8 @@ END
 
 cat > sub1/parse.y << 'END'
 %{
+#include <stdio.h>
+
 int yylex () { return (getchar ()); }
 void yyerror (const char *s) {}
 %}
@@ -76,6 +78,8 @@ END
 cp sub1/parse.y sub2/parse.y
 
 cat > sub1/main.c << 'END'
+extern int yyparse(void);
+
 int main ()
 {
   return yyparse ();

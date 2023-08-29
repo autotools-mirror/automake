@@ -80,6 +80,8 @@ BUILT_SOURCES = parse.h
 END
 
 cat > sub1/main.c << 'END'
+extern int yyparse(void);
+
 int main ()
 {
   return yyparse ();

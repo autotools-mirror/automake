@@ -81,7 +81,15 @@ foo_SOURCES = \
 END
 
 mkdir sub1 sub2
-echo 'int main (void)' > main.c
+
+echo "/* Subobj clean: generic case*/" > main.c
+for i in 1 2; do
+  for j in a b c d e f; do
+    echo "extern void $j$i (void);" >> main.c
+  done
+done
+
+echo 'int main (void)' >> main.c
 echo '{' >> main.c
 for i in 1 2; do
   for j in a b c d e f; do
