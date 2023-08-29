@@ -49,6 +49,8 @@ END
 
 cat > Makefile.am <<'END'
 AUTOMAKE_OPTIONS = subdir-objects
+AM_LFLAGS = --never-interactive
+
 noinst_PROGRAMS = foo bar
 foo_SOURCES = sub/parse.y
 bar_SOURCES = $(foo_SOURCES)

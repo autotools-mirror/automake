@@ -28,14 +28,13 @@ AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
+AM_LFLAGS = --never-interactive
+
 noinst_PROGRAMS = foo
 foo_SOURCES = foo.l
 END
 
 cat > foo.l << 'END'
-%{
-#define YY_NO_UNISTD_H 1
-%}
 %%
 "GOOD"   return EOF;
 .

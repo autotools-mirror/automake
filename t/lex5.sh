@@ -28,6 +28,7 @@ END
 cat > Makefile.am << 'END'
 AUTOMAKE_OPTIONS  = subdir-objects
 LDADD             = @LEXLIB@
+AM_LFLAGS         = --never-interactive
 
 bin_PROGRAMS    = foo/foo
 foo_foo_SOURCES = foo/foo.l
@@ -36,9 +37,6 @@ END
 mkdir foo
 
 cat > foo/foo.l << 'END'
-%{
-#define YY_NO_UNISTD_H 1
-%}
 %%
 "END"   return EOF;
 .

@@ -32,6 +32,8 @@ AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
+AM_LFLAGS = --never-interactive
+
 noinst_PROGRAMS = foo
 foo_SOURCES = foo.l
 foo_LDADD = $(LEXLIB) $(LIBOBJS)
@@ -45,9 +47,6 @@ int yywrap (void)
 END
 
 cat > foo.l <<'END'
-%{
-#define YY_NO_UNISTD_H 1
-%}
 %%
 "END" return EOF;
 .

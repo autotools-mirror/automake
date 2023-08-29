@@ -28,6 +28,8 @@ AC_OUTPUT
 EOF
 
 cat > Makefile.am <<'EOF'
+AM_LFLAGS = --never-interactive
+
 # Need generic and non-generic rules.
 bin_PROGRAMS = foo1 foo2
 foo1_SOURCES = foo.l
@@ -40,6 +42,8 @@ EOF
 
 cat > sub/Makefile.am <<'EOF'
 AUTOMAKE_OPTIONS = subdir-objects
+AM_LFLAGS = --never-interactive
+
 # Need generic and non-generic rules.
 bin_PROGRAMS = bar1 bar2
 bar1_SOURCES = bar.l
@@ -50,9 +54,6 @@ LDADD = $(LEXLIB)
 EOF
 
 cat > foo.l <<'EOF'
-%{
-#define YY_NO_UNISTD_H 1
-%}
 %%
 "END"   return EOF;
 .

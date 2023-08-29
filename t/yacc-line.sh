@@ -32,6 +32,8 @@ END
 mkdir dir sub sub/dir
 
 cat > Makefile.am << 'END'
+AM_LFLAGS = --never-interactive
+
 SUBDIRS = sub
 bin_PROGRAMS = foo bar
 AM_YFLAGS = -d
@@ -45,6 +47,8 @@ END
 
 cat > sub/Makefile.am << 'END'
 AUTOMAKE_OPTIONS = subdir-objects
+AM_LFLAGS = --never-interactive
+
 noinst_PROGRAMS = foo bar
 foo_YFLAGS = -d
 foo_SOURCES = zardoz.y

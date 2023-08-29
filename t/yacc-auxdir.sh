@@ -35,12 +35,16 @@ cat > Makefile.am << 'END'
 SUBDIRS = sub
 bin_PROGRAMS = foo
 AM_YFLAGS = -d
+AM_LFLAGS = --never-interactive
+
 foo_SOURCES = foo.y
 END
 
 cat > sub/Makefile.am << 'END'
 bin_PROGRAMS = bar
 AM_YFLAGS = -d
+AM_LFLAGS = --never-interactive
+
 bar_SOURCES = bar.y main.c
 END
 

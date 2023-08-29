@@ -29,6 +29,8 @@ END
 cat > Makefile.am << 'END'
 bin_PROGRAMS = foo
 AM_YFLAGS = -d
+AM_LFLAGS = --never-interactive
+
 foo_SOURCES = foo.y main.c
 BUILT_SOURCES = foo.h
 END

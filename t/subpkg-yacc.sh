@@ -61,6 +61,8 @@ AC_OUTPUT
 EOF
 
 cat >lib/Makefile.am <<'EOF'
+AM_LFLAGS = --never-interactive
+
 noinst_LIBRARIES = liblib.a
 liblib_a_SOURCES = src/x.c foo.y
 EXTRA_liblib_a_SOURCES = bar.y

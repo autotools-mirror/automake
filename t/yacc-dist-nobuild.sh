@@ -28,6 +28,8 @@ AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
+AM_LFLAGS = --never-interactive
+
 bin_PROGRAMS = foobar zardoz
 foobar_SOURCES = parse.y main.c
 zardoz_SOURCES = $(foobar_SOURCES)

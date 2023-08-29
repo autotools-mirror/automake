@@ -28,6 +28,8 @@ END
 
 cat > Makefile.am << 'END'
 AUTOMAKE_OPTIONS = subdir-objects
+AM_LFLAGS = --never-interactive
+
 bin_PROGRAMS = foo/foo
 foo_foo_SOURCES = foo/parse.y
 AM_YFLAGS = -d

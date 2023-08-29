@@ -25,6 +25,8 @@ AC_PROG_YACC
 END
 
 cat > Makefile.am << 'END'
+AM_LFLAGS = --never-interactive
+
 bin_PROGRAMS = maude
 maude_SOURCES = sub/maude.y
 END

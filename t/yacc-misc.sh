@@ -26,6 +26,8 @@ AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
+AM_LFLAGS = --never-interactive
+
 bin_PROGRAMS = foo bar
 foo_SOURCES = parse.y foo.c
 bar_SOURCES = bar.y foo.c

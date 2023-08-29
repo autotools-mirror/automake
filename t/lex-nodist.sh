@@ -31,6 +31,8 @@ AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
+AM_LFLAGS = --never-interactive
+
 .PHONY: test-build test-dist
 test-build: all
 	ls -l
@@ -45,9 +47,6 @@ check-local: test-build test-dist
 lexer.l:
 	rm -f $@ $@-t
 	:; { : \
-	  && echo '%{' \
-	  && echo '#define YY_NO_UNISTD_H 1' \
-	  && echo '%}' \
 	  && echo '%%' \
 	  && echo '"GOOD" return EOF;' \
 	  && echo '.'; \

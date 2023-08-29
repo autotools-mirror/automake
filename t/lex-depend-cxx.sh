@@ -27,6 +27,8 @@ AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
+AM_LFLAGS = --never-interactive
+
 noinst_PROGRAMS = joe moe
 joe_SOURCES = joe.ll
 moe_SOURCES = moe.l++
@@ -53,8 +55,6 @@ cat > joe.ll << 'END'
 extern "C"
 #endif
 YY_DECL;
-#define YY_NO_UNISTD_H 1
-int isatty (int fd) { return 0; }
 %}
 %%
 "foo" return EOF;

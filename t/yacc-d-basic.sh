@@ -35,6 +35,8 @@ END
 mkdir foo bar baz
 
 cat > foo/Makefile.am <<'END'
+AM_LFLAGS = --never-interactive
+
 bin_PROGRAMS = zardoz
 zardoz_SOURCES = parse.y main.c
 .PHONY: echo-distcom

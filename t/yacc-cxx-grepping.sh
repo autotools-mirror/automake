@@ -27,6 +27,8 @@ AC_PROG_YACC
 END
 
 cat > Makefile.am << 'END'
+AM_LFLAGS = --never-interactive
+
 bin_PROGRAMS = foo bar baz qux
 foo_SOURCES = foo.y++
 bar_SOURCES = bar.ypp

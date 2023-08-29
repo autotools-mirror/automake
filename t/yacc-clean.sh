@@ -38,6 +38,8 @@ END
 mkdir sub1 sub2
 
 cat > sub1/Makefile.am << 'END'
+AM_LFLAGS = --never-interactive
+
 bin_PROGRAMS = foo bar baz qux
 
 foo_SOURCES = main.c parse.y

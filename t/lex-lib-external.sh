@@ -28,6 +28,8 @@ AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
+AM_LFLAGS = --never-interactive
+
 bin_PROGRAMS = lexer
 lexer_SOURCES = foo.l
 lexer_LDADD = $(LEXLIB)
@@ -42,9 +44,6 @@ have-lexlib:
 END
 
 cat > foo.l <<'END'
-%{
-#define YY_NO_UNISTD_H 1
-%}
 %%
 "GOOD"   return EOF;
 .

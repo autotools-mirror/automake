@@ -37,6 +37,8 @@ AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
+AM_LFLAGS = --never-interactive
+
 bin_PROGRAMS = foo
 foo_SOURCES = lexer.l foo.c
 LDADD = $(LEXLIB)
@@ -44,9 +46,6 @@ END
 
 # Original lexer, with a "foobar" comment
 cat > lexer.l << 'END'
-%{
-#define YY_NO_UNISTD_H 1
-%}
 %%
 "END" return EOF;
 .
@@ -89,9 +88,6 @@ $sleep
 
 # New lexer, with 'fubar' comment.
 cat > ../lexer.l << 'END'
-%{
-#define YY_NO_UNISTD_H 1
-%}
 %%
 "END" return EOF;
 .
@@ -112,9 +108,6 @@ $sleep
 
 # New lexer, with 'maude' comment.
 cat > ../lexer.l << 'END'
-%{
-#define YY_NO_UNISTD_H 1
-%}
 %%
 "END" return EOF;
 .

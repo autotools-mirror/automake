@@ -70,6 +70,8 @@ mkdir foo bar baz qux baz/sub
 
 # These makefiles will be extended later.
 cat > Makefile.am <<'END'
+AM_LFLAGS = --never-interactive
+
 .PHONY: echo-distcom
 echo-distcom:
 	@echo ' ' $(DIST_COMMON) ' '

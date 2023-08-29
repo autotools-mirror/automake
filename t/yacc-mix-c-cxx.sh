@@ -28,6 +28,8 @@ AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
+AM_LFLAGS = --never-interactive
+
 bin_PROGRAMS = c1 c2 cxx1 cxx2 cxx3
 AM_YFLAGS = -d
 

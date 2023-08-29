@@ -39,6 +39,8 @@ END
 
 cat > Makefile.am <<'END'
 AUTOMAKE_OPTIONS = no-dependencies
+AM_LFLAGS = --never-interactive
+
 bin_PROGRAMS = foo bar
 foo_SOURCES = main.c foo.y
 bar_SOURCES = main.c bar.y

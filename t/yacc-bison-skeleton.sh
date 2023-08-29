@@ -31,6 +31,8 @@ cat > Makefile.am << 'END'
 bin_PROGRAMS = zardoz
 zardoz_SOURCES = zardoz.y foo.c
 AM_YFLAGS = -d --skeleton glr.c
+AM_LFLAGS = --never-interactive
+
 BUILT_SOURCES = zardoz.h
 END
 

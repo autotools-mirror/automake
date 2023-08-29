@@ -27,6 +27,8 @@ AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
+AM_LFLAGS = --never-interactive
+
 bin_PROGRAMS = zoo
 zoo_SOURCES = joe.l
 LDADD = $(LEXLIB)
@@ -42,9 +44,6 @@ test-obj-updated: joe.$(OBJEXT)
 END
 
 cat > joe.l << 'END'
-%{
-#define YY_NO_UNISTD_H 1
-%}
 %%
 "foo" return EOF;
 .

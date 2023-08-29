@@ -31,6 +31,7 @@ EOF
 cat > Makefile.am <<'EOF'
 # Need generic and non-generic rules.
 AM_YFLAGS = -d
+AM_LFLAGS = --never-interactive
 bin_PROGRAMS = foo bar
 foo_SOURCES = parse.y
 bar_SOURCES = $(foo_SOURCES)

@@ -35,6 +35,8 @@ EOF
 # The LEXER2 intermediate variable is there to make sure Automake
 # matches 'nodist_' against the right variable name...
 cat > Makefile.am << 'EOF'
+AM_LFLAGS = --never-interactive
+
 EXTRA_PROGRAMS = foo
 LEXER2 = lexer2.l
 nodist_foo_SOURCES = lexer.l $(LEXER2)
@@ -49,9 +51,6 @@ distdirtest: distdir
 EOF
 
 cat > lexer.l << 'END'
-%{
-#define YY_NO_UNISTD_H 1
-%}
 %%
 "GOOD"   return EOF;
 .

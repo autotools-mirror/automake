@@ -27,6 +27,8 @@ AC_OUTPUT
 END
 
 cat > Makefile.am <<'END'
+AM_LFLAGS = --never-interactive
+
 bin_PROGRAMS = foo
 foo_SOURCES = foo.y
 # A minor automake wart: automake doesn't generate code to clean

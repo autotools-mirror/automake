@@ -33,6 +33,8 @@ AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
+AM_LFLAGS = --never-interactive
+
 bin_PROGRAMS = foo
 foo_SOURCES = lexer.l main.c mylex.h
 foo_LFLAGS = --header-file=mylex.h
@@ -45,9 +47,6 @@ END
 
 cat > lexer.l << 'END'
 %option noyywrap
-%{
-#define YY_NO_UNISTD_H 1
-%}
 %%
 "GOOD"   return EOF;
 .
@@ -55,7 +54,6 @@ cat > lexer.l << 'END'
 END
 
 cat > main.c <<'END'
-#define YY_NO_UNISTD_H 1
 #include "mylex.h"
 int main (void)
 {

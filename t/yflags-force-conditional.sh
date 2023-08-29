@@ -38,6 +38,8 @@ YACC=fake-yacc; export YACC
 
 cat > Makefile.am <<'END'
 AUTOMAKE_OPTIONS = no-dependencies
+AM_LFLAGS = --never-interactive
+
 bin_PROGRAMS = foo bar
 foo_SOURCES = foo.y main.c
 bar_SOURCES = $(foo_SOURCES)

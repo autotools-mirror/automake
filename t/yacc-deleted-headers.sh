@@ -26,6 +26,8 @@ AC_OUTPUT
 END
 
 cat > Makefile.am <<'END'
+AM_LFLAGS = --never-interactive
+
 bin_PROGRAMS = p1 p2 p3 p4
 # The order in which files are listed in the p*_SOURCES variables
 # below is significant, since it causes make failures whenever

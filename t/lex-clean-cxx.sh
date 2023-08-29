@@ -29,6 +29,8 @@ AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
+AM_LFLAGS = --never-interactive
+
 bin_PROGRAMS = foo bar baz qux
 
 foo_SOURCES = mainfoo.cc parsefoo.lxx
@@ -60,8 +62,6 @@ cat > parsefoo.lxx << 'END'
 extern "C"
 #endif
 YY_DECL;
-#define YY_NO_UNISTD_H 1
-int isatty (int fd) { return 0; }
 %}
 %%
 "GOOD"   return EOF;

@@ -31,6 +31,8 @@ AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
+AM_LFLAGS = --never-interactive
+
 SUBDIRS = sub1 sub2
 .PHONY: test-build test-dist
 test-build: all

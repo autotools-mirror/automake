@@ -151,6 +151,7 @@ ba2_YFLAGS = -v
 ba2_LFLAGS = -n
 ba2_LDADD = $(LEXLIB)
 AM_YFLAGS = -d
+AM_LFLAGS = --never-interactive
 BUILT_SOURCES = baz6.h
 EOF
 

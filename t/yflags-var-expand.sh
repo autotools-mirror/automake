@@ -29,6 +29,8 @@ END
 $ACLOCAL
 
 cat > Makefile.am <<'END'
+AM_LFLAGS = --never-interactive
+
 bin_PROGRAMS = foo bar
 foo_SOURCES = foo.y
 bar_SOURCES = bar.y

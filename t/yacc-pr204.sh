@@ -34,6 +34,8 @@ EOF
 # sure Automake match 'nodist_' against the right
 # variable name...
 cat > Makefile.am << 'EOF'
+AM_LFLAGS = --never-interactive
+
 AM_YFLAGS = -d
 EXTRA_PROGRAMS = foo
 PARSE2 = parse2.y

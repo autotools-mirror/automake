@@ -28,6 +28,8 @@ AC_OUTPUT
 END
 
 cat > Makefile.am <<'END'
+AM_LFLAGS = --never-interactive
+
 bin_PROGRAMS = foo
 foo_SOURCES = foo.y
 # Don't do this in a real-life Makefile.am!

@@ -35,6 +35,8 @@ END
 $ACLOCAL
 
 cat > Makefile.am <<'END'
+AM_LFLAGS = --never-interactive
+
 bin_PROGRAMS = zardoz
 zardoz_SOURCES = zardoz.y
 END
