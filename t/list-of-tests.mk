@@ -872,6 +872,7 @@ t/pluseq8.sh \
 t/pluseq9.sh \
 t/pluseq10.sh \
 t/pluseq11.sh \
+t/posixtarget.sh \
 t/posixsubst-data.sh \
 t/posixsubst-extradist.sh \
 t/posixsubst-ldadd.sh \
