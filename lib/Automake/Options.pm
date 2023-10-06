@@ -290,6 +290,7 @@ sub _is_valid_easy_option ($)
     no-installman
     no-texinfo.tex
     nostdinc
+    posix
     readme-alpha
     serial-tests
     parallel-tests
