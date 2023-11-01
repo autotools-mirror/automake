@@ -6,14 +6,14 @@
 # gives unlimited permission to copy and/or distribute it,
 # with or without modifications, as long as this notice is preserved.
 
-# AM_PROG_LEX
-# -----------
+# AM_PROG_LEX([OPTIONS])
+# --------------------
 # Autoconf leaves LEX=: if lex or flex can't be found.  Change that to a
 # "missing" invocation, for better error output.
 AC_DEFUN([AM_PROG_LEX],
 [AC_PREREQ([2.50])dnl
 AC_REQUIRE([AM_MISSING_HAS_RUN])dnl
-AC_REQUIRE([AC_PROG_LEX])dnl
+AC_PROVIDE_IFELSE([AC_PROG_LEX], [], [AC_PROG_LEX($@)])dnl
 if test "$LEX" = :; then
   LEX=${am_missing_run}flex
 fi])
