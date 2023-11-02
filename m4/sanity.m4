@@ -16,10 +16,28 @@ AS_IF([sleep 0.001 2>/dev/null], [am_cv_sleep_fractional_seconds=true], [am_cv_s
 # _AM_FILESYSTEM_TIMESTAMP_RESOLUTION
 # -----------------------------------
 # Determine the filesystem timestamp resolution.  Modern systems are nanosecond
-# capable, but historical systems could be millisecond, second, or even 2-second
-# resolution.
+# capable, but historical systems could have millisecond, second, or even
+# 2-second resolution.
 AC_DEFUN([_AM_FILESYSTEM_TIMESTAMP_RESOLUTION], [dnl
 AC_REQUIRE([_AM_SLEEP_FRACTIONAL_SECONDS])
+#
+# Check if Autom4te uses Time::HiRes. If not, we cannot use fractional sleep,
+# because this sanity test and automated tests will be unreliable due to
+# Autom4te's caching of results and comparing timestamps.
+# More info: long thread around
+#     https://lists.gnu.org/archive/html/automake/2023-04/msg00002.html
+# and https://debbugs.gnu.org/cgi/bugreport.cgi?bug=64756.  
+AC_PATH_PROG([AUTOM4TE], [autom4te])
+if test x"$autom4te_perllibdir" = x; then
+  autom4te_perllibdir=`sed -n \
+   '/autom4te_perllibdir/{s/^.*|| //;s/;$//;s/^.//;s/.$//;p;q}' <$AUTOM4TE`
+fi
+if grep HiRes "$autom4te_perllibdir"/Autom4te/FileUtils.pm >/dev/null; then
+  :
+else
+  am_cv_sleep_fractional_seconds=false
+fi
+
 AC_CACHE_CHECK([the filesystem timestamp resolution], am_cv_filesystem_timestamp_resolution, [dnl
 # Use names that lexically sort older-first when the timestamps are equal.
 rm -f conftest.file.a conftest.file.b
