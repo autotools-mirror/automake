@@ -15,9 +15,9 @@ AS_IF([sleep 0.001 2>/dev/null], [am_cv_sleep_fractional_seconds=true], [am_cv_s
 
 # _AM_FILESYSTEM_TIMESTAMP_RESOLUTION
 # -----------------------------------
-# Determine the filesystem timestamp resolution.  Modern systems are nanosecond
-# capable, but historical systems could have millisecond, second, or even
-# 2-second resolution.
+# Determine the filesystem timestamp resolution.  Modern systems are
+# nanosecond capable, but historical systems could have millisecond,
+# second, or even 2-second resolution.
 AC_DEFUN([_AM_FILESYSTEM_TIMESTAMP_RESOLUTION], [dnl
 AC_REQUIRE([_AM_SLEEP_FRACTIONAL_SECONDS])
 #
@@ -27,8 +27,11 @@ AC_REQUIRE([_AM_SLEEP_FRACTIONAL_SECONDS])
 # More info: long thread around
 #     https://lists.gnu.org/archive/html/automake/2023-04/msg00002.html
 # and https://debbugs.gnu.org/cgi/bugreport.cgi?bug=64756.  
+# By the way, we cannot use Perl to see if %INC{q[Time/HiRes.pm]} is
+#   defined, because Time::HiRes might get pulled in from other system
+#   modules even when not used directly. (An idea suggested in that thread.)
 AC_PATH_PROG([AUTOM4TE], [autom4te])
-if test x"$autom4te_perllibdir" = x; then
+if test x"$autom4te_perllibdir = x; then
   autom4te_perllibdir=`sed -n \
    '/autom4te_perllibdir/{s/^.*|| //;s/;$//;s/^.//;s/.$//;p;q}' <$AUTOM4TE`
 fi
