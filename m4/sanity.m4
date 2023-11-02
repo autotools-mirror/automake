@@ -26,12 +26,12 @@ AC_REQUIRE([_AM_SLEEP_FRACTIONAL_SECONDS])
 # Autom4te's caching of results and comparing timestamps.
 # More info: long thread around
 #     https://lists.gnu.org/archive/html/automake/2023-04/msg00002.html
-# and https://debbugs.gnu.org/cgi/bugreport.cgi?bug=64756.  
+# and https://debbugs.gnu.org/cgi/bugreport.cgi?bug=64756.
 # By the way, we cannot use Perl to see if %INC{q[Time/HiRes.pm]} is
 #   defined, because Time::HiRes might get pulled in from other system
 #   modules even when not used directly. (An idea suggested in that thread.)
 AC_PATH_PROG([AUTOM4TE], [autom4te])
-if test x"$autom4te_perllibdir = x; then
+if test x"$autom4te_perllibdir" = x; then
   autom4te_perllibdir=`sed -n \
    '/autom4te_perllibdir/{s/^.*|| //;s/;$//;s/^.//;s/.$//;p;q}' <$AUTOM4TE`
 fi
