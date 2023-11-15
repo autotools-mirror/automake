@@ -35,9 +35,9 @@ $AUTOCONF
 $AUTOMAKE
 
 # .POSIX should be the first non-blank non-comment line.
-sed -e '/^$/d' -e '/^ *#/d' -e 1q | grep '^\.POSIX:' Makefile.in
+sed -e '/^$/d' -e '/^ *#/d' -e 1q Makefile.in | grep '^\.POSIX:'
 
 ./configure
 # Although we aren't responsible for what autoconf does, check that the
 # result is as expected, since we're here.
-sed -e '/^$/d' -e '/^ *#/d' -e 1q | grep '^\.POSIX:' Makefile
+sed -e '/^$/d' -e '/^ *#/d' -e 1q Makefile | grep '^\.POSIX:'
