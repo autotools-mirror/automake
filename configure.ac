@@ -68,13 +68,16 @@ AUTOMAKE="\"`pwd`/pre-inst-env\" automake-$APIVERSION"
 AC_PROG_LN_S
 
 AC_PATH_PROG([PERL], [perl])
-if test -z "$PERL"; then
+case $PERL in
+ '')
    AC_MSG_ERROR([perl not found])
-elif echo "$PERL" | grep '[ 	]' >/dev/null; then
+   ;;
+ *' '* | *'	'*)
   AC_MSG_ERROR([The path to your Perl contains spaces or tabs.
 This would cause build failures later or unusable programs.
 Please use a path without spaces and try again.])
-fi
+  ;;
+esac
 
 # Save details about the selected perl interpreter in config.log.
 AM_RUN_LOG([$PERL --version])
