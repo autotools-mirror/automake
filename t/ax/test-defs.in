@@ -177,12 +177,26 @@ GNU_GCJFLAGS=${AM_TESTSUITE_GNU_GCJFLAGS-${GNU_GCJFLAGS-'@GNU_GCJFLAGS@'}}
 # this variable.
 TEX=${AM_TESTSUITE_TEX-'@TEX@'}
 
-# The amount we should wait after modifying files depends on the platform.
-# For instance, Windows '95, '98 and ME have 2-second granularity
-# and can be up to 3 seconds in the future w.r.t. the system clock.
-# The creative quoting is to avoid spuriously triggering a failure in
-# the maintainer checks,
-sleep='sleep ''@MODIFICATION_DELAY@'
+# The time we should wait after modifying files depends on the platform, and
+# also the capabilities of the 'automake' and 'autom4te' programs, which in
+# turn depend on the capabilities of the Perl interpreter.  configure has
+# detected the platform's resolution for file modification times; we still
+# need to check automake and autom4te.
+MTIME_RESOLUTION='@MTIME_RESOLUTION@'
+case $MTIME_RESOLUTION in
+  1 | 2) ;; # Can assume these values are usable as is.
+  *)
+    if $AUTOMAKE --version 2>&1 |
+         grep 'Features:.*subsecond-mtime' > /dev/null 2>&1 &&
+       $AUTOM4TE --version 2>&1 |
+         grep 'Features:.*subsecond-mtime' > /dev/null 2>&1; then
+      :
+    else
+      MTIME_RESOLUTION=1
+    fi
+  ;;
+esac
+sleep="sleep $MTIME_RESOLUTION"
 
 # An old timestamp that can be given to a file, in "touch -t" format.
 # The time stamp should be portable to all file systems of interest.

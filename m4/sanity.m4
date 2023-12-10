@@ -15,66 +15,87 @@ AS_IF([sleep 0.001 2>/dev/null], [am_cv_sleep_fractional_seconds=true], [am_cv_s
 
 # _AM_FILESYSTEM_TIMESTAMP_RESOLUTION
 # -----------------------------------
-# Determine the filesystem timestamp resolution.  Modern systems are
-# nanosecond capable, but historical systems could have millisecond,
-# second, or even 2-second resolution.
+# Determine the filesystem's resolution for file modification
+# timestamps.  The coarsest we know of is FAT, with a resolution
+# of only two seconds, even with the most recent "exFAT" extensions.
+# The finest (e.g. ext4 with large inodes, XFS, ZFS) is one
+# nanosecond, matching clock_gettime.  However, it is probably not
+# possible to delay execution of a shell script for less than one
+# millisecond, due to process creation overhead and scheduling
+# granularity, so we don't check for anything finer than that.
 AC_DEFUN([_AM_FILESYSTEM_TIMESTAMP_RESOLUTION], [dnl
 AC_REQUIRE([_AM_SLEEP_FRACTIONAL_SECONDS])
-#
-# Check if Autom4te uses Time::HiRes. If not, we cannot use fractional sleep,
-# because this sanity test and automated tests will be unreliable due to
-# Autom4te's caching of results and comparing timestamps.
-# More info: long thread around
-#     https://lists.gnu.org/archive/html/automake/2023-04/msg00002.html
-# and https://debbugs.gnu.org/cgi/bugreport.cgi?bug=64756.
-# By the way, we cannot use Perl to see if %INC{q[Time/HiRes.pm]} is
-#   defined, because Time::HiRes might get pulled in from other system
-#   modules even when not used directly. (An idea suggested in that thread.)
-AC_PATH_PROG([AUTOM4TE], [autom4te])
-if test x"$autom4te_perllibdir" = x; then
-  autom4te_perllibdir=`sed -n \
-   '/autom4te_perllibdir/{s/^.*|| //;s/;$//;s/^.//;s/.$//;p;q}' <$AUTOM4TE`
-fi
-if grep HiRes "$autom4te_perllibdir"/Autom4te/FileUtils.pm >/dev/null; then
-  :
-else
-  am_cv_sleep_fractional_seconds=false
+AC_CACHE_CHECK([the filesystem timestamp resolution], am_cv_filesystem_timestamp_resolution, [dnl
+# Default to the worst case.
+am_cv_filesystem_timestamp_resolution=2
+
+# Only try to go finer than 1s if sleep can do it.
+am_try_resolutions=1
+if $am_cv_sleep_fractional_seconds; then
+  am_try_resolutions="0.001 0.01 0.1 $am_try_resolutions"
 fi
 
-AC_CACHE_CHECK([the filesystem timestamp resolution], am_cv_filesystem_timestamp_resolution, [dnl
-# Use names that lexically sort older-first when the timestamps are equal.
-rm -f conftest.file.a conftest.file.b
-: > conftest.file.a
-AS_IF([$am_cv_sleep_fractional_seconds], [dnl
-  am_try_sleep=0.1 am_try_loops=20
-], [dnl
-  am_try_sleep=1   am_try_loops=2
-])
-am_try=0
-while :; do
-  AS_VAR_ARITH([am_try], [$am_try + 1])
-  echo "timestamp $am_try" > conftest.file.b
-  set X `ls -t conftest.file.a conftest.file.b`
-  if test "$[2]" = conftest.file.b || test $am_try -eq $am_try_loops; then
+# In order to catch current-generation FAT out, we must *modify* files
+# that already exist; the *creation* timestamp is finer.  Use names
+# that make ls -t sort them differently when they have equal
+# timestamps than when they have distinct timestamps, keeping
+# in mind that ls -t prints the *newest* file first.
+rm -f conftest.ts?
+: > conftest.ts1
+: > conftest.ts2
+: > conftest.ts3
+
+# Make sure ls -t actually works.  Do 'set' in a subshell so we don't
+# clobber the current shell's arguments.
+if (
+     set X `[ls -t conftest.ts[12]]` &&
+     {
+       test "$[*]" != "X conftest.ts1 conftest.ts2" ||
+       test "$[*]" != "X conftest.ts2 conftest.ts1";
+     }
+); then :; else
+  # If neither matched, then we have a broken ls.  This can happen
+  # if, for instance, CONFIG_SHELL is bash and it inherits a
+  # broken ls alias from the environment.  This has actually
+  # happened.  Such a system could not be considered "sane".
+  _AS_ECHO_UNQUOTED(
+    ["Bad output from ls -t: \"`[ls -t conftest.ts[12]]`\""],
+    [AS_MESSAGE_LOG_FD])
+  AC_MSG_FAILURE([ls -t produces unexpected output.
+Make sure there is not a broken alias in your environment.])
+fi
+
+for am_try_res in $am_try_resolutions; do
+  # Any one fine-grained sleep might happen to cross the boundary
+  # between two values of a coarser actual resolution, but if we do
+  # two fine-grained sleeps in a row, at least one of them will fall
+  # entirely within a coarse interval.
+  echo alpha > conftest.ts1
+  sleep $am_try_res
+  echo beta > conftest.ts2
+  sleep $am_try_res
+  echo gamma > conftest.ts3
+
+  # We assume that 'ls -t' will make use of high-resolution
+  # timestamps if the operating system supports them at all.
+  if (set X `ls -t conftest.ts?` &&
+      test "$[]2" = conftest.ts3 &&
+      test "$[]3" = conftest.ts2 &&
+      test "$[]4" = conftest.ts1); then
+    am_cv_filesystem_timestamp_resolution=$am_try_res
     break
   fi
-  sleep $am_try_sleep
 done
-rm -f conftest.file.a conftest.file.b
-am_cv_filesystem_timestamp_resolution=$am_try
-AS_IF([$am_cv_sleep_fractional_seconds], [dnl
-  AS_VAR_ARITH([am_cv_filesystem_timestamp_resolution], [$am_try / 10])
-  AS_VAR_ARITH([am_fraction], [$am_try % 10])
-  AS_VAR_APPEND([am_cv_filesystem_timestamp_resolution], [.$am_fraction])
-])
+rm -f conftest.ts?
 ])])
 
 # AM_SANITY_CHECK
 # ---------------
 AC_DEFUN([AM_SANITY_CHECK],
 [AC_REQUIRE([_AM_FILESYSTEM_TIMESTAMP_RESOLUTION])
-rm -f conftest.file
-AC_CACHE_CHECK([whether build environment is sane], am_cv_build_env_is_sane, [dnl
+# This check should not be cached, as it may vary across builds of
+# different projects.
+AC_MSG_CHECKING([whether build environment is sane])
 # Reject unsafe characters in $srcdir or the absolute working directory
 # name.  Accept space and tab only in the latter.
 am_lf='
@@ -93,41 +114,33 @@ esac
 # symlink; some systems play weird games with the mod time of symlinks
 # (eg FreeBSD returns the mod time of the symlink's containing
 # directory).
-if (
-   am_has_slept=no
-   for am_try in 1 2; do
-     echo "timestamp, slept: $am_has_slept" > conftest.file
-     set X `ls -Lt "$srcdir/configure" conftest.file 2> /dev/null`
-     if test "$[*]" = "X"; then
-	# -L didn't work.
-	set X `ls -t "$srcdir/configure" conftest.file`
-     fi
-     if test "$[*]" != "X $srcdir/configure conftest.file" \
-	&& test "$[*]" != "X conftest.file $srcdir/configure"; then
+am_build_env_is_sane=no
+am_has_slept=no
+rm -f conftest.file
+for am_try in 1 2; do
+  echo "timestamp, slept: $am_has_slept" > conftest.file
+  if (
+    set X `ls -Lt "$srcdir/configure" conftest.file 2> /dev/null`
+    if test "$[*]" = "X"; then
+      # -L didn't work.
+      set X `ls -t "$srcdir/configure" conftest.file`
+    fi
+    test "$[2]" = conftest.file
+  ); then
+    am_build_env_is_sane=yes
+    break
+  fi
+  # Just in case.
+  sleep $am_cv_filesystem_timestamp_resolution
+  am_has_slept=yes
+done
 
-	# If neither matched, then we have a broken ls.  This can happen
-	# if, for instance, CONFIG_SHELL is bash and it inherits a
-	# broken ls alias from the environment.  This has actually
-	# happened.  Such a system could not be considered "sane".
-	AC_MSG_ERROR([ls -t appears to fail.  Make sure there is not a broken
-  alias in your environment])
-     fi
-     if test "$[2]" = conftest.file || test $am_try -eq 2; then
-       break
-     fi
-     # Just in case.
-     sleep $am_cv_filesystem_timestamp_resolution
-     am_has_slept=yes
-   done
-   test "$[2]" = conftest.file
-   )
-then
-  am_cv_build_env_is_sane=yes
-else
-   AC_MSG_ERROR([newly created file is older than distributed files!
+AC_MSG_RESULT([$am_build_env_is_sane])
+if test $am_build_env_is_sane = no; then
+  AC_MSG_ERROR([newly created file is older than distributed files!
 Check your system clock])
 fi
-])
+
 # If we didn't sleep, we still need to ensure time stamps of config.status and
 # generated files are strictly newer.
 am_sleep_pid=

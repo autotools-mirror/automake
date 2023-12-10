@@ -180,15 +180,18 @@ result=no
 test "x$am_cv_prog_ln" = xln && result=yes
 AC_MSG_RESULT([$result])
 
-MODIFICATION_DELAY=$am_cv_filesystem_timestamp_resolution
-AC_SUBST([MODIFICATION_DELAY])
-
 ## ------------------------------------------- ##
 ##  Test for things needed by the test suite.  ##
 ## ------------------------------------------- ##
 
 AC_PROG_EGREP
 AC_PROG_FGREP
+
+# The test suite needs to know the resolution of timestamps
+# supported by the filesystem hosting the build.  The value
+# will be acceptable to 'sleep' on this system.
+MTIME_RESOLUTION=$am_cv_filesystem_timestamp_resolution
+AC_SUBST([MTIME_RESOLUTION])
 
 dnl FIXME: could we extract this in a simpler way through autoconf
 dnl FIXME: idioms or internals?
