@@ -278,6 +278,7 @@ EXTRA_DIST += $(perf_TESTS)
 clean-local: clean-local-check
 .PHONY: clean-local-check
 clean-local-check:
+	find . -type d ! -perm -700 -exec chmod u+rwx {} ';'
 	$(AM_V_GEN)$(PERL) $(srcdir)/t/ax/deltree.pl t/*.dir t/*/*.dir */t/*.dir
 
 # vim: ft=automake noet

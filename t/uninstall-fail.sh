@@ -98,4 +98,7 @@ run_make -M -e FAIL uninstall
 
 $EGREP "(cd|sh)(\[[0-9]*[0-9]\])?: .*$inst/share" output
 
+# restore reasonable permissions so the rest of the world doesn't have to deal.
+chmod u+rwx $inst/share
+
 :
