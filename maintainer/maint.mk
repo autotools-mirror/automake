@@ -308,10 +308,12 @@ announcement: NEWS
 	  && X "Please report bugs and problems to" \
 	       "<$(PACKAGE_BUGREPORT)>," \
 	  && X "and send general comments and feedback to" \
-	       "<$(PACKAGE_MAILINGLIST)>." \
+	       "<$(PACKAGE_MAILINGLIST)>," \
+	  && X "and patches to" \
+	       "<automake-patches@gnu.org>." \
 	  && X \
 	  && X "Thanks to everyone who has reported problems, contributed" \
-	  && X "patches, and helped testing Automake!" \
+	  && X "patches, and helped test Automake!" \
 	  && X \
 	  && X "-*-*-*-" \
 	  && X \
@@ -320,7 +322,8 @@ announcement: NEWS
 		(/^~~~/ && wait_for_end) { print; exit(0) } \
 		{ print } \
 	     ' <$(srcdir)/NEWS >> $@-t \
-	  && mv -f $@-t $@
+	  && mv -f $@-t $@ \
+	  && ls -l ./$@
 .PHONY: announcement
 CLEANFILES += announcement
 
