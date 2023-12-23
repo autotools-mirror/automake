@@ -8871,10 +8871,10 @@ a bit, we can say this rule first makes a distribution, and then,
 @emph{operating from it}, takes the following steps (in this order):
 @itemize
 @item
-tries to do a @code{VPATH} build (@pxref{VPATH Builds}), with the
+does a @code{VPATH} build (@pxref{VPATH Builds}), with the
 @code{srcdir} and all its content made @emph{read-only};
 @item
-tries to make the printable documentation, if any (with @command{make dvi}),
+makes the printable documentation (with @command{make dvi}), if any,
 @item
 runs the test suite (with @command{make check}) on this fresh build;
 @item
@@ -8893,12 +8893,23 @@ All of these actions are performed in a temporary directory.  The
 exact location and the exact structure of such a directory (where the
 read-only sources are placed, how the temporary build and install
 directories are named and how deeply they are nested, etc.) is to be
-considered an implementation detail, which can change at any time; so
-do not rely on it.
+considered an implementation detail, which can change at any time, so
+please do not rely on it.
 
+@menu
+* DISTCHECK_CONFIGURE_FLAGS::  Overriding configure flags in distcheck.
+* distcheck-hook::             Running commands after distcheck.
+* dvi and distcheck::          Overriding the distcheck doc target.
+* distcleancheck::             Handling files not cleaned.
+* distuninstallcheck::         Overriding the uninstall check.
+* Errors with distclean::
+@end menu
+
+@node DISTCHECK_CONFIGURE_FLAGS
+@subsection @code{DISTCHECK_CONFIGURE_FLAGS}
 @vindex AM_DISTCHECK_CONFIGURE_FLAGS
 @vindex DISTCHECK_CONFIGURE_FLAGS
-@subheading DISTCHECK_CONFIGURE_FLAGS
+
 Building the package involves running @samp{./configure}.  If you need
 to supply additional flags to @command{configure}, define them in the
 @code{AM_DISTCHECK_CONFIGURE_FLAGS} variable in your top-level
@@ -8912,31 +8923,52 @@ over the @command{configure} options @option{--srcdir} and
 @code{AM_DISTCHECK_CONFIGURE_FLAGS} nor by
 @code{DISTCHECK_CONFIGURE_FLAGS}.
 
-Also note that developers are encouraged to strive to make their code
-buildable without requiring any special configure option; thus, in
-general, you shouldn't define @code{AM_DISTCHECK_CONFIGURE_FLAGS}.
-However, there might be few scenarios in which the use of this variable
-is justified.
-GNU @command{m4} offers an example.  GNU @command{m4} configures by
-default with its experimental and seldom used "changeword" feature
-disabled; so in this case it is useful to have @command{make distcheck}
-run configure with the @option{--with-changeword} option, to ensure that
-the code for changeword support still compiles correctly.
-GNU @command{m4} also employs the @code{AM_DISTCHECK_CONFIGURE_FLAGS}
-variable to stress-test the use of @option{--program-prefix=g}, since at
-one point the @command{m4} build system had a bug where @command{make
-installcheck} was wrongly assuming it could blindly test "@command{m4}",
-rather than the just-installed "@command{gm4}".
+Developers are encouraged to strive to make their code buildable
+without requiring any special configure option; thus, in general, you
+shouldn't define @code{AM_DISTCHECK_CONFIGURE_FLAGS}.  GNU
+@command{m4} offers an example of when its use is justified, however.
+GNU @command{m4} configures by default with its experimental and
+seldom used @samp{changeword} feature disabled; so in this case it is
+useful to have @command{make distcheck} run configure with the
+@option{--with-changeword} option, to ensure that the code for
+changeword support still compiles correctly.  GNU @command{m4} also
+employs the @code{AM_DISTCHECK_CONFIGURE_FLAGS} variable to
+stress-test the use of @option{--program-prefix=g}, since at one point
+the @command{m4} build system had a bug where @command{make
+installcheck} was wrongly assuming it could blindly test @samp{m4},
+rather than the just-installed @samp{gm4}.
 
+@node distcheck-hook
+@subsection @code{distcheck-hook}
+@trindex distcheck-hook
+
+If the @code{distcheck-hook} rule is defined in your top-level
+@file{Makefile.am}, then it will be invoked by @code{distcheck} after
+the new distribution has been unpacked, but before the unpacked copy
+is configured and built.  Your @code{distcheck-hook} can do almost
+anything, though as always caution is advised.  Generally this hook is
+used to check for potential distribution errors not caught by the
+standard mechanism.
+
+@code{distcheck-hook}, as well as @code{AM_DISTCHECK_CONFIGURE_FLAGS}
+and @code{DISTCHECK_CONFIGURE_FLAGS}, are not honored in a subpackage
+@file{Makefile.am}, but the flags from
+@code{AM_DISTCHECK_CONFIGURE_FLAGS} and
+@code{DISTCHECK_CONFIGURE_FLAGS} are passed down to the
+@command{configure} script of the subpackage.
+
+@node dvi and distcheck
+@subsection @code{dvi} and @code{distcheck}
 @trindex dvi
-@subheading dvi and distcheck
-@cindex @code{eps} images
+
 Ordinarily, @command{make distcheck} runs @command{make dvi}.  It does
 nothing if the distribution contains no Texinfo sources.  If the
 distribution does contain a Texinfo manual, by default the @code{dvi}
 target will run @TeX{} to make sure it can be successfully processed
 (@pxref{Texinfo}).
 
+@vindex AM_DISTCHECK_DVI_TARGET
+@cindex @code{eps} images, and @code{distcheck}
 However, you may wish to test the manual by producing @code{pdf}
 (e.g., if your manual uses images in formats other than @code{eps}),
 @code{html} (if you don't have @TeX{} at all), some other format, or
@@ -8952,41 +8984,28 @@ AM_DISTCHECK_DVI_TARGET = pdf
 To make @code{dvi} into a do-nothing target, see the example for
 @code{EMPTY_AUTOMAKE_TARGETS} in @ref{Third-Party Makefiles}.
 
-@trindex distcheck-hook
-@subheading distcheck-hook
-If the @code{distcheck-hook} rule is defined in your top-level
-@file{Makefile.am}, then it will be invoked by @code{distcheck} after
-the new distribution has been unpacked, but before the unpacked copy
-is configured and built.  Your @code{distcheck-hook} can do almost
-anything, though as always caution is advised.  Generally this hook is
-used to check for potential distribution errors not caught by the
-standard mechanism.  Note that @code{distcheck-hook} as well as
-@code{AM_DISTCHECK_CONFIGURE_FLAGS} and @code{DISTCHECK_CONFIGURE_FLAGS}
-are not honored in a subpackage @file{Makefile.am}, but the flags from
-@code{AM_DISTCHECK_CONFIGURE_FLAGS} and @code{DISTCHECK_CONFIGURE_FLAGS}
-are passed down to the @command{configure} script of the subpackage.
-
+@node distcleancheck
+@subsection @code{distcleancheck}
 @cindex @samp{make distcleancheck}
 @trindex distcleancheck
 @vindex DISTCLEANFILES
 @vindex distcleancheck_listfiles
 
-@subheading distcleancheck
-Speaking of potential distribution errors, @code{distcheck} also
-ensures that the @code{distclean} rule actually removes all built
-files.  This is done by running @samp{make distcleancheck} at the end of
-the @code{VPATH} build.  By default, @code{distcleancheck} will run
-@code{distclean} and then make sure the build tree has been emptied by
-running @samp{$(distcleancheck_listfiles)}.  Usually this check will
-find generated files that you forgot to add to the @code{DISTCLEANFILES}
+@code{distcheck} ensures that the @code{distclean} rule actually
+removes all built files.  This is done by running @samp{make
+distcleancheck} at the end of the @code{VPATH} build.  By default,
+@code{distcleancheck} will run @code{distclean} and then make sure the
+build tree has been emptied by running the value of the variable
+@samp{$(distcleancheck_listfiles)}.  Often this check will find
+generated files that you forgot to add to the @code{DISTCLEANFILES}
 variable (@pxref{Clean}).
 
 The @code{distcleancheck} behavior should be OK for most packages,
 otherwise you have the possibility to override the definition of
 either the @code{distcleancheck} rule, or the
 @samp{$(distcleancheck_listfiles)} variable.  For instance, to disable
-@code{distcleancheck} completely, add the following rule to your
-top-level @file{Makefile.am}:
+@code{distcleancheck} completely (not recommended), add the following
+rule to your top-level @file{Makefile.am}:
 
 @example
 distcleancheck:
@@ -8994,48 +9013,221 @@ distcleancheck:
 @end example
 
 If you want @code{distcleancheck} to ignore built files that have not
-been cleaned because they are also part of the distribution, add the
-following definition instead:
+been cleaned because they are also part of the distribution, make the
+following definition:
 
-@c Keep in sync with distcleancheck.sh
+@c Keep in sync with t/distcleancheck.sh.
 @example
 distcleancheck_listfiles = \
   find . -type f -exec sh -c 'test -f $(srcdir)/$$1 || echo $$1' \
        sh '@{@}' ';'
 @end example
 
-The above definition is not the default because it's usually an error if
-your Makefiles cause some distributed files to be rebuilt when the user
-builds the package.  (Think about the user missing the tool required to
-build the file; or if the required tool is built by your package,
-consider the cross-compilation case where it can't be run.)  There is
-an entry in the FAQ about this (@pxref{Errors with distclean}); make
-sure you read it before playing with @code{distcleancheck_listfiles}.
+The above definition is not the default because it's usually an error
+if your Makefiles cause some distributed files to be rebuilt when the
+user builds the package: consider the user missing the tool required
+to build the file; or if the required tool is built by your package,
+consider the cross-compilation case where it can't be run.
 
+Please see the (following) section @ref{Errors with distclean} before
+playing with @code{distcleancheck_listfiles}.
+
+@node distuninstallcheck
+@subsection @code{distuninstallcheck}
 @cindex @samp{make distuninstallcheck}
 @trindex distuninstallcheck
 @vindex distuninstallcheck_listfiles
 
-@subheading distuninstallcheck
 @code{distcheck} also checks that the @code{uninstall} rule works
 properly, both for ordinary and @code{DESTDIR} builds.  It does this
 by invoking @samp{make uninstall}, and then it checks the install tree
 to see if any files are left over.  This check will make sure that you
 correctly coded your @code{uninstall}-related rules.
 
-By default, the checking is done by the @code{distuninstallcheck} rule,
-and the list of files in the install tree is generated by
-@samp{$(distuninstallcheck_listfiles)} (this is a variable whose value is
-a shell command to run that prints the list of files to stdout).
+By default, the checking is done by the @code{distuninstallcheck}
+rule, and the list of files in the install tree is generated by
+@samp{$(distuninstallcheck_listfiles)}. The value of the latter
+variable is taken to be a shell command to run that prints the list of
+files to stdout.
 
 Either of these can be overridden to modify the behavior of
-@code{distcheck}.  For instance, to disable this check completely, you
-would write:
+@code{distcheck}.  For instance, to disable this check completely (not
+recommended), you would write:
 
 @example
 distuninstallcheck:
         @@:
 @end example
+
+@node Errors with distclean
+@subsection Errors with @code{distclean}
+@cindex @code{distclean}, diagnostic
+@cindex @samp{make distclean}, diagnostic
+@cindex dependencies and distributed files
+@trindex distclean
+
+As explained in the section above (@pxref{Checking the Distribution}),
+@samp{make distcheck} attempts to build and check your package for
+errors. One such error you might see is:
+
+@example
+ERROR: files left in build directory after distclean:
+@end example
+
+@noindent The file(s) left in the build directory after @samp{make distclean}
+has run are listed after this error message. This can happen in two
+ways:
+
+@itemize @bullet
+@item files that were forgotten to be distclean-ed;
+@item distributed files that are erroneously rebuilt.
+@end itemize
+
+In the first case of simple left-over files not intended to be
+distributed, the fix is to include them for cleaning (@pxref{Clean});
+this is straightforward and doesn't need more explanation.
+
+@cmindex help2man
+@cindex man pages, generating and distributing
+The second case, however, is not always easy to understand and fix, so
+let's proceed with an example.  Suppose our package contains a program
+for which we want to build a man page using @command{help2man}.  GNU
+@command{help2man} produces simple manual pages from the
+@option{--help} and @option{--version} output of other commands
+(@pxref{,,,help2man, The Help2man Manual}).  Because we don't want to
+force our users to install @command{help2man}, we distribute the
+generated man page using the following setup.
+
+@example
+# This Makefile.am is bogus.
+bin_PROGRAMS = foo
+foo_SOURCES = foo.c
+dist_man_MANS = foo.1
+
+foo.1: foo$(EXEEXT)
+        help2man --output=foo.1 ./foo$(EXEEXT)
+@end example
+
+This will effectively distribute the man page.  However,
+@samp{make distcheck} will fail with:
+
+@example
+ERROR: files left in build directory after distclean:
+./foo.1
+@end example
+
+Why was @file{foo.1} rebuilt?  Because although distributed,
+@file{foo.1} depends on a non-distributed built file:
+@file{foo$(EXEEXT)}.  @file{foo$(EXEEXT)} is built by the user, so it
+will always appear to be newer than the distributed @file{foo.1}.
+
+In other words, @samp{make distcheck} caught an inconsistency in our
+package.  Our intent was to distribute @file{foo.1} so users do not
+need to install @command{help2man}, but since this rule causes this
+file to be always rebuilt, users @emph{do} need @command{help2man}.
+Either we should ensure that @file{foo.1} is not rebuilt by users, or
+there is no point in distributing @file{foo.1}.
+
+More generally, the rule is that distributed files should never depend
+on non-distributed built files.  If you distribute something
+generated, distribute all its sources.
+
+One way to fix the above example, while still distributing
+@file{foo.1}, is to not depend on @file{foo$(EXEEXT)}, but instead on
+relevant source files.  For instance, assuming @command{foo --version}
+and @command{foo --help} do not change unless @file{foo.c} or
+@file{configure.ac} change, we could write the following
+@file{Makefile.am}:
+
+@example
+bin_PROGRAMS = foo
+foo_SOURCES = foo.c
+dist_man_MANS = foo.1
+
+foo.1: foo.c $(top_srcdir)/configure.ac
+        $(MAKE) $(AM_MAKEFLAGS) foo$(EXEEXT)
+        help2man --output=foo.1 ./foo$(EXEEXT)
+@end example
+
+This way, @file{foo.1} will not get rebuilt every time
+@file{foo$(EXEEXT)} changes.  The @command{make} call makes sure
+@file{foo$(EXEEXT)} is up-to-date before @command{help2man}. 
+
+Another step towards ensuring this would be to use separate
+directories for binaries and man pages, and set @code{SUBDIRS} so that
+binaries are built before man pages.  Unfortunately, this alone is, in
+general, not sufficient. In order to avoid to avoid concurrency bugs,
+it may be necessary to include wrappers; this is done by GNU Autoconf,
+as mentioned below.
+
+We could also decide not to distribute @file{foo.1}.  In this case
+it's fine to have @file{foo.1} dependent upon @file{foo$(EXEEXT)},
+since both will have to be rebuilt.  However, it might be impossible
+to build the package in a cross-compilation, because building
+@file{foo.1} involves an @emph{execution} of @file{foo$(EXEEXT)}.  The
+exception would be if @file{foo} is a platform-independent script,
+such as @command{help2man}.
+
+Another context where such errors are common is when distributed files
+are built by tools that are built by the package.  The pattern is
+similar:
+
+@example
+distributed-file: built-tools distributed-sources
+        build-command
+@end example
+
+@noindent
+should be changed to
+
+@example
+distributed-file: distributed-sources
+        $(MAKE) $(AM_MAKEFLAGS) built-tools
+        build-command
+@end example
+
+@noindent
+or you could choose not to distribute @file{distributed-file}, if
+cross-compilation does not matter.
+
+The points made through these examples are worth summarizing:
+
+@cartouche
+@itemize
+@item Distributed files should never depend upon non-distributed built files.
+
+@item Distributed files should be distributed with all their dependencies.
+
+@item If a file is @emph{intended} to be rebuilt by users, then there
+is no point in distributing it.
+@end itemize
+@end cartouche
+
+Real-world examples for @code{help2man}:
+
+@itemize
+@item
+Autoconf takes the approach described above, including man pages in
+its releases. A wrapper for each script is needed to avoid concurrency
+problems.  See its source file @code{autoconf/man/local.mk}, which has
+a good discussion of the necessary additional details.
+
+@item
+Automake itself takes another approach: it does @emph{not} include man
+pages in distributions; thus, every user generates them when building
+from the release tarballs.  This is ok (only) because Automake also
+includes a copy of the @command{help2man} script, which is plausible
+because @command{help2man} is small, self-contained, and
+platform-independent.  See the source file
+@code{automake/doc/local.mk}.
+@end itemize
+
+@vrindex distcleancheck_listfiles
+If you're desperate, it's possible to disable this check completely by
+setting @code{distcleancheck_listfiles} (@pxref{distcleancheck}).
+Make sure you understand the reason why @samp{make distcheck}
+complains first.  @code{distcleancheck_listfiles} is a way to
+@emph{hide} errors, not to fix them.  You can always do better.
 
 @node The Types of Distributions
 @section The Types of Distributions
@@ -12523,157 +12715,6 @@ non-POSIX environments, you should avoid file names that
 differ only in case (e.g., @file{makefile} and @file{Makefile}).
 Nowadays it is no longer worth worrying about the 8.3 limits of
 DOS file systems.
-
-@c FIXME This should probably be moved to the "Checking the Distribution"
-@c FIXME section...
-@node Errors with distclean
-@section Errors with distclean
-@cindex @code{distclean}, diagnostic
-@cindex @samp{make distclean}, diagnostic
-@cindex dependencies and distributed files
-@trindex distclean
-
-This is a diagnostic you might encounter while running @samp{make
-distcheck}.
-
-As explained in @ref{Checking the Distribution}, @samp{make distcheck}
-attempts to build and check your package for errors like this one.
-
-@samp{make distcheck} will perform a @code{VPATH} build of your
-package (@pxref{VPATH Builds}), and then call @samp{make distclean}.
-Files left in the build directory after @samp{make distclean} has run
-are listed after this error.
-
-This diagnostic covers two kinds of errors:
-
-@itemize @bullet
-@item
-files that are forgotten by distclean;
-@item
-distributed files that are erroneously rebuilt.
-@end itemize
-
-The former left-over files are not distributed, so the fix is to mark
-them for cleaning (@pxref{Clean}); this is obvious and doesn't deserve
-more explanation.
-
-The latter bug is not always easy to understand and fix, so let's
-proceed with an example.  Suppose our package contains a program for
-which we want to build a man page using @command{help2man}.  GNU
-@command{help2man} produces simple manual pages from the @option{--help}
-and @option{--version} output of other commands (@pxref{Top, , Overview,
-help2man, The Help2man Manual}).  Because we don't want to force our
-users to install @command{help2man}, we decide to distribute the
-generated man page using the following setup.
-
-@example
-# This Makefile.am is bogus.
-bin_PROGRAMS = foo
-foo_SOURCES = foo.c
-dist_man_MANS = foo.1
-
-foo.1: foo$(EXEEXT)
-        help2man --output=foo.1 ./foo$(EXEEXT)
-@end example
-
-This will effectively distribute the man page.  However,
-@samp{make distcheck} will fail with:
-
-@example
-ERROR: files left in build directory after distclean:
-./foo.1
-@end example
-
-Why was @file{foo.1} rebuilt?  Because although distributed,
-@file{foo.1} depends on a non-distributed built file:
-@file{foo$(EXEEXT)}.  @file{foo$(EXEEXT)} is built by the user, so it
-will always appear to be newer than the distributed @file{foo.1}.
-
-@samp{make distcheck} caught an inconsistency in our package.  Our
-intent was to distribute @file{foo.1} so users do not need to install
-@command{help2man}, however since this rule causes this file to be
-always rebuilt, users @emph{do} need @command{help2man}.  Either we
-should ensure that @file{foo.1} is not rebuilt by users, or there is
-no point in distributing @file{foo.1}.
-
-More generally, the rule is that distributed files should never depend
-on non-distributed built files.  If you distribute something
-generated, distribute its sources.
-
-One way to fix the above example, while still distributing
-@file{foo.1}, is to not depend on @file{foo$(EXEEXT)}.  For instance,
-assuming @command{foo --version} and @command{foo --help} do not
-change unless @file{foo.c} or @file{configure.ac} change, we could
-write the following @file{Makefile.am}:
-
-@example
-bin_PROGRAMS = foo
-foo_SOURCES = foo.c
-dist_man_MANS = foo.1
-
-foo.1: foo.c $(top_srcdir)/configure.ac
-        $(MAKE) $(AM_MAKEFLAGS) foo$(EXEEXT)
-        help2man --output=foo.1 ./foo$(EXEEXT)
-@end example
-
-This way, @file{foo.1} will not get rebuilt every time
-@file{foo$(EXEEXT)} changes.  The @command{make} call makes sure
-@file{foo$(EXEEXT)} is up-to-date before @command{help2man}.  Another
-way to ensure this would be to use separate directories for binaries
-and man pages, and set @code{SUBDIRS} so that binaries are built
-before man pages.
-
-We could also decide not to distribute @file{foo.1}.  In
-this case it's fine to have @file{foo.1} dependent upon
-@file{foo$(EXEEXT)}, since both will have to be rebuilt.
-However, it would be impossible to build the package in a
-cross-compilation, because building @file{foo.1} involves
-an @emph{execution} of @file{foo$(EXEEXT)}.
-
-Another context where such errors are common is when distributed files
-are built by tools that are built by the package.  The pattern is
-similar:
-
-@example
-distributed-file: built-tools distributed-sources
-        build-command
-@end example
-
-@noindent
-should be changed to
-
-@example
-distributed-file: distributed-sources
-        $(MAKE) $(AM_MAKEFLAGS) built-tools
-        build-command
-@end example
-
-@noindent
-or you could choose not to distribute @file{distributed-file}, if
-cross-compilation does not matter.
-
-The points made through these examples are worth a summary:
-
-@cartouche
-@itemize
-@item
-Distributed files should never depend upon non-distributed built
-files.
-@item
-Distributed files should be distributed with all their dependencies.
-@item
-If a file is @emph{intended} to be rebuilt by users, then there is no point
-in distributing it.
-@end itemize
-@end cartouche
-
-@vrindex distcleancheck_listfiles
-For desperate cases, it's always possible to disable this check by
-setting @code{distcleancheck_listfiles} as documented in @ref{Checking
-the Distribution}.
-Make sure you do understand the reason why @samp{make distcheck}
-complains before you do this.  @code{distcleancheck_listfiles} is a
-way to @emph{hide} errors, not to fix them.  You can always do better.
 
 @node Flag Variables Ordering
 @section Flag Variables Ordering
