@@ -591,7 +591,7 @@ AC_OUTPUT
 # a development snapshot.
 # According to HACKING, the version of a development snapshot should
 # end with an "odd" letter (a, c, ...), the version of a test release
-# should end wit an "even" letter (b, d, ...).
+# should end with an "even" letter (b, d, ...).
 
 am_stable_version_rx='[[1-9]\.[0-9]+(\.[0-9]+)?]'
 am_beta_version_rx="[$am_stable_version_rx[bdfhjlnprtvxz]]"

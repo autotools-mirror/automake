@@ -68,7 +68,7 @@ chmod +x x-bin/'rm' x-bin/my-install
 
 cat >setenv.in <<'END'
 orig_INSTALL='@INSTALL@'
-# In case we've falled back on the install-sh script (seen e.g.,
+# In case we've fallen back on the install-sh script (seen e.g.,
 # on AIX 7.1), we need to make sure we use its absolute path,
 # as we don't know from which directory we'll be run.
 case "$orig_INSTALL" in

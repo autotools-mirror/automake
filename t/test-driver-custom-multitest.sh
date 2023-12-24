@@ -62,8 +62,8 @@ END
 cat > pass-fail.t << 'END'
 echo %% pass-fail %%
 echo 'FAIL: this fails :-('
-echo 'some randome message'
-echo 'some randome warning' >&2
+echo 'some random message'
+echo 'some random warning' >&2
 echo 'PASS: this passes :-)'
 echo 'INFO: blah'
 echo 'WARNING: blah blah' >&2

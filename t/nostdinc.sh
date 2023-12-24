@@ -17,9 +17,9 @@
 # Test to make sure nostdinc option works correctly.
 
 # We don't require a C compiler explicitly, because the first part of the
-# test (where 'Makefile.in' is grepped) does not require one.  Insted, we
-# just skip the rest of the test if configure fails to find a working C
-# compiler.
+# test (where 'Makefile.in' is grepped) does not require one.  Instead,
+# we just skip the rest of the test if configure fails to find a working
+# C compiler.
 
 . test-init.sh
 

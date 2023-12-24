@@ -58,7 +58,7 @@ rm -f && exit 99 # Sanity check.
 ./configure
 grep '^am__rm_f_notfound = ""$' Makefile
 
-# Chagne the `rm -f` behavior to work.
+# Change the `rm -f` behavior to work.
 sed -e '/#DELETE/d' -e '/#CHANGE/s:1:0:' bin/rm > bin/rm.tmp
 cat bin/rm.tmp > bin/rm
 

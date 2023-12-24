@@ -58,7 +58,7 @@ END
 
 cat > zardoz.texi << 'END'
 @setfilename zardoz.info
-some randome text
+some random text
 @include vers1a_2b.texi
 more random text
 END
