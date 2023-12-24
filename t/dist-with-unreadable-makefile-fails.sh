@@ -45,8 +45,9 @@ test ! -r Makefile.am || skip_ "cannot drop file read permissions"
 ./configure
 
 # 'dist' should fail because we can't copy Makefile.am.
-if $MAKE dist; then
-  exit 1
-else
-  exit 0
-fi
+! $MAKE dist
+
+# restore sane permissions for future greps and finds.
+chmod u+rw Makefile.am
+
+:
