@@ -1058,7 +1058,7 @@ am_setup_testdir ()
 
 am_extra_info ()
 {
-  echo "Running from installcheck: $am_running_installcheck"
-  echo "Test Protocol: $am_test_protocol"
-  echo "PATH = $PATH"
+  echo "am-test-lib.sh: Running from installcheck: $am_running_installcheck"
+  echo "am-test-lib.sh: Test Protocol: $am_test_protocol"
+  echo "am-test-lib.sh: PATH = $PATH"
 }
