@@ -14,15 +14,18 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-# Check verbose mode defaults and behavior.
+# Check verbose mode defaults and behavior. See bug#32868.
+# Because we have to rerun the autotools for every configuration,
+# this test can take 30 seconds or so to run.
 
 . test-init.sh
 
 : > Makefile.am
 
-# Default behavior is currently verbose.
+# 
+echo "Default behavior is currently verbose."
 cat <<EOF >configure.ac
-AC_INIT([silent-defaults], [1.0])
+AC_INIT([silent-defaults-default-verbose], [1.0])
 AM_INIT_AUTOMAKE
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT
@@ -32,7 +35,7 @@ $ACLOCAL
 $AUTOMAKE
 $AUTOCONF
 
-./configure -C
+./configure
 grep '^AM_DEFAULT_VERBOSITY = 1' Makefile
 
 ./configure -C --enable-silent-rules
@@ -41,18 +44,21 @@ grep '^AM_DEFAULT_VERBOSITY = 0' Makefile
 ./configure -C --disable-silent-rules
 grep '^AM_DEFAULT_VERBOSITY = 1' Makefile
 
-# User doesn't pick a silent mode default before AM_INIT_AUTOMAKE.
+# 
+echo "User doesn't pick a silent mode default before AM_INIT_AUTOMAKE."
 cat <<EOF >configure.ac
-AC_INIT([silent-defaults], [1.0])
+AC_INIT([silent-defaults-use-am_silent_rules], [1.0])
 AM_SILENT_RULES
 AM_INIT_AUTOMAKE
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT
 EOF
 
+$ACLOCAL
+$AUTOMAKE
 $AUTOCONF
 
-./configure -C
+./configure
 grep '^AM_DEFAULT_VERBOSITY = 1' Makefile
 
 ./configure -C --enable-silent-rules
@@ -61,18 +67,21 @@ grep '^AM_DEFAULT_VERBOSITY = 0' Makefile
 ./configure -C --disable-silent-rules
 grep '^AM_DEFAULT_VERBOSITY = 1' Makefile
 
-# User disables silent mode default before AM_INIT_AUTOMAKE.
+# 
+echo "User disables silent mode default before AM_INIT_AUTOMAKE."
 cat <<EOF >configure.ac
-AC_INIT([silent-defaults], [1.0])
+AC_INIT([silent-defaults-user-disable-before-am_init], [1.0])
 AM_SILENT_RULES([no])
 AM_INIT_AUTOMAKE
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT
 EOF
 
+$ACLOCAL
+$AUTOMAKE
 $AUTOCONF
 
-./configure -C
+./configure
 grep '^AM_DEFAULT_VERBOSITY = 1' Makefile
 
 ./configure -C --enable-silent-rules
@@ -81,18 +90,21 @@ grep '^AM_DEFAULT_VERBOSITY = 0' Makefile
 ./configure -C --disable-silent-rules
 grep '^AM_DEFAULT_VERBOSITY = 1' Makefile
 
-# User enables silent mode default before AM_INIT_AUTOMAKE.
+# 
+echo "User enables silent mode default before AM_INIT_AUTOMAKE."
 cat <<EOF >configure.ac
-AC_INIT([silent-defaults], [1.0])
+AC_INIT([silent-defaults-user-enable-before-am_init], [1.0])
 AM_SILENT_RULES([yes])
 AM_INIT_AUTOMAKE
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT
 EOF
 
+$ACLOCAL
+$AUTOMAKE
 $AUTOCONF
 
-./configure -C
+./configure
 grep '^AM_DEFAULT_VERBOSITY = 0' Makefile
 
 ./configure -C --enable-silent-rules
@@ -101,18 +113,21 @@ grep '^AM_DEFAULT_VERBOSITY = 0' Makefile
 ./configure -C --disable-silent-rules
 grep '^AM_DEFAULT_VERBOSITY = 1' Makefile
 
-# User doesn't pick a silent mode default after AM_INIT_AUTOMAKE.
+# 
+echo "User doesn't pick a silent mode default after AM_INIT_AUTOMAKE."
 cat <<EOF >configure.ac
-AC_INIT([silent-defaults], [1.0])
+AC_INIT([silent-defaults-user-no-default-after-am_init], [1.0])
 AM_INIT_AUTOMAKE
 AM_SILENT_RULES
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT
 EOF
 
+$ACLOCAL
+$AUTOMAKE
 $AUTOCONF
 
-./configure -C
+./configure
 grep '^AM_DEFAULT_VERBOSITY = 1' Makefile
 
 ./configure -C --enable-silent-rules
@@ -121,18 +136,21 @@ grep '^AM_DEFAULT_VERBOSITY = 0' Makefile
 ./configure -C --disable-silent-rules
 grep '^AM_DEFAULT_VERBOSITY = 1' Makefile
 
-# User disables silent mode default after AM_INIT_AUTOMAKE.
+# 
+echo "User disables silent mode default after AM_INIT_AUTOMAKE."
 cat <<EOF >configure.ac
-AC_INIT([silent-defaults], [1.0])
+AC_INIT([silent-defaults-user-disable-after-am_init], [1.0])
 AM_INIT_AUTOMAKE
 AM_SILENT_RULES([no])
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT
 EOF
 
+$ACLOCAL
+$AUTOMAKE
 $AUTOCONF
 
-./configure -C
+./configure
 grep '^AM_DEFAULT_VERBOSITY = 1' Makefile
 
 ./configure -C --enable-silent-rules
@@ -141,18 +159,21 @@ grep '^AM_DEFAULT_VERBOSITY = 0' Makefile
 ./configure -C --disable-silent-rules
 grep '^AM_DEFAULT_VERBOSITY = 1' Makefile
 
-# User enables silent mode default after AM_INIT_AUTOMAKE.
+# 
+echo "User enables silent mode default after AM_INIT_AUTOMAKE."
 cat <<EOF >configure.ac
-AC_INIT([silent-defaults], [1.0])
+AC_INIT([silent-defaults-user-enable-after-am_init], [1.0])
 AM_INIT_AUTOMAKE
 AM_SILENT_RULES([yes])
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT
 EOF
 
+$ACLOCAL
+$AUTOMAKE
 $AUTOCONF
 
-./configure -C
+./configure
 grep '^AM_DEFAULT_VERBOSITY = 0' Makefile
 
 ./configure -C --enable-silent-rules

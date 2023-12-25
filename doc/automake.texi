@@ -11468,16 +11468,17 @@ Libtool Sources}).
 * Make verbosity::              Make is verbose by default
 * Tricks For Silencing Make::   Standard and generic ways to silence make
 * Automake Silent Rules::       How Automake can help in silencing make
+* Unsilencing Automake::        Showing commands.
 @end menu
 
 @node Make verbosity
 @section Make is verbose by default
 
 Normally, when executing the set of rules associated with a target,
-@command{make} prints each rule before it is executed.  This behaviour,
-while having been in place for a long time, and being even mandated by
-the POSIX standard, starkly violates the ``silence is golden'' UNIX
-principle@footnote{See also
+@command{make} prints each rule before it is executed.  This behavior,
+despite having been in place since the beginning of @command{make},
+and being mandated by the POSIX standard, starkly violates the
+``silence is golden'' UNIX principle@footnote{See also
 @uref{http://catb.org/~esr/writings/taoup/html/ch11s09.html}.}:
 
 @quotation
@@ -11486,24 +11487,28 @@ say nothing.  Well-behaved Unix programs do their jobs unobtrusively,
 with a minimum of fuss and bother.  Silence is golden.
 @end quotation
 
-In fact, while such verbosity of @command{make} can theoretically be
-useful to track bugs and understand reasons of failures right away, it
-can also hide warning and error messages from @command{make}-invoked
-tools, drowning them in a flood of uninteresting and seldom useful
-messages, and thus allowing them to go easily undetected.
+The traditional verbosity of @command{make} is understandable, as it
+is useful, often necessary, in order to understand reasons of
+failures. However, it can also hide warning and error messages from
+@command{make}-invoked tools, drowning them in uninteresting and
+seldom useful messages, and thus allowing them to easily go
+undetected.
 
-This problem can be very annoying, especially for developers, who usually
+This can be quite problematic, especially for developers, who usually
 know quite well what's going on behind the scenes, and for whom the
-verbose output from @command{make} ends up being mostly noise that hampers
-the easy detection of potentially important warning messages.
+verbose output from @command{make} ends up being mostly noise that
+hampers the easy detection of potentially important warning messages.
+
+So Automake provides some support for silencing @command{make}.
 
 @node Tricks For Silencing Make
 @section Standard and generic ways to silence Make
 
-Here we describe some common idioms/tricks to obtain a quieter make
-output, with their relative advantages and drawbacks.  In the next
-section (@ref{Automake Silent Rules}) we'll see how Automake can help
-in this respect, providing more elaborate and flexible idioms.
+Here we describe some common idioms/tricks to obtain a quieter
+@command{make} output, with their relative advantages and drawbacks.
+In the next section (@ref{Automake Silent Rules}) we'll see how
+Automake can help in this respect, providing more elaborate and
+flexible idioms.
 
 @itemize @bullet
 
@@ -11515,13 +11520,14 @@ executing it.
 The @option{-s} flag is mandated by POSIX, universally supported, and
 its purpose and function are easy to understand.
 
-But it also has its serious limitations too.  First of all, it embodies
-an ``all or nothing'' strategy, i.e., either everything is silenced, or
-nothing is; this lack of granularity can sometimes be a fatal flaw.
-Moreover, when the @option{-s} flag is used, the @command{make} output
-might turn out to be too terse; in case of errors, the user won't
-be able to easily see what rule or command have caused them, or even,
-in case of tools with poor error reporting, what the errors were!
+But it also has serious limitations.  First of all, it embodies an
+``all or nothing'' strategy, i.e., either everything is silenced, or
+nothing is; in practice, this lack of granularity makes it unsuitable
+as a general solution.  When the @option{-s} flag is used, the
+@command{make} output might turn out to be too terse; in case of
+errors, the user won't be able to easily see what rule or command have
+caused them, or even, in case of tools with poor error reporting, what
+the errors were.
 
 @item @command{make >/dev/null || make}
 
@@ -11540,13 +11546,13 @@ debugging and error assessment very difficult.
 This is GNU @command{make} specific.  When called with the
 @option{--no-print-directory} option, GNU @command{make} will disable
 printing of the working directory by invoked sub-@command{make}s (the
-well-known ``@i{Entering/Leaving directory ...}'' messages).  This helps
-to decrease the verbosity of the output, but experience has shown that
-it can also often render debugging considerably harder in projects using
-deeply-nested @command{make} recursion.
+well-known ``@i{Entering/Leaving directory @dots{}}'' messages).  This
+helps to decrease the verbosity of the output, but experience has
+shown that it can also often render debugging considerably harder in
+projects using deeply-nested @command{make} recursion.
 
-As an aside, notice that the @option{--no-print-directory} option is
-automatically activated if the @option{-s} flag is used.
+As an aside, the @option{--no-print-directory} option is automatically
+activated if the @option{-s} flag is used.
 
 @c TODO: Other tricks?
 @c TODO: Maybe speak about the @code{.SILENT} target?
@@ -11601,8 +11607,8 @@ gcc -Wall -o foo main.o func.o
 test -z "foo" || rm -f foo
 rm -f *.o
 
-@i{Silent rules enabled: the output is minimal but informative.  In
-particular, the warnings from the compiler stick out very clearly.}
+@i{Silent rules enabled: the output is minimal but informative.
+The warnings from the compiler stick out very clearly.}
 % @kbd{make V=0 CFLAGS=-Wall}
   CC     main.o
 main.c: In function ‘main’:
@@ -11667,21 +11673,22 @@ discussion, see @url{https://bugs.gnu.org/20077}.)
 @end itemize
 
 @cindex default verbosity for silent rules
-Note that silent rules are @emph{disabled} by default; the user must
-enable them explicitly at either @command{configure} run time or at
-@command{make} run time.  We think that this is a good policy, since
-it provides the casual user with enough information to prepare a good
-bug report in case anything breaks.
+Silent rules are @emph{disabled} by default; the user must enable them
+explicitly at either @command{configure} run time or at @command{make}
+run time.  We think that this is a good policy, since it provides the
+casual user with enough information to prepare a good bug report in
+case anything breaks.
 
-Still, notwithstanding the rationales above, developers who wants to
-make silent rules enabled by default in their own packages can do so
-by calling @code{AM_SILENT_RULES([yes])} in @file{configure.ac}.
+Notwithstanding those rationales, developers who want to enable silent
+rules by default in their own packages can do so by calling
+@code{AM_SILENT_RULES([yes])} in @file{configure.ac}.
 
 @c Keep in sync with silent-configsite.sh
-Users who prefer to have silent rules enabled by default can edit their
-@file{config.site} file to make the variable @code{enable_silent_rules}
-default to @samp{yes}.  This should still allow disabling silent rules
-at @command{configure} time and at @command{make} time.
+Analogously, users who prefer to have silent rules enabled by default
+for everything on their system can edit their @file{config.site} file
+to make the variable @code{enable_silent_rules} default to @samp{yes}.
+This still allows disabling silent rules at @command{configure} time
+and at @command{make} time.
 
 To work best, the current implementation of this feature normally uses
 nested variable expansion @samp{$(@var{var1}$(V))}, a @file{Makefile}
@@ -11713,15 +11720,16 @@ the predefined variable @code{AM_V_P} to know whether make is being run
 in silent or verbose mode; adjust the verbose information your recipe
 displays accordingly. For example:
 
-@example
+@c smallexample because text is too wide for normal example.
+@smallexample
 generate-headers:
-        @set -e; \
-        ... [commands defining a shell variable '$headers'] ...; \
+        @@set -e; \
+        ... [commands defining shell variable '$headers'] ...; \
         if $(AM_V_P); then set -x; else echo " GEN   [headers]"; fi; \
         rm -f $$headers && generate-header --flags $$headers
-@end example
+@end smallexample
 
-@code{AM_V_P} is (must) always set to a simple command, not needing
+@code{AM_V_P} is (must be) always set to a simple command, not needing
 shell quoting, typically either @code{:} or @code{true} or
 @code{false}.
 
@@ -11730,21 +11738,60 @@ You can add your own variables, so strings of your own choice are shown.
 The following snippet shows how you would define your own equivalent of
 @code{AM_V_GEN}, say a string @samp{PKG-GEN}:
 
-@example
+@c smallexample because regular example would look weird
+@c next to the smallexample above.
+@smallexample
 pkg_verbose = $(pkg_verbose_@@AM_V@@)
 pkg_verbose_ = $(pkg_verbose_@@AM_DEFAULT_V@@)
 pkg_verbose_0 = @@echo PKG-GEN $@@;
 
 foo: foo.in
         $(pkg_verbose)cp $(srcdir)/foo.in $@@
-@end example
+@end smallexample
 
 @end itemize
 
-As a final note, observe that, even when silent rules are enabled,
-the @option{--no-print-directory} option is still required with GNU
-@command{make} if the ``@i{Entering/Leaving directory ...}'' messages
-are to be disabled.
+Even when silent rules are enabled, the @option{--no-print-directory}
+option is still required with GNU @command{make} if the
+``@i{Entering/Leaving directory @dots{}}'' messages are to be elided.
+
+@node Unsilencing Automake
+@section Unsilencing Automake
+
+@cindex unsilencing Automake
+@cindex verbose output from Automake
+
+With the @code{AM_SILENT_RULES} macro described in the previous
+section, Automake does a good job reducing @command{make} output to a
+bare minimum. Sometimes you want to see more than that. Let's
+summarize ways to get more information out of Automake packages:
+
+@itemize
+@item
+Running @code{make V=1} will produce generally verbose output.
+
+@item
+Adding @code{AM_V_GEN= AM_V_at=} will unsilence more rules. Thus, in all:
+@code{make V=1 AM_V_GEN= AM_V_at=}.
+
+@c VERBOSE=1 is (highly) relevant to the Automake test suite,
+@c but not in general, so shouldn't be mentioned here. See automake/HACKING.
+@c item
+@c Adding @code{VERBOSE=1} can unsilence yet more. Thus, in all:
+@c ode{make V=1 AM_V_GEN= AM_V_at= VERBOSE=1}.
+
+@item
+Even this will not unsilence everything. To see the real truth of what
+gets executed, resort to GNU Make's debugging feature: @code{make
+--debug=p ... other args ...}.  This reports every command being run,
+ignoring the @code{@@} prefix on rules (which silences them). In the
+case of Automake, these commands are generally complex shell
+constructs, and you'll want to track down the source files in Automake
+to actually understand them; but at least you'll have the text to
+search for. You may wish to include other debugging
+options. @xref{Options Summary,,,make, The GNU Make Manual}.
+
+@end itemize
 
 @node Not Enough
 @chapter When Automake Isn't Enough
