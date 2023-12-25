@@ -26,3 +26,5 @@ AC_SUBST([AM_ZARDOZ])
 END
 
 $ACLOCAL
+
+:

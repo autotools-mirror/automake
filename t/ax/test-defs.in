@@ -193,9 +193,20 @@ case $MTIME_RESOLUTION in
       :
     else
       MTIME_RESOLUTION=1
+      # we must not sleep for fractional seconds when autom4te does not
+      # support subsecond-mtimes, even when sleep supports it. See bug#67670.
+      am_cv_sleep_fractional_seconds=false
+      export am_cv_sleep_fractional_seconds
     fi
   ;;
 esac
+
+# This sleep variable is used explicitly in some tests to avoid
+# too-quick creation. I (Karl) believe that was an incomplete workaround
+# for this whole subsecond-mtime problem. With this set to "sleep 1",
+# there were still random parallelization failures, without also setting
+# am_cv_sleep_fractional_seconds=false as above.
+# 
 sleep="sleep $MTIME_RESOLUTION"
 
 # An old timestamp that can be given to a file, in "touch -t" format.
@@ -205,8 +216,8 @@ sleep="sleep $MTIME_RESOLUTION"
 old_timestamp=198309271735.59
 
 # Make our wrapper script (or installed scripts, if running under
-# "installcheck") accessible by default.  And avoid to uselessly
-# extend $PATH multiple times if this file is sourced multiple times.
+# "installcheck") accessible by default.  And avoid uselessly
+# extending $PATH multiple times if this file is sourced multiple times.
 case $PATH in
   $am_bindir$PATH_SEPARATOR*) ;;
   *) PATH=$am_bindir$PATH_SEPARATOR$PATH;;

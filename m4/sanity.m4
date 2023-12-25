@@ -9,8 +9,10 @@
 # _AM_SLEEP_FRACTIONAL_SECONDS
 # ----------------------------
 AC_DEFUN([_AM_SLEEP_FRACTIONAL_SECONDS], [dnl
-AC_CACHE_CHECK([whether sleep supports fractional seconds], am_cv_sleep_fractional_seconds, [dnl
-AS_IF([sleep 0.001 2>/dev/null], [am_cv_sleep_fractional_seconds=true], [am_cv_sleep_fractional_seconds=false])
+AC_CACHE_CHECK([whether sleep supports fractional seconds],
+               am_cv_sleep_fractional_seconds, [dnl
+AS_IF([sleep 0.001 2>/dev/null], [am_cv_sleep_fractional_seconds=true],
+                                 [am_cv_sleep_fractional_seconds=false])
 ])])
 
 # _AM_FILESYSTEM_TIMESTAMP_RESOLUTION
@@ -25,7 +27,7 @@ AS_IF([sleep 0.001 2>/dev/null], [am_cv_sleep_fractional_seconds=true], [am_cv_s
 # granularity, so we don't check for anything finer than that.
 AC_DEFUN([_AM_FILESYSTEM_TIMESTAMP_RESOLUTION], [dnl
 AC_REQUIRE([_AM_SLEEP_FRACTIONAL_SECONDS])
-AC_CACHE_CHECK([the filesystem timestamp resolution], am_cv_filesystem_timestamp_resolution, [dnl
+AC_CACHE_CHECK([filesystem timestamp resolution], am_cv_filesystem_timestamp_resolution, [dnl
 # Default to the worst case.
 am_cv_filesystem_timestamp_resolution=2
 
