@@ -440,7 +440,8 @@ sc_tests_ls_t:
 # Use '$sleep' instead.  Some file systems (e.g., Windows) have only
 # a 2sec resolution.
 sc_tests_plain_sleep:
-	@if grep -E '\bsleep +[12345]\b' $(xtests); then \
+	@if grep -vE '^[ 	]*#' $(xtests) \
+	      | grep -E '\bsleep +[12345]\b' | grep .; then \
 	  echo 'Do not use "sleep x" in the above tests.  Use "$$sleep" instead.' 1>&2; \
 	  exit 1; \
 	fi
