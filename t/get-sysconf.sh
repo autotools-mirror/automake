@@ -56,10 +56,10 @@ libtoolize --help || :
 # It's OK if the selected Lex and Yacc programs don't know how to print
 # the version number or the help screen; those are usually available only
 # for Flex and Bison.
-$LEX --version || :
-$LEX --help || :
-$YACC --version || :
-$YACC --help || :
+$LEX --version </dev/null || :
+$LEX --help </dev/null || :
+$YACC --version </dev/null || :
+$YACC --help </dev/null || :
 
 cat "$am_top_builddir/config.log" || st=1
 cat "$am_top_builddir/bin/aclocal-$APIVERSION" || st=1
