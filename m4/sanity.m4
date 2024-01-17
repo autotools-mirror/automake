@@ -34,7 +34,7 @@ am_cv_filesystem_timestamp_resolution=2
 # Only try to go finer than 1s if sleep can do it.
 am_try_resolutions=1
 if $am_cv_sleep_fractional_seconds; then
-  am_try_resolutions="0.001 0.01 0.1 $am_try_resolutions"
+  am_try_resolutions="0.01 0.1 $am_try_resolutions"
 fi
 
 # In order to catch current-generation FAT out, we must *modify* files
