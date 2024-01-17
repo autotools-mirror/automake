@@ -243,9 +243,9 @@ except ImportError:
 
   dnl 1. pythondir: where to install python scripts.  This is the
   dnl    site-packages directory, not the python standard library
-  dnl    directory like in previous automake betas.  This behavior
+  dnl    directory as in early automake betas.  This behavior
   dnl    is more consistent with lispdir.m4 for example.
-  dnl Query distutils for this directory.
+  dnl Query sysconfig or distutils (per above) for this directory.
   dnl
   AC_CACHE_CHECK([for $am_display_PYTHON script directory (pythondir)],
   [am_cv_python_pythondir],
@@ -257,7 +257,19 @@ except ImportError:
    am_cv_python_pythondir=`$PYTHON -c "
 $am_python_setup_sysconfig
 if can_use_sysconfig:
-  sitedir = sysconfig.get_path('purelib', vars={'base':'$am_py_prefix'})
+  try:
+    if hasattr(sysconfig, 'get_default_scheme'):
+      scheme = sysconfig.get_default_scheme()
+    else:
+      scheme = sysconfig._get_default_scheme()
+    if scheme == 'posix_local':
+      # Debian's default scheme installs to /usr/local/ but we want to
+      # follow the prefix, as we always have.
+      # See bugs#54412, #64837, et al.
+      scheme = 'posix_prefix'
+    sitedir = sysconfig.get_path('purelib', scheme, vars={'base':'$am_py_prefix'})
+  except:
+    sitedir = sysconfig.get_path('purelib', vars={'base':'$am_py_prefix'})
 else:
   from distutils import sysconfig
   sitedir = sysconfig.get_python_lib(0, 0, prefix='$am_py_prefix')
@@ -287,7 +299,7 @@ sys.stdout.write(sitedir)"`
 
   dnl 3. pyexecdir: directory for installing python extension modules
   dnl    (shared libraries).
-  dnl Query distutils for this directory.
+  dnl Query sysconfig or distutils for this directory.
   dnl
   AC_CACHE_CHECK([for $am_display_PYTHON extension module directory (pyexecdir)],
   [am_cv_python_pyexecdir],
@@ -299,7 +311,17 @@ sys.stdout.write(sitedir)"`
    am_cv_python_pyexecdir=`$PYTHON -c "
 $am_python_setup_sysconfig
 if can_use_sysconfig:
-  sitedir = sysconfig.get_path('platlib', vars={'platbase':'$am_py_exec_prefix'})
+  try:
+    if hasattr(sysconfig, 'get_default_scheme'):
+      scheme = sysconfig.get_default_scheme()
+    else:
+      scheme = sysconfig._get_default_scheme()
+    if scheme == 'posix_local':
+      # See scheme comments above.
+      scheme = 'posix_prefix'
+    sitedir = sysconfig.get_path('platlib', scheme, vars={'platbase':'$am_py_exec_prefix'})
+  except:
+    sitedir = sysconfig.get_path('platlib', vars={'platbase':'$am_py_exec_prefix'})
 else:
   from distutils import sysconfig
   sitedir = sysconfig.get_python_lib(1, 0, prefix='$am_py_exec_prefix')
