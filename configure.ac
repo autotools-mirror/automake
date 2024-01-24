@@ -588,13 +588,17 @@ AC_CONFIG_FILES([pre-inst-env], [chmod +x pre-inst-env])
 AC_OUTPUT
 
 # Inform the user if this version of automake is a beta release or
-# a development snapshot.
-# According to HACKING, the version of a development snapshot should
-# end with an "odd" letter (a, c, ...), the version of a test release
-# should end with an "even" letter (b, d, ...).
-
+# a development snapshot. Except, as of 1.17 (January 2024), don't bother.
+# Just call all pretests development snapshots.
+#
 am_stable_version_rx='[[1-9]\.[0-9]+(\.[0-9]+)?]'
-am_beta_version_rx="[$am_stable_version_rx[bdfhjlnprtvxz]]"
+
+# This won't match anything as of 1.17, since we switched to
+# .90-numbered test releases. But if we wanted to, according to HACKING,
+# the version of a development snapshot should end with an odd number
+# (91, 93, ...) and a beta release should end with an even number (90,
+# 92, ...).
+am_beta_version_rx="[$am_stable_version_rx[bdfhjlnprtvxz]]" # no match
 
 am_release_type=`AS_ECHO(["$PACKAGE_VERSION"]) | LC_ALL=C awk ["
   /^$am_stable_version_rx$/ { print \"stable\"; exit(0); }
@@ -605,10 +609,11 @@ am_release_type=`AS_ECHO(["$PACKAGE_VERSION"]) | LC_ALL=C awk ["
 test "$am_release_type" = stable || test "$silent" = yes || cat <<EOF
 
 WARNING: You are about to use a $am_release_type of automake.
-WARNING: It might easily suffer from new bugs or regressions.
+WARNING: It could well suffer from new bugs or regressions.
 WARNING: You are strongly advised not to use it in production code.
 
-Please report bugs, problems and feedback to <AC_PACKAGE_BUGREPORT>.
+Please report bugs, problems and feedback to <AC_PACKAGE_BUGREPORT>,
+since that is the whole point of a test release.
 EOF
 
 AS_EXIT([0])
