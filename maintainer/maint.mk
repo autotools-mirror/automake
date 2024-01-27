@@ -340,7 +340,7 @@ SV_GIT_CF = 'https://$(git-sv-host)/gitweb/?p=config.git;a=blob_plain;hb=HEAD;f=
 SV_GIT_GL = 'https://$(git-sv-host)/gitweb/?p=gnulib.git;a=blob_plain;hb=HEAD;f='
 
 # Files that we fetch and which we compare against.
-# Note that the 'lib/COPYING' file must still be synced by hand.
+# Note that the 'lib/COPYING' file and help2man must still be synced by hand.
 FETCHFILES = \
   $(SV_GIT_CF)config.guess \
   $(SV_GIT_CF)config.sub \
@@ -353,8 +353,9 @@ FETCHFILES = \
   $(SV_GIT_GL)doc/INSTALL
 
 # Fetch the latest versions of few scripts and files we care about.
-# A retrieval failure or a copying failure usually mean serious problems,
+# A retrieval or copying failure usually means serious problems,
 # so we'll just bail out if 'wget' or 'cp' fail.
+# Update the top-level INSTALL in sync with lib/INSTALL as a special case.
 fetch:
 	$(AM_V_at)rm -rf Fetchdir
 	$(AM_V_at)mkdir Fetchdir
@@ -368,6 +369,7 @@ fetch:
 	   else \
 	     echo "$@: updating file $$file"; \
 	     cp Fetchdir/$$file $(srcdir)/lib/$$file || exit 1; \
+	     test "$$file" != INSTALL || cp Fetchdir/$$file ../$$file; \
 	   fi; \
 	done
 	$(AM_V_at)rm -rf Fetchdir

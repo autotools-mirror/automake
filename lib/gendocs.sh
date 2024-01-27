@@ -167,7 +167,7 @@ while test $# -gt 0; do
     --html)      shift; default_htmlarg=false; htmlarg=$1;;
     --info)      shift; infoarg=$1;;
     --no-ascii)  generate_ascii=false;;
-    --no-html)   generate_ascii=false;;
+    --no-html)   generate_html=false;;
     --no-info)   generate_info=false;;
     --no-tex)    generate_tex=false;;
     --source)    shift; source_extra=$1;;
@@ -417,8 +417,8 @@ printf "\nMaking .tar.gz for sources...\n"
 d=`dirname $srcfile`
 (
   cd "$d"
-  srcfiles=`ls -d *.texinfo *.texi *.txi *.eps $source_extra 2>/dev/null` || true
-  tar czfh "$abs_outdir/$PACKAGE.texi.tar.gz" $srcfiles
+  ls -d *.texinfo *.texi *.txi *.eps "$source_extra" 2>/dev/null \
+     | tar -czhf "$abs_outdir/$PACKAGE.texi.tar.gz" -T-
   ls -l "$abs_outdir/$PACKAGE.texi.tar.gz"
 )
 texi_tgz_size=`calcsize "$outdir/$PACKAGE.texi.tar.gz"`
