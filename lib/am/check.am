@@ -319,9 +319,11 @@ $(TEST_SUITE_LOG): $(TEST_LOGS)
 	else \
 	  success=false; \
 	fi; \
-## Make $br a line of exactly 76 '=' characters, that will be used to
+##
+## Make $br a line of exactly 76 '=' characters, which will be used to
 ## enclose the testsuite summary report when displayed on the console.
 	br='==================='; br=$$br$$br$$br$$br; \
+##
 ## When writing the test summary to the console, we want to color a line
 ## reporting the count of some result *only* if at least one test
 ## experienced such a result.  This function is handy in this regard.
@@ -343,6 +345,7 @@ $(TEST_SUITE_LOG): $(TEST_LOGS)
 	    fi; \
 	    echo "$${color_start}# $$desc $$count$${color_end}"; \
 	}; \
+##
 ## A shell function that creates the testsuite summary.  We need it
 ## because we have to create *two* summaries, one for test-suite.log,
 ## and a possibly-colorized one for console output.
@@ -356,12 +359,28 @@ $(TEST_SUITE_LOG): $(TEST_LOGS)
 	  result_count $$1 "XPASS:" $$xpass "$$red"; \
 	  result_count $$1 "ERROR:" $$error "$$mgn"; \
 	}; \
+##
+## Write some basic system info in the log. 
+	output_system_information () \
+	{ \
+## Omit the hostname for privacy.  In practice it's a single word?
+          echo;                                    \
+	  (uname -a | awk '{$$2=""; print}') 2>&1; \
+	  if test -r /etc/os-release; then         \
+	    sed 8q /etc/os-release;                \
+	  elif test -r /etc/issue; then            \
+	    cat /etc/issue;                        \
+	  fi;                                      \
+	}; \
 ## Write "global" testsuite log.
 	{								\
 	  echo "$(PACKAGE_STRING): $(subdir)/$(TEST_SUITE_LOG)" |	\
 	    $(am__rst_title);						\
 	  create_testsuite_report --no-color;				\
+	  output_system_information;                                    \
 	  echo;								\
+## What is this line for? It seems to be intended for machine parsing,
+## but I can't find any other reference to it. --karl, 27jan24.
 	  echo ".. contents:: :depth: 2";				\
 	  echo;								\
 	  for b in $$bases; do echo $$b; done				\
