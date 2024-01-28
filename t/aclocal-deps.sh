@@ -64,7 +64,7 @@ $MAKE check-not-foo
 
 # Update one of the macros.  This should cause ./configure, Makefile.in,
 # Makefile, lib/Makefile.in, and lib/Makefile to be updated.
-
+$sleep
 cat >m4/mymacro.m4 <<'EOF'
 AC_DEFUN([MY_MACRO], [AC_LIBOBJ([foo])])
 EOF

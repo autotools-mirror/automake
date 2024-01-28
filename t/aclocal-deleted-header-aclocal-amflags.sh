@@ -42,13 +42,12 @@ EOF
 $ACLOCAL -I .
 $AUTOMAKE
 $AUTOCONF
-
 ./configure
-
 $MAKE
 grep GREPFOO Makefile
 grep GREPBAR Makefile && exit 1
 
+$sleep
 sed 's/FOO/BAR/' < configure.ac > t
 mv -f t configure.ac
 rm -f foo.m4

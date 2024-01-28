@@ -88,10 +88,10 @@ cat > parse.yy <<'END'
 // https://bugs.gnu.org/20031
 #include <stdlib.h>
 // Valid C++, but deliberately invalid C.
+#include <cstdlib>
 using std::exit;
 using std::free;
 using std::malloc;
-#include <cstdlib>
 #include "parse.hh"
 int yylex (void) { return 0; }
 void yyerror (const char *s) {}

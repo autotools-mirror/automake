@@ -57,7 +57,7 @@ $MAKE
 # configure.ac.  That is already tested by 'subdir-add-pr46.sh' though,
 # so here we try to just edit a file that is included by configure.ac,
 # without touching configure.ac itself.
-
+$sleep
 mkdir sub/maude
 cat > sub/maude/Makefile.am << 'END'
 include_HEADERS = foo.h
@@ -80,6 +80,7 @@ echo 'AC_CONFIG_FILES([maude/Makefile sub/maude/Makefile])' >> confiles.m4
 # We want a simple rebuild from sub/ to create sub/maude/Makefile
 # and maude/Makefile automatically.
 cd sub
+$sleep
 $MAKE
 cd ..
 grep '^SUBDIRS = *maude *$' sub/Makefile.in
@@ -89,6 +90,7 @@ test -f sub/maude/Makefile
 
 # Make sure the dependencies of aclocal.m4 or honored at least from
 # the top-level directory.
+$sleep
 echo 'AC_DEFUN([MORE_DEFS], [AC_SUBST([GREPME])])' > m4/moredefs.m4
 $MAKE
 
