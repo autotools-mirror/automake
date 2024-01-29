@@ -635,6 +635,10 @@ python_has_pep3147 ()
     am_pep3147_tag=$($PYTHON -c 'import imp; print(imp.get_tag())') \
       || am_pep3147_tag=none
   fi
+  if test "$am_pep3147_tag" = "none"; then
+    am_pep3147_tag=$($PYTHON -c 'import sys; print(sys.implementation.cache_tag)') \
+      || am_pep3147_tag=none
+  fi
   test $am_pep3147_tag != none
 }
 am_pep3147_tag=
