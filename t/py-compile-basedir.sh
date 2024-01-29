@@ -42,8 +42,13 @@ for d in foo foo/bar "$(pwd)/foo" . .. ../foo ''; do
   py_installed "$d2/$f.pyc"
   py_installed "$d2/sub/$f.pyc"
   files=$(find "$d2" | grep '\.py[co]$')
-  # with new-enough Python3, there are six files.
-  case $(echo "$files" | wc -l) in 4|6) ;; *) false;; esac
+  #
+  # 1) With new-enough Python3, there are six files.
+  # 
+  # 2) We have to elide the leading spaces from the wc output
+  #    for the sake of the macOS shell.
+  #    https://debbugs.gnu.org/cgi/bugreport.cgi?bug=68119#4
+  case $(echo "$files" | wc -l | sed 's/^ *//') in 4|6) ;; *) false;; esac
   case $d2 in
     .|..) rm -f $files;;
        *) rm -rf "$d2";;
