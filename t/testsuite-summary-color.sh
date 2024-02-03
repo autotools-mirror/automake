@@ -46,8 +46,7 @@ ${red}${br}${std}"
 
 failure_footer="\
 ${red}${br}${std}
-${red}See ./test-suite.log${std}
-${red}Please report to bug-automake@gnu.org${std}
+$failure_footer_text_colorized
 ${red}${br}${std}"
 
 do_check '' <<END

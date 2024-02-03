@@ -34,7 +34,7 @@ ${br}"
 
 footer="\
 ${br}
-See ./test-suite.log
+See ./test-suite.log for debugging.
 ${br}"
 
 echo AC_OUTPUT >> configure.ac

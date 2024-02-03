@@ -87,8 +87,17 @@ if test $use_colors = yes; then
   mgn="$esc[0;35m"
   brg="$esc[1m"
   std="$esc[m"
+  failure_footer="\
+${red}${br}${std}
+$failure_footer_text_colorized
+${red}${br}${std}"
+
 else
   red= grn= lgn= blu= mgn= brg= std=
+  failure_footer="\
+${red}${br}${std}
+$failure_footer_text
+${red}${br}${std}"
 fi
 
   success_header="\
@@ -101,12 +110,6 @@ ${grn}${br}${std}"
   failure_header="\
 ${red}${br}${std}
 ${red}Testsuite summary for GNU AutoTAP 5.12${std}
-${red}${br}${std}"
-
-  failure_footer="\
-${red}${br}${std}
-${red}See ./test-suite.log${std}
-${red}Please report to bug-automake@gnu.org${std}
 ${red}${br}${std}"
 
 $ACLOCAL

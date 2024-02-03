@@ -102,7 +102,7 @@ cat exp
 cat got
 diff exp got
 
-grep '^Please report to bug-automake@gnu\.org$' stdout
+grep 'Please report this to bug-automake@gnu\.org' stdout
 
 run_make -O check \
   TESTS='foo.test baz.test' \

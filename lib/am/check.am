@@ -246,6 +246,7 @@ am--force-recheck:
 ## Exists only to be overridden.  See bug#11745.
 AM_TESTSUITE_SUMMARY_HEADER = ' for $(PACKAGE_STRING)'
 
+## emacs-page
 $(TEST_SUITE_LOG): $(TEST_LOGS)
 	@$(am__set_TESTS_bases); \
 ## Helper shell function, tells whether a path refers to an existing,
@@ -360,7 +361,7 @@ $(TEST_SUITE_LOG): $(TEST_LOGS)
 	  result_count $$1 "ERROR:" $$error "$$mgn"; \
 	}; \
 ##
-## Write some basic system info in the log. 
+## Function to write some basic system info in the log. 
 	output_system_information () \
 	{ \
 ## Omit the hostname for privacy.  In practice it's a single word?
@@ -372,6 +373,16 @@ $(TEST_SUITE_LOG): $(TEST_LOGS)
 	    cat /etc/issue;                        \
 	  fi;                                      \
 	}; \
+##
+## Function to output the "please report bugs" message.
+	please_report () \
+	{ \
+echo "Some test(s) failed.  Please report this to $(PACKAGE_BUGREPORT),";    \
+echo "together with the test-suite.log file (gzipped) and your system";      \
+echo "information.  Thanks.";                                                \
+	}; \
+##
+## emacs-page
 ## Write "global" testsuite log.
 	{								\
 	  echo "$(PACKAGE_STRING): $(subdir)/$(TEST_SUITE_LOG)" |	\
@@ -379,8 +390,10 @@ $(TEST_SUITE_LOG): $(TEST_LOGS)
 	  create_testsuite_report --no-color;				\
 	  output_system_information;                                    \
 	  echo;								\
-## What is this line for? It seems to be intended for machine parsing,
-## but I can't find any other reference to it. --karl, 27jan24.
+## What is this line for? It's a Sphinx reStructuredText directive that
+## would insert a table of contents that goes two levels deep on headings.
+## But why is it in test-suite.log? No other references to it are evident.
+## Please inform automake@gnu.org.
 	  echo ".. contents:: :depth: 2";				\
 	  echo;								\
 	  for b in $$bases; do echo $$b; done				\
@@ -403,9 +416,9 @@ $(TEST_SUITE_LOG): $(TEST_LOGS)
 	create_testsuite_report --maybe-color;				\
 	echo "$$col$$br$$std";						\
 	if $$success; then :; else					\
-	  echo "$${col}See $(subdir)/$(TEST_SUITE_LOG)$${std}";		\
+	  echo "$${col}See $(subdir)/$(TEST_SUITE_LOG) for debugging.$${std}";\
 	  if test -n "$(PACKAGE_BUGREPORT)"; then			\
-	    echo "$${col}Please report to $(PACKAGE_BUGREPORT)$${std}";	\
+	    please_report | sed -e "s/^/$${col}/" -e s/'$$'/"$${std}"/; \
 	  fi;								\
 	  echo "$$col$$br$$std";					\
 	fi;								\

@@ -32,8 +32,7 @@ success_footer=${br}
 
 failure_footer="\
 ${br}
-See ./test-suite.log
-Please report to bug-automake@gnu.org
+$failure_footer_text
 ${br}"
 
 # Corner cases.
