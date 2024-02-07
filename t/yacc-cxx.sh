@@ -54,9 +54,16 @@ cat > parse1.yy << 'END'
 using std::exit;
 using std::free;
 using std::malloc;
+#if (defined __cplusplus) && ((!defined __sun) || (defined __EXTERN_C__))
+extern "C" {
+#endif
 // "std::" qualification required by Sun C++ 5.9.
 int yylex (void) { return std::getchar (); }
 void yyerror (const char *s) {}
+#if (defined __cplusplus) && ((!defined __sun) || (defined __EXTERN_C__))
+}
+#endif
+
 %}
 %%
 a : 'a' { exit(0); };

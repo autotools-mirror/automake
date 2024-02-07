@@ -54,8 +54,14 @@ END
 
 cat > p.y <<'END'
 %{
+#if (defined __cplusplus) && ((!defined __sun) || (defined __EXTERN_C__))
+extern "C" {
+#endif
 int yylex (void) { int new = 0; return new; }
 void yyerror (const char *s) {}
+#if (defined __cplusplus) && ((!defined __sun) || (defined __EXTERN_C__))
+}
+#endif
 %}
 %token ZARDOZ
 %%
@@ -93,8 +99,14 @@ using std::exit;
 using std::free;
 using std::malloc;
 #include "parse.hh"
+#if (defined __cplusplus) && ((!defined __sun) || (defined __EXTERN_C__))
+extern "C" {
+#endif
 int yylex (void) { return 0; }
 void yyerror (const char *s) {}
+#if (defined __cplusplus) && ((!defined __sun) || (defined __EXTERN_C__))
+}
+#endif
 %}
 %token FOOBAR
 %%

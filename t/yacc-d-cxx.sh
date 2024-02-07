@@ -35,8 +35,14 @@ write_parse ()
     using std::free;
     using std::malloc;
     #include "$header"
+    #if (defined __cplusplus) && ((!defined __sun) || (defined __EXTERN_C__))
+    extern "C" {
+    #endif
     int yylex (void) { return 0; }
     void yyerror (const char *s) {}
+    #if (defined __cplusplus) && ((!defined __sun) || (defined __EXTERN_C__))
+    }
+    #endif
     %}
     %%
     x : 'x' {};

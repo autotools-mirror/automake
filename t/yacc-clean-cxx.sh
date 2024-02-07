@@ -70,9 +70,17 @@ cat > sub1/parsefoo.yxx << 'END'
 %{
 // This file should contain valid C++ but invalid C.
 #include <cstdio>
+#if (defined __cplusplus) && ((!defined __sun) || (defined __EXTERN_C__))
+extern "C" {
+#endif
+
 // "std::" qualification required by Sun C++ 5.9.
 int yylex (void) { return std::getchar (); }
 void yyerror (const char *s) {}
+#if (defined __cplusplus) && ((!defined __sun) || (defined __EXTERN_C__))
+}
+#endif
+
 %}
 %%
 x : 'x' { };
