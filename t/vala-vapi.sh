@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-# Test and that vapi files are correctly handled by Vala support.
+# Test that vapi files are correctly handled by Vala support.
 
 required='pkg-config valac cc GNUmake'
 . test-init.sh
@@ -42,7 +42,7 @@ public class Zardoz {
 }
 END
 
-# Use printf, not echo, to avoid '\n' being considered and escape
+# Use printf, not echo, to avoid '\n' being considered an escape
 # sequence and printed as a newline in 'foo.h'.
 printf '%s\n' '#define BARBAR "Zardoz!\n"' > foo.h
 
@@ -78,7 +78,7 @@ cross_compiling || $MAKE test1 || exit 1
 
 # Simple check on remake rules.
 $sleep
-# Use printf, not echo, to avoid '\n' being considered and escape
+# Use printf, not echo, to avoid '\n' being considered an escape
 # sequence and printed as a newline in 'foo.h'.
 printf '%s\n' '#define BAZBAZ "Quux!\n"' > foo.h
 sed 's/BARBAR/BAZBAZ/' zardoz.vala > t && mv -f t zardoz.vala || exit 99
