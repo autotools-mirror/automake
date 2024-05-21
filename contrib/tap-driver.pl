@@ -38,10 +38,10 @@ my $ME = "tap-driver.pl";
 
 my $USAGE = <<'END';
 Usage:
-  tap-driver --test-name=NAME --log-file=PATH --trs-file=PATH
-             [--expect-failure={yes|no}] [--color-tests={yes|no}]
-             [--enable-hard-errors={yes|no}] [--ignore-exit]
-             [--diagnostic-string=STRING] [--merge|--no-merge]
+  tap-driver --test-name NAME --log-file PATH --trs-file PATH
+             [--expect-failure {yes|no}] [--color-tests {yes|no}]
+             [--enable-hard-errors {yes|no}] [--ignore-exit]
+             [--diagnostic-string STRING] [--merge|--no-merge]
              [--comments|--no-comments] [--] TEST-COMMAND
 The '--test-name', '--log-file' and '--trs-file' options are mandatory.
 END

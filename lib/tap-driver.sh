@@ -48,10 +48,10 @@ print_usage ()
 {
   cat <<END
 Usage:
-  tap-driver.sh --test-name=NAME --log-file=PATH --trs-file=PATH
-                [--expect-failure={yes|no}] [--color-tests={yes|no}]
-                [--enable-hard-errors={yes|no}] [--ignore-exit]
-                [--diagnostic-string=STRING] [--merge|--no-merge]
+  tap-driver.sh --test-name NAME --log-file PATH --trs-file PATH
+                [--expect-failure {yes|no}] [--color-tests {yes|no}]
+                [--enable-hard-errors {yes|no}] [--ignore-exit]
+                [--diagnostic-string STRING] [--merge|--no-merge]
                 [--comments|--no-comments] [--] TEST-COMMAND
 The '--test-name', '-log-file' and '--trs-file' options are mandatory.
 END
