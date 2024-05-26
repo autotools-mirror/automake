@@ -15,7 +15,7 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 # Ensure install-strip works when STRIP consists of more than one word.
-# This test needs GNU binutils strip.  See sister test 'strip3.sh'.
+# See sister test 'strip3.sh'.
 
 required='cc strip'
 . test-init.sh
@@ -39,7 +39,7 @@ $ACLOCAL
 $AUTOCONF
 $AUTOMAKE -a
 
-./configure --prefix="$(pwd)/inst" STRIP='strip --verbose'
+./configure --prefix="$(pwd)/inst" STRIP='strip -x'
 $MAKE
 $MAKE install-strip
 

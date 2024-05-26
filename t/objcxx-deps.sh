@@ -21,6 +21,10 @@
 
 cat >> configure.ac << 'END'
 AC_PROG_OBJCXX
+AC_CHECK_LIB([objc],[__objc_exec_class])
+AC_CHECK_LIB([objc],[objc_getProperty])
+AC_CHECK_LIB([objc],[objc_msg_lookup_sender])
+AC_CHECK_LIB([objc],[objc_msg_lookup])
 AC_OUTPUT
 END
 
