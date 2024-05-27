@@ -64,7 +64,7 @@ case ${am_running_installcheck:=no} in
     am_system_acdir=""
     ;;
   *)
-    echo "$me: variable 'am_running_installcheck' has invalid"
+    echo "$me: variable 'am_running_installcheck' has invalid" \
          "value '$am_running_installcheck'" >&2
     exit 99
     ;;
@@ -172,7 +172,7 @@ GNU_CFLAGS=${AM_TESTSUITE_GNU_CFLAGS-${GNU_CFLAGS-'@GNU_CFLAGS@'}}
 GNU_GCJ=${AM_TESTSUITE_GNU_GCJ-${GNU_GCJ-'@GNU_GCJ@'}}
 GNU_GCJFLAGS=${AM_TESTSUITE_GNU_GCJFLAGS-${GNU_GCJFLAGS-'@GNU_GCJFLAGS@'}}
 
-# No all versions of Tex support '--version', so we use a configure
+# Not all versions of Tex support '--version', so we use a configure
 # check to decide if tex is available.  This decision is embodied in
 # this variable.
 TEX=${AM_TESTSUITE_TEX-'@TEX@'}
@@ -190,8 +190,24 @@ case $MTIME_RESOLUTION in
          grep 'Features:.*subsecond-mtime' > /dev/null 2>&1 &&
        $AUTOM4TE --version 2>&1 |
          grep 'Features:.*subsecond-mtime' > /dev/null 2>&1; then
-      :
+      # subsecond-mtime should be supported; use the timestamp
+      # resolution that we determined. If it hasn't been determined,
+      # that's a bug somewhere.
+      if test -n "$am_cv_filesystem_timestamp_resolution"; then
+        #echo "$me: got $am_cv_filesystem_timestamp_resolution" >&2
+        MTIME_RESOLUTION=$am_cv_filesystem_timestamp_resolution
+      else
+        # ends up in test-suite.log.
+        echo "$me: subsecond-mtime supported per automake and auto4mte" \
+             "--version, but am_cv_filesystem_timestamp_resolution not set;" \
+             "that's an error somewhere. Proceeding with value 1." >&2
+        MTIME_RESOLUTION=1
+      fi
     else
+      #echo "$me: --version doesn't support subsecond-mtime" >&2
+      #$AUTOMAKE --version >&2
+      #$AUTOM4TE --version >&2
+      #
       MTIME_RESOLUTION=1
       # we must not sleep for fractional seconds when autom4te does not
       # support subsecond-mtimes, even when sleep supports it. See bug#67670.
@@ -202,10 +218,10 @@ case $MTIME_RESOLUTION in
 esac
 
 # This sleep variable is used explicitly in some tests to avoid
-# too-quick creation. I (Karl) believe that was an incomplete workaround
+# too-quick creation. Seems likely this was an incomplete workaround
 # for this whole subsecond-mtime problem. With this set to "sleep 1",
-# there were still random parallelization failures, without also setting
-# am_cv_sleep_fractional_seconds=false as above.
+# there were still random parallelization failures; setting
+# am_cv_sleep_fractional_seconds=false as above was still needed.
 # 
 sleep="sleep $MTIME_RESOLUTION"
 

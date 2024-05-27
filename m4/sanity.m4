@@ -24,16 +24,20 @@ AS_IF([sleep 0.001 2>/dev/null], [am_cv_sleep_fractional_seconds=true],
 # nanosecond, matching clock_gettime.  However, it is probably not
 # possible to delay execution of a shell script for less than one
 # millisecond, due to process creation overhead and scheduling
-# granularity, so we don't check for anything finer than that.
+# granularity, so we don't check for anything finer than that. (See below.)
 AC_DEFUN([_AM_FILESYSTEM_TIMESTAMP_RESOLUTION], [dnl
 AC_REQUIRE([_AM_SLEEP_FRACTIONAL_SECONDS])
-AC_CACHE_CHECK([filesystem timestamp resolution], am_cv_filesystem_timestamp_resolution, [dnl
+AC_CACHE_CHECK([filesystem timestamp resolution],
+               am_cv_filesystem_timestamp_resolution, [dnl
 # Default to the worst case.
 am_cv_filesystem_timestamp_resolution=2
 
 # Only try to go finer than 1s if sleep can do it.
 am_try_resolutions=1
 if $am_cv_sleep_fractional_seconds; then
+  # Even a millisecond often causes a bunch of false positives,
+  # so just try a hundredth of a second. The time saved between .001 and
+  # .01 is not terribly consequential.
   am_try_resolutions="0.01 0.1 $am_try_resolutions"
 fi
 
@@ -48,12 +52,13 @@ rm -f conftest.ts?
 : > conftest.ts3
 
 # Make sure ls -t actually works.  Do 'set' in a subshell so we don't
-# clobber the current shell's arguments.
+# clobber the current shell's arguments. (Outer-level square brackets
+# are for m4; be careful, it's easy to get confused.)
 if (
      set X `[ls -t conftest.ts[12]]` &&
      {
-       test "$[*]" != "X conftest.ts1 conftest.ts2" ||
-       test "$[*]" != "X conftest.ts2 conftest.ts1";
+       test "$[]*" != "X conftest.ts1 conftest.ts2" ||
+       test "$[]*" != "X conftest.ts2 conftest.ts1";
      }
 ); then :; else
   # If neither matched, then we have a broken ls.  This can happen
@@ -64,7 +69,7 @@ if (
     ["Bad output from ls -t: \"`[ls -t conftest.ts[12]]`\""],
     [AS_MESSAGE_LOG_FD])
   AC_MSG_FAILURE([ls -t produces unexpected output.
-Make sure there is not a broken alias in your environment.])
+Make sure there is not a broken ls alias in your environment.])
 fi
 
 for am_try_res in $am_try_resolutions; do
@@ -84,11 +89,47 @@ for am_try_res in $am_try_resolutions; do
       test "$[]2" = conftest.ts3 &&
       test "$[]3" = conftest.ts2 &&
       test "$[]4" = conftest.ts1); then
-    am_cv_filesystem_timestamp_resolution=$am_try_res
-    break
+    #
+    # Ok, ls -t worked. We have one more thing to check: make.
+    # It can happen that everything else supports the subsecond mtimes,
+    # but make doesn't, notably on macOS, which ships make 3.81 from
+    # 2006 (the last one released under GPLv2). https://bugs.gnu.org/68808
+    # 
+    # So, first let's create a Makefile:
+    rm -f conftest.mk
+    echo 'conftest.ts1: conftest.ts2' >conftest.mk
+    echo '	touch conftest.ts2' >>conftest.mk
+    #
+    # Now, running
+    #   touch conftest.ts1; touch conftest.ts2; make
+    # should touch ts1 because ts2 is newer. This could happen by luck,
+    # but most often, it will fail if make's support is insufficient. So
+    # test for several consecutive successes.
+    # 
+    # (We reuse conftest.ts[12] because we still want to modify existing
+    # files, not create new ones, per above.)
+    n=0
+    make_ok=true
+    until test $n -eq 4; do
+      echo one > conftest.ts1
+      sleep $am_try_res
+      echo two > conftest.ts2 # ts2 should now be newer than ts1
+      if make -f conftest.mk | grep 'up to date' >/dev/null; then
+        make_ok=false
+        break # out of $n loop
+      fi
+      n=`expr $n + 1`
+    done
+    if $make_ok; then
+      # Everything we know to check worked out, so call this resolution good.
+      am_cv_filesystem_timestamp_resolution=$am_try_res
+      break # out of resolution loop
+    fi
+    # Otherwise, we'll go on to check the next resolution.
   fi
 done
 rm -f conftest.ts?
+# (end _am_filesystem_timestamp_resolution)
 ])])
 
 # AM_SANITY_CHECK

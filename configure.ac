@@ -191,6 +191,10 @@ AC_PROG_FGREP
 # supported by the filesystem hosting the build.  The value
 # will be acceptable to 'sleep' on this system.
 MTIME_RESOLUTION=$am_cv_filesystem_timestamp_resolution
+if test -z "$MTIME_RESOLUTION"; then
+  AC_MSG_NOTICE(am_cv_filesystem_timestamp_resolution strangely not set; using 1)
+  MTIME_RESOLUTION=1
+fi
 AC_SUBST([MTIME_RESOLUTION])
 
 dnl FIXME: could we extract this in a simpler way through autoconf
