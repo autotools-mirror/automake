@@ -328,6 +328,10 @@ sc_tests_here_document_format:
 # Makefile.am rules, configure.ac code and helper shell script created and
 # used by out shell scripts, because Autoconf (as of version 2.69) does not
 # yet ensure that $CONFIG_SHELL will be set to a proper POSIX shell.
+# We exclude failure_footer_text_colorized in test-defs.in from the
+# check because the result differs with $(...) and I (Karl) don't know why;
+# the testsuite-summary-color.sh and tap-summary-color tests fail when
+# $(...) is used. Life is too short.
 sc_tests_command_subst:
 	@found=false; \
 	scan () { \
@@ -335,6 +339,7 @@ sc_tests_command_subst:
 	         -e '/<<.*END/,/^END/b' -e '/<<.*EOF/,/^EOF/b' \
 	         -e 's/\\`/\\{backtick}/' \
 	         -e "s/[^\\]'\([^']*\`[^']*\)*'/'{quoted-text}'/g" \
+	         -e /failure_footer_text_colorized=/d \
 	         -e '/`/p' $$*; \
 	}; \
 	for file in $(xtests); do \

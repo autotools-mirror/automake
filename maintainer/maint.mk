@@ -621,7 +621,7 @@ ALL_PACKAGES = \
 
 pkg-targets = check dist
 
-# Note: "ttp" stays for "Third Party Package".
+# Note: "ttp" stands for "Third Party Package".
 
 ttp-check ttp-check-all: do-clone = $(GIT) clone --verbose
 ttp-check: ttp-packages = $(FEW_PACKAGES)
