@@ -111,14 +111,23 @@ EXTRA_DIST += lib/gnupload
 
 # First component of a version number (mandatory).
 rx-0 = ^[1-9][0-9]*
-# Later components of a version number (optional).
-rx-1 = \.[0-9][0-9]*
+#
+# Minor component of a version number (omitted only for a major
+# release): .1, .10, etc. Assume we won't go beyond .99.
+rx-1 = \.[0-9]{1,2}
+#
+# Micro component of a version number (optional):
+# Either a single digit 0-9, or multiple digits starting with 0-8.
+# Multiple digits starting with 9 (.90, etc.) are for test releases.
+rx-2 = \.([0-9]|[0-8][0-9]+)
+#
 # Used in recipes to decide which kind of release we are.
 stable_major_version_rx = $(rx-0)\.0$$
 stable_minor_version_rx = $(rx-0)$(rx-1)$$
-stable_micro_version_rx = $(rx-0)$(rx-1)$(rx-1)$$
-beta_version_rx = $(rx-0)($(rx-1)){1,2}[bdfhjlnprtvxz]$$
-alpha_version_rx  = $(rx-0)($(rx-1)){1,2}[acegikmoqsuwy]$$
+stable_micro_version_rx = $(rx-0)$(rx-1)$(rx-2)$$
+# The 9* is for pretests beyond the first five, e.g., .990, .992, ...
+beta_version_rx = $(rx-0)$(rx-1)\.99*[02468]$$
+alpha_version_rx  = $(rx-0)$(rx-1)\.99*[13579]$$
 match_version = echo "$(VERSION)" | $(EGREP) >/dev/null
 
 # Check that we don't have uncommitted or unstaged changes.
