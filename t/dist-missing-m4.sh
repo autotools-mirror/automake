@@ -61,7 +61,7 @@ for vpath in false :; do
   run_make -e FAIL -M
   # This error will come from autoconf, not make, so we can be stricter
   # in our grepping of it.
-  grep 'possibly undefined .*MY_ZARDOZ' output
+  $EGREP '(possibly undefined|undefined or overquoted) macro: .*MY_ZARDOZ' output
   grep 'MY_FOOBAR' output && exit 1 # No spurious error, please.
   cd "$ocwd" || fatal_ "cannot chdir back to top-level test directory"
 done
