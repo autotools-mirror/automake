@@ -396,7 +396,7 @@ When Automake Isn't Enough
 
 Frequently Asked Questions about Automake
 
-* CVS::                         CVS and generated files
+* Version Control::             Version control and generated files
 * maintainer-mode::             missing and AM_MAINTAINER_MODE
 * Wildcards::                   Why doesn't Automake support wildcards?
 * Limitations on File Names::   Limitations on source and installed file names
@@ -12392,7 +12392,7 @@ This chapter covers some questions that often come up on the mailing
 lists.
 
 @menu
-* CVS::                         CVS and generated files
+* Version Control::             Version control and generated files
 * maintainer-mode::             missing and AM_MAINTAINER_MODE
 * Wildcards::                   Why doesn't Automake support wildcards?
 * Limitations on File Names::   Limitations on source and installed file names
@@ -12405,8 +12405,8 @@ lists.
 * Reporting Bugs::              Feedback on bugs and feature requests
 @end menu
 
-@node CVS
-@section CVS and generated files
+@node Version Control
+@section Version control and generated files
 
 @subheading Background: distributed generated Files
 @cindex generated files, distributed
@@ -12429,42 +12429,37 @@ As generated files shipped in packages are up-to-date, and because
 @command{tar} preserves times-tamps, these rebuild rules are not
 triggered when a user unpacks and builds a package.
 
-@subheading Background: CVS and Timestamps
-@cindex timestamps and CVS
-@cindex CVS and timestamps
+@subheading Background: Version Control and Timestamps
+@cindex timestamps and version control
+@cindex version control and timestamps
 
-Unless you use CVS keywords (in which case files must be updated at
-commit time), CVS preserves timestamp during @samp{cvs commit} and
-@samp{cvs import -d} operations.
-
-When you check out a file using @samp{cvs checkout} its timestamp is
-set to that of the revision that is being checked out.
-
-However, during @command{cvs update}, files will have the date of the
-update, not the original timestamp of this revision.  This is meant to
+Typically when you update files with version control commands,
+working files will have the timestamp of your update,
+not the original timestamp of the commit.  This is meant to
 make sure that @command{make} notices that sources files have been updated.
 
 This timestamp shift is troublesome when both sources and generated
-files are kept under CVS@.  Because CVS processes files in lexical
+files are kept under version control.  Because version control
+commands often process files in lexical
 order, @file{configure.ac} will appear newer than @file{configure}
-after a @command{cvs update} that updates both files, even if
+after a version control command that updates both files, even if
 @file{configure} was newer than @file{configure.ac} when it was
-checked in.  Calling @command{make} will then trigger a spurious rebuild
+committed.  Calling @command{make} will then trigger a spurious rebuild
 of @file{configure}.
 
-@subheading Living with CVS in Autoconfiscated Projects
-@cindex CVS and generated files
-@cindex generated files and CVS
+@subheading Living with Version Control in Autoconfiscated Projects
+@cindex version control and generated files
+@cindex generated files and version control
 
 There are basically two clans among maintainers: those who keep all
-distributed files under CVS, including generated files, and those who
-keep generated files @emph{out} of CVS.
+distributed files under version control, including generated files, and
+those who keep generated files @emph{out} of version control.
 
-@subsubheading All Files in CVS
+@subsubheading All Files under Version Control
 
 @itemize @bullet
 @item
-The CVS repository contains all distributed files so you know exactly
+The repository contains all distributed files so you know exactly
 what is distributed, and you can check out any prior version entirely.
 
 @item
@@ -12477,8 +12472,7 @@ Users do not need Autotools to build a check-out of the project; it
 works just like a released tarball.
 
 @item
-If users use @command{cvs update} to update their copy, instead of
-@command{cvs checkout} to fetch a fresh one, timestamps will be
+If users use version control to update their copy, timestamps will likely be
 inaccurate.  Some rebuild rules will be triggered and attempt to
 run developer tools such as @command{autoconf} or @command{automake}.
 
@@ -12489,45 +12483,42 @@ possible suggestions about how to obtain them, rather than just some
 ``command not found'' error, or (worse) some obscure message from some
 older version of the required tool they happen to have installed.
 
-Maintainers interested in keeping their package buildable from a CVS
+Maintainers interested in keeping their package buildable from a
 checkout even for those users that lack maintainer-specific tools might
 want to provide a helper script (or to enhance their existing bootstrap
-script) to fix the timestamps after a
-@command{cvs update} or a @command{git checkout}, to prevent spurious
+script) to fix the timestamps after a checkout, to prevent spurious
 rebuilds.  In case of a project committing the Autotools-generated
 files, as well as the generated @file{.info} files, such a script might
 look something like this:
 
 @smallexample
 #!/bin/sh
-# fix-timestamp.sh: prevents useless rebuilds after "cvs update"
+# fix-timestamp.sh: Prevent useless rebuilds after "git pull".
 sleep 1
 # aclocal-generated aclocal.m4 depends on locally-installed
-# '.m4' macro files, as well as on 'configure.ac'
+# '.m4' macro files, as well as on 'configure.ac'.
 touch aclocal.m4
 sleep 1
-# autoconf-generated configure depends on aclocal.m4 and on
-# configure.ac
-touch configure
-# so does autoheader-generated config.h.in
-touch config.h.in
-# and all the automake-generated Makefile.in files
-touch `find . -name Makefile.in -print`
-# finally, the makeinfo-generated '.info' files depend on the
-# corresponding '.texi' files
-touch doc/*.info
+# autoconf-generated 'configure' and autoheader-generated
+# config.h.in both depend on aclocal.m4 and on configure.ac.
+touch configure config.h.in
+# Automake-generated Makefile.in files depend on Makefile.am,
+# and makeinfo-generated '.info' files depend on the
+# corresponding '.texi' files.
+touch $(git ls-files '*/Makefile.in' '*.info')
 @end smallexample
 
 @item
 In distributed development, developers are likely to have different
 versions of the maintainer tools installed.  In this case rebuilds
-triggered by clock skew will lead to spurious changes
+triggered by clock skew can lead to spurious changes
 to generated files.  There are several solutions to this:
 
 @itemize
 @item
 All developers should use the same versions, so that the rebuilt files
-are identical to files in CVS@.  (This starts to be difficult when each
+are identical to files in the repository.
+(This starts to be difficult when each
 project you work on uses different versions.)
 @item
 Or people use a script to fix the timestamp after a checkout (the GCC
@@ -12540,7 +12531,7 @@ in @ref{maintainer-mode}.
 
 @item
 Although we focused on spurious rebuilds, the converse can also
-happen.  CVS's timestamp handling can also let you think an
+happen.  Version control timestamp handling can also let you think an
 out-of-date file is up-to-date.
 
 For instance, suppose a developer has modified @file{Makefile.am} and
@@ -12549,30 +12540,30 @@ change to @file{Makefile.am} right before checking in both files
 (without rebuilding @file{Makefile.in} to account for the change).
 
 This last change to @file{Makefile.am} makes the copy of
-@file{Makefile.in} out-of-date.  Since CVS processes files
-alphabetically, when another developer @samp{cvs update}s his or her
+@file{Makefile.in} out-of-date.  Assuming version control processes files
+alphabetically, when another developer updates their
 tree, @file{Makefile.in} will happen to be newer than
 @file{Makefile.am}.  This other developer will not see that
 @file{Makefile.in} is out-of-date.
 
 @end itemize
 
-@subsubheading Generated Files out of CVS
+@subsubheading Generated Files out of Version Control
 
-One way to get CVS and @command{make} working peacefully is to never
-store generated files in CVS, i.e., do not CVS-control files that
-are @file{Makefile} targets (also called @emph{derived} files).
+One way to get version control and @command{make} working peacefully is to never
+store generated files in version control, i.e., do not version-control
+files that are @file{Makefile} targets (also called @emph{derived} files).
 
 This way developers are not annoyed by changes to generated files.  It
 does not matter if they all have different versions (assuming they are
 compatible, of course).  And finally, timestamps are not lost; changes
-to sources files can't be missed as in the
+to source files can't be missed as in the
 @file{Makefile.am}/@file{Makefile.in} example discussed earlier.
 
-The drawback is that the CVS repository is not an exact copy of what
-is distributed and that users now need to install various development
+The drawback is that the repository does not contain some files that are
+is distributed, so builders now need to install various development
 tools (maybe even specific versions) before they can build a checkout.
-But, after all, CVS's job is versioning, not distribution.
+But, after all, the job of version control is versioning, not distribution.
 
 Allowing developers to use different versions of their tools can also
 hide bugs during distributed development.  Indeed, developers will be
@@ -12584,8 +12575,8 @@ developers could have noticed if they weren't using their own versions
 of this tool.
 
 @subheading Third-party Files
-@cindex CVS and third-party files
-@cindex third-party files and CVS
+@cindex version control and third-party files
+@cindex third-party files and version control
 
 Another class of files not discussed here (because they do not cause
 timestamp issues) are files that are shipped with a package, but
@@ -12593,7 +12584,7 @@ maintained elsewhere.  For instance, tools like @command{gettextize}
 and @command{autopoint} (from Gettext) or @command{libtoolize} (from
 Libtool), will install or update files in your package.
 
-These files, whether they are kept under CVS or not, raise similar
+These files, whether they are kept under version control or not, raise similar
 concerns about version mismatch between developers' tools.  The
 Gettext manual has a section about this; see @ref{Version Control Issues,,
 Integrating with Version Control Systems, gettext, GNU gettext tools}.
@@ -12650,7 +12641,7 @@ The user can override the default setting by passing either
 to @command{configure}.
 
 People use @code{AM_MAINTAINER_MODE} either because they do not want their
-users (or themselves) annoyed by clock skew (@pxref{CVS}), or
+users (or themselves) annoyed by clock skew (@pxref{Version Control}), or
 because they simply can't stand the rebuild rules and prefer running
 maintainer tools explicitly.
 
@@ -12693,13 +12684,13 @@ a file.
 There are several objections to this:
 @itemize
 @item
-When using CVS (or similar) developers need to remember they have to
-run @samp{cvs add} or @samp{cvs rm} anyway.  Updating
+When using version control, developers need to remember they have to
+add or remove files from version control anyway.  Updating
 @file{Makefile.am} accordingly quickly becomes a reflex.
 
 Conversely, if your application doesn't compile
 because you forgot to add a file in @file{Makefile.am}, it will help
-you remember to @samp{cvs add} it.
+you remember to add the file to version control.
 
 @item
 Using wildcards makes it easy to distribute files by mistake.  For
@@ -13751,7 +13742,7 @@ attach the @file{test-suite.log} file.
 @c  LocalWords:  dircategory in's aclocal ifinfo titlepage Tromey vskip pt sp
 @c  LocalWords:  filll defcodeindex ov cv op tr syncodeindex fn cp vr ifnottex
 @c  LocalWords:  dir Automake's ac Dist Gnits gnits dfn Autoconf's pxref
-@c  LocalWords:  cindex Autoconf autoconf perl samp cvs dist trindex SUBST foo
+@c  LocalWords:  cindex Autoconf autoconf perl samp dist trindex SUBST foo
 @c  LocalWords:  xs emph FIXME ref vindex pkglibdir pkgincludedir pkgdatadir mt
 @c  LocalWords:  pkg libdir cpio bindir sbindir rmt pax sbin zar zardir acindex
 @c  LocalWords:  HTML htmldir html noinst TEXINFOS nodist nobase strudel CFLAGS
@@ -13801,7 +13792,7 @@ attach the @file{test-suite.log} file.
 @c  LocalWords:  installcheck gzipped tarZ std utils etags mkid cd
 @c  LocalWords:  ARGS taggable ETAGSFLAGS lang ctags CTAGSFLAGS GTAGS gtags idl
 @c  LocalWords:  foocc doit idlC multilibs ABIs cmindex defmac ARG enableval FC
-@c  LocalWords:  MSG xtrue DBG pathchk CYGWIN afile proglink versioned CVS's TE
+@c  LocalWords:  MSG xtrue DBG pathchk CYGWIN afile proglink versioned TE
 @c  LocalWords:  wildcards Autoconfiscated subsubheading autotools Meyering API
 @c  LocalWords:  ois's wildcard Wportability cartouche vrindex printindex Duret
 @c  LocalWords:  DSOMEFLAG DVERSION automake Lutz insertcopying versioning FAQ
