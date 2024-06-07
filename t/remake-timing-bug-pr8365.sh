@@ -16,7 +16,7 @@
 
 # Test for automake bug#8365, related to Makefile remake rules.
 # The bug is due to subtle timestamp issues and limitations in
-# make's behaviour, and is very unlikely to be triggered (we have
+# make's behavior, and is very unlikely to be triggered (we have
 # to resort to timestamp edit hacks to consistently expose it); in
 # any account, it is nigh to impossible to trigger it by running
 # make by hand.  Thus, fixing it would not be worth the hassle, but

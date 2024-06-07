@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-# Check that canonicalization does not transliterate the '@' charactrer.
+# Check that canonicalization does not transliterate the '@' character.
 
 . test-init.sh
 

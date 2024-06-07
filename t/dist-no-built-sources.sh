@@ -70,7 +70,7 @@ EOF
     # built-sources build should have it
     test -e x.c
   fi
-  
+
   # If the test runs fast enough, the make dist second time through
   # won't do anything since the tarball will be considered up to date.
   rm -f "${pkg_ver}".tar.gz "${pkg_ver}".tar

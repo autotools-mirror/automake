@@ -333,7 +333,7 @@ sub variables (;$)
     {
       @vars = values %_variable_dict;
     }
-  # The behaviour of the 'sort' built-in is undefined in scalar
+  # The behavior of the 'sort' built-in is undefined in scalar
   # context, hence we need an ad-hoc handling for such context.
   return wantarray ? sort { $a->name cmp $b->name } @vars : scalar @vars;
 }

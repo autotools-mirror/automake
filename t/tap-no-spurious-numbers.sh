@@ -74,7 +74,7 @@ highno=1000
 
 for result in 'ok' 'not ok'; do
   for spacing in "" " " "$tab"; do
-    subst="$result &$spacing$higno"
+    subst="$result &$spacing$highno"
     sed -e "s|.*|$subst|" prefixes
     for directive in TODO SKIP; do
       test "$result $directive" != "not ok SKIP" || continue

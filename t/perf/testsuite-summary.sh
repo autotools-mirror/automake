@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-# Check performanceof recipe generating test-suite.log file and testsuite
+# Check performance of recipe generating test-suite.log file and testsuite
 # summary.  That has suffered of huge inefficiencies in the past.
 # FIXME: this test is not currently able to detect whether the measured
 # FIXME: performance is too low, and FAIL accordingly; it just offers

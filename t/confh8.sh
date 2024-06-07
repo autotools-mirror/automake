@@ -15,7 +15,7 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 # Test to make sure several config headers are allowed.
-# See also sister "minimalistic" test 'confh7.sh'.
+# See also sister "minimalist" test 'confh7.sh'.
 
 . test-init.sh
 

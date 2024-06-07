@@ -19,7 +19,7 @@
 am_create_testdir=empty
 . test-init.sh
 
-hasnt_parallel_tests ()
+lacks_parallel_tests ()
 {
   $EGREP 'TEST_SUITE_LOG|TEST_LOGS|\.log.*:' $1 && exit 1
   grep 'recheck.*:' $1 && exit 1
@@ -61,7 +61,7 @@ touch missing install-sh
 $ACLOCAL
 $AUTOMAKE
 grep TEST Makefile.in # For debugging.
-hasnt_parallel_tests Makefile.in
+lacks_parallel_tests Makefile.in
 test ! -e test-driver
 cd ..
 
@@ -71,7 +71,7 @@ $ACLOCAL
 $AUTOMAKE --add-missing
 grep TEST [ab]Makefile.in # For debugging.
 has_parallel_tests aMakefile.in
-hasnt_parallel_tests bMakefile.in
+lacks_parallel_tests bMakefile.in
 mv aMakefile.in aMakefile.sav
 mv bMakefile.in bMakefile.sav
 test ! -e test-driver

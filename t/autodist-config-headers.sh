@@ -15,7 +15,7 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 # Check that config.h.bot and config.h.top are automatically
-# distributed if the AC_CONFIG_HADERS macro is used and they
+# distributed if the AC_CONFIG_HEADERS macro is used and they
 # exist at automake runtime.
 # Related to automake bug#7819.
 

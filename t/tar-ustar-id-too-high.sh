@@ -15,7 +15,7 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 # Check that UID or GID too high for the ustar format are correctly
-# rwcognized and diagnosed by configure.  See bug#8343 and bug#13588.
+# recognized and diagnosed by configure.  See bug#8343 and bug#13588.
 
 . test-init.sh
 

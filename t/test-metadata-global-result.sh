@@ -174,7 +174,7 @@ XFAIL: zar-doz
 ==============
 END
 
-# Whitespaces before and after ':global-test-result:' are handled OK.
+# Whitespace characters before and after ':global-test-result:' are handled OK.
 
 echo "   $tab:global-test-result:PASS" > foo.test
 echo "${tab}${tab}:global-test-result:${tab}   ${tab}SKIP" > zar-doz.x

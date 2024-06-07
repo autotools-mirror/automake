@@ -62,7 +62,7 @@ case "$1" in
 esac
 END
 
-# Quite complexish, but allow the tests in client scripts to be written
+# Quite complex, but allow the tests in client scripts to be written
 # in a "data-driven fashion".
 do_check ()
 {

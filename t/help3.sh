@@ -22,7 +22,7 @@
 mkdir cleandir
 cd cleandir
 
-# Honour user overrides for $ACLOCAL and $AUTOMAKE, but without
+# Honor user overrides for $ACLOCAL and $AUTOMAKE, but without
 # adding extra options.
 ACLOCAL=$am_original_ACLOCAL
 AUTOMAKE=$am_original_AUTOMAKE
@@ -51,7 +51,7 @@ mv -f foo.m4 aclocal.m4 # autoconf will need aclocal.m4
 
 $AUTOMAKE --add-missing --help --copy
 test ! -e install-sh
-$AUTOMAKE --copy --version --add-mising
+$AUTOMAKE --copy --version --add-missing
 test ! -e install-sh
 # Sanity check.
 $AUTOMAKE --add-missing --copy

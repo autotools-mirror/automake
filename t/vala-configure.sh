@@ -58,7 +58,7 @@ chmod +x bin/valac.old
 
 PATH=$(pwd)/bin$PATH_SEPARATOR$PATH; export PATH
 
-# Avoid interferences from the environment.
+# Avoid interference from the environment.
 unset VALAC vala_version
 
 $ACLOCAL

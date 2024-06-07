@@ -15,7 +15,7 @@
 
 ##################################################################
 # The master copy of this file is in Automake's source repository.
-# Please send updates to automake-patches@gnu.org.          
+# Please send updates to automake-patches@gnu.org.
 ##################################################################
 
 package Automake::ChannelDefs;
@@ -451,8 +451,8 @@ sub merge_WARNINGS (@)
         {
           # The character class in the second match group is ASCII \S minus
           # comma.  We are generous with this because category values may come
-          # from WARNINGS and we don't want to assume what other programs'
-          # syntaxes for warnings categories are.
+          # from WARNINGS and we don't want to assume other programs'
+          # syntax for warnings categories.
           /^(no-|)([\w\[\]\/\\!"#$%&'()*+-.:;<=>?@^`{|}~]+)$/
             or die "Invalid warnings category: $_";
           $warnings{$2} = $1;

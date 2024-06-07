@@ -16,7 +16,7 @@
 
 # TAP support:
 #  - a test result numbered as 0 is to be considered out-of-order
-# This is consistent with the behaviour of the 'prove' utility.
+# This is consistent with the behavior of the 'prove' utility.
 
 . test-init.sh
 . tap-setup.sh

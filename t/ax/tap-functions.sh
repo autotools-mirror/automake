@@ -148,7 +148,7 @@ result_ ()
   set -x # Restore shell xtraces.
 }
 
-#  Shorthands for common usages of 'result_'.
+#  Shorthand for common usages of 'result_'.
 ok_ () { result_ 'ok' ${1+"$@"}; }
 not_ok_ () { result_ 'not ok' ${1+"$@"}; }
 skip_ () { result_ 'ok' -D SKIP ${1+"$@"}; }

@@ -45,7 +45,7 @@ grep 'DISTCHECK_CONFIGURE_FLAGS.*AM_DISTCHECK_CONFIGURE_FLAGS' Makefile.in \
 $AUTOCONF
 ./configure --enable-success sentence='it works :-)'
 
-# The configure call in "make distcheck" should honour
+# The configure call in "make distcheck" should honor
 # $(AM_DISTCHECK_CONFIGURE_FLAGS).
 
 $MAKE distcheck

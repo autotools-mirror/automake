@@ -16,7 +16,7 @@
 
 # Check parallel-tests features:
 #  - $(TESTS_LOGS) can end up holding duplicated entries
-# Such behaviour can be useful for projects that want to verify that
+# Such behavior can be useful for projects that want to verify that
 # different test scripts don't end up sharing the same log file.
 # (Automake itself is such a project, BTW ;-)
 

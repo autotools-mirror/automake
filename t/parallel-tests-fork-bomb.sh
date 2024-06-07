@@ -39,7 +39,7 @@ if IS_GNU_MAKE
 
  is_too_deep := $(shell test $(MAKELEVEL) -lt 10 && echo no)
 
-## Indenteation here required to avoid confusing Automake.
+## Indentation here required to avoid confusing Automake.
  ifeq ($(is_too_deep),no)
  else
  $(error $(errmsg), $(MAKELEVEL) levels)

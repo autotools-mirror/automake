@@ -44,7 +44,7 @@ for d in foo foo/bar "$(pwd)/foo" . .. ../foo ''; do
   files=$(find "$d2" | grep '\.py[co]$')
   #
   # 1) With new-enough Python3, there are six files.
-  # 
+  #
   # 2) We have to elide the leading spaces from the wc output
   #    for the sake of the macOS shell.
   #    https://debbugs.gnu.org/cgi/bugreport.cgi?bug=68119#4

@@ -40,7 +40,7 @@ empty =
 TEST_LOG_DRIVER = \$(top_srcdir)/td
 
 # XFAIL_TESTS should gracefully handle TAB characters, and multiple
-# whitespaces.
+# whitespace characters.
 XFAIL_TESTS =\$(empty)${tab}x1.test x2.test${tab}x3.test${tab}\
 x4.test ${tab} x5.test              x6.test${tab}\$(empty)
 

@@ -54,7 +54,7 @@ for string in \
 '## A string with more whitespace' \
     "  ${tab}a b${tab} c" \
 '## Note the we do not have the empty string here.  We prefer to' \
-'## leave its behaviour in this context undefined for the moment.'
+'## leave its behavior in this context undefined for the moment.'
 do
   case $string in '##'*) continue;; esac
   i=$(($i + 1))

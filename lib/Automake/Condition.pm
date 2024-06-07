@@ -313,7 +313,7 @@ sub true ($ )
 
 Build a string which denotes the condition.
 
-For instance using the C<$cond> definition from L<SYNOPSYS>,
+For instance using the C<$cond> definition from L<SYNOPSIS>,
 C<$cond-E<gt>string> will return C<"COND1_TRUE COND2_FALSE">.
 
 =cut
@@ -341,7 +341,7 @@ sub string ($ )
 
 Build a human readable string which denotes the condition.
 
-For instance using the C<$cond> definition from L<SYNOPSYS>,
+For instance using the C<$cond> definition from L<SYNOPSIS>,
 C<$cond-E<gt>string> will return C<"COND1 and !COND2">.
 
 =cut
@@ -382,7 +382,7 @@ sub human ($ )
 
 Build a C<AC_SUBST>-style string for output in F<Makefile.in>.
 
-For instance using the C<$cond> definition from L<SYNOPSYS>,
+For instance using the C<$cond> definition from L<SYNOPSIS>,
 C<$cond-E<gt>subst_string> will return C<"@COND1_TRUE@@COND2_FALSE@">.
 
 =cut
@@ -411,7 +411,7 @@ sub subst_string ($ )
 Return 1 iff C<$cond> is true when C<$when> is true.
 Return 0 otherwise.
 
-Using the definitions from L<SYNOPSYS>, C<$cond> is true
+Using the definitions from L<SYNOPSIS>, C<$cond> is true
 when C<$both> is true, but the converse is wrong.
 
 =cut

@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-# Make sure 'py-compile' honours the PYTHON environment variable.
+# Make sure 'py-compile' honors the PYTHON environment variable.
 
 . test-init.sh
 

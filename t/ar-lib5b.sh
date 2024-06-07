@@ -66,7 +66,7 @@ case " $* " in
   # configure tests.
   *' -OUT:'*) exit 0;;
   # This means that $* looks like a command-line for 'ar'.  We have to
-  # exit with failure here, to accommodate the two following ortoghonal
+  # exit with failure here, to accommodate the two following orthogonal
   # scenarios:
   #  1. when 'lib' is tested by configure, this will tell that it does
   #     not use the ar(1) interface, so that the 'ar-lib' script will

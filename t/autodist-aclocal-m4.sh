@@ -16,8 +16,8 @@
 
 # Check that 'aclocal.m4' is not automatically distributed if not
 # required to build 'configure'.  This is *really* a corner-case
-# check, and the behaviour it checks is not documented either, so
-# if that behaviour is deliberately changed in the future, just
+# check, and the behavior it checks is not documented either, so
+# if that behavior is deliberately changed in the future, just
 # remove this test.
 # Related to automake bug#7819.
 

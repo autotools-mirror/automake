@@ -35,9 +35,9 @@ cat >Makefile.am <<'END'
 AUTOMAKE_OPTIONS = subdir-objects
 bin_PROGRAMS = p
 nobase_bin_PROGRAMS = np sub/np
-lib_LTIBRARIES = libfoo.la
+lib_LTLIBRARIES = libfoo.la
 nobase_lib_LTLIBRARIES = libnfoo.la sub/libnfoo.la
-pyexec_LTIBRARIES = libpy.la
+pyexec_LTLIBRARIES = libpy.la
 nobase_pyexec_LTLIBRARIES = libnpy.la sub/libnpy.la
 END
 

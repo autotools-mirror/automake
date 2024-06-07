@@ -1,6 +1,6 @@
 ## ----------------------------------- ##                   -*- Autoconf -*-
 ## Check if --with-dmalloc was given.  ##
-## From Franc,ois Pinard               ##
+## From François Pinard                ##
 ## ----------------------------------- ##
 
 # Copyright (C) 1996-2024 Free Software Foundation, Inc.

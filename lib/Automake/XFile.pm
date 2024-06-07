@@ -17,7 +17,7 @@
 
 ##################################################################
 # The master copy of this file is in Automake's source repository.
-# Please send updates to automake-patches@gnu.org.          
+# Please send updates to automake-patches@gnu.org.
 ##################################################################
 
 package Automake::XFile;

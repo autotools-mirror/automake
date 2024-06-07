@@ -117,7 +117,7 @@ $MAKE clean
 have_generated_files
 
 # But stamp files should be removed by "maintainer-clean" (the
-# behaviour w.r.t. intermediate C files is still unclear, and
+# behavior w.r.t. intermediate C files is still unclear, and
 # better left undefined for the moment).
 $MAKE maintainer-clean
 ls *vala*.stamp | grep . && exit 1

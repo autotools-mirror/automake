@@ -63,7 +63,7 @@ grep '^sub/maude\.c:.*maude\.y' Makefile.in && exit 1
 cat > Makefile.am << 'END'
 bin_PROGRAMS = maude
 maude_SOURCES = sub/maude.y
-## A particularly trickey case.
+## A particularly tricky case.
 maude_YFLAGS = -d
 END
 

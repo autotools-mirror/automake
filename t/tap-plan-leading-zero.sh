@@ -17,7 +17,7 @@
 # TAP support:
 #  - TAP plans with numbers having leading zeroes, as in "1..01"
 #  - TAP "SKIP" plans with multiple zeroes, as in "1..00 # SKIP"
-# This is consistent with the behaviour of the 'prove' utility.
+# This is consistent with the behavior of the 'prove' utility.
 
 . test-init.sh
 

@@ -22,7 +22,7 @@
 mkdir cleandir
 cd cleandir
 
-# Honour user overrides for $ACLOCAL and $AUTOMAKE, but without
+# Honor user overrides for $ACLOCAL and $AUTOMAKE, but without
 # adding extra options.
 ACLOCAL=$am_original_ACLOCAL
 AUTOMAKE=$am_original_AUTOMAKE

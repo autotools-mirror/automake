@@ -75,7 +75,7 @@ test "$(cat write)" = "all is ok"
 test ! -e removed
 test -f doc/README
 test -f doc/RELEASE-DATE
-test ! -e doc/HACING
+test ! -e doc/HACKING
 ./execute
 ./execute | grep 'I run successfully'
 cd ..

@@ -16,9 +16,9 @@
 
 # Check if Automake doesn't exit with an error for Texinfo output files
 # without a direct input file, but with a matching input file processed
-# by 'configure' (file.texi.in). 
+# by 'configure' (file.texi.in).
 # https://debbugs.gnu.org/cgi/bugreport.cgi?bug=54063#41
-# 
+#
 # This also tests an @setfilename that is different from the file name,
 # and the lack of any @setfilename, in the case of using .texi.in.
 # (See scan_texinfo_file in automake.)

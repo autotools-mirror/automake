@@ -108,7 +108,7 @@ test $($FGREP -c "$cmarker" my.log) -eq 5
 
 # Passed test scripts shouldn't be mentioned in the global log.
 $EGREP '(^pass|[^x]pass)\.test' my.log && exit 1
-# But failing (expectedly or not) and skipped ones should.
+# But failing (unexpectedly or not) and skipped ones should.
 $FGREP 'xfail.test' my.log
 $FGREP 'skip.test' my.log
 $FGREP 'fail.test' my.log

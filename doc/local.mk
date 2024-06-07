@@ -34,11 +34,11 @@ CLEANFILES += $(man1_MANS)
 # In automake, users generate man pages as part of a normal build from
 # release tarballs. This is ok because we also distribute the help2man
 # script, as given below.
-# 
+#
 # Autoconf handles this in an alternative way, of including the man
 # pages in the tarballs and thus not requiring help2man to be run by
 # users (q.v.). Neither is better or worse than the other.
-# 
+#
 # See the "Errors with distclean" node in the manual for more info.
 
 # XXX: The help2man script we include in the Automake distribution

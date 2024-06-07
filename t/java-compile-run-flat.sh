@@ -150,7 +150,7 @@ END
 
 cat >> Makefile.am <<'END'
 ## We must use 'TESTS_ENVIRONMENT', not 'AM_TESTS_ENVIRONMENT',
-## because the latter is not hnoured by the old serial test
+## because the latter is not honored by the old serial test
 ## harness.
 TESTS_ENVIRONMENT = \
     if test x"$$jprog_doing_installcheck" != x"yes"; then \

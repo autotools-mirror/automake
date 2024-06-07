@@ -15,7 +15,7 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 # TAP support: a malformed TAP plan is not recognized.  The checks in
-# here should be consistent with the behaviour of the 'prove' utility.
+# here should be consistent with the behavior of the 'prove' utility.
 
 . test-init.sh
 

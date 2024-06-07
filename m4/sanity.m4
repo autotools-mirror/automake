@@ -94,7 +94,7 @@ for am_try_res in $am_try_resolutions; do
     # It can happen that everything else supports the subsecond mtimes,
     # but make doesn't, notably on macOS, which ships make 3.81 from
     # 2006 (the last one released under GPLv2). https://bugs.gnu.org/68808
-    # 
+    #
     # So, first let's create a Makefile:
     rm -f conftest.mk
     echo 'conftest.ts1: conftest.ts2' >conftest.mk
@@ -105,7 +105,7 @@ for am_try_res in $am_try_resolutions; do
     # should touch ts1 because ts2 is newer. This could happen by luck,
     # but most often, it will fail if make's support is insufficient. So
     # test for several consecutive successes.
-    # 
+    #
     # (We reuse conftest.ts[12] because we still want to modify existing
     # files, not create new ones, per above.)
     n=0

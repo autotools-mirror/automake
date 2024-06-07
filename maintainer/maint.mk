@@ -503,7 +503,7 @@ files_without_copyright += lib/mkinstalldirs
 # This script has an MIT-style license
 files_without_copyright += lib/install-sh
 
-# The UPDATE_COPYRIGHT_YEAR environment variable is honoured by the
+# The UPDATE_COPYRIGHT_YEAR environment variable is honored by the
 # 'lib/update-copyright' script.
 .PHONY: update-copyright
 update-copyright:

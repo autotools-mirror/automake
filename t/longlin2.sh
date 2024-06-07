@@ -34,7 +34,7 @@ FOO = $files $files2 \
 EOF
 
 # The 'FOO = ...' line is 2293-byte long.  More than what a POSIX
-# conformant system is expected to support.  So do not use grep
+# conforming system is expected to support.  So do not use grep
 # on the non-text file.
 
 # grep $match Makefile.am

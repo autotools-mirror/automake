@@ -395,7 +395,7 @@ dnl We don't want to abort our configuration script if no C compiler is
 dnl available, as such a compiler is only required to run part of the
 dnl testsuite, not to build or install Automake.  Ditto for C++, Fortran
 dnl and Fortran 77 compilers.  Unfortunately, autoconf does not offer an
-dnl easy way to obtain this behaviour, so we'll need a few hacks.
+dnl easy way to obtain this behavior, so we'll need a few hacks.
 
 dnl We want the body of this macro to expand as a single shell statement,
 dnl thus we wrap it into { ... } brackets.

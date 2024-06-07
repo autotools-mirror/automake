@@ -15,7 +15,7 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 # Make sure we reuse variables whenever possible, to limit
-# combinational explosion.  (This test is named after the &subobjname
+# combinatorial explosion.  (This test is named after the &subobjname
 # sub in Automake).
 
 . test-init.sh

@@ -33,7 +33,7 @@ chmod a-w d || skip_ "cannot make directories unwritable"
 # "eat" the error message from 'rm' in some situation, although the 'rm'
 # utility itself correctly prints it when invoked from (say) 'env' or
 # 'bash'.  Yikes.
-# We'll cater to these incompatibilities by relaxing a test below if
+# We'll cater to this incompatibility by relaxing a test below if
 # a faulty shell or 'rm' program is detected.
 st=0; $SHELL -c 'rm -f d/f' 2>stderr || st=$?
 cat stderr >&2

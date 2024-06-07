@@ -39,7 +39,7 @@ else
 bin_PROGRAMS            =       tb
 tb_SOURCES              =       tb.c tparse.h tscan.l tparse.y
 tb_LDADD                =       $(LEXLIB)
-tparse.h: tparce.c
+tparse.h: tparse.c
 	echo whatever
 endif
 EOF

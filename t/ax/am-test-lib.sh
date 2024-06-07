@@ -188,7 +188,7 @@ run_make ()
   am__make_redirect_stdall=no
   am__make_flags=
   am__make_rc_exp=0
-  # Follow-up code might want to analyse this, so mark is as
+  # Follow-up code might want to analyze this, so mark it as
   # publicly accessible (no double undesrscore).
   am_make_rc=0
   # Parse options for this function.
@@ -425,7 +425,7 @@ using_gmake ()
       fatal_ "invalid value for \$am__using_gmake: '$am__using_gmake'";;
   esac
 }
-am__using_gmake="" # Avoid interferences from the environment.
+am__using_gmake="" # Avoid interference from the environment.
 
 # make_can_chain_suffix_rules
 # ---------------------------
@@ -461,7 +461,7 @@ END
       *) fatal_ "make_can_chain_suffix_rules: internal error";;
   esac
 }
-am__can_chain_suffix_rules="" # Avoid interferences from the environment.
+am__can_chain_suffix_rules="" # Avoid interference from the environment.
 
 # useless_vpath_rebuild
 # ---------------------

@@ -171,7 +171,7 @@ nodist_noinst_SCRIPTS += runtest
 
 # If two test scripts have the same basename, they will end up sharing
 # the same log file, leading to all sort of undefined and undesired
-# behaviours.
+# behaviors.
 check-no-repeated-test-name:
 	@LC_ALL=C; export LC_ALL; \
 	 lst='$(TEST_LOGS)'; for log in $$lst; do echo $$log; done \

@@ -35,7 +35,7 @@ if test -n "${ZSH_VERSION+set}" && (emulate sh) >/dev/null 2>&1; then
   NULLCMD=:
   setopt NO_GLOB_SUBST
   # If Zsh is not started directly in POSIX-compatibility mode, it has some
-  # incompatibilities in the handling of $0 that conflict with our usage;
+  # incompatibility in the handling of $0 that conflict with our usage;
   # i.e., $0 inside a file sourced with the '.' builtin is temporarily set
   # to the name of the sourced file.  Work around that.
   # Note that a bug in some versions of Zsh prevents us from resetting $0
@@ -95,7 +95,7 @@ _am_exit ()
   # Extra escaping to ensure we do not call our 'exit' alias.
   (\exit $1); \exit $1
 }
-# Avoid interferences from the environment
+# Avoid interference from the environment
 am__test_skipped=no
 # This alias must actually be placed before any use if 'exit' -- even
 # just inside a function definition.  Weird, but real.
@@ -249,7 +249,7 @@ unindent ()
   fi
   sed "$sed_unindent_prog" ${1+"$@"}
 }
-sed_unindent_prog="" # Avoid interferences from the environment.
+sed_unindent_prog="" # Avoid interference from the environment.
 
 ## ---------------------------------------------------------------- ##
 ##  Create and set up of the temporary directory used by the test.  ##
@@ -271,7 +271,7 @@ am_exit_trap ()
   else
     # This is to ensure that a test script does give a SKIP outcome just
     # because a command in it happens to exit with status 77.  This
-    # behaviour, while from time to time useful to developers, is not
+    # behavior, while from time to time useful to developers, is not
     # meant to be enabled by default, as it could cause spurious failures
     # in the wild.  Thus it will be enabled only when the variable
     # 'am_explicit_skips' is set to a "true" value.
@@ -305,7 +305,7 @@ am_set_exit_traps ()
   #  - /bin/ksh and /usr/xpg4/bin/sh on Solaris 10
   #  - Bash 3.2.51 on Solaris 10 and bash 4.1.5 on Debian GNU/Linux
   #  - AT&T ksh on Debian Gnu/Linux (deb package ksh, version 93u-1)
-  # OTOH, at least these shells that do *not* exhibit that behaviour:
+  # OTOH, at least these shells that do *not* exhibit that behavior:
   #  - modern version of the Almquist Shell (at least 0.5.5.1), on
   #    both Solaris and GNU/Linux
   #  - public domain Korn Shell, version 5.2.14, on Debian GNU/Linux

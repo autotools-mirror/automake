@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-# Check that the aclocal honouring of AC_CONFIG_MACRO_DIR interacts
+# Check that the aclocal honoring of AC_CONFIG_MACRO_DIR interacts
 # nicely with automatic rebuild rules.
 
 . test-init.sh
