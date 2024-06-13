@@ -90,40 +90,46 @@ for am_try_res in $am_try_resolutions; do
       test "$[]3" = conftest.ts2 &&
       test "$[]4" = conftest.ts1); then
     #
-    # Ok, ls -t worked. We have one more thing to check: make.
-    # It can happen that everything else supports the subsecond mtimes,
-    # but make doesn't, notably on macOS, which ships make 3.81 from
-    # 2006 (the last one released under GPLv2). https://bugs.gnu.org/68808
-    #
-    # So, first let's create a Makefile:
-    rm -f conftest.mk
-    echo 'conftest.ts1: conftest.ts2' >conftest.mk
-    echo '	touch conftest.ts2' >>conftest.mk
-    #
-    # Now, running
-    #   touch conftest.ts1; touch conftest.ts2; make
-    # should touch ts1 because ts2 is newer. This could happen by luck,
-    # but most often, it will fail if make's support is insufficient. So
-    # test for several consecutive successes.
-    #
-    # (We reuse conftest.ts[12] because we still want to modify existing
-    # files, not create new ones, per above.)
-    n=0
+    # Ok, ls -t worked. If we're at a resolution of 1 second, we're done,
+    # because we don't need to test make.
     make_ok=true
-    until test $n -eq 4; do
-      echo one > conftest.ts1
-      sleep $am_try_res
-      echo two > conftest.ts2 # ts2 should now be newer than ts1
-      if make -f conftest.mk | grep 'up to date' >/dev/null; then
-        make_ok=false
-        break # out of $n loop
-      fi
-      n=`expr $n + 1`
-    done
+    if test $am_try_res != 1; then
+      # But if we've succeeded so far with a subsecond resolution, we
+      # have one more thing to check: make. It can happen that
+      # everything else supports the subsecond mtimes, but make doesn't;
+      # notably on macOS, which ships make 3.81 from 2006 (the last one
+      # released under GPLv2). https://bugs.gnu.org/68808
+      #
+      # So, first let's create a Makefile (real tab character):
+      rm -f conftest.mk
+      echo 'conftest.ts1: conftest.ts2' >conftest.mk
+      echo '	touch conftest.ts2' >>conftest.mk
+      #
+      # Now, running
+      #   touch conftest.ts1; touch conftest.ts2; make
+      # should touch ts1 because ts2 is newer. This could happen by luck,
+      # but most often, it will fail if make's support is insufficient. So
+      # test for several consecutive successes.
+      #
+      # (We reuse conftest.ts[12] because we still want to modify existing
+      # files, not create new ones, per above.)
+      n=0
+      until test $n -eq 3; do
+        echo one > conftest.ts1
+        sleep $am_try_res
+        echo two > conftest.ts2 # ts2 should now be newer than ts1
+        if make -f conftest.mk | grep 'up to date' >/dev/null; then
+          make_ok=false
+          break # out of $n loop
+        fi
+        n=`expr $n + 1`
+      done
+    fi
+    #
     if $make_ok; then
       # Everything we know to check worked out, so call this resolution good.
       am_cv_filesystem_timestamp_resolution=$am_try_res
-      break # out of resolution loop
+      break # out of $am_try_res loop
     fi
     # Otherwise, we'll go on to check the next resolution.
   fi
