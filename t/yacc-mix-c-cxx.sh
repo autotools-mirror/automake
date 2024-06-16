@@ -71,6 +71,7 @@ END
 
 cat > 1.c <<'END'
 #include "p.h"
+extern int yyparse (void);
 int main ()
 {
     int new = ZARDOZ;
@@ -80,6 +81,7 @@ int main ()
 END
 
 cat > 2.c <<'END'
+extern int yyparse (void);
 int main ()
 {
     int yyparse ();

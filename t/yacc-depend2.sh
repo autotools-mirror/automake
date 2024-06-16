@@ -43,7 +43,7 @@ END
 
 cat > foo.y << 'END'
 %{
-int yylex () { return 0; }
+int yylex (void) { return 0; }
 void yyerror (const char *s) {}
 %}
 %token TOKEN
@@ -54,6 +54,7 @@ END
 
 cat > main.c << 'END'
 #include "foo.h"
+extern int yyparse (void);
 int main(void)
 {
   return yyparse ();

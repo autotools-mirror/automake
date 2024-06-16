@@ -48,6 +48,7 @@ END
 
 cat > main.c << 'END'
 #include "foo.h"
+extern int yyparse (void);
 int main(void)
 {
   return yyparse ();

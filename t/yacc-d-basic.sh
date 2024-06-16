@@ -49,7 +49,7 @@ cp foo/Makefile.am baz/Makefile.am
 cat > foo/parse.y << 'END'
 %{
 #include "parse.h"
-int yylex () { return 0; }
+int yylex (void) { return 0; }
 void yyerror (const char *s) {}
 %}
 %%
@@ -69,6 +69,7 @@ sed -e 's/parse\.h/y.tab.h/' <foo/parse.y >bar/parse.y
 
 cat > foo/main.c << 'END'
 #include "parse.h"
+extern int yyparse (void);
 int main ()
 {
   return yyparse ();

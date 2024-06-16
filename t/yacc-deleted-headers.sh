@@ -68,6 +68,7 @@ END
 
 cat > main1.c << 'END'
 #include "parse1.h"
+extern int yyparse (void);
 int main (void)
 {
   return ZARDOZ + yyparse ();
