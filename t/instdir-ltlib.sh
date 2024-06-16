@@ -15,12 +15,20 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 # If $(libdir) or $(pyexecdir) is the empty string, then nothing should
-# be installed there.
-# This test exercises the libtool code paths.
+# be installed there, and in fact libtool will refuse to link due to the
+# missing argument for -rpath:
+#   /bin/sh ./libtool [...] -rpath  libfoo.lo  
+#   libtool:   error: only absolute run-paths are allowed
+# (Hopefully the error message will be improved.)
+# Thus this test is expected to fail.
+# 
+# This test exercises some of the libtool code paths.
 
 required='cc libtoolize'
 . test-init.sh
 
+# Although LT_INIT is preferred nowadays, keep using AC_PROG_LIBTOOL
+# to help make sure it's still supported.
 cat >>configure.ac <<'END'
 AC_PROG_CC
 AM_PROG_AR

@@ -36,6 +36,7 @@ t/override-conditional-2.sh \
 t/override-conditional-pr13940.sh \
 t/dist-pr109765.sh \
 t/instdir-cond2.sh \
+t/instdir-ltlib.sh \
 t/java-nobase.sh \
 t/objext-pr10128.sh \
 t/remake-timing-bug-pr8365.sh \
@@ -545,7 +546,6 @@ t/instdir-cond2.sh \
 t/instdir-no-empty.sh \
 t/instdir-java.sh \
 t/instdir-lisp.sh \
-t/instdir-ltlib.sh \
 t/instdir-prog.sh \
 t/instdir-python.sh \
 t/instdir-texi.sh \
