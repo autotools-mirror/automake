@@ -1165,11 +1165,18 @@ sub parse_arguments ()
 sub parse_ACLOCAL_PATH ()
 {
   return if not defined $ENV{"ACLOCAL_PATH"};
+  
   # Directories in ACLOCAL_PATH should take precedence over system
   # directories, so we use unshift.  However, directories that
   # come first in ACLOCAL_PATH take precedence over directories
   # coming later, which is why the result of split is reversed.
-  foreach my $dir (reverse split /:/, $ENV{"ACLOCAL_PATH"})
+  
+  # OS/2 and Windows (but not Cygwin, etc.) use ; for the path separator.
+  # Possibly it would be cleaner to use path_sep from Config,
+  # but this seems simpler.
+  my $path_sep = $^O =~ /^(os2|mswin)/i ? ';' : ':';
+  
+  foreach my $dir (reverse split $path_sep, $ENV{"ACLOCAL_PATH"})
     {
       unshift (@system_includes, $dir) if $dir ne '' && -d $dir;
     }
