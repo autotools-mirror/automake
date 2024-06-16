@@ -273,9 +273,9 @@ For instance C<$c3-E<gt>conds> will simply return C<("FALSE")>.
 sub conds ($ )
 {
   my ($self) = @_;
-  my @conds = keys %{$self->{'hash'}};
+  my @conds = sort keys %{$self->{'hash'}};
   return ("TRUE") unless @conds;
-  return sort @conds;
+  return @conds;
 }
 
 # Undocumented, shouldn't be needed outside of this class.
@@ -306,7 +306,7 @@ Return 1 iff this condition is always true.
 sub true ($ )
 {
   my ($self) = @_;
-  return 0 == keys %{$self->{'hash'}};
+  return 0 == keys %{$self->{'hash'}}; # sort not needed
 }
 
 =item C<$cond-E<gt>string>

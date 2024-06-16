@@ -68,7 +68,7 @@ sub parse_options (%)
   if (@ARGV && $ARGV[0] =~ /^-./)
     {
       my %argopts;
-      for my $k (keys %option)
+      for my $k (keys %option) # sort keys not needed
 	{
 	  if ($k =~ /(.*)=s$/)
 	    {

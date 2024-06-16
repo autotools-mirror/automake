@@ -198,14 +198,14 @@ TEST_RESULTS :
   # Whether the test script should be re-run by "make recheck".
   sub must_recheck ()
   {
-    return grep { !/^(?:XFAIL|PASS|SKIP)$/ } (keys %test_results_seen);
+    return grep { !/^(?:XFAIL|PASS|SKIP)$/ } (sort keys %test_results_seen);
   }
 
   # Whether the content of the log file associated to this test should
   # be copied into the "global" test-suite.log.
   sub copy_in_global_log ()
   {
-    return grep { not $_ eq "PASS" } (keys %test_results_seen);
+    return grep { not $_ eq "PASS" } (sort keys %test_results_seen);
   }
 
   sub get_global_test_result ()

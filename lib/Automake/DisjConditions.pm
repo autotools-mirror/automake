@@ -250,7 +250,7 @@ otherwise.
 sub false ($ )
 {
   my ($self) = @_;
-  return 0 == keys %{$self->{'hash'}};
+  return 0 == keys %{$self->{'hash'}}; # sort keys not needed
 }
 
 =item C<$et = $set-E<gt>true>

@@ -430,7 +430,7 @@ sub register_suffix_rule ($$$)
   # we know how to transform $src in that "something else".
   if (exists $suffix_rules->{$dest})
     {
-      for my $dest2 (keys %{$suffix_rules->{$dest}})
+      for my $dest2 (sort keys %{$suffix_rules->{$dest}})
 	{
 	  my $dist = $suffix_rules->{$dest}{$dest2}[1] + 1;
 	  # Overwrite an existing $src->$dest2 path only if
@@ -445,8 +445,8 @@ sub register_suffix_rule ($$$)
 
   # Similarly, any extension that can be derived into $src
   # can be derived into the same extensions as $src can.
-  my @dest2 = keys %{$suffix_rules->{$src}};
-  for my $src2 (keys %$suffix_rules)
+  my @dest2 = sort keys %{$suffix_rules->{$src}};
+  for my $src2 (sort keys %$suffix_rules)
     {
       if (exists $suffix_rules->{$src2}{$src})
 	{
