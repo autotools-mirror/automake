@@ -32,8 +32,17 @@ AC_CACHE_CHECK([filesystem timestamp resolution],
 # Default to the worst case.
 am_cv_filesystem_timestamp_resolution=2
 
-# Only try to go finer than 1s if sleep can do it.
-am_try_resolutions=1
+# Only try to go finer than 1 sec if sleep can do it.
+# Don't try 1 sec, because if 0.01 sec and 0.1 sec don't work,
+# - 1 sec is not much of a win compared to 2 sec, and
+# - it takes 2 seconds to perform the test whether 1 sec works.
+# 
+# Instead, just use the default 2s on platforms that have 1s resolution,
+# accept the extra 1s delay when using $sleep in the Automake tests, in
+# exchange for not incurring the 2s delay for running the test for all
+# packages.
+#
+am_try_resolutions=
 if $am_cv_sleep_fractional_seconds; then
   # Even a millisecond often causes a bunch of false positives,
   # so just try a hundredth of a second. The time saved between .001 and
