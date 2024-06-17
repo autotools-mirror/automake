@@ -370,14 +370,26 @@ $(TEST_SUITE_LOG): $(TEST_LOGS)
 ## Function to write some basic system info in the log.
 	output_system_information () \
 	{ \
-## Omit the hostname for privacy.  In practice it's a single word?
-          echo;                                    \
-	  (uname -a | awk '{$$2=""; print}') 2>&1; \
-	  if test -r /etc/os-release; then         \
-	    sed 8q /etc/os-release;                \
-	  elif test -r /etc/issue; then            \
-	    cat /etc/issue;                        \
-	  fi;                                      \
+## Omit the hostname for privacy.  Always a single word.
+## Start the line with a label for clarity, and so commands like
+## grep ^Linux don't get a false hit.
+          echo;                                     \
+	  { uname -a | $(AWK) '{                    \
+  printf "System information (uname -a):";          \
+  for (i = 1; i < NF; ++i)                          \
+    {                                               \
+      if (i != 2)                                   \
+        printf " %s", $$i;                          \
+    }                                               \
+  printf "\n";                                      \
+}'; } 2>&1;                                         \
+	  if test -r /etc/os-release; then          \
+	    echo "Distribution information (/etc/os-release):"; \
+	    sed 8q /etc/os-release;                 \
+	  elif test -r /etc/issue; then             \
+	    echo "Distribution information (/etc/issue):";      \
+	    cat /etc/issue;                         \
+	  fi;                                       \
 	}; \
 ##
 ## Function to output the "please report bugs" message.
