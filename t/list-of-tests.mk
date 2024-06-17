@@ -815,6 +815,7 @@ t/parallel-tests-fork-bomb.sh \
 t/parallel-tests-empty-testlogs.sh \
 t/parallel-tests-driver-install.sh \
 t/parallel-tests-no-color-in-log.sh \
+t/parallel-tests-without-skipped-logs.sh \
 t/parallel-tests-no-spurious-summary.sh \
 t/parallel-tests-exit-statuses.sh \
 t/parallel-tests-console-output.sh \
