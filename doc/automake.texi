@@ -3372,6 +3372,19 @@ The environment variable @env{ACLOCAL_AUTOMAKE_DIR} provides another
 way to set the directory containing automake-provided macro files.
 However @option{--automake-acdir} takes precedence over it.
 
+@item --aclocal-path=@var{path}
+@opindex --aclocal-path
+Look for local third-party macro files (and the special @file{dirlist}
+file, @pxref{dirlist}) along @var{path} (a colon-separated list of
+directories) instead of in the installation directory.  (This can be
+used for building against alternative system roots (``sysroots'') for
+finding headers and libraries.)
+
+@vindex ACLOCAL_PATH
+The environment variable @env{ACLOCAL_PATH} provides another way to
+set the search path containing local third-party macro files. This
+variable is ignored if the @option{--aclocal-path} option is specified.
+
 @item --system-acdir=@var{dir}
 @opindex --system-acdir
 Look for the system-wide third-party macro files (and the special
@@ -3529,6 +3542,7 @@ Any extra directories specified using @option{-I} options
 @item @var{acdir}
 @end enumerate
 
+@anchor{dirlist}
 @subsubheading Modifying the Macro Search Path: @file{dirlist}
 @cindex @file{dirlist}
 
@@ -3614,40 +3628,46 @@ copy of Automake in your account and want @command{aclocal} to look for
 macros installed at other places on the system.
 
 @anchor{ACLOCAL_PATH}
-@subsubheading Modifying the Macro Search Path: @file{ACLOCAL_PATH}
+@subsubheading Modifying the Macro Search Path: @option{--aclocal-path}/@file{ACLOCAL_PATH}
+@opindex @option{--aclocal-path}
 @cindex @env{ACLOCAL_PATH}
 
 The fourth and last mechanism to customize the macro search path is
-also the simplest.  Any directory included in the colon-separated
-environment variable @env{ACLOCAL_PATH} is added to the search path
+also the simplest.  Any directory included in the colon-separated path
+given to the @option{--aclocal-path} command-line option or in the
+@env{ACLOCAL_PATH} environment variable is added to the search path.
 @c Keep in sync with aclocal-path-precedence.sh
-and takes precedence over system directories (including those found via
-@file{dirlist}), with the exception of the versioned directory
-@var{acdir-APIVERSION} (@pxref{Macro Search Path}).  However, directories
-passed via @option{-I} will take precedence over directories in
-@env{ACLOCAL_PATH}.
+These directories take precedence over system directories (including
+those found via @file{dirlist}), with the exception of the versioned
+directory @var{acdir-APIVERSION} (@pxref{Macro Search Path}).
+However, directories passed via @option{-I} will take precedence over
+directories in @option{--aclocal-path}/@env{ACLOCAL_PATH}.
 
-@c Keep in sync with aclocal-path-installed.sh
-Also note that, if the @option{--install} option is used, any @file{.m4}
-file containing a required macro that is found in a directory listed in
-@env{ACLOCAL_PATH} will be installed locally.
-@c Keep in sync with aclocal-path-installed-serial.sh
-In this case, serial numbers in @file{.m4} are honored too,
-@pxref{Serials}.
+@c Keep in sync with aclocal-path-install.sh
+If the @option{--install} option is used, any @file{.m4} file
+containing a required macro that is found in a directory listed in
+@option{--aclocal-path}/@env{ACLOCAL_PATH} will be installed locally.
+@c Keep in sync with aclocal-path-install-serial.sh
+In this case, serial numbers in @file{.m4} are honored too
+(@pxref{Serials}).
 
-Conversely to @file{dirlist}, @env{ACLOCAL_PATH} is useful if you are
-using a global copy of Automake and want @command{aclocal} to look for
+Conversely to @file{dirlist},
+@option{--aclocal-path}/@env{ACLOCAL_PATH} is useful if you are using
+a global copy of Automake and want @command{aclocal} to look for
 macros somewhere under your home directory.
 
-@subsubheading Planned future incompatibility
+@subsubheading Possible future incompatibility
 
-The order in which the directories in the macro search path are currently
-looked up is confusing and/or suboptimal in various aspects, and is
-probably going to be changed in the future Automake release.  In
-particular, directories in @env{ACLOCAL_PATH} and @file{@var{acdir}}
+The order in which the directories in the macro search path are
+currently looked up is confusing and/or suboptimal in various aspects.
+In particular, directories in
+@option{--aclocal-path}/@env{ACLOCAL_PATH} and @file{@var{acdir}}
 might end up taking precedence over @file{@var{acdir-APIVERSION}}, and
-directories in @file{@var{acdir}/dirlist} might end up taking precedence
-over @file{@var{acdir}}.  @emph{This is a possible future incompatibility!}
+directories in @file{@var{acdir}/dirlist} might end up taking
+precedence over @file{@var{acdir}}.  Although there are no plans to
+change the current behavior, if it causes problems, the default might
+need to be changed, and the current behavior retained as an
+option.
 
 @node Extending aclocal
 @subsection Writing your own aclocal macros

@@ -62,11 +62,12 @@ $perl_threads = 0;
 # @user_includes can be augmented with -I or AC_CONFIG_MACRO_DIRS.
 # @automake_includes can be reset with the '--automake-acdir' option.
 # @system_includes can be augmented with the 'dirlist' file or the
-# ACLOCAL_PATH environment variable, and reset with the '--system-acdir'
-# option.
+# --aclocal-path option/ACLOCAL_PATH environment variable, and reset
+# with the '--system-acdir' option.
 my @user_includes = ();
 my @automake_includes = ('@datadir@/aclocal-' . $APIVERSION);
 my @system_includes = ('@datadir@/aclocal');
+my $aclocal_path = '';
 
 # Whether we should copy M4 file in $user_includes[0].
 my $install = 0;
@@ -1031,6 +1032,8 @@ Generate 'aclocal.m4' by scanning 'configure.ac' or 'configure.in'
 
 Options:
       --automake-acdir=DIR  directory holding automake-provided m4 files
+      --aclocal-path=PATH   colon-separated list of directories to
+                              search for third-party local files
       --system-acdir=DIR    directory holding third-party system-wide files
       --diff[=COMMAND]      run COMMAND [diff -u] on M4 files that would be
                             changed (implies --install and --dry-run)
@@ -1055,18 +1058,27 @@ EOF
   # pages during Automake compilation, the environment is set to local values.
   # So don't include it in the installed man page.
   if (!$ENV{AUTOMAKE_HELP2MAN}) {
-    my $aclocal_automake_dir = $ENV{"ACLOCAL_AUTOMAKE_DIR"} || "";
-    my $aclocal_path = $ENV{"ACLOCAL_PATH"} || "";
+    my $aclocal_automake_dir_env = $ENV{"ACLOCAL_AUTOMAKE_DIR"} || "";
+    my $aclocal_path_env = $ENV{"ACLOCAL_PATH"} || "";
     print <<"EOF";
 
-Current m4 search paths (in order):
-  -I dirs:                  @user_includes
-  --automake-acdir:         @automake_includes
-  \$ACLOCAL_AUTOMAKE_DIR:    $aclocal_automake_dir
-  \$ACLOCAL_PATH:            $aclocal_path
-  --system-acdir:           @system_includes
+m4 search paths (in order):
+      user includes: @user_includes
+  automake includes: @automake_includes
+    system includes: @system_includes
+       aclocal path: $aclocal_path
+
+Environment variable settings, for reference:
+  \$ACLOCAL_AUTOMAKE_DIR:    $aclocal_automake_dir_env
+  \$ACLOCAL_PATH:            $aclocal_path_env
 EOF
   }
+  # The above listing of paths is rather a mess.  Because we don't
+  # compute all paths before outputting the help, the aclocal paths and
+  # ac_config_macro_dirs are not added to the system includes.  And
+  # because we don't keep track separately of command line values given
+  # to -I and the other options, we can't report them separately from
+  # the environment variables.
 
   print <<'EOF';
 
@@ -1106,6 +1118,7 @@ sub parse_arguments ()
      'version'		=> \&version,
      'system-acdir=s'	=> sub { shift; @system_includes = @_; },
      'automake-acdir=s'	=> sub { shift; @automake_includes = @_; },
+     'aclocal-path=s'   => sub { shift; $aclocal_path = $_[0]; },
      'diff:s'		=> \$diff_command,
      'dry-run'		=> \$dry_run,
      'force'		=> \$force_output,
@@ -1160,11 +1173,11 @@ sub parse_arguments ()
     }
 }
 
-# Add any directory listed in the 'ACLOCAL_PATH' environment variable
-# to the list of system include directories.
+# Add any directory listed in $aclocal_path to the list of system
+# include directories.
 sub parse_ACLOCAL_PATH ()
 {
-  return if not defined $ENV{"ACLOCAL_PATH"};
+  return if not $aclocal_path;
   
   # Directories in ACLOCAL_PATH should take precedence over system
   # directories, so we use unshift.  However, directories that
@@ -1176,7 +1189,7 @@ sub parse_ACLOCAL_PATH ()
   # but this seems simpler.
   my $path_sep = $^O =~ /^(os2|mswin)/i ? ';' : ':';
   
-  foreach my $dir (reverse split $path_sep, $ENV{"ACLOCAL_PATH"})
+  foreach my $dir (reverse split $path_sep, $aclocal_path)
     {
       unshift (@system_includes, $dir) if $dir ne '' && -d $dir;
     }
@@ -1193,6 +1206,8 @@ if (exists $ENV{"AUTOMAKE_UNINSTALLED"})
 
 @automake_includes = ($ENV{"ACLOCAL_AUTOMAKE_DIR"})
   if (exists $ENV{"ACLOCAL_AUTOMAKE_DIR"});
+$aclocal_path = ($ENV{"ACLOCAL_PATH"})
+  if (exists $ENV{"ACLOCAL_PATH"});
 
 parse_WARNINGS;		    # Parse the WARNINGS environment variable.
 parse_arguments;

@@ -26,6 +26,7 @@ FOO_MACRO
 BAR_MACRO
 AC_PROG_LIBTOOL
 AM_GNU_GETTEXT
+AC_OUTPUT
 END
 
 mkdir mdir1 mdir2 mdir3 sysdir extradir
@@ -63,6 +64,34 @@ END
 echo ./extradir > sysdir/dirlist
 
 ACLOCAL_PATH=mdir1:mdir2 $ACLOCAL -I mdir3 --system-acdir sysdir
+$AUTOCONF
+
+$FGREP '::' configure # For debugging.
+
+# Directories coming first in ACLOCAL_PATH should take precedence
+# over those coming later.
+$FGREP '::pass-foo::' configure
+
+# Directories from '-I' options should take precedence over directories
+# in ACLOCAL_PATH.
+$FGREP '::pass-bar::' configure
+
+# Directories in ACLOCAL_PATH should take precedence over system acdir
+# (typically '${prefix}/share/aclocal'), and any directory added through
+# the 'dirlist' special file.
+$FGREP '::pass-gettext::' configure
+$FGREP '::pass-libtool::' configure
+
+# Directories in ACLOCAL_PATH shouldn't take precedence over the internal
+# automake acdir (typically '${prefix}/share/aclocal-${APIVERSION}').
+$FGREP 'am__api_version' configure
+
+# A final sanity check.
+$FGREP '::fail' configure && exit 1
+
+# Same checks, but now with the command line option.
+ACLOCAL_PATH=mdir2:mdir1 $ACLOCAL -I mdir3 --system-acdir sysdir --aclocal-path "mdir1:mdir2"
+$ACLOCAL -I mdir3 --system-acdir sysdir --aclocal-path "mdir1:mdir2"
 $AUTOCONF
 
 $FGREP '::' configure # For debugging.
