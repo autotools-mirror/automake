@@ -217,11 +217,23 @@ case $MTIME_RESOLUTION in
   ;;
 esac
 
-# This sleep variable is used explicitly in some tests to avoid
-# too-quick creation. Seems likely this was an incomplete workaround
-# for this whole subsecond-mtime problem. With this set to "sleep 1",
-# there were still random parallelization failures; setting
-# am_cv_sleep_fractional_seconds=false as above was still needed.
+# This sleep variable is used explicitly in tests when AC_OUTPUT is not
+# used, hence config.status is not created, hence AC_CONFIG_COMMANDS_*
+# is not evaluated. Originally set up here:
+#   https://lists.gnu.org/archive/html/bug-automake/2010-10/msg00000.html
+# Discovered again in this review of the "sleep" history:
+#   https://lists.gnu.org/archive/html/automake/2024-06/msg00054.html
+# It seems a better fix would be to have Automake (in sanity.m4) figure
+# out the need for sleep even when AC_OUTPUT is not used.
+# 
+# In general, the problem is when the mtime resolution is 1 second (or
+# more) and the configure file is created less than 1 second ago, which
+# happens routinely in the tests, and for many fast-enough configure
+# scripts in other packages, too.
+# 
+# At any rate, with this set to "sleep 1", there were still random
+# parallelization failures; setting am_cv_sleep_fractional_seconds=false
+# as above was still needed.
 #
 sleep="sleep $MTIME_RESOLUTION"
 
