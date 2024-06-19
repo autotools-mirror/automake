@@ -62,7 +62,8 @@ rm -f conftest.ts?
 
 # Make sure ls -t actually works.  Do 'set' in a subshell so we don't
 # clobber the current shell's arguments. (Outer-level square brackets
-# are for m4; be careful, it's easy to get confused.)
+# are removed by m4; they're present so that m4 does not expand
+# <dollar><star>; be careful, easy to get confused.)
 if (
      set X `[ls -t conftest.ts[12]]` &&
      {
@@ -108,6 +109,14 @@ for am_try_res in $am_try_resolutions; do
       # everything else supports the subsecond mtimes, but make doesn't;
       # notably on macOS, which ships make 3.81 from 2006 (the last one
       # released under GPLv2). https://bugs.gnu.org/68808
+      # 
+      # It is incorrect to be testing "make" here; we should be testing
+      # $(MAKE). But $(MAKE) is not defined? At any rate, our hope is
+      # that in practice it does not matter: it is the system "make"
+      # which is (by far) the most likely to be broken, whereas if the
+      # user overrides it, probably they did so with a better, or at
+      # least not worse, make. Nevertheless: FIXME.
+      # https://lists.gnu.org/archive/html/automake/2024-06/msg00051.html
       #
       # So, first let's create a Makefile (real tab character):
       rm -f conftest.mk
@@ -179,11 +188,11 @@ for am_try in 1 2; do
   echo "timestamp, slept: $am_has_slept" > conftest.file
   if (
     set X `ls -Lt "$srcdir/configure" conftest.file 2> /dev/null`
-    if test "$[*]" = "X"; then
+    if test "$[]*" = "X"; then
       # -L didn't work.
       set X `ls -t "$srcdir/configure" conftest.file`
     fi
-    test "$[2]" = conftest.file
+    test "$[]*" = conftest.file
   ); then
     am_build_env_is_sane=yes
     break
