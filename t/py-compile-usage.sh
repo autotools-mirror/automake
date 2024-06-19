@@ -38,11 +38,11 @@ $FGREP ' --destdir DIR ' stdout
   || { cat stdout; cat stderr >&2; exit 1; }
 cat stdout
 test -s stderr && { cat stderr >&2; exit 1; }
-year='20[0-9][0-9]' # Hopefully automake will be obsolete in 80 years ;-)
+year='2[0-9][0-9][0-9]'
 month='(0[0-9]|1[012])'
 day='([012][0-9]|3[01])'
 hour='([01][0-9]|2[0123])'
-LC_ALL=C $EGREP "^py-compile $year-$month-$day\.$hour" stdout
+LC_ALL=C $EGREP "^py-compile .* $year-$month-$day\.$hour" stdout
 test $(wc -l <stdout) -eq 1
 
 # Unknown option.
