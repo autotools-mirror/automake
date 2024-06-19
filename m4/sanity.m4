@@ -192,7 +192,7 @@ for am_try in 1 2; do
       # -L didn't work.
       set X `ls -t "$srcdir/configure" conftest.file`
     fi
-    test "$[]*" = conftest.file
+    test "$[]2" = conftest.file
   ); then
     am_build_env_is_sane=yes
     break
