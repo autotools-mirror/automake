@@ -316,7 +316,7 @@ announcement: NEWS
 	  && X \
 	  && X "Please report bugs and problems to" \
 	       "<$(PACKAGE_BUGREPORT)>" \
-	       "(instead of replying to this mail)," \
+	  && X "(instead of replying to this mail)," \
 	  && X "and send general comments and feedback to" \
 	       "<$(PACKAGE_MAILINGLIST)>," \
 	  && X "and patches to" \
