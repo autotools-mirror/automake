@@ -17,7 +17,7 @@
 ## You should have received a copy of the GNU General Public License
 ## along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-# FIXME: this "expected failures" are in truth an hack used to
+# FIXME: These "expected failures" are a kludge used to
 # FIXME: to verify that some incorrect usages of our perl libraries
 # FIXME: raise an error.  We should find a cleaner way to check that.
 perl_fake_XFAIL_TESTS = \
@@ -28,6 +28,9 @@ t/pm/DisjCon3.pl \
 t/pm/Version2.pl \
 t/pm/Version3.pl
 
+# These must be separately/redundantly included in handwritten_TESTS
+# below.  Despite the redundancy, it seems cleaner to keep
+# handwritten_TESTS as a list of all such .sh tests.
 XFAIL_TESTS = \
 t/all.sh \
 t/cond17.sh \
@@ -546,6 +549,7 @@ t/instdir-cond2.sh \
 t/instdir-no-empty.sh \
 t/instdir-java.sh \
 t/instdir-lisp.sh \
+t/instdir-ltlib.sh \
 t/instdir-prog.sh \
 t/instdir-python.sh \
 t/instdir-texi.sh \
