@@ -110,15 +110,14 @@ for am_try_res in $am_try_resolutions; do
       # notably on macOS, which ships make 3.81 from 2006 (the last one
       # released under GPLv2). https://bugs.gnu.org/68808
       # 
-      # It is incorrect to be testing "make" here; we should be testing
-      # $(MAKE). But $(MAKE) is not defined? At any rate, our hope is
-      # that in practice it does not matter: it is the system "make"
-      # which is (by far) the most likely to be broken, whereas if the
-      # user overrides it, probably they did so with a better, or at
-      # least not worse, make. Nevertheless: FIXME.
+      # We test $MAKE if it is defined in the environment, else "make".
+      # It might get overridden later, but our hope is that in practice
+      # it does not matter: it is the system "make" which is (by far)
+      # the most likely to be broken, whereas if the user overrides it,
+      # probably they did so with a better, or at least not worse, make.
       # https://lists.gnu.org/archive/html/automake/2024-06/msg00051.html
       #
-      # So, first let's create a Makefile (real tab character):
+      # Create a Makefile (real tab character here):
       rm -f conftest.mk
       echo 'conftest.ts1: conftest.ts2' >conftest.mk
       echo '	touch conftest.ts2' >>conftest.mk
@@ -132,11 +131,12 @@ for am_try_res in $am_try_resolutions; do
       # (We reuse conftest.ts[12] because we still want to modify existing
       # files, not create new ones, per above.)
       n=0
+      make=${MAKE-make}
       until test $n -eq 3; do
         echo one > conftest.ts1
         sleep $am_try_res
         echo two > conftest.ts2 # ts2 should now be newer than ts1
-        if make -f conftest.mk | grep 'up to date' >/dev/null; then
+        if $make -f conftest.mk | grep 'up to date' >/dev/null; then
           make_ok=false
           break # out of $n loop
         fi
