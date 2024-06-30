@@ -751,7 +751,11 @@ sub scan_variable_expansions ($)
   while ($text =~ m{\$(?:\{([^\}]*)\}|\(([^\)]*)\)|(\$))}g)
     {
       my $var = $1 || $2 || $3;
-      next if $var eq '$';
+      next if (! defined $var) || ($var eq '$');
+      # we check for $var being defined because NetworkManager and other
+      # packages use the strange construct $().
+      # https://lists.gnu.org/archive/html/automake/2024-06/msg00085.html
+      
       # The occurrence may look like $(string1[:subst1=[subst2]]) but
       # we want only 'string1'.
       $var =~ s/:[^:=]*=[^=]*$//;

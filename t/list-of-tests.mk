@@ -1282,6 +1282,7 @@ t/vala-per-target-flags.sh \
 t/vala-recursive-setup.sh \
 t/vala-vapi.sh \
 t/vala-vpath.sh \
+t/varempty.sh \
 t/vars.sh \
 t/vars3.sh \
 t/var-recurs.sh \
