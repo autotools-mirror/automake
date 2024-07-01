@@ -214,8 +214,8 @@
   'master', 'next' and 'maint'.  In practice, for quite a few years now,
   as of this writing in 2023, we have been using only the master branch,
   due to lack of time and desire to deal with anything but fixing bugs.
-  The branch information in the items below should thus be taken with a
-  large dose of salt.
+  The branch information in the items below and above should thus be
+  taken with a large dose of salt.
 
 * The 'master' branch is where the development of the next release
   takes place.  It should be kept in a stable, almost-releasable state,
@@ -499,27 +499,33 @@
 ============================================================================
 = Release procedure
 
-* The steps outlined here are meant to be followed for alpha and stable
-  releases as well.  Where differences are expected, they will be
-  explicitly described.
+* The steps outlined here are meant to be followed for all releases,
+  whether stable, beta, alpha, or other.  Where differences are
+  expected, they will be explicitly mentioned.
 
-* Fetch new versions of the files that are maintained by the FSF by
-  running "make fetch".  help2man has to be updated separately.  In case
-  any file in the automake repository has been updated, commit and
+* Fetch new versions of the files that are maintained elsewhere by
+  running "make fetch".  help2man has to be updated separately.  If
+  any files in the automake repository get updated, commit them and
   rerun the testsuite.
 
 * Ensure that the copyright notices of the distributed files are up to
   date.  The maintainer-only target "update-copyright" can help with this.
 
 * Check NEWS; in particular, ensure that all the relevant differences
-  with the last release are actually reported.
+  with the last release are included.
+
+* Create an announcement message with "make announcement".  Edit the
+  generated 'announcement' file appropriately, in particularly filling
+  in by hand any "TODO" left in there.  It's useful to do this early,
+  because carefully writing the announcement can easily bring to light
+  things that still need to be worked on.
 
 * Update the version number in configure.ac.  Leading up to a release,
   say 1.17, pretests should be numbered from 1.16.90. Even numbers
   (1.16.90, 1.16.92, ...) should be the pretest releases; odd numbers
   (1.16.91, 1.16.93, ...) should be only the development versions.
   Leading up to a release 1.17.1, we would have 1.16.0.90, etc.
-  Before 1.17 (January 2024), we used suffixed letters for pretests,
+  Before 1.17 (June 2024), we used suffixed letters for pretests,
   as is traditional, but deficient sorting algorithms did not like that.
 
 * Run these commands, in this order (as mentioned, adjust -j as desired):
@@ -531,10 +537,21 @@
     make -j12 distcheck                                # regular distcheck
     make -j12 distcheck AM_TESTSUITE_MAKE="make -j12"  # parallelize makes
 
-  It is also advised to run "git clean -fdx" before invoking the
-  bootstrap, to ensure a really clean rebuild.  However, it must
-  be done carefully, because that command will remove *all* the
-  files that are not tracked by git!
+  You can run "git clean -fdx" before invoking the bootstrap, to ensure
+  a completely clean rebuild.  However, it must be done carefully,
+  because that command will remove *all* the files that are not tracked
+  by git!  Run git status first to ensure all removals are ok.
+
+* Create the automated part of the announcement with the announce-gen
+  script that is part of gnulib:
+    prever=1.16.92
+    newver=1.16.94
+    gpgkey=0x7FD9FCCB000BEEEE #  gpg --fingerprint
+    $gnulib/build-aux/announce-gen --release-type=alpha \
+      --package-name=automake --previous-version=$prever \
+      --current-version=$newver --gpg-key-id=$gpgkey \
+      --url-directory=https://alpha.gnu.org/gnu/automake
+  and merge this with the just-written announcement file.
 
 * Run "make git-tag-release".
   This will run the maintainer checks, verify that the local git
@@ -552,7 +569,7 @@
   locations.  In case you need to sign with a non-default key, you can
   use "make GNUPLOADFLAGS='--user KEY' git-upload-release".
 
-* For stable releases you'll have to update the manuals at www.gnu.org.
+* For stable releases you also need to update the manuals on www.gnu.org.
 
   - Check links:
        make html
@@ -574,10 +591,6 @@
     for example:
       make web-manual-update CVS_USER=slattarini
 
-* Create an announcement message with "make announcement".  Edit the
-  generated 'announcement' file appropriately, in particularly filling
-  in by hand any "TODO" left in there.
-
 * Update version number in configure.ac to next alpha number.
   Rerun ./bootstrap and commit.
 
@@ -586,14 +599,14 @@
 
 * Send the announcement generated in the earlier steps at least to
   <autotools-announce@gnu.org> and <automake@gnu.org>.  If the release
-  is a stable one, the announcement must also go to <info-gnu@gnu.org>;
+  is a stable one, the announcement also goes to <info-gnu@gnu.org>;
   if it is an alpha or beta release, announcement should be sent also
   to <platform-testers@gnu.org>, to maximize the possibility of early
-  testing on exotic or proprietary systems.  Finally, copy an abridged
+  testing on the widest variety of systems.  Finally, copy an abridged
   version of the announcement into the NEWS feed at:
   <https://savannah.gnu.org/projects/automake>.
   Be sure to link a version to the complete announcement (from
-  the version you sent to the automake list, as get archived on
+  the version you sent to the automake list, as archived at
   <https://lists.gnu.org/archive/html/automake/>).
 
 ---------
