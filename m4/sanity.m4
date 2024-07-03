@@ -11,8 +11,8 @@
 AC_DEFUN([_AM_SLEEP_FRACTIONAL_SECONDS], [dnl
 AC_CACHE_CHECK([whether sleep supports fractional seconds],
                am_cv_sleep_fractional_seconds, [dnl
-AS_IF([sleep 0.001 2>/dev/null], [am_cv_sleep_fractional_seconds=true],
-                                 [am_cv_sleep_fractional_seconds=false])
+AS_IF([sleep 0.001 2>/dev/null], [am_cv_sleep_fractional_seconds=yes],
+                                 [am_cv_sleep_fractional_seconds=no])
 ])])
 
 # _AM_FILESYSTEM_TIMESTAMP_RESOLUTION
@@ -43,7 +43,7 @@ am_cv_filesystem_timestamp_resolution=2
 # packages.
 #
 am_try_resolutions=
-if $am_cv_sleep_fractional_seconds; then
+if test "$am_cv_sleep_fractional_seconds" = yes; then
   # Even a millisecond often causes a bunch of false positives,
   # so just try a hundredth of a second. The time saved between .001 and
   # .01 is not terribly consequential.
@@ -198,12 +198,12 @@ for am_try in 1 2; do
     break
   fi
   # Just in case.
-  sleep $am_cv_filesystem_timestamp_resolution
+  sleep "$am_cv_filesystem_timestamp_resolution"
   am_has_slept=yes
 done
 
 AC_MSG_RESULT([$am_build_env_is_sane])
-if test $am_build_env_is_sane = no; then
+if test "$am_build_env_is_sane" = no; then
   AC_MSG_ERROR([newly created file is older than distributed files!
 Check your system clock])
 fi
@@ -212,7 +212,7 @@ fi
 # generated files are strictly newer.
 am_sleep_pid=
 AS_IF([test -e conftest.file || grep 'slept: no' conftest.file >/dev/null 2>&1],, [dnl
-  ( sleep $am_cv_filesystem_timestamp_resolution ) &
+  ( sleep "$am_cv_filesystem_timestamp_resolution" ) &
   am_sleep_pid=$!
 ])
 AC_CONFIG_COMMANDS_PRE(
