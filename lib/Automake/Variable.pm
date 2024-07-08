@@ -1175,11 +1175,19 @@ sub require_variables ($$$@)
 	  $text .= "  The usual way to define '$var' is to add "
 	    . "'$mac'\n  to '$configure_ac' and run 'aclocal' and "
 	    . "'autoconf' again.";
+	  #
 	  # aclocal will not warn about undefined macros unless it
 	  # starts with AM_.
-	  $text .= "\n  If '$mac' is in '$configure_ac', make sure\n"
+	  $text .= "\n\n  If '$mac' is in '$configure_ac', make sure\n"
 	    . "  its definition is in aclocal's search path."
 	    unless $mac =~ /^AM_/;
+	  #
+	  # More hints for the libtool case.
+	  $text .= "\n\n  If you install Automake in its own prefix,\n"
+	    . "  you'll need to arrange for the Libtool m4 files\n"
+	    . "  to be found by aclocal.  For info on this, see:\n"
+	    . "    https://gnu.org/s/automake/manual/automake.html#Libtool-library-used-but-LIBTOOL-is-undefined"
+	    if $mac eq "LT_INIT";
 	}
       elsif (exists $_ac_macro_for_var{$var})
 	{

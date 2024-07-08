@@ -181,7 +181,7 @@ Scanning @file{configure.ac}, using @command{aclocal}
 * aclocal Invocation::          Auto-generating aclocal.m4
 * Macros::                      Autoconf macros supplied with Automake
 
-Auto-generating aclocal.m4
+Auto-generating aclocal.m4: Invoking @command{aclocal}
 
 * aclocal Options::             Options supported by aclocal
 * Macro Search Path::           How aclocal finds .m4 files
@@ -256,6 +256,7 @@ Building a Shared Library
 Common Issues Related to Libtool's Use
 
 * Error required file ltmain.sh not found::  The need to run libtoolize
+* Libtool library used but LIBTOOL is undefined::  test releases and libtoolize
 * Objects created both with libtool and without::  Avoid a specific build race
 
 Yacc and Lex support
@@ -301,8 +302,8 @@ Python
 
 Building documentation
 
-* Texinfo::                     Texinfo
-* Man Pages::                   Man pages
+* Texinfo::
+* Man Pages::
 
 What Gets Installed
 
@@ -1606,7 +1607,7 @@ Autoconf distribution), and
 
 @noindent
 If needed, tools related to Gettext (@pxref{,,,gettext, GNU gettext
-utilities}) and Libtool (@pxref{,,,libtool, GNU libtool}) are also
+utilities}) and Libtool (@pxref{,,,libtool, The Libtool Manual}) are also
 invoked at different points.  Thus, as you can see, using
 @command{autoreconf} is quite a bit more convenient.
 
@@ -2612,7 +2613,7 @@ would be chosen by automake; they would be @file{false-true.o} and
 @file{true-true.o}. (The name of the object files rarely matters.)
 
 @node automake Invocation
-@chapter Creating a @file{Makefile.in}
+@chapter Creating a @file{Makefile.in}: Invoking @command{automake}
 @c This node used to be named "Invoking automake".  This @anchor
 @c allows old links to still work.
 @anchor{Invoking automake}
@@ -3275,7 +3276,7 @@ macros installed in a system-wide directory; @pxref{aclocal Invocation}).
 @end ftable
 
 @node aclocal Invocation
-@section Auto-generating aclocal.m4
+@section Auto-generating aclocal.m4: Invoking @command{aclocal}
 @c This node used to be named "Invoking aclocal".  This @anchor
 @c allows old links to still work.
 @anchor{Invoking aclocal}
@@ -3317,14 +3318,14 @@ specified as a relative search path with @command{aclocal}'s @option{-I}
 argument, @command{aclocal} assumes the file belongs to the package
 and uses @code{m4_include} instead of copying it into
 @file{aclocal.m4}.  This makes the package smaller, eases dependency
-tracking, and cause the file to be distributed automatically.
+tracking, and causes the file to be distributed automatically.
 (@xref{Local Macros}, for an example.)  Any macro that is found in a
 system-wide directory or via an absolute search path will be copied.
 So use @samp{-I `pwd`/reldir} instead of @samp{-I reldir} whenever
-some relative directory should be considered outside the package.
+a relative directory should be considered to be outside the package.
 
 The contents of @file{acinclude.m4}, if this file exists, are also
-automatically included in @file{aclocal.m4}.  We recommend against
+automatically included in @file{aclocal.m4}.  We mostly recommend against
 using @file{acinclude.m4} in new packages (@pxref{Local Macros}).
 
 @vindex AUTOM4TE
@@ -3338,11 +3339,12 @@ conditionally).  @command{autom4te} is expected to be in the
 @env{PATH}, just like @command{autoconf}.  Its location can be
 overridden using the @env{AUTOM4TE} environment variable.
 
-Although this section explains the details of @command{aclocal}, in
-practice it is usually simpler to run @command{autoreconf}, instead of
-worrying about the required order of the various tools
-(@pxref{autoreconf Invocation, , Using @command{autoreconf},
-autoconf, The Autoconf Manual}).
+In practice it is usually simpler to run @command{autoreconf} instead
+of worrying about the required order of the various tools
+(@pxref{autoreconf Invocation, , Using @command{autoreconf}, autoconf,
+The Autoconf Manual}).
+
+This section explains the details of @command{aclocal}.
 
 @menu
 * aclocal Options::             Options supported by aclocal
@@ -3364,13 +3366,14 @@ autoconf, The Autoconf Manual}).
 @table @code
 @item --automake-acdir=@var{dir}
 @opindex --automake-acdir
-Look for the automake-provided macro files in @var{dir} instead of
+Look for Automake-provided macro files in @var{dir} instead of
 in the installation directory.  This is typically used for debugging.
 
 @vindex ACLOCAL_AUTOMAKE_DIR
-The environment variable @env{ACLOCAL_AUTOMAKE_DIR} provides another
-way to set the directory containing automake-provided macro files.
-However @option{--automake-acdir} takes precedence over it.
+If this option is not specified, the value of the environment variable
+@env{ACLOCAL_AUTOMAKE_DIR}, if set, is used to set the directory
+containing Automake-provided macro files.  Otherwise an install-time
+default is used.
 
 @item --aclocal-path=@var{path}
 @opindex --aclocal-path
@@ -3381,9 +3384,10 @@ used for building against alternative system roots (``sysroots'') for
 finding headers and libraries.)
 
 @vindex ACLOCAL_PATH
-The environment variable @env{ACLOCAL_PATH} provides another way to
-set the search path containing local third-party macro files. This
-variable is ignored if the @option{--aclocal-path} option is specified.
+If this option is not specified, the value of the environment variable
+@env{ACLOCAL_PATH}, if set, is used to set the search path containing
+local third-party macro files. Otherwise an install-time default is
+used.
 
 @item --system-acdir=@var{dir}
 @opindex --system-acdir
@@ -3404,7 +3408,7 @@ by @option{--install}.
 
 @item --help
 @opindex --help
-Print a summary of the command line options and exit.
+Print a summary of the command line options and exit successfully.
 
 @item -I @var{dir}
 @opindex -I
@@ -3414,10 +3418,10 @@ Add the directory @var{dir} to the list of directories searched for
 @item --install
 @opindex --install
 Install system-wide third-party macros into the first directory
-specified with @samp{-I @var{dir}} instead of copying them in the
+specified with @samp{-I @var{dir}} instead of copying them into the
 output file.
 @c Keep in sync with aclocal-install-absdir.sh
-Note that this will happen also if @var{dir} is an absolute path.
+This is also done if @var{dir} is an absolute path.
 
 @cindex serial number and @option{--install}
 When this option is used, and only when this option is used,
@@ -3433,8 +3437,8 @@ output file only when needed, i.e., when its contents change or if one
 of its dependencies is younger.
 
 This option forces the update of @file{aclocal.m4} (or the file
-specified with @file{--output} below) and only this file, it has
-absolutely no influence on files that may need to be installed by
+specified with @file{--output} below) and only this file; it has no
+influence on files that may need to be installed by
 @option{--install}.
 
 @item --output=@var{file}
@@ -3443,40 +3447,42 @@ Cause the output to be put into @var{file} instead of @file{aclocal.m4}.
 
 @item --print-ac-dir
 @opindex --print-ac-dir
-Prints the name of the directory that @command{aclocal} will search to
+Print the name of the directory that @command{aclocal} will search to
 find third-party @file{.m4} files.  When this option is given, normal
 processing is suppressed.  This option was used @emph{in the past} by
 third-party packages to determine where to install @file{.m4} macro
 files, but @emph{this usage is today discouraged}, since it causes
-@samp{$(prefix)} not to be thoroughly honored (which violates the
-GNU Coding Standards), and similar semantics can be better obtained
-with the @env{ACLOCAL_PATH} environment variable; @pxref{Extending aclocal}.
+@samp{$(prefix)} not to be thoroughly honored (violating the GNU
+Coding Standards). And similar semantics can be better obtained with
+the @env{ACLOCAL_PATH} environment variable (@pxref{Extending
+aclocal}).
 
 @item --verbose
 @opindex --verbose
-Print the names of the files it examines.
+Print the names of files examined.
 
 @item --version
 @opindex --version
-Print the version number of Automake and exit.
+Print the version number of Automake and exit successfully.
 
 @item -W CATEGORY
 @item --warnings=@var{category}
 @opindex -W
 @opindex --warnings
-Output warnings falling in @var{category}.  @var{category} can be
-one of:
+Output warnings falling in @var{category}, one of:
 @table @code
 @item syntax
 dubious syntactic constructs, underquoted macros, unused macros, etc.
 @item unsupported
-unknown macros
+unknown macros.
 @item all
-all the warnings, this is the default
+all the warnings; this is the default.
 @item none
-turn off all the warnings
+turn off all the warnings.
+@item no-@var{category}
+turn off warnings in @var{category}.
 @item error
-treat warnings as errors
+treat warnings as errors.
 @end table
 
 All warnings are output by default.
@@ -3504,14 +3510,14 @@ for example, for Automake 1.11.x, @var{APIVERSION} = @code{1.11}.
 
 @item @var{acdir}
 This directory is intended for third party @file{.m4} files, and is
-configured when @command{automake} itself is built.  This is
+configured when @command{automake} itself is built.  It is
 @file{@@datadir@@/aclocal/}, which typically
 expands to @file{$@{prefix@}/share/aclocal/}.  To find the compiled-in
 value of @var{acdir}, use the @option{--print-ac-dir} option
 (@pxref{aclocal Options}).
 @end table
 
-As an example, suppose that @command{automake-1.11.2} was configured with
+For example, suppose that Automake 1.11.2 was configured with
 @option{--prefix=@-/usr/local}.  Then, the search path would be:
 
 @enumerate
@@ -3519,20 +3525,20 @@ As an example, suppose that @command{automake-1.11.2} was configured with
 @item @file{/usr/local/share/aclocal/}
 @end enumerate
 
-The paths for the @var{acdir} and @var{acdir-APIVERSION} directories can
-be changed respectively through aclocal options @option{--system-acdir}
-and @option{--automake-acdir} (@pxref{aclocal Options}).  Note however
-that these options are only intended for use by the internal Automake
-test suite, or for debugging under highly unusual situations; they are
-not ordinarily needed by end-users.
+The paths for the @var{acdir} and @var{acdir-APIVERSION} directories
+can be changed respectively through the @command{aclocal} options
+@option{--system-acdir} and @option{--automake-acdir} (@pxref{aclocal
+Options}).  These options are not ordinarily needed by end-users;
+they're mainly intended for use by the Automake test suite, or for
+debugging.
 
-As explained in (@pxref{aclocal Options}), there are several options that
-can be used to change or extend this search path.
+As also listed in (@pxref{aclocal Options}), several other options can
+be used to change or extend the macro search path.
 
 @subsubheading Modifying the Macro Search Path: @samp{-I @var{dir}}
 
-Any extra directories specified using @option{-I} options
-(@pxref{aclocal Options}) are @emph{prepended} to this search list.  Thus,
+Any directories specified using @option{-I} options (@pxref{aclocal
+Options}) are @emph{prepended} to this search list.  Thus,
 @samp{aclocal -I /foo -I /bar} results in the following search path:
 
 @enumerate
@@ -3546,12 +3552,13 @@ Any extra directories specified using @option{-I} options
 @subsubheading Modifying the Macro Search Path: @file{dirlist}
 @cindex @file{dirlist}
 
-There is a third mechanism for customizing the search path.  If a
-@file{dirlist} file exists in @var{acdir}, then that file is assumed to
-contain a list of directory patterns, one per line.  @command{aclocal}
-expands these patterns to directory names, and adds them to the search
-list @emph{after} all other directories.  @file{dirlist} entries may
-use shell wildcards such as @samp{*}, @samp{?}, or @code{[...]}.
+There is a third mechanism for customizing the search path: if a
+@file{dirlist} file exists in @var{acdir}, then that file is assumed
+to contain a list of directory patterns, one per line.
+@command{aclocal} expands these patterns to directory names, and adds
+them to the search list @emph{after} all other directories.
+@file{dirlist} entries may use shell wildcards such as @samp{*},
+@samp{?}, or @code{[...]}.
 
 For example, suppose
 @file{@var{acdir}/dirlist} contains the following:
@@ -3574,20 +3581,16 @@ Then, the search path would be
 @item @var{acdir}
 @item @code{/test1}
 @item @code{/test2}
+@item all directories with path names starting with @code{/test3}.
 @end enumerate
 
-@noindent
-and all directories with path names starting with @code{/test3}.
-
 If the @option{--system-acdir=@var{dir}} option is used, then
-@command{aclocal} will search for the @file{dirlist} file in
-@var{dir}; but remember the warnings  above against the use of
-@option{--system-acdir}.
+@command{aclocal} will search for the @file{dirlist} file in that
+@var{dir}.
 
 @file{dirlist} is useful in the following situation: suppose that
-@command{automake} version @code{1.11.2} is installed with
-@samp{--prefix=/usr} by the system vendor.  Thus, the default search
-directories are
+Automake 1.11.2 is installed with @samp{--prefix=/usr} by the system
+vendor.  Thus, the default search directories are
 
 @c @code looks better than @file here
 @enumerate
@@ -3596,13 +3599,14 @@ directories are
 @end enumerate
 
 However, suppose further that many packages have been manually
-installed on the system, with $prefix=/usr/local, as is typical.  In
-that case, many of these ``extra'' @file{.m4} files are in
-@file{/usr/local/share/aclocal}.  The only way to force
-@file{/usr/bin/aclocal} to find these ``extra'' @file{.m4} files is to
-always call @samp{aclocal -I /usr/local/share/aclocal}.  This is
-inconvenient.  With @file{dirlist}, one may create a file
-@file{/usr/share/aclocal/dirlist} containing only the single line
+installed on the system, with @code{$prefix=/usr/local}, as is
+typical.  In that case, many of these ``extra'' @file{.m4} files are
+in @file{/usr/local/share/aclocal}.  Without @file{dirlist}, the only
+way to force @file{/usr/bin/aclocal} to find these ``extra''
+@file{.m4} files is to always call @samp{aclocal -I
+/usr/local/share/aclocal}.  This is inconvenient.  With
+@file{dirlist}, one can create a file
+@file{/usr/share/aclocal/dirlist} containing the single line
 
 @example
 /usr/local/share/aclocal
@@ -3618,10 +3622,9 @@ Now, the ``default'' search path on the affected system is
 @end enumerate
 
 @noindent
-without the need for @option{-I} options; @option{-I} options can be reserved
-for project-specific needs (@file{my-source-dir/m4/}), rather than
-using them to work around local system-dependent tool installation
-directories.
+This way, @option{-I} options can be reserved for project-specific
+needs (@file{my-source-dir/m4/}), rather than using them to work
+around local system-dependent tool installation directories.
 
 Similarly, @file{dirlist} can be handy if you have installed a local
 copy of Automake in your account and want @command{aclocal} to look for
@@ -3632,13 +3635,14 @@ macros installed at other places on the system.
 @opindex @option{--aclocal-path}
 @cindex @env{ACLOCAL_PATH}
 
-The fourth and last mechanism to customize the macro search path is
-also the simplest.  Any directory included in the colon-separated path
-given to the @option{--aclocal-path} command-line option or in the
-@env{ACLOCAL_PATH} environment variable is added to the search path.
+The fourth and last mechanism to customize the macro search path: any
+directory included in the colon-separated path given to the
+@option{--aclocal-path} command-line option, or (if the option is not
+specified) in the @env{ACLOCAL_PATH} environment variable, is added to
+the search path.
 @c Keep in sync with aclocal-path-precedence.sh
-These directories take precedence over system directories (including
-those found via @file{dirlist}), with the exception of the versioned
+These directories take precedence over system directories, including
+those found via @file{dirlist}, with the exception of the versioned
 directory @var{acdir-APIVERSION} (@pxref{Macro Search Path}).
 However, directories passed via @option{-I} will take precedence over
 directories in @option{--aclocal-path}/@env{ACLOCAL_PATH}.
@@ -3651,12 +3655,12 @@ containing a required macro that is found in a directory listed in
 In this case, serial numbers in @file{.m4} are honored too
 (@pxref{Serials}).
 
-Conversely to @file{dirlist},
 @option{--aclocal-path}/@env{ACLOCAL_PATH} is useful if you are using
 a global copy of Automake and want @command{aclocal} to look for
-macros somewhere under your home directory.
+macros somewhere under your home directory. This is more or less the
+opposite of @file{dirlist}.
 
-@subsubheading Possible future incompatibility
+@subsubheading Possible future incompatibility in @command{aclocal}
 
 The order in which the directories in the macro search path are
 currently looked up is confusing and/or suboptimal in various aspects.
@@ -3664,10 +3668,10 @@ In particular, directories in
 @option{--aclocal-path}/@env{ACLOCAL_PATH} and @file{@var{acdir}}
 might end up taking precedence over @file{@var{acdir-APIVERSION}}, and
 directories in @file{@var{acdir}/dirlist} might end up taking
-precedence over @file{@var{acdir}}.  Although there are no plans to
-change the current behavior, if it causes problems, the default might
-need to be changed, and the current behavior retained as an
-option.
+precedence over @file{@var{acdir}}.  There are no definite plans to
+change the current behavior, but if bug reports show the need (so
+please report issues), the default might need to be changed, and the
+current behavior retained as an option.
 
 @node Extending aclocal
 @subsection Writing your own aclocal macros
@@ -3675,17 +3679,17 @@ option.
 @cindex @command{aclocal}, extending
 @cindex Extending @command{aclocal}
 
-The @command{aclocal} program doesn't have any built-in knowledge of any
-macros, so it is easy to extend it with your own macros.
+The @command{aclocal} program doesn't have built-in knowledge of any
+macros. You can extend it with your own macros.
 
-This can be used by libraries that want to supply their own Autoconf
+Libraries, for example, usually want to supply their own Autoconf
 macros for use by other programs.  For instance, the @command{gettext}
 library supplies a macro @code{AM_GNU_GETTEXT} that should be used by
-any package using @command{gettext}.  When the library is installed, it
-installs this macro so that @command{aclocal} will find it.
+any package using @command{gettext}.  When the library is installed,
+it installs this macro so that @command{aclocal} will find it.
 
 A macro file's name should end in @file{.m4}.  Such files should be
-installed in @file{$(datadir)/aclocal}.  This is as simple as writing:
+installed in @file{$(datadir)/aclocal}.  This can be done with:
 
 @c Keep in sync with primary-prefix-couples-documented-valid.sh
 @example
@@ -3697,19 +3701,19 @@ aclocal_DATA = mymacro.m4 myothermacro.m4
 Please do use @file{$(datadir)/aclocal}, and not something based on
 the result of @samp{aclocal --print-ac-dir} (@pxref{Hard-Coded Install
 Paths}, for arguments).  It might also be helpful to suggest to
-the user to add the @file{$(datadir)/aclocal} directory to his
+the user to add the @file{$(datadir)/aclocal} directory to their
 @env{ACLOCAL_PATH} variable (@pxref{ACLOCAL_PATH}) so that
 @command{aclocal} will find the @file{.m4} files installed by your
 package automatically.
 
 A file of macros should be a series of properly quoted
 @code{AC_DEFUN}'s (@pxref{Macro Definitions, , , autoconf, The
-Autoconf Manual}).  The @command{aclocal} programs also understands
+Autoconf Manual}).  The @command{aclocal} program also understands
 @code{AC_REQUIRE} (@pxref{Prerequisite Macros, , , autoconf, The
 Autoconf Manual}), so it is safe to put each macro in a separate file.
-Each file should have no side effects but macro definitions.
-Especially, any call to @code{AC_PREREQ} should be done inside the
-defined macro, not at the beginning of the file.
+Each file should have no side effects except for defining the
+macro(s).  In particular, any call to @code{AC_PREREQ} should be done
+inside the defined macro, not at the beginning of the file.
 
 @cindex underquoted @code{AC_DEFUN}
 @acindex AC_DEFUN
@@ -3720,13 +3724,13 @@ underquoted calls to @code{AC_DEFUN}.  We realize this annoys some
 people, because @command{aclocal} was not so strict in the past and
 many third party macros are underquoted; and we have to apologize for
 this temporary inconvenience.  The reason we have to be stricter is
-that a future implementation of @command{aclocal} (@pxref{Future of
-aclocal}) will have to temporarily include all of these third party
-@file{.m4} files, maybe several times, even including files that end
-up not being needed.  Doing so should alleviate many problems of the
-current implementation; however, it requires a stricter style from
-macro authors.  Hopefully it is easy to revise the existing macros.
-For instance,
+that a possible future implementation of @command{aclocal}
+(@pxref{Future of aclocal}) will have to temporarily include all of
+these third party @file{.m4} files, maybe several times, even
+including files that end up not being needed.  Doing so should
+alleviate many problems of the current implementation; however, it
+requires a stricter style from macro authors.  Hopefully it is easy to
+revise the existing macros.  For instance,
 
 @example
 # bad style
@@ -3750,20 +3754,19 @@ AX_BAR
 ])
 @end example
 
-Wrapping the @code{AC_PREREQ} call inside the macro ensures that
-Autoconf 2.68 will not be required if @code{AX_FOOBAR} is not used.
-Most importantly, quoting the first argument of @code{AC_DEFUN} allows
-the macro to be redefined or included twice (otherwise this first
-argument would be expanded during the second definition).  For
-consistency we like to quote even arguments such as @code{2.68} that
-do not require it.
+Wrapping the @code{AC_PREREQ([2.68])} call inside the macro ensures
+that the Autoconf 2.68 will not be a prerequisite if @code{AX_FOOBAR}
+is not used.  Most importantly, quoting the first argument of
+@code{AC_DEFUN} allows the macro to be redefined or included twice
+(otherwise this first argument would be expanded during the second
+definition).  For consistency we like to quote even arguments such as
+@code{2.68} that do not require it.
 
 If you have been directed here by the @command{aclocal} diagnostic but
 are not the maintainer of the implicated macro, you will want to
-contact the maintainer of that macro.  Please make sure you have the
-latest version of the macro and that the problem hasn't already been
-reported before doing so: people tend to work faster when they aren't
-flooded by mails.
+contact the maintainer of that macro.  Please try to make sure you
+have the latest version of the macro and that the problem hasn't
+already been reported before doing so.
 
 Another situation where @command{aclocal} is commonly used is to
 manage macros that are used locally by the package; @ref{Local
@@ -3785,22 +3788,23 @@ henceforth be visible to @command{autoconf}.  However, if it contains
 numerous macros, it will rapidly become difficult to maintain, and it
 will be almost impossible to share macros between packages.
 
-The second possibility, which we do recommend, is to write each macro
-in its own file and gather all these files in a directory.  This
-directory is usually called @file{m4/}.  Then it's enough to update
-@file{configure.ac} by adding a proper call to @code{AC_CONFIG_MACRO_DIRS}:
+The second possibility, which we recommend, is to write each macro in
+its own file and gather all these files in a directory.  This
+directory is usually called @file{m4/}.  Then you can update
+@file{configure.ac} by adding a proper call to
+@code{AC_CONFIG_MACRO_DIRS}:
 
 @example
 AC_CONFIG_MACRO_DIRS([m4])
 @end example
 
 @command{aclocal} will then take care of automatically adding @file{m4/}
-to its search path for m4 files.
+to its search path for M4 files.
 
-When @samp{aclocal} is run, it will build an @file{aclocal.m4}
-that @code{m4_include}s any file from @file{m4/} that defines a
-required macro.  Macros not found locally will still be searched in
-system-wide directories, as explained in @ref{Macro Search Path}.
+When @command{aclocal} is run, it will build an @file{aclocal.m4} that
+@code{m4_include}s any file from @file{m4/} that defines a required
+macro.  Macros not found locally will still be searched in system-wide
+directories, as explained in @ref{Macro Search Path}.
 
 Custom macros should be distributed for the same reason that
 @file{configure.ac} is: so that other people have all the sources of
@@ -3808,23 +3812,22 @@ your package if they want to work on it.  In fact, this distribution
 happens automatically because all @code{m4_include}d files are
 distributed.
 
-However there is no consensus on the distribution of third-party
-macros that your package may use.  Many libraries install their own
-macro in the system-wide @command{aclocal} directory (@pxref{Extending
-aclocal}).  For instance, Guile ships with a file called
-@file{guile.m4} that contains the macro @code{GUILE_FLAGS} that can
-be used to define setup compiler and linker flags appropriate for
-using Guile.  Using @code{GUILE_FLAGS} in @file{configure.ac} will
-cause @command{aclocal} to copy @file{guile.m4} into
-@file{aclocal.m4}, but as @file{guile.m4} is not part of the project,
-it will not be distributed.  Technically, that means a user who
-needs to rebuild @file{aclocal.m4} will have to install Guile first.
-This is probably OK, if Guile already is a requirement to build the
-package.  However, if Guile is only an optional feature, or if your
-package might run on architectures where Guile cannot be installed,
-this requirement will hinder development.  An easy solution is to copy
-such third-party macros in your local @file{m4/} directory so they get
-distributed.
+There is no consensus on the distribution of third-party macros that
+your package may use.  Many libraries install their own macro in the
+system-wide @command{aclocal} directory (@pxref{Extending aclocal}).
+For instance, Guile ships with a file called @file{guile.m4} that
+contains the macro @code{GUILE_FLAGS} that can be used to define
+compiler and linker flags appropriate for using Guile.  Using
+@code{GUILE_FLAGS} in @file{configure.ac} will cause @command{aclocal}
+to copy @file{guile.m4} into @file{aclocal.m4}, but as @file{guile.m4}
+is not part of the project, it will not be distributed.  Technically,
+that means a user who needs to rebuild @file{aclocal.m4} will have to
+install Guile first.  This is probably OK, if Guile already is a
+requirement to build the package.  However, if Guile is only an
+optional feature, or if your package might run on architectures where
+Guile cannot be installed, this requirement will hinder development.
+An easy solution is to copy such third-party macros in your local
+@file{m4/} directory so they get distributed.
 
 Since Automake 1.10, @command{aclocal} offers the option @code{--install}
 to copy these system-wide third-party macros in your local macro directory,
@@ -3840,19 +3843,10 @@ after the first run is that when you later edit @file{configure.ac}
 and depend on a new macro, this macro will be installed in your
 @file{m4/} automatically.  Another one is that serial numbers
 (@pxref{Serials}) can be used to update the macros in your source tree
-automatically when new system-wide versions are installed.  A serial
-number should be a single line of the form
-
-@example
-#serial @var{nnn}
-@end example
-
-@noindent
-where @var{nnn} contains only digits and dots.  It should appear in
-the M4 file before any macro definition.  It is a good practice to
-maintain a serial number for each macro you distribute, even if you do
-not use the @option{--install} option of @command{aclocal}: this allows
-other people to use it.
+automatically when new system-wide versions are installed. It is good
+practice to maintain a serial number for each macro you distribute,
+even if you do not use the @option{--install} option of
+@command{aclocal}: this allows other people to use it.
 
 
 @node Serials
@@ -3863,11 +3857,11 @@ other people to use it.
 @cindex @command{aclocal} and serial numbers
 
 Because third-party macros defined in @file{*.m4} files are naturally
-shared between multiple projects, some people like to version them.
-This makes it easier to tell which of two M4 files is newer.  Since at
-least 1996, the tradition is to use a @samp{#serial} line for this.
+shared between multiple projects, people like to version them.  This
+makes it easier to tell which of two M4 files is newer.  Since at
+least 1996, the convention is to use a @samp{#serial} line for this.
 
-A serial number should be a single line of the form
+Such a serial number should be a single line of the form
 
 @example
 # serial @var{version}
@@ -3895,9 +3889,11 @@ exist in your search path, and if at least one of them uses a
 @samp{#serial} line, @command{aclocal} will ignore the file that has
 the older @samp{#serial} line (or the file that has none).
 
-Note that a serial number applies to a whole M4 file, not to any macro
-it contains.  A file can contain multiple macros, but only one
-serial.
+A serial number applies to a whole M4 file, not to any macro it
+contains.  A file can contain multiple macros, but only one serial
+number.
+
+@subsubheading Serial Number Example
 
 Here is a use case that illustrates the use of @option{--install} and
 its interaction with serial numbers.  Let's assume we maintain a
@@ -3997,8 +3993,8 @@ If you are leery of letting @command{aclocal} update your local
 macro, you can run @samp{aclocal --diff} to review the changes
 @samp{aclocal --install} would perform on these macros.
 
-Finally, note that the @option{--force} option of @command{aclocal} has
-absolutely no effect on the files installed by @option{--install}.  For
+Finally, note that the @option{--force} option of @command{aclocal}
+has no effect on the files installed by @option{--install}.  For
 instance, if you have modified your local macros, do not expect
 @option{--install --force} to replace the local macros by their
 system-wide versions.  If you want to do so, simply erase the local
@@ -4012,46 +4008,43 @@ macros you want to revert, and run @samp{aclocal --install}.
 Ideally, @command{aclocal} should not be part of Automake.  Automake
 should focus on generating @file{Makefile}s; dealing with M4 macros is
 more Autoconf's job.  The fact that some people install Automake just
-to use @command{aclocal}, but do not use @command{automake} otherwise
-is an indication of how that feature is misplaced.
+to use @command{aclocal}, but do not use Automake otherwise, is an
+indication of how that feature is misplaced.
 
-The new implementation will probably be done slightly differently.
-For instance, it could enforce the @file{m4/}-style layout discussed in
+A new implementation would probably be done slightly differently.  For
+instance, it could enforce the @file{m4/}-style layout discussed in
 @ref{Local Macros}.
 
-We do not know when or whether this will happen.  This has been
-discussed several times in the past, but someone still has to commit
-to that non-trivial task.
+We do not know when or whether this will happen.  It has been
+discussed several times, but someone still has to commit to executing
+this non-trivial task.
 
-From the user point of view, @command{aclocal}'s removal might turn
+From the user's point of view, @command{aclocal}'s removal might turn
 out to be painful.  There is a simple precaution that you may take to
 make that switch more seamless: never call @command{aclocal} yourself.
-Keep its invocation under the exclusive control of @command{autoreconf} and
-Automake's rebuild rules.  Hopefully you won't need to worry about
-things breaking; when @command{aclocal} disappears, because everything
-will have been taken care of.  If otherwise you used to call
-@command{aclocal} directly yourself or from some script, you will
-quickly notice the change.
+Keep its invocation under the exclusive control of
+@command{autoreconf} and Automake's rebuild rules.  Hopefully you
+won't need to worry about things breaking; when @command{aclocal}
+disappears, because everything will have been taken care of.  If
+otherwise you used to call @command{aclocal} directly yourself or from
+some script, you will quickly notice the change.
 
 Many packages come with a script called @file{bootstrap} or
-@file{autogen.sh}, that will just call @command{aclocal},
-@command{libtoolize}, @command{gettextize} or @command{autopoint},
-@command{autoconf}, @command{autoheader}, and @command{automake} in
-the right order.  In fact, this is precisely what @command{autoreconf}
-can do for you.  If your package has such a @file{bootstrap} or
-@file{autogen.sh} script, consider using @command{autoreconf}.  That
-should simplify its logic a lot (less things to maintain, all to the
-good), it's even likely you will not need the script anymore, and more
-to the point you will not call @command{aclocal} directly anymore.
+@file{autogen.sh} that calls @command{aclocal}, @command{libtoolize},
+@command{gettextize} or @command{autopoint}, @command{autoconf},
+@command{autoheader}, and @command{automake} in the right order.  In
+fact, this is precisely what @command{autoreconf} can do for you.  If
+your package has such a @file{bootstrap} or @file{autogen.sh} script,
+consider using @command{autoreconf}.  That should simplify its logic
+(all to the good), and more to the point you will not call
+@command{aclocal} directly anymore.
 
 For the time being, third-party packages should continue to install
 public macros into @file{/usr/share/aclocal/}.  If @command{aclocal}
 is replaced by another tool it might make sense to rename the
 directory, but supporting @file{/usr/share/aclocal/} for backward
-compatibility should be easy provided all macros are properly written
-(@pxref{Extending aclocal}).
-
-
+compatibility should be feasible, provided all macros are properly
+written (@pxref{Extending aclocal}).
 
 @node Macros
 @section Autoconf macros supplied with Automake
@@ -4414,7 +4407,7 @@ been constructed.
 In addition to the built-in recursive targets defined by Automake
 (@code{all}, @code{check}, etc.), the developer can also define his
 own recursive targets.  That is done by passing the names of such
-targets as arguments to the m4 macro @code{AM_EXTRA_RECURSIVE_TARGETS}
+targets as arguments to the M4 macro @code{AM_EXTRA_RECURSIVE_TARGETS}
 in @file{configure.ac}.  Automake generates rules to handle the
 recursion for such targets; and the developer can define real actions
 for them by defining corresponding @code{-local} targets.
@@ -5196,7 +5189,7 @@ name of the primary is @code{LIBRARIES}.  Libraries can be installed in
 @code{libdir} or @code{pkglibdir}.
 
 @xref{A Shared Library}, for information on how to build shared
-libraries using libtool and the @code{LTLIBRARIES} primary.
+libraries using Libtool and the @code{LTLIBRARIES} primary.
 
 Each @code{_LIBRARIES} variable is a list of the libraries to be built.
 For instance, to create a library named @file{libcpio.a}, but not install
@@ -5302,17 +5295,16 @@ macro, libtool, The Libtool Manual}.)
 
 @cindex suffix @file{.lo}, defined
 Because object files for shared and static libraries must be compiled
-differently, libtool is also used during compilation.  Object files
-built by libtool are called @dfn{libtool objects}: these are files
+differently, Libtool is also used during compilation.  Object files
+built by Libtool are called @dfn{libtool objects}: these are files
 using the @file{.lo} suffix.  Libtool libraries are built from these
 libtool objects.
 
 You should not assume anything about the structure of @file{.la} or
-@file{.lo} files and how libtool constructs them: this is libtool's
-concern, and the last thing one wants is to learn about libtool's
-guts.  However the existence of these files matters, because they are
-used as targets and dependencies in @file{Makefile}s' rules when
-building libtool libraries.  There are situations where you may have
+@file{.lo} files and how Libtool constructs them; this is Libtool's
+concern. However, the existence of these files matters, because they
+are used as targets and dependencies in @file{Makefile} rules when
+building Libtool libraries.  There are situations where you may have
 to refer to these, for instance when expressing dependencies for
 building source files conditionally (@pxref{Conditional Libtool
 Sources}).
@@ -5320,14 +5312,14 @@ Sources}).
 @cindex @file{libltdl}, introduction
 
 People considering writing a plug-in system, with dynamically loaded
-modules, should look into @file{libltdl}: libtool's dlopening library
+modules, should look into @file{libltdl}: Libtool's dlopening library
 (@pxref{Using libltdl, , Using libltdl, libtool, The Libtool Manual}).
-This offers a portable dlopening facility to load libtool libraries
+This offers a portable dlopening facility to load Libtool libraries
 dynamically, and can also achieve static linking where unavoidable.
 
-Before we discuss how to use libtool with Automake in detail, it
-should be noted that the libtool manual also has a section about how
-to use Automake with libtool (@pxref{Using Automake, , Using Automake
+Before we discuss how to use Libtool with Automake in detail, it
+should be noted that the Libtool manual also has a section about how
+to use Automake with Libtool (@pxref{Using Automake, , Using Automake
 with Libtool, libtool, The Libtool Manual}).
 
 @node Libtool Libraries
@@ -5341,9 +5333,9 @@ with Libtool, libtool, The Libtool Manual}).
 @vindex pkglib_LTLIBRARIES
 @vindex _LTLIBRARIES
 
-Automake uses libtool to build libraries declared with the
+Automake uses Libtool to build libraries declared with the
 @code{LTLIBRARIES} primary.  Each @code{_LTLIBRARIES} variable is a
-list of libtool libraries to build.  For instance, to create a libtool
+list of Libtool libraries to build.  For instance, to create a libtool
 library named @file{libgettext.la}, and install it in @code{libdir},
 write:
 
@@ -5385,7 +5377,7 @@ hello_LDADD = libgettext.la
 @noindent
 Whether @file{hello} is statically or dynamically linked with
 @file{libgettext.la} is not yet known: this will depend on the
-configuration of libtool and the capabilities of the host.
+configuration of Libtool and the capabilities of the host.
 
 
 @node Conditional Libtool Libraries
@@ -5398,14 +5390,14 @@ two main ways to build conditional libraries: using Automake
 conditionals or using Autoconf @code{AC_SUBST}itutions.
 
 The important implementation detail you have to be aware of is that
-the place where a library will be installed matters to libtool: it
+the place where a library will be installed matters to Libtool: it
 needs to be indicated @emph{at link-time} using the @option{-rpath}
 option.
 
 For libraries whose destination directory is known when Automake runs,
 Automake will automatically supply the appropriate @option{-rpath}
-option to libtool.  This is the case for libraries listed explicitly in
-some installable @code{_LTLIBRARIES} variables such as
+option to @command{libtool}.  This is the case for libraries listed
+explicitly in some installable @code{_LTLIBRARIES} variables such as
 @code{lib_LTLIBRARIES}.
 
 However, for libraries determined at configure time (and thus
@@ -5500,14 +5492,14 @@ endif
 @vindex noinst_LTLIBRARIES
 @vindex check_LTLIBRARIES
 
-Sometimes you want to build libtool libraries that should not be
+Sometimes you want to build Libtool libraries that should not be
 installed.  These are called @dfn{libtool convenience libraries} and
 are typically used to encapsulate many sublibraries, later gathered
 into one big installed library.
 
 Libtool convenience libraries are declared by directory-less variables
 such as @code{noinst_LTLIBRARIES}, @code{check_LTLIBRARIES}, or even
-@code{EXTRA_LTLIBRARIES}.  Unlike installed libtool libraries they do
+@code{EXTRA_LTLIBRARIES}.  Unlike installed Libtool libraries they do
 not need an @option{-rpath} flag at link time (this is in fact the only
 difference).
 
@@ -5519,7 +5511,7 @@ rules to build them, but if the library does not appear as a @file{Makefile}
 dependency anywhere it won't be built (this is why
 @code{EXTRA_LTLIBRARIES} is used for conditional compilation).
 
-Here is a sample setup merging libtool convenience libraries from
+Here is a sample setup merging Libtool convenience libraries from
 subdirectories into one main @file{libtop.la} library.
 
 @c Keep in sync with ltconv.sh
@@ -5591,8 +5583,8 @@ to list in @code{libtop_la_SOURCES} there is no point in cheating with
 @cindex libtool modules
 @cindex @option{-module}, libtool
 
-These are libtool libraries meant to be dlopened.  They are
-indicated to libtool by passing @option{-module} at link-time.
+These are Libtool libraries meant to be dlopened.  They are
+indicated to @command{libtool} by passing @option{-module} at link-time.
 
 @example
 pkglib_LTLIBRARIES = mymodule.la
@@ -5631,9 +5623,9 @@ variable should be used to list extra libtool objects (@file{.lo}
 files) or libtool libraries (@file{.la}) to add to @var{library}.
 
 The @samp{@var{library}_LDFLAGS} variable is the place to list
-additional libtool linking flags, such as @option{-version-info},
-@option{-static}, and a lot more.  @xref{Link mode, , Link mode,
-libtool, The Libtool Manual}.
+additional @command{libtool} linking flags, such as
+@option{-version-info}, @option{-static}, and a lot more.  @xref{Link
+mode,,, libtool, The Libtool Manual}.
 
 The @command{libtool} command has two kinds of options: mode-specific
 options and generic options.  Mode-specific options such as the
@@ -5649,8 +5641,8 @@ be listed in the @samp{@var{library}_LIBTOOLFLAGS} variable.
 If @samp{@var{library}_LIBTOOLFLAGS} is not defined, then the variable
 @code{AM_LIBTOOLFLAGS} is used instead.
 
-These flags are passed to libtool after the @option{--tag=@var{tag}}
-option computed by Automake (if any), so
+These flags are passed to @command{libtool} after the
+@option{--tag=@var{tag}} option computed by Automake (if any), so
 @samp{@var{library}_LIBTOOLFLAGS} (or @code{AM_LIBTOOLFLAGS}) is a
 good place to override or supplement the @option{--tag=@var{tag}}
 setting.
@@ -5688,12 +5680,13 @@ performed automatically by Autoconf (@pxref{AC_LIBOBJ vs LIBOBJS, ,
 @subsection Common Issues Related to Libtool's Use
 
 @menu
-* Error required file ltmain.sh not found::  The need to run libtoolize
+* Error required file ltmain.sh not found::        The need to run libtoolize
+* Libtool library used but LIBTOOL is undefined::  aclocal and test releases
 * Objects created both with libtool and without::  Avoid a specific build race
 @end menu
 
 @node Error required file ltmain.sh not found
-@subsubsection Error: @samp{required file `./ltmain.sh' not found}
+@subsubsection Error: @samp{required file './ltmain.sh' not found}---@command{libtoolize} needed
 @cindex @file{ltmain.sh} not found
 @cindex @command{libtoolize}, no longer run by @command{automake}
 @cindex @command{libtoolize} and @command{autoreconf}
@@ -5702,7 +5695,7 @@ performed automatically by Autoconf (@pxref{AC_LIBOBJ vs LIBOBJS, ,
 @cindex @file{autogen.sh} and @command{autoreconf}
 
 Libtool comes with a tool called @command{libtoolize} that will
-install libtool's supporting files into a package.  Running this
+install Libtool's supporting files into a package.  Running this
 command will install @file{ltmain.sh}.  You should execute it before
 @command{aclocal} and @command{automake}.
 
@@ -5715,16 +5708,97 @@ Since Automake 1.6, it has been decided that running
 @command{libtoolize} was not Automake's business.  Instead, that
 functionality has been moved into the @command{autoreconf} command
 (@pxref{autoreconf Invocation, , Using @command{autoreconf}, autoconf,
-The Autoconf Manual}).  If you do not want to remember what to run and
-when, just remember the @command{autoreconf} command.  Hopefully,
-replacing existing @file{bootstrap} or @file{autogen.sh} scripts by a
-call to @command{autoreconf} should also free you from any similar
-incompatible change in the future.
+The Autoconf Manual}).  The @command{autoreconf} command saves you
+from having to figure out which infrastructure scripts to run in what
+order.  Augmenting existing @file{bootstrap} or @file{autogen.sh}
+scripts with a call to @command{autoreconf} should also free you from
+any similar incompatible change in the future.
+
+@node Libtool library used but LIBTOOL is undefined
+@subsubsection Error: @samp{Libtool library used but 'LIBTOOL' is undefined}---@command{libtoolize} redux
+@cindex Libtool library used but @samp{LIBTOOL} is undefined
+@cindex @samp{LIBTOOL} is undefined
+
+This error message results from Automake seeing Libtool being used in
+@file{Makefile.am}, but the @code{LIBTOOL} variable is not defined.
+There are two common reasons for this.  First, @code{LT_INIT} is
+missing from @file{configure.ac}; it can simply be added.
+
+The second reason is more complicated: if you've installed Automake
+under a separate prefix, Automake cannot know where to find the
+@code{LT_INIT} macro.  Automake looks in the @file{aclocal.m4} file,
+which is generated by the @command{aclocal} command (@pxref{aclocal
+Invocation}). But since the default search paths for @command{aclocal}
+are based on where it is installed (@pxref{Macro Search Path}), if
+Automake is installed in one place (e.g., because it's for a test
+release), and Libtool in another (e.g., for general system use),
+@file{libtool.m4} won't be found by @command{aclocal} and thus
+@code{LT_INIT} won't be defined.
+
+The best solution is to run @command{libtoolize} in the tree that is
+using the separately-installed Automake.  That will copy 
+@file{libtool.m4} and the other Libtool M4 files and scripts into your
+package, including @file{ltmain.sh} (see previous section).  If you
+have subpackages that use Libtool independently, you'll need to run
+@command{libtoolize} in each of them. @xref{Invoking libtoolize,,,
+libtool, The Libtool Manual}.
+
+The @command{libtoolize} output suggests using an @file{m4} subdirectory:
+
+@example
+libtoolize: Consider adding 'AC_CONFIG_MACRO_DIRS([m4])' to configure.ac,
+libtoolize: and rerunning libtoolize and aclocal.
+libtoolize: Consider adding '-I m4' to ACLOCAL_AMFLAGS in Makefile.am.
+@end example
+
+For purposes of Libtool and Automake, however, an m4 subdirectory is
+required, not just something to consider.  Without having the Libtool
+M4 files in the local package, @command{aclocal} will (frustratingly)
+report the same @samp{Libtool library used but ...} error.  (The name
+of the subdirectory for the M4 files can be anything, but @samp{m4} is
+by far the most common convention.)
+
+Here is a concrete example.  Suppose you've installed a test
+release of Automake (thank you) with @code{--prefix=/tmp/amtest}, and
+thus put @code{/tmp/amtest/bin} first in your @env{PATH}.  You already
+have Libtool installed under @code{/usr/local/gnu}.  Then, your
+Libtool-using package will fail to bootstrap, with the error:
+
+@example
+Makefile.am:161: error: Libtool library used but 'LIBTOOL' is undefined
+...
+@end example
+
+You can resolve this by ensuring your @file{configure.ac} includes
+these lines (after the @code{AM_INIT_AUTOMAKE}):
+
+@example
+AC_CONFIG_MACRO_DIRS([m4])
+AM_PROG_AR
+LT_INIT
+@end example
+
+@noindent
+and then running:
+
+@example
+libtoolize
+autoreconf
+@end example
+
+@noindent
+To summarize, the @command{libtoolize} (from the system directory)
+copies @file{libtool.m4} and the other Libtool support files into your
+package. The subsequent @command{autoreconf} then runs
+@command{aclocal} (under the test prefix) which can now find
+@code{LT_INIT}.
+
+(For more discussion of this, see @url{https://bugs.gnu.org/71847}.
 
 @node Objects created both with libtool and without
 @subsubsection Objects @samp{created with both libtool and without}
 
-Sometimes, the same source file is used both to build a libtool
+Sometimes, the same source file is used both to build a Libtool
 library and to build another non-libtool target (be it a program or
 another library).
 
@@ -5746,7 +5820,7 @@ libfoo_la_SOURCES = foo.c @dots{}
 
 Technically, it means that we should build @file{foo.$(OBJEXT)} for
 @file{prog}, and @file{foo.lo} for @file{libfoo.la}.  The problem is
-that in the course of creating @file{foo.lo}, libtool may erase (or
+that in the course of creating @file{foo.lo}, Libtool may erase (or
 replace) @file{foo.$(OBJEXT)}, and this cannot be avoided.
 
 Therefore, when Automake detects this situation it will complain
@@ -5797,7 +5871,7 @@ This variable, if it exists, lists all the source files that are
 compiled to build the program.  These files are added to the
 distribution by default.  When building the program, Automake will cause
 each source file to be compiled to a single @file{.o} file (or
-@file{.lo} when using libtool).  Normally these object files are named
+@file{.lo} when using Libtool).  Normally these object files are named
 after the source file, but other factors can change this.  If a file in
 the @code{_SOURCES} variable has an unrecognized extension, Automake
 will do one of two things with it.  If a suffix rule exists for turning
@@ -5877,8 +5951,8 @@ Extra objects can be added to a @emph{library} using the @code{_LIBADD}
 variable.  For instance, this should be used for objects determined by
 @command{configure} (@pxref{A Library}).
 
-In the case of libtool libraries, @code{maude_LIBADD} can also refer
-to other libtool libraries.
+In the case of Libtool libraries, @code{maude_LIBADD} can also refer
+to other Libtool libraries.
 
 @item maude_LDADD
 Extra objects (@file{*.$(OBJEXT)}) and libraries (@file{*.a},
@@ -6101,8 +6175,8 @@ from @file{test1.cpp}, @file{test2.cpp}, and @file{test3.cpp}.
 Without the last line, they will be built from @file{test1.c},
 @file{test2.c}, and @file{test3.c}.
 
-@cindex Libtool modules, default source example
-@cindex default source, Libtool modules example
+@cindex libtool modules, default source example
+@cindex default source, libtool modules example
 Another case where this is convenient is building many Libtool modules
 (@file{module@var{n}.la}), each defined in its own file
 (@file{module@var{n}.c}).
@@ -11483,7 +11557,7 @@ it will cause @command{automake} to output the rules for the respective
 files only for the given condition.
 @end defmac
 
-@code{AM_COND_IF} macros may be nested when m4 quotation is used
+@code{AM_COND_IF} macros may be nested when M4 quotation is used
 properly (@pxref{M4 Quotation, ,, autoconf, The Autoconf Manual}).
 
 @cindex Example conditional @code{AC_CONFIG_FILES}
@@ -11706,8 +11780,8 @@ func.c:4:3: warning: ‘i’ used uninitialized in this function
 @end example
 
 @cindex silent rules and libtool
-Also, in projects using @command{libtool}, the use of silent rules can
-automatically enable the @command{libtool}'s @option{--silent} option:
+Also, in projects using Libtool, the use of silent rules can
+automatically enable @command{libtool}'s @option{--silent} option:
 
 @example
 % @kbd{cat Makefile.am}
@@ -11849,8 +11923,9 @@ option is still required with GNU @command{make} if the
 
 With the @code{AM_SILENT_RULES} macro described in the previous
 section, Automake does a good job reducing @command{make} output to a
-bare minimum. Sometimes you want to see more than that. Let's
-summarize ways to get more information out of Automake packages:
+bare minimum.  Sometimes you want to see more than that, especially
+when debugging.  Let's summarize ways to get more information out of
+Automake packages:
 
 @itemize
 @item
@@ -11869,13 +11944,13 @@ Adding @code{AM_V_GEN= AM_V_at=} will unsilence more rules. Thus, in all:
 @item
 Even this will not unsilence everything. To see the real truth of what
 gets executed, resort to GNU Make's debugging feature: @code{make
---debug=p ... other args ...}.  This reports every command being run,
-ignoring the @code{@@} prefix on rules (which silences them). In the
-case of Automake, these commands are generally complex shell
-constructs, and you'll want to track down the source files in Automake
-to actually understand them; but at least you'll have the text to
-search for. You may wish to include other debugging
-options. @xref{Options Summary,,,make, The GNU Make Manual}.
+--debug=p ... @var{otherargs} ...}.  This reports every command being
+run, ignoring the @code{@@} prefix on rules (which is what silences
+them).  In the case of Automake, these commands are generally complex
+shell constructs, and you'll want to track down the source files in
+Automake to actually understand them; but at least you'll have the
+text to search for.  You may wish to include other debugging options.
+@xref{Options Summary,,,make, The GNU Make Manual}.
 
 @end itemize
 
@@ -12287,7 +12362,6 @@ Some of the files that can be automatically installed via the
 @option{--add-missing} switch do fall under the GPL@.  However, these also
 have a special exception allowing you to distribute them with your
 package, regardless of the licensing you choose.
-
 
 @node API Versioning
 @chapter Automake API Versioning
@@ -13653,8 +13727,9 @@ generated by @command{automake} effectively:
 @itemize
 @item
 If less verbose output has been enabled in the package with the use
-of silent rules (@pxref{Automake Silent Rules}), you can use
-@code{make V=1} to see the commands being executed.
+of silent rules (@pxref{Automake Silent Rules}), you'll probably want
+undo that and see the actual commands being run: @pxref{Unsilencing
+Automake}.
 
 @item
 @code{make -n} can help show what would be done without actually doing
@@ -13667,9 +13742,9 @@ rules, you should not mix such recursion with actions that change any
 files.@footnote{Automake's @samp{dist} and @samp{distcheck} rules had
 a bug in this regard in that they created directories even with
 @option{-n}, but this has been fixed in Automake 1.11.}  Furthermore,
-note that GNU @command{make} will update prerequisites for the
-@file{Makefile} file itself even with @option{-n} (@pxref{Remaking
-Makefiles,,, make, The GNU Make Manual}).
+GNU @command{make} will update prerequisites for the @file{Makefile}
+file itself even with @option{-n} (@pxref{Remaking Makefiles,,, make,
+The GNU Make Manual}).
 
 @item
 @code{make SHELL="/bin/bash -vx"} can help debug complex rules.
@@ -13764,7 +13839,6 @@ attach the @file{test-suite.log} file.
 @appendixsec General Index
 
 @printindex cp
-
 
 @bye
 

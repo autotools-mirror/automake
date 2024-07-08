@@ -299,6 +299,7 @@ announcement: NEWS
 	  && $(determine_release_type) \
 	  && ftp_base="https://$$dest.gnu.org/gnu/$(PACKAGE)" \
 	  && X () { printf '%s\n' "$$*" >> $@-t; } \
+	  && AO () { if test "$$dest" = alpha; then X "$$*"; else :; fi; } \
 	  && X "We are pleased to announce the $(PACKAGE_NAME) $(VERSION)" \
 	       "$$announcement_type." \
 	  && X \
@@ -327,6 +328,11 @@ announcement: NEWS
 	  && X \
 	  && X "-*-*-*-" \
 	  && X \
+  && AO "If you install this test release in its own prefix (recommended)" \
+  && AO "and you use libtool, you'll need to arrange for the libtool m4 files"\
+  && AO "to be found by aclocal. For info on this, see:" \
+  && AO "  https://gnu.org/s/automake/manual/automake.html#Libtool-library-used-but-LIBTOOL-is-undefined" \
+  && AO \
 	  && $(AWK) '\
 	        ($$0 ~ /^New in .*:/) { wait_for_end=1; } \
 		(/^~~~/ && wait_for_end) { print; exit(0) } \
