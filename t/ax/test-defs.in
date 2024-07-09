@@ -23,8 +23,7 @@
 #   - This code has to be 'set -e' clean.
 
 # See whether the current test script is expected to use TAP or not.
-# Use a sensible default, while allowing the scripts to override this
-# check.
+# Use a sensible default, while allowing the scripts to override this check.
 if test -z "$am_test_protocol"; then
   case $argv0 in
     *.tap) am_test_protocol=tap;;
@@ -191,24 +190,36 @@ case $MTIME_RESOLUTION in
        $AUTOM4TE --version 2>&1 |
          grep 'Features:.*subsecond-mtime' > /dev/null 2>&1; then
       # subsecond-mtime should be supported; use the timestamp
-      # resolution that we determined. If it hasn't been determined,
-      # that's a bug somewhere.
+      # resolution that we determined.
       if test -n "$am_cv_filesystem_timestamp_resolution"; then
-        #echo "$me: got $am_cv_filesystem_timestamp_resolution" >&2
+        #echo "$BASH_SOURCE: amftr=$am_cv_filesystem_timestamp_resolution" >&2
         MTIME_RESOLUTION=$am_cv_filesystem_timestamp_resolution
+        
+      elif test -n "$MTIME_RESOLUTION"; then
+        #echo "$BASH_SOURCE: M_R=$MTIME_RESOLUTION" >&2
+        # This is normal when running tests: the cache variable is
+        # not set, but MTIME_RESOLUTION is, because config.status is sourced.
+        # Its value should be usable, but because this was discovered
+        # just before the 1.17 release, for safety, let's set it to 1,
+        # and try it after the release.
+        MTIME_RESOLUTION=1
+
+      # If MTIME_RESOLUTION is empty too, that's weird.
       else
-        # ends up in test-suite.log.
+        # This message ends up in test-suite.log.
         echo "$me: subsecond-mtime supported per automake and auto4mte" \
-             "--version, but am_cv_filesystem_timestamp_resolution not set;" \
-             "that's an error somewhere. Proceeding with value 1." >&2
+             "--version, but neither am_cv_filesystem_timestamp_resolution;" \
+             "nor MTIME_RESOLUTION are set; that's an error somewhere." \
+             "Proceeding with value 1." >&2
         MTIME_RESOLUTION=1
       fi
     else
-      #echo "$me: --version doesn't support subsecond-mtime" >&2
+      #echo "$BASH_SOURCE: some --version doesn't support subsecond-mtime" >&2
       #$AUTOMAKE --version >&2
       #$AUTOM4TE --version >&2
       #
       MTIME_RESOLUTION=1
+      #
       # we must not sleep for fractional seconds when autom4te does not
       # support subsecond-mtimes, even when sleep supports it. See bug#67670.
       am_cv_sleep_fractional_seconds=no
