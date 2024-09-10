@@ -39,12 +39,12 @@ as they are used in Automake.
 
 A version is a string that looks like
 C<MAJOR.MINOR[.MICRO][ALPHA][-FORK]> where C<MAJOR>, C<MINOR>, and
-C<MICRO> are digits, C<ALPHA> is a character, and C<FORK> any
-alphanumeric word.
+C<MICRO> are digits, C<ALPHA> is either a character or another C<.NUM>,
+and C<FORK> any alphanumeric word.
 
 Usually, C<ALPHA> is used to label alpha releases or intermediate
 snapshots, C<FORK> is used for git branches or patched releases, and
-C<MICRO> is used for bug fixes releases on the C<MAJOR.MINOR> branch.
+C<MICRO> is used for bug fix releases on the C<MAJOR.MINOR> branch.
 
 For the purpose of ordering, C<1.4> is the same as C<1.4.0>, but
 C<1.4g> is the same as C<1.4.99g>.  The C<FORK> identifier is ignored
@@ -52,6 +52,18 @@ in the ordering, except when it looks like C<-pMINOR[ALPHA]>: some
 versions were labeled like C<1.4-p3a>, this is the same as an alpha
 release labeled C<1.4.3a>.  Yes, it's horrible, but Automake did not
 support two-dot versions in the past.
+
+In 2024, Automake switched from using letter suffixes like C<1.4g> for
+pretests to the C<.90> form (used by nearly all other GNU packages),
+e.g., C<1.16.90> was a pretest leading up to C<1.17>. Thus we also have
+to support four-part version numbers, since test releases leading up to
+C<1.17.1> have to be C<1.17.0.92>, etc., to follow the pattern. In this
+case, all four version parts have to be present and all-numeric; the
+C<-FORK> is still optional (but entirely ignored).
+
+Aggravatingly, version number syntax is also recognized in
+lib/Automake/Options.pm, since bare version numbers are also valid
+Automake options, as tested in C<version6[.sh]>.
 
 =head2 FUNCTIONS
 
@@ -61,7 +73,8 @@ support two-dot versions in the past.
 
 Split the string C<$version> into the corresponding C<(MAJOR, MINOR,
 MICRO, ALPHA, FORK)> tuple.  For instance C<'1.4g'> would be split
-into C<(1, 4, 99, 'g', '')>.  Return C<()> on error.
+into C<(1, 4, 99, 'g', '')> and C<'1.17.0.91'> into C<1, 17, 0, 91, ''>.
+Return C<()> on error.
 
 =cut
 
@@ -69,15 +82,21 @@ sub split ($)
 {
   my ($ver) = @_;
 
-  # Special case for versions like 1.4-p2a.
+  # Recognize MAJOR.MINOR, plus special case for versions like 1.4-p2a.
   if ($ver =~ /^(\d+)\.(\d+)(?:-p(\d+)([a-z]+)?)$/)
   {
     return ($1, $2, $3, $4 || '', '');
   }
-  # Common case.
+  # Recognize MAJOR.MINOR and MAJOR.MINOR.MICRO, as well as
+  # the pre-2024 case with possible letters in the alpha part.
   elsif ($ver =~ /^(\d+)\.(\d+)(?:\.(\d+))?([a-z])?(?:-([A-Za-z0-9]+))?$/)
   {
     return ($1, $2, $3 || (defined $4 ? 99 : 0), $4 || '', $5 || '');
+  }
+  # 2024ff. case with all numbers: MAJOR.MINOR.MICRO.ALPHA[-FORK].
+  elsif ($ver =~ /^(\d+)\.(\d+).(\d+)\.(\d+)(?:-([A-Za-z0-9]+))?$/)
+  {
+    return ($1, $2, $3, $4, $5 || '');
   }
   return ();
 }

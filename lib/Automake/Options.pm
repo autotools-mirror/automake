@@ -378,7 +378,8 @@ sub _process_option_list (\%@)
               $ret = 0;
             }
         }
-      elsif (/^\d+\.\d+(?:\.\d+)?[a-z]?(?:-[A-Za-z0-9]+)?$/)
+      elsif (/^\d+\.\d+(?:\.\d+)?(?:\.\d+)?[a-z]?(?:-[A-Za-z0-9]+)?$/)
+            # MAJOR.MINOR (all digits) are required, all else optional.
         {
           # Got a version number.
           if (Automake::Version::check ($VERSION, $&))
