@@ -116,10 +116,10 @@ sub set ($$$)
 
 =item C<$var-E<gt>conditions>
 
-Return an L<Automake::DisjConditions> describing the conditions that
+Return an L<Automake::DisjConditions> describing the conditions
 that an item is defined in.
 
-These are all the conditions for which is would be safe to call
+These are all the conditions for which it would be safe to call
 C<rdef>.
 
 =cut

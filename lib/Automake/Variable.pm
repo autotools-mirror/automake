@@ -829,11 +829,11 @@ C<$where>: the C<Location> of the assignment.
 
 C<$pretty>: whether C<$value> should be pretty printed (one of
 C<VAR_ASIS>, C<VAR_PRETTY>, C<VAR_SILENT>, or C<VAR_SORTED>, defined
-by by L<Automake::VarDef>).  C<$pretty> applies only to real
+by L<Automake::VarDef>).  C<$pretty> applies only to real
 assignments.  I.e., it does not apply to a C<+=> assignment (except
 when part of it is being done as a conditional C<=> assignment).
 
-This function will all run any hook registered with the C<hook>
+This function will run any hook registered with the C<hook>
 function.
 
 =cut
