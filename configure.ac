@@ -73,9 +73,11 @@ case $PERL in
    AC_MSG_ERROR([perl not found])
    ;;
  *' '* | *'	'*)
-  AC_MSG_ERROR([The path to your Perl contains spaces or tabs.
-This would cause build failures later or unusable programs.
-Please use a path without spaces and try again.])
+  AC_MSG_WARN([The path to your Perl contains spaces or tabs.
+This will likely cause build failures later or unusable programs.
+Unless you're specifying a full string for a #! line,
+as in "/usr/bin/env perl",
+please use a path without spaces and try again.])
   ;;
 esac
 
