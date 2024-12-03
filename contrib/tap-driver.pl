@@ -32,7 +32,7 @@ use strict;
 use Getopt::Long ();
 use TAP::Parser;
 
-my $VERSION = '2013-12-24.15'; # UTC
+my $VERSION = '2024-12-03.03'; # UTC
 
 my $ME = "tap-driver.pl";
 
@@ -555,7 +555,8 @@ main @ARGV;
 # cperl-extra-newline-before-brace: t
 # cperl-merge-trailing-else: nil
 # cperl-continued-statement-offset: 2
-# eval: (add-hook 'before-save-hook 'time-stamp)
+# eval: (add-hook 'before-save-hook 'time-stamp nil t)
+# time-stamp-line-limit: 50
 # time-stamp-start: "my $VERSION = "
 # time-stamp-format: "'%:y-%02m-%02d.%02H'"
 # time-stamp-time-zone: "UTC0"
