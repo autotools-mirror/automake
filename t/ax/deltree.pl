@@ -17,8 +17,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use strict;
-use warnings FATAL => 'all';
+use strict; use warnings;
 use File::Path qw/rmtree/;
 
 my $exit_status = 0;

@@ -35,9 +35,7 @@ line options in conformance to the GNU Coding standards.
 
 =cut
 
-use 5.006;
-use strict;
-use warnings FATAL => 'all';
+use 5.006; use strict; use warnings;
 
 use Carp qw (confess croak);
 use Exporter ();

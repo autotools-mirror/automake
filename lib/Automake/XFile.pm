@@ -69,10 +69,7 @@ and C<getlines> methods to translate C<\r\n> to C<\n>.
 
 =cut
 
-use 5.006;
-use strict;
-use warnings FATAL => 'all';
-
+use 5.006; use strict; use warnings;
 use Errno;
 use Exporter;
 use IO::File;

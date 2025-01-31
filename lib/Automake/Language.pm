@@ -15,9 +15,7 @@
 
 package Automake::Language;
 
-use 5.006;
-use strict;
-use warnings FATAL => 'all';
+use 5.006; use strict; use warnings;
 
 use Class::Struct ();
 

@@ -15,10 +15,7 @@
 
 package Automake::Variable;
 
-use 5.006;
-use strict;
-use warnings FATAL => 'all';
-
+use 5.006; use strict; use warnings;
 use Carp;
 use Exporter;
 

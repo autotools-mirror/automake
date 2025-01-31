@@ -27,12 +27,12 @@
 #  Imports, static data, and setup.  #
 # ---------------------------------- #
 
-use warnings FATAL => 'all';
-use strict;
+use strict; use warnings;
 use Getopt::Long ();
+
 use TAP::Parser;
 
-my $VERSION = '2024-12-03.03'; # UTC
+my $VERSION = '2025-01-31.17'; # UTC
 
 my $ME = "tap-driver.pl";
 

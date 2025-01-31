@@ -44,8 +44,8 @@ END
 
 echo "#! $PERL -w" > bar.test
 cat >>bar.test <<'END'
-use warnings FATAL => 'all';
 use strict;
+use warnings;
 open(FD8, ">&=8") or die "$!";
 open(FD9, ">&=9") or die "$!";
 print FD8 "  $0: 8888\n";

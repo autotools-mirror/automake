@@ -81,8 +81,7 @@ do_check
 
 echo "#! $PERL -w" > foo.test
 cat >> foo.test <<'END'
-use warnings FATAL => 'all';
-use strict;
+use strict; use warnings;
 
 open (FD3, "<&=3") or die "opening FD3: $!";
 open (FD4, ">&=4") or die "opening FD4: $!";

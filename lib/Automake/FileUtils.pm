@@ -34,9 +34,7 @@ This perl module provides various general purpose file handling functions.
 
 =cut
 
-use 5.006;
-use strict;
-use warnings FATAL => 'all';
+use 5.006; use strict; use warnings;
 
 BEGIN
 {

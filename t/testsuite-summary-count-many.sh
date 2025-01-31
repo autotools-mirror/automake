@@ -52,8 +52,8 @@ END
 chmod a+x all.test
 
 $PERL -w -e '
-  use warnings FATAL => "all";
   use strict;
+  use warnings;
 
   my $base = 1000;
   my %count = (
