@@ -565,6 +565,16 @@ if test "$GNU_F77" != false; then
         _AM_SKIP_COMP_TESTS([GNU Fortran 77])])
 fi
 
+# GNU Algol 68 compiler.
+AC_ARG_VAR([GNU_A68],    [GNU Algol 68 compiler])
+AC_ARG_VAR([GNU_A68FLAGS], [GNU Algol 68 compiler flags])
+AC_CHECK_TOOLS([GNU_A68], [ga68], [false])
+if test "$GNU_A68" != false; then
+   AS_IF([AM_RUN_LOG([$GNU_A68 --version && $GNU_A68 -v])], [],
+   [AC_MSG_WARN([botched installation for GNU Algol 68 compiler])
+   _AM_SKIP_COMP_TESTS([GNU Algol 68])])
+fi
+
 # GNU Java compiler.
 AC_ARG_VAR([GNU_GCJ], [GNU Java compiler])
 AC_ARG_VAR([GNU_GCJFLAGS], [GNU Java compiler flags])
