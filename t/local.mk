@@ -29,7 +29,7 @@ AM_PL_LOG_FLAGS = -Mstrict -w
 
 TAP_LOG_DRIVER = AM_TAP_AWK='$(AWK)' $(SHELL) $(srcdir)/lib/tap-driver.sh
 
-AM_TAP_LOG_DRIVER_FLAGS = --merge
+AM_TAP_LOG_DRIVER_FLAGS = --merge --stderr-prefix '@%:@[stderr]'
 
 EXTRA_DIST += %D%/README %D%/ax/is %D%/ax/is_newest %D%/ax/deltree.pl
 
