@@ -23,7 +23,7 @@
 # bugs to <bug-automake@gnu.org> or send patches to
 # <automake-patches@gnu.org>.
 
-scriptversion=2025-02-03.03; # UTC
+scriptversion=2025-02-03.04; # UTC
 
 # Make unconditional expansion of undefined variables an error.  This
 # helps a lot in preventing typo-related bugs.
@@ -544,7 +544,7 @@ function get_test_exit_message(status)
   if (status == 0)
     return ""
   if (status !~ /^[1-9][0-9]*$/)
-    abort("getting exit status")
+    abort("getting exit status: not an integer: " status)
   if (status < 127)
     exit_details = ""
   else if (status == 127)
