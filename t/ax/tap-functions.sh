@@ -69,18 +69,17 @@ planned_=none
 
 # diag_ [EXPLANATION]
 # ------------------
-# Report the given text as TAP diagnostic.  Assumes the string denoting
-# TAP diagnostic lines is stored in the '$diag_string_' variable; this is
-# done to allow better interplay with TAP drivers that allow such a string
-# to be configured.
+# Report the given text, or stdin if no arguments, as TAP diagnostic.
+# Assumes the string denoting TAP diagnostic lines is stored in the
+# '$diag_string_' variable; this is done to allow better interplay
+# with TAP drivers that allow such a string to be configured.
 diag_ ()
 (
   set +x
-  test $# -eq 0 || while IFS= read -r line; do
+  test $# -eq 0 || { printf %s\\n "$*" | diag_; return; }
+  while IFS= read -r line || test -n "$line"; do
     printf %s\\n "$diag_string_ $line"
-  done <<EOF
-$*
-EOF
+  done
 )
 
 # Used by the 'diag_' function above.  User-overridable.
