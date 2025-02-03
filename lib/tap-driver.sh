@@ -23,7 +23,7 @@
 # bugs to <bug-automake@gnu.org> or send patches to
 # <automake-patches@gnu.org>.
 
-scriptversion=2025-02-03.01; # UTC
+scriptversion=2025-02-03.02; # UTC
 
 # Make unconditional expansion of undefined variables an error.  This
 # helps a lot in preventing typo-related bugs.
@@ -139,12 +139,17 @@ fi
     # <https://lists.gnu.org/archive/html/bug-autoconf/2011-09/msg00004.html>
     # <http://mail.opensolaris.org/pipermail/ksh93-integration-discuss/2009-February/004121.html>
     trap : 1 3 2 13 15
+    # Determine where to send the test script's stderr.  Only the test's stderr
+    # should go here; if `exec 2>&$stderr_fd' were run, this script's stderr
+    # (e.g., `set -x' output, if turned on to help with debugging) would mix
+    # with the test script's stderr and go to the log (via `awk', if `--merge'
+    # is enabled), not the terminal.
     if test $merge -gt 0; then
-      exec 2>&1
+      stderr_fd=1  # send stderr to awk, which will copy it to the log
     else
-      exec 2>&3
+      stderr_fd=3  # send stderr directly to the log file
     fi
-    "$@" 3>&-
+    "$@" 2>&$stderr_fd 3>&-
     echo $?
   ) | LC_ALL=C ${AM_TAP_AWK-awk} \
         -v me="$me" \
