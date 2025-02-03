@@ -76,6 +76,7 @@ handwritten_TESTS = \
 t/get-sysconf.sh \
 $(perl_TESTS) \
 t/instspc.tap \
+t/a68-demo.sh \
 t/aclocal.sh \
 t/aclocal-I-order-1.sh \
 t/aclocal-I-order-2.sh \
