@@ -78,12 +78,12 @@ diag_ ()
   set +x
   test $# -eq 0 || { printf %s\\n "$*" | diag_; return; }
   while IFS= read -r line || test -n "$line"; do
-    printf %s\\n "$diag_string_ $line"
+    printf %s\\n "$diag_string_$line"
   done
 )
 
 # Used by the 'diag_' function above.  User-overridable.
-diag_string_="#"
+diag_string_="# "
 
 # warn_ [EXPLANATION]
 # ------------------
