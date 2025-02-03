@@ -76,7 +76,11 @@ planned_=none
 diag_ ()
 (
   set +x
-  test $# -eq 0 || echo "$diag_string_ $*"
+  test $# -eq 0 || while IFS= read -r line; do
+    echo "$diag_string_ $line"
+  done <<EOF
+$*
+EOF
 )
 
 # Used by the 'diag_' function above.  User-overridable.
