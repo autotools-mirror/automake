@@ -74,9 +74,10 @@ planned_=none
 # done to allow better interplay with TAP drivers that allow such a string
 # to be configured.
 diag_ ()
-{
+(
+  set +x
   test $# -eq 0 || echo "$diag_string_ $*"
-}
+)
 
 # Used by the 'diag_' function above.  User-overridable.
 diag_string_="#"
