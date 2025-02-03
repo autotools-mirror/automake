@@ -77,7 +77,7 @@ diag_ ()
 (
   set +x
   test $# -eq 0 || while IFS= read -r line; do
-    echo "$diag_string_ $line"
+    printf %s\\n "$diag_string_ $line"
   done <<EOF
 $*
 EOF
