@@ -23,7 +23,7 @@
 # bugs to <bug-automake@gnu.org> or send patches to
 # <automake-patches@gnu.org>.
 
-scriptversion=2024-12-03.03; # UTC
+scriptversion=2025-02-03.01; # UTC
 
 # Make unconditional expansion of undefined variables an error.  This
 # helps a lot in preventing typo-related bugs.
@@ -144,7 +144,7 @@ fi
     else
       exec 2>&3
     fi
-    "$@"
+    "$@" 3>&-
     echo $?
   ) | LC_ALL=C ${AM_TAP_AWK-awk} \
         -v me="$me" \
@@ -638,8 +638,6 @@ exit 0
 
 } # End of "BEGIN" block.
 '
-
-# TODO: document that we consume the file descriptor 3 :-(
 } 3>"$log_file"
 
 test $? -eq 0 || fatal "I/O or internal error"
