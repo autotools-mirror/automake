@@ -10524,9 +10524,65 @@ relative to test results; this can be of great help in debugging
 (especially if your test scripts are shell scripts run with shell
 tracing active).  As a downside, this option might cause the test
 harness to get confused if anything that appears on standard error
-looks like a test result.
+looks like a test result.  Use @option{--stderr-prefix} to prefix each
+line of standard error to avoid this problem.
 @item --no-merge
 Revert the effects of @option{--merge}.
+@item --stderr-prefix @var{STRING}
+Prefix each line of the test script's standard error with
+@code{@var{STRING}}.  Defaults to the empty string.  This option makes
+it possible to avoid parsing ambiguity when @option{--merge} is in use,
+but it can also be used without @option{--merge} to make it easier to
+read test log files.  When used with @option{--merge}, users will
+typically want to start @code{@var{STRING}} with @samp{#}, which starts
+a TAP comment.  The @samp{#} character is difficult to portably include
+in a @command{make} variable, so the following quadrigraph
+substitutions, copied from Autoconf (@pxref{Quadrigraphs, , , autoconf,
+The Autoconf Manual}), are performed on @code{@var{STRING}}:
+
+@table @samp
+@item @@%:@@
+Replaced with @samp{#}.
+@item @@&t@@
+Replaced with the empty string.  This makes it possible to include the
+literal characters @samp{@@%:@@} in the prefix (@samp{@@%@@&t@@:@@}, for
+example).
+@end table
+
+For example, in shell, @samp{--stderr-prefix "@@%:@@[stderr] "} will
+prefix each line of the test script's standard error with
+@samp{#[stderr] }.
+
+When prefixing standard error lines, the test program's standard error
+lines can be processed out of order relative to the test program's
+standard output lines, even when @option{--merge} is used.  This can be
+due to many factors, including:
+
+@itemize @bullet
+@item
+Output buffering in the test program: The test program might be
+accumulating output data and writing it to the operating system in
+batches, not as soon as it is available.  You can try
+@uref{man:setvbuf(3),,setvbuf(3)} to change the buffering mode in the
+test program, or you can add regular flushes.  OS-specific utilities to
+control buffering may be available, such as
+@uref{man:stdbuf(1),,stdbuf(1)} on GNU/Linux systems.
+
+@item
+Concurrent processing of standard output and standard error: Due to a
+limitation of the shell command language, the TAP driver processes
+standard output in a different thread or process than standard error.
+Thus, processing order is influenced by how the operating system
+schedules the two threads or processes for execution.
+
+@item
+Line-based processing: When prefixing standard error, the TAP driver
+waits until a complete line is read from the test program before
+processing the line.  This reduces the chances that characters from a
+standard output line are mixed with characters from a standard error
+line.
+@end itemize
+
 @item --diagnostic-string @var{STRING}
 Change the string that introduces TAP diagnostics from the default value
 of ``@code{#}'' to @code{@var{STRING}}.  This can be useful if your
@@ -10614,6 +10670,58 @@ PASS: baz.test 1
 ...
 % @kbd{echo exit status: $?}
 exit status: 0
+
+% @kbd{cat stderr-demo.test}
+#!/bin/sh
+echo 'ok 1'
+# These sleeps help highlight the reordering of standard output and
+# standard error lines that can happen if --merge is not used.
+sleep 1
+# Note that this is a diagnostic message written to standard error, so
+# it should not affect the tests.  However, it will break the tests if
+# --merge is used without --stderr-prefix because "Bail out!" will be
+# interpreted as a TAP directive.
+echo 'Bail out! (this should not actually bail out)' >&2
+sleep 1
+echo 'ok 2'
+echo '1..2'
+
+% @kbd{make check TESTS=stderr-demo.test}
+...
+PASS: stderr-demo.test 1
+PASS: stderr-demo.test 2
+...
+
+% @kbd{cat stderr-demo.log}
+Bail out! (this should not actually bail out)
+ok 1
+PASS: stderr-demo.test 1
+ok 2
+PASS: stderr-demo.test 2
+1..2
+
+% @kbd{make check TESTS=stderr-demo.test \
+      TEST_LOG_DRIVER_FLAGS='--merge'}
+...
+PASS: stderr-demo.test 1
+ERROR: stderr-demo.test - Bail out! (this should not actually bail out)
+...
+
+% @kbd{make check TESTS=stderr-demo.test \
+      TEST_LOG_DRIVER_FLAGS='--merge --stderr-prefix "@@%:@@[stderr] "'}
+...
+PASS: stderr-demo.test 1
+PASS: stderr-demo.test 2
+...
+
+% @kbd{cat stderr-demo.log}
+ok 1
+PASS: stderr-demo.test 1
+#[stderr] Bail out! (this should not actually bail out)
+ok 2
+PASS: stderr-demo.test 2
+1..2
+
 @end example
 
 @node Incompatibility with other TAP parsers and drivers
