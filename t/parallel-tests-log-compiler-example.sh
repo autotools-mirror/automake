@@ -37,7 +37,10 @@ LOG_COMPILER = ./wrapper-script
 AM_LOG_FLAGS = -d
 END
 
-echo 'my $a =+ 2; exit (0);' > foo.pl
+# intentionally reversed += operator to provoke warning; thus,
+# explicitly use warnings so that PERL5OPT=-Mwarnings=FATAL,all
+# in the environment won't be a fatal error.  See ../HACKING.
+echo 'use warnings; my $a =+ 2; exit (0);' > foo.pl
 echo 'import sys; sys.exit(0);' > bar.py
 : > baz
 
