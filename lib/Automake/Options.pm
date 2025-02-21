@@ -272,6 +272,7 @@ sub _is_valid_easy_option ($)
     color-tests
     dejagnu
     dist-bzip2
+    dist-bzip3
     dist-lzip
     dist-xz
     dist-zip

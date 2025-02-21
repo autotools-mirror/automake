@@ -405,6 +405,7 @@ t/deprecated-acinit.sh \
 t/destdir.sh \
 t/dir-named-obj-is-bad.sh \
 t/discover.sh \
+t/dist-bzip3.sh \
 t/dist-formats.tap \
 t/dist-lzma.sh \
 t/dist-tarZ.sh \
