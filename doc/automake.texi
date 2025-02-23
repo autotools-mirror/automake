@@ -10516,6 +10516,7 @@ with the @samp{#} character) in the testsuite progress output too; by
 default, TAP diagnostics are only copied to the @file{.log} file.
 @item --no-comments
 Revert the effects of @option{--comments}.
+
 @item --merge
 Instruct the test driver to merge the test scripts' standard error into
 their standard output.  This is necessary if you want to ensure that
@@ -10526,8 +10527,10 @@ tracing active).  As a downside, this option might cause the test
 harness to get confused if anything that appears on standard error
 looks like a test result.  Use @option{--stderr-prefix} to prefix each
 line of standard error to avoid this problem.
+
 @item --no-merge
 Revert the effects of @option{--merge}.
+
 @item --stderr-prefix @var{STRING}
 Prefix each line of the test script's standard error with
 @code{@var{STRING}}.  Defaults to the empty string.  This option makes
@@ -10549,39 +10552,13 @@ literal characters @samp{@@%:@@} in the prefix (@samp{@@%@@&t@@:@@}, for
 example).
 @end table
 
-For example, in shell, @samp{--stderr-prefix "@@%:@@[stderr] "} will
-prefix each line of the test script's standard error with
-@samp{#[stderr] }.
+For example, the option @samp{--stderr-prefix "@@%:@@[stderr] "}
+passed on the command line will prefix each line of the test script's
+standard error with @samp{#[stderr] }.
 
-When prefixing standard error lines, the test program's standard error
-lines can be processed out of order relative to the test program's
-standard output lines, even when @option{--merge} is used.  This can be
-due to many factors, including:
-
-@itemize @bullet
-@item
-Output buffering in the test program: The test program might be
-accumulating output data and writing it to the operating system in
-batches, not as soon as it is available.  You can try
-@uref{man:setvbuf(3),,setvbuf(3)} to change the buffering mode in the
-test program, or you can add regular flushes.  OS-specific utilities to
-control buffering may be available, such as
-@uref{man:stdbuf(1),,stdbuf(1)} on GNU/Linux systems.
-
-@item
-Concurrent processing of standard output and standard error: Due to a
-limitation of the shell command language, the TAP driver processes
-standard output in a different thread or process than standard error.
-Thus, processing order is influenced by how the operating system
-schedules the two threads or processes for execution.
-
-@item
-Line-based processing: When prefixing standard error, the TAP driver
-waits until a complete line is read from the test program before
-processing the line.  This reduces the chances that characters from a
-standard output line are mixed with characters from a standard error
-line.
-@end itemize
+For more details on @option{--stderr-prefix} processing, especially
+the occasional output reordering due to a race condition, @pxref{TAP
+prefixing stderr}.
 
 @item --diagnostic-string @var{STRING}
 Change the string that introduces TAP diagnostics from the default value
@@ -10596,7 +10573,18 @@ the ``official'' TAP protocol does not allow for such a customization; so
 don't use it if you can avoid it.
 @end table
 
-@noindent
+@menu
+* TAP setup and examples:: Setup and examples of TAP usage.
+* TAP stderr examples::    Examples of stderr issues and processing.
+* TAP prefixing stderr::   Details about @option{--stderr-prefix} processing.
+@end menu
+
+@node TAP setup and examples
+@subsubsection TAP setup and examples
+
+@cindex TAP setup, example of
+@cindex setting up TAP, example
+
 Here is an example of how the TAP driver can be set up and used.
 
 @c Keep in sync with tap-doc2.sh
@@ -10670,7 +10658,19 @@ PASS: baz.test 1
 ...
 % @kbd{echo exit status: $?}
 exit status: 0
+@end example
 
+@node TAP stderr examples
+@subsubsection TAP stderr examples
+
+@cindex TAP stderr example
+@cindex stderr example in TAP
+
+Here is a sequence of examples showing the issue with merging stdout
+and stderr, and the resolution with @option{--stderr-prefix}.  Read
+the comments for specifics.
+
+@example
 % @kbd{cat stderr-demo.test}
 #!/bin/sh
 echo 'ok 1'
@@ -10721,8 +10721,68 @@ PASS: stderr-demo.test 1
 ok 2
 PASS: stderr-demo.test 2
 1..2
-
 @end example
+
+@node TAP prefixing stderr
+@subsubsection TAP prefixing stderr
+
+@cindex TAP prefixing stderr
+@cindex prefixing stderr in TAP
+@cindex stderr prefixing in TAP
+@cindex race condition in stderr prefixing
+
+@c see https://bugs.gnu.org/72536 for this feature and discussion.
+
+When using the above @option{--stderr-prefix} TAP option, the test
+program's standard error lines might occasionally be processed out of
+order relative to the test program's standard output lines,
+particularly when @option{--merge} is also used.  This can be due to
+many factors, including:
+
+@itemize @bullet
+@item
+Output buffering in the test program: The test program might be
+accumulating output data and writing it to the operating system in
+batches, not as soon as it is available.  You can try setvbuf(3) to
+change the buffering mode in the test program, or you can add regular
+flushes.  OS-specific utilities to control buffering may be available,
+such as stdbuf(1) on GNU/Linux systems.
+
+@item
+Concurrent processing of standard output and standard error: Due to a
+limitation of the shell command language, the TAP driver processes
+standard output in a different thread or process than standard error,
+causing a race condition.  Thus, processing order is influenced by how
+the operating system schedules the two threads or processes for
+execution.
+
+@item
+Line-based processing: When prefixing standard error, the TAP driver
+waits until a complete line is read from the test program before
+processing the line.  This reduces the chances that characters from a
+standard output line are mixed with characters from a standard error
+line.
+@end itemize
+
+Thus, stderr lines might appear out of order relative to stdout lines,
+even when @option{--merge} is passed.  All stderr lines are still
+processed in order relative to other stderr lines, and the same goes
+for the stdout lines relative to other stdout lines.  So the
+reordering shouldn't break a package's TAP tests, since there's no
+reason to output TAP commands to stderr; even more so when stderr
+lines are prefixed.
+
+When working on a particular test, if you find the reordering is
+causing trouble, you can omit @option{--stderr-prefix}, or run the
+test directly (not via TAP) to get a more accurate understanding of
+output timing.
+
+Overall, though, the order of processing (and logging) should not
+differ from the order of the test program's write(2) calls by much.
+Out-of-order processing only happens if the test program writes to
+stdout then stderr but the kernel wakes up the TAP driver's
+thread/process that is reading stderr before it wakes up the TAP
+driver's thread/process that is reading stdout, or vice versa.
 
 @node Incompatibility with other TAP parsers and drivers
 @subsection Incompatibility with other TAP parsers and drivers
