@@ -1061,7 +1061,7 @@ sub err_ac
 
 # msg_am ($CHANNEL, $MESSAGE, [%OPTIONS])
 # ---------------------------------------
-# Messages about about the current Makefile.am.
+# Messages about the current Makefile.am.
 sub msg_am
 {
   my ($channel, $msg, %opts) = @_;
@@ -1070,7 +1070,7 @@ sub msg_am
 
 # msg_ac ($CHANNEL, $MESSAGE, [%OPTIONS])
 # ---------------------------------------
-# Messages about about configure.ac.
+# Messages about configure.ac.
 sub msg_ac
 {
   my ($channel, $msg, %opts) = @_;
@@ -5668,8 +5668,15 @@ sub scan_autoconf_files ()
     {
       require_conf_file ($required_aux_file{$file}->get, FOREIGN, $file)
     }
-  err_am "'install.sh' is an anachronism; use 'install-sh' instead"
-    if -f $config_aux_dir . '/install.sh';
+  
+  my $auxdir_install_dot_sh = "$config_aux_dir/install.sh";
+  # Maybe there is a way to report the line number of the
+  # AC_CONFIG_AUX_DIR call in configure.ac? Don't know.
+  msg 'obsolete', "$configure_ac", "'install.sh' is an anachronism\n"
+                                 . "  (found in $auxdir_install_dot_sh,\n"
+                                 . "   defined by AC_CONFIG_AUX_DIR);\n"
+                                 . "  use 'install-sh' instead"
+    if -f $auxdir_install_dot_sh;
 
   # Preserve dist_common for later.
   @configure_dist_common = @dist_common;
@@ -5954,7 +5961,7 @@ sub lang_yacc_target_hook
     my ($self, $aggregate, $output, $input, %transform) = @_;
 
     # If some relevant *YFLAGS variable contains the '-d' flag, we'll
-    # have to to generate special code.
+    # have to generate special code.
     my $yflags_contains_minus_d = 0;
 
     foreach my $pfx ("", "${aggregate}_")
@@ -7549,8 +7556,7 @@ sub is_make_dir
 ################################################################
 
 # Find the aux dir.  This should match the algorithm used by
-# ./configure. (See the Autoconf documentation for for
-# AC_CONFIG_AUX_DIR.)
+# ./configure. See the Autoconf documentation for AC_CONFIG_AUX_DIR.
 sub locate_aux_dir ()
 {
   if (! $config_aux_dir_set_in_configure_ac)
