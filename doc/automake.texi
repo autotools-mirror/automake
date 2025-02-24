@@ -10741,9 +10741,11 @@ PASS: stderr-demo.test 2
 
 When using the above @option{--stderr-prefix} TAP option, the test
 program's standard error lines might occasionally be processed out of
-order relative to the test program's standard output lines,
-particularly when @option{--merge} is also used.  This can be due to
-many factors, including:
+order relative to the test program's standard output lines, even when
+@option{--merge} is also used.  This can cause confusion when reading a
+test's log because a stdout line might appear earlier (or later) than a
+stderr line despite being output by the test program after (or before)
+the stderr line.  This reordering can be due to many factors, including:
 
 @itemize @bullet
 @item
@@ -10755,33 +10757,41 @@ flushes.  OS-specific utilities to control buffering may be available,
 such as stdbuf(1) on GNU/Linux systems.
 
 @item
+Input buffering in the TAP driver: The TAP driver relies on the awk(1)
+utility, and some awk implementations (notably mawk) aggressively buffer
+their input (the test program output).  This causes stderr lines to
+appear in the test log much earlier than stdout lines.  The
+@option{--merge} option addresses this by sending the stderr lines to
+awk along with the stdout lines, rendering awk's input buffering
+irrelevant.  (This issue also applies when @option{--stderr-prefix} is
+not used.)
+
+@item
 Concurrent processing of standard output and standard error: Due to a
 limitation of the shell command language, the TAP driver processes
 standard output in a different thread or process than standard error,
-causing a race condition.  Thus, processing order is influenced by how
-the operating system schedules the two threads or processes for
-execution.
+causing a race condition.  Processing order is influenced by how the
+operating system schedules the two threads or processes for execution,
+which is outside the TAP driver's control.
 
 @item
 Line-based processing: When prefixing standard error, the TAP driver
 waits until a complete line is read from the test program before
 processing the line.  This reduces the chances that characters from a
 standard output line are mixed with characters from a standard error
-line.
+line, but it delays processing until the line terminator is encountered.
 @end itemize
 
-Thus, stderr lines might appear out of order relative to stdout lines,
-even when @option{--merge} is passed.  All stderr lines are still
-processed in order relative to other stderr lines, and the same goes
-for the stdout lines relative to other stdout lines.  So the
-reordering shouldn't break a package's TAP tests, since there's no
-reason to output TAP commands to stderr; even more so when stderr
-lines are prefixed.
+All stderr lines are still processed in order relative to other stderr
+lines, and the same goes for the stdout lines relative to other stdout
+lines.  So the reordering shouldn't break a package's TAP tests, since
+there's no reason to output TAP commands to stderr; even more so when
+stderr lines are prefixed.
 
-When working on a particular test, if you find the reordering is
-causing trouble, you can omit @option{--stderr-prefix}, or run the
-test directly (not via TAP) to get a more accurate understanding of
-output timing.
+When troubleshooting a particular test, if you find the reordering is
+causing confusion, you can omit @option{--stderr-prefix}, or run the
+test program directly (not via the TAP driver) to get a more accurate
+understanding of output timing.
 
 Overall, though, the order of processing (and logging) should not
 differ from the order of the test program's write(2) calls by much.
