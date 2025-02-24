@@ -227,7 +227,29 @@ command_ok_ ()
     esac
     shift
   done
-  tap_result_="ok"; "$@" || tap_result_="not ok"
+  tap_result_="ok"
+  # Temporarily disable `set -e` if enabled so that the shell does not abort
+  # if the command fails.  (See the comment below for why `|| handle_error`
+  # can't be used.)  The `set +o` command could be used instead of examining
+  # `$-`, but that would add lots of `set -x` log spam.
+  case $- in
+    *e*) restore_set_e_='set -e';;
+    *) restore_set_e_='';;
+  esac
+  set +e
+  # Run the command in a subshell in case the command is a shell function that
+  # invokes `exit` (perhaps indirectly via `set -e`).  This also prevents the
+  # function from modifying the outer shell execution environment (e.g.,
+  # change variables), which may be an upside or a downside depending on what
+  # the function wants to do.
+  #
+  # Do NOT put the command or the subshell on the left-hand side of a `||` (or
+  # as the condition of an `if` statement, etc.).  Otherwise, if the command
+  # is a shell function, `set -e` would be effectively disabled inside the
+  # function, potentially causing failures to be treated as successes.
+  (eval "$restore_set_e_" && "$@")
+  test "$?" -eq 0 || tap_result_="not ok"
+  eval "$restore_set_e_"
   result_ "$tap_result_" -D "$tap_directive_" -r "$tap_reason_" \
           -- "$tap_description_"
 }
