@@ -19,14 +19,27 @@
 . test-init.sh
 
 # the tests are almost the same, so do a loop with a couple conditionals.
-for testopt in no-built-sources dist-built-sources; do
+# 
+# test-init.sh creates configure.ac with an AM_INIT_AUTOMAKE call with
+# no options. The default is [no-no-]dist-built-sources, i.e., distdir
+# does depend on $(BUILT_SOURCES), so test that first. (There is no
+# Automake option named dist-built-sources, only --no-no-dist-built-sources.)
+# 
+# The second time around, add the no-dist-built-sources option,
+# and the distdir target should not depend on anything.
+#
+for testopt in dist-built-sources no-dist-built-sources; do
 
-  if test "$testopt" = no-built-sources; then
+  if test "$testopt" = no-dist-built-sources; then
     sed -e 's/AM_INIT_AUTOMAKE/AM_INIT_AUTOMAKE([no-dist-built-sources])/' \
         configure.ac >configure.tmp
-    cmp configure.ac configure.tmp && fatal_ 'failed to edit configure.ac'
+    cmp configure.ac configure.tmp \
+    && fatal_ 'failed to edit configure.ac for dist-built-sources'
     mv -f configure.tmp configure.ac
   fi
+
+#printf "\n\f test=$testopt, configure.ac is:\n"
+#cat configure.ac
 
   cat >> configure.ac << 'END'
 AC_OUTPUT
@@ -43,8 +56,8 @@ y.c:
 	cp x.c y.c # simulate 'undetectable' dependency on x.c
 EOF
 
-  if test "$testopt" = no-built-sources; then
-    touch y.c # no-built-sources dist needs to have all files already there
+  if test "$testopt" = no-dist-built-sources; then
+    touch y.c # no-dist-built-sources dist needs to have all files already
   else
     : # with default $(BUILT_SOURCES) dep, will try to build y.c by the rule
   fi
@@ -55,6 +68,9 @@ EOF
   ./configure
   run_make dist
 
+#printf "\n\f test=$testopt, Makefile has:\n"
+#grep ^distdir: Makefile
+
   # In any case, the tarball should contain y.c, but not x.c.
   # The tarball is always named based on $0, regardless of our options.
   pkg_ver=$me-1.0
@@ -63,15 +79,19 @@ EOF
   tar tf "${pkg_ver}".tar "${pkg_ver}"/y.c
 
   # And x.c should have been built only for the built-sources version.
-  if test "$testopt" = no-built-sources; then
+  if test "$testopt" = no-dist-built-sources; then
     # no-built-sources should not have generated this
     ! test -e x.c
+    grep 'distdir:$' Makefile
   else
     # built-sources build should have it
     test -e x.c
+    grep 'distdir: \$(BUILT_SOURCES)' Makefile
   fi
 
   # If the test runs fast enough, the make dist second time through
   # won't do anything since the tarball will be considered up to date.
   rm -f "${pkg_ver}".tar.gz "${pkg_ver}".tar
 done
+
+:
