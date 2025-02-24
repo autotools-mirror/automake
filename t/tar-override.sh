@@ -16,14 +16,21 @@
 
 # Check that the user can override the tar program used by "make dist"
 # at runtime, by redefining the 'TAR' environment variable.
-# NOTE: currently this works only when the tar format used is 'v7'
-#       (which is the default one).
+# 
+# Currently this works only when the tar format used is 'v7';
+# as of 2025 (automake-1.18), this is no longer the default,
+# so force that format in our test setup.
 
 . test-init.sh
 
 cwd=$(pwd) || fatal_ "getting current working directory"
 
-echo AC_OUTPUT >> configure.ac
+cat > configure.ac << 'END'
+AC_INIT([tar-override], [1.0])
+AM_INIT_AUTOMAKE([tar-v7])
+AC_CONFIG_FILES([Makefile])
+AC_OUTPUT
+END
 
 cat > am--tar <<'END'
 #!/bin/sh
