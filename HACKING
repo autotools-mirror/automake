@@ -551,14 +551,17 @@
   version number schemes. The test t/pm/Version[.pl] comprehensively
   checks valid and invalid version strings.
 
-* If making a minor or major release (1.x), also update APIVERSION
-  in configure.ac. But not micro.
+* If making a minor or major release (1.x), also update APIVERSION in
+  configure.ac. But not micro. Don't change APIVERSION for pretests,
+  e.g., APIVERSION=1.17 for the pretest 1.17.90, even though it's
+  leading up to 1.18.
 
 * Create an announcement message with "make announcement".  Edit the
   generated 'announcement' file appropriately, in particularly filling
-  in by hand any "TODO" left in there.  It's useful to do this early,
-  because carefully writing the announcement can easily bring to light
-  things that still need to be worked on.
+  in by hand any "TODO" left in there.  In particular, thank people who
+  should be thanked (read through the ChangeLog).  It's useful to do
+  this early, because carefully writing the announcement can easily
+  bring to light things that still need to be worked on.
 
 * Run these commands, in this order (as mentioned, adjust -j as desired):
     make bootstrap
@@ -574,8 +577,15 @@
   because that command will remove *all* the files that are not tracked
   by git!  Run git status first to ensure all removals are ok.
 
+* Run "make git-tag-release".
+  This will run the maintainer checks, verify that the local git
+  repository and working tree are clean and up-to-date, and create
+  a proper signed git tag for the release (based on the contents
+  of $(VERSION)).
+
 * Create additional info for the announcement with the announce-gen
-  script that is part of gnulib (it requires the release tarball):
+  script that is part of gnulib.  It requires the new release tarball,
+  and the repository to be tagged
     pkg=automake
     prever=1.16.92
     newver=1.16.94
@@ -587,12 +597,6 @@
       --current-version=$newver --gpg-key-id=$gpgkey \
       --url-directory=https://$host.gnu.org/gnu/$pkg
   and merge this with the just-written announcement file.
-
-* Run "make git-tag-release".
-  This will run the maintainer checks, verify that the local git
-  repository and working tree are clean and up-to-date, and create
-  a proper signed git tag for the release (based on the contents
-  of $(VERSION)).
 
 * Run "make git-upload-release".
   For pretest releases: "DEVEL_SNAPSHOT=1 make git-upload-release".

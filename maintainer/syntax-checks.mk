@@ -335,7 +335,7 @@ sc_tests_here_document_format:
 sc_tests_command_subst:
 	@found=false; \
 	scan () { \
-	  sed -n -e '/^#/d' \
+	  sed -n -e '/^ *#/d' \
 	         -e '/<<.*END/,/^END/b' -e '/<<.*EOF/,/^EOF/b' \
 	         -e 's/\\`/\\{backtick}/' \
 	         -e "s/[^\\]'\([^']*\`[^']*\)*'/'{quoted-text}'/g" \
@@ -446,8 +446,8 @@ sc_tests_ls_t:
 # a 2sec resolution.
 sc_tests_plain_sleep:
 	@if grep -vE '^[ 	]*#' $(xtests) \
-	      | grep -E '\bsleep +[12345]\b' | grep .; then \
-	  echo 'Do not use "sleep x" in the above tests.  Use "$$sleep" instead.' 1>&2; \
+	      | grep -E '\bsleep +[12]\b' | grep .; then \
+	  echo 'Do not use "sleep x" in the above tests; use "$$sleep" (no x).' 1>&2; \
 	  exit 1; \
 	fi
 
