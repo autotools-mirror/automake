@@ -25,7 +25,7 @@ AC_INIT([GNU Algol 68 Demo], [1.0], [bug-automake@gnu.org])
 AC_CONFIG_SRCDIR([play.a68])
 AC_CONFIG_AUX_DIR([build-aux])
 AM_INIT_AUTOMAKE
-AC_PROG_A68
+AC_PROG_A68C
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT
 END
@@ -51,11 +51,11 @@ $AUTOCONF
 $AUTOMAKE --add-missing
 
 cat > work.a68 << 'END'
-PROGRAM (puts ("We are working :-(\n"); 0)
+(puts ("We are working :-('n"))
 END
 
 cat > play.a68 << 'END'
-PROGRAM (puts ("We are playing :-)\n"); 0)
+(puts ("We are playing :-)'n"))
 END
 
 ./configure
