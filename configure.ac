@@ -567,7 +567,7 @@ fi
 
 # GNU Algol 68 compiler.
 AC_ARG_VAR([GNU_A68],    [GNU Algol 68 compiler])
-AC_ARG_VAR([GNU_A68FLAGS], [GNU Algol 68 compiler flags])
+AC_ARG_VAR([GNU_A68CFLAGS], [GNU Algol 68 compiler flags])
 AC_CHECK_TOOLS([GNU_A68], [ga68], [false])
 if test "$GNU_A68" != false; then
    AS_IF([AM_RUN_LOG([$GNU_A68 --version && $GNU_A68 -v])], [],
