@@ -23,7 +23,7 @@
 # bugs to <bug-automake@gnu.org> or send patches to
 # <automake-patches@gnu.org>.
 
-scriptversion=2025-02-03.04; # UTC
+scriptversion=2025-05-03.16; # UTC
 
 # Make unconditional expansion of undefined variables an error.  This
 # helps a lot in preventing typo-related bugs.
@@ -54,7 +54,7 @@ Usage:
                 [--diagnostic-string STRING] [--merge|--no-merge]
                 [--stderr-prefix STRING] [--comments|--no-comments]
                 [--] TEST-COMMAND
-The '--test-name', '-log-file' and '--trs-file' options are mandatory.
+The '--test-name', '--log-file' and '--trs-file' options are mandatory.
 
 Report bugs to <bug-automake@gnu.org>.
 GNU Automake home page: <https://www.gnu.org/software/automake/>.
