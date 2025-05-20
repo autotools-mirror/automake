@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-# Test to make sure mdate-sh works correctly.
+# Test that mdate-sh works correctly.
 
 am_create_testdir=empty
 . test-init.sh
@@ -41,5 +41,19 @@ esac
 if year=$(date +%Y) && test $year -gt 2010; then
   test $year = $3 || exit 1
 fi
+
+# 
+# Also check that mdate-sh respects SOURCE_DATE_EPOCH.
+SOURCE_DATE_EPOCH=123456 # into January 2, 1970, for no particular reason.
+export SOURCE_DATE_EPOCH
+set x $(./mdate-sh mdate-sh)
+shift
+echo "$*" # For debugging.
+
+# Check that mdate output is the expected day (1 January 1970):
+test $# = 3
+test x$1 = x2
+test x$2 = xJanuary
+test x$3 = x1970
 
 :

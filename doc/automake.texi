@@ -8327,7 +8327,7 @@ All of these targets can be extended using @samp{-local} rules
 @cindex @code{EDITION} Texinfo flag
 @cindex @code{UPDATED-MONTH} Texinfo flag
 
-@cindex @file{mdate-sh}
+@cindex @file{mdate-sh}, Automake helper script
 
 If a @file{.texi} file @code{@@include}s @file{version.texi} (actually
 any file named @file{vers...texi}, then that file will be
@@ -8336,24 +8336,37 @@ Texinfo flags you can reference using @code{@@value@{EDITION@}},
 @code{@@value@{VERSION@}}, @code{@@value@{UPDATED@}}, and
 @code{@@value@{UPDATED-MONTH@}}.
 
+@vindex SOURCE_DATE_EPOCH@r{, and @command{mdate-sh}}
 @table @code
 @item EDITION
 @itemx VERSION
 Both of these flags hold the version number of your program.  They are
-kept separate for clarity.
+kept separate for historical reasons.
 
 @item UPDATED
-This holds the date the primary @file{.texi} file was last modified.
+This holds the date the primary @file{.texi} file was last modified,
+or the date of the @env{SOURCE_DATE_EPOCH} variable (see below).
 
 @item UPDATED-MONTH
 This holds the name of the month in which the primary @file{.texi} file
-was last modified.
+was last modified, or the month of @env{SOURCE_DATE_EPOCH}.
 @end table
 
 The @file{version.texi} support requires the @command{mdate-sh}
 script; this script is supplied with Automake and automatically
 included when @command{automake} is invoked with the
 @option{--add-missing} option.
+
+@cindex reproducible builds
+@cindex epoch, and reproducible builds
+If the @env{SOURCE_DATE_EPOCH} environment variable is set,
+@command{mdate-sh} uses its value, instead of the modification time of
+any file.  This variable is typically set globally for the sake of
+creating a reproducible build across a distribution.  Its value is an
+integer, the number of seconds since the Unix epoch (January 1, 1970,
+00:00:00 UTC).  If for any reason the @env{SOURCE_DATE_EPOCH} value
+cannot be converted into the human-readable date strings,
+@command{mdate-sh} falls back to using the given file's mtime.
 
 If you have multiple Texinfo files, and you want to use the
 @file{version.texi} feature, then you have to have a separate version
