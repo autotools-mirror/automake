@@ -25,7 +25,7 @@ AC_INIT([GNU Algol 68 Demo], [1.0], [bug-automake@gnu.org])
 AC_CONFIG_SRCDIR([play.a68])
 AC_CONFIG_AUX_DIR([build-aux])
 AM_INIT_AUTOMAKE
-AC_PROG_A68C
+AC_PROG_A68
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT
 END
