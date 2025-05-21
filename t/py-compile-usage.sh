@@ -17,6 +17,7 @@
 # Test 'py-compile --help', 'py-compile --version', and that 'py-compile'
 # correctly complains on wrong usage.
 
+required=python
 . test-init.sh
 
 cp "$am_scriptdir/py-compile" . \
