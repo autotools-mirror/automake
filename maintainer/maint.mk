@@ -348,11 +348,19 @@ CLEANFILES += announcement
 # --------------------------------------------------------------------- #
 
 # Git repositories on Savannah.
-git-sv-host = git.savannah.gnu.org
+# In May 2025, we switched away from https://git.savannah.gnu.org/gitweb
+# because it has become unreliable, often returning 502 Bad Gateway
+# due to endless crawler bombardment of Savannah. The new
+# https://cgi.git.savannah.gnu.org url is an experimental read-only
+# mirror. It would probably be better to just switch to assuming local
+# checkouts instead of retrieving via a web interface. See thread around
+# https://lists.gnu.org/archive/html/savannah-hackers-public/2025-05/msg00040.html
+
+git-sv-host = cgit.git.savannah.gnu.org/cgit
 
 # Some repositories we sync files from.
-SV_GIT_CF = 'https://$(git-sv-host)/gitweb/?p=config.git;a=blob_plain;hb=HEAD;f='
-SV_GIT_GL = 'https://$(git-sv-host)/gitweb/?p=gnulib.git;a=blob_plain;hb=HEAD;f='
+SV_GIT_CF = https://$(git-sv-host)/config.git/plain/
+SV_GIT_GL = https://$(git-sv-host)/gnulib.git/plain/
 
 # Files that we fetch and which we compare against.
 # Note that the 'lib/COPYING' file and help2man must still be synced by hand.
@@ -374,7 +382,7 @@ FETCHFILES = \
 fetch:
 	$(AM_V_at)rm -rf Fetchdir
 	$(AM_V_at)mkdir Fetchdir
-	$(AM_V_GEN)set -e; \
+	$(AM_V_GEN)set -ex; \
 	if $(AM_V_P); then wget_opts=; else wget_opts=-nv; fi; \
 	for url in $(FETCHFILES); do \
 	   file=`printf '%s\n' "$$url" | sed 's|^.*/||; s|^.*=||'`; \
