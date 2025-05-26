@@ -182,8 +182,8 @@ print-release-type:
 git-tag-release: maintainer-check
 	@set -e -u; \
 	case '$(AM_TAG_DRYRUN)' in \
-	  ""|[nN]|[nN]o|NO) run="";; \
-	  *) run="echo Running:";; \
+	  ""|[nN]|[nN]o|NO) run="set -x;";; \
+	  *) run="echo Would run:";; \
 	esac; \
 	$(git_must_have_clean_workdir); \
 	$$run $(GIT) tag -s "v$(VERSION)" -m "$(PACKAGE) $(VERSION)"
@@ -205,8 +205,8 @@ git-upload-release:
 	@# Upload it to the correct FTP repository.
 	@$(determine_release_type) \
 	  && dest=$$dest.gnu.org:automake \
-	  && echo "Will upload to $$dest: $(DIST_ARCHIVES)" \
-	  && $(srcdir)/lib/gnupload $(GNUPLOADFLAGS) --to $$dest \
+	  && echo "Uploading to $$dest: $(DIST_ARCHIVES)" \
+	  && set -x && $(srcdir)/lib/gnupload $(GNUPLOADFLAGS) --to $$dest \
 	                            $(DIST_ARCHIVES)
 
 .PHONY: print-release-type git-upload-release git-tag-release
