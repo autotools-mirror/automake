@@ -533,8 +533,10 @@
 * Ensure that the copyright notices of the distributed files are up to
   date.  The maintainer-only target "update-copyright" can help with this.
 
-* Check NEWS; in particular, ensure that all the relevant differences
-  from the last release are included.
+* Check NEWS; specifically, ensure that all the substantive differences
+  from the last release are included. Include bug numbers or mailing
+  list references wherever relevant. Update the version number and
+  include the release date.
 
 * Update the AC_INIT version number in configure.ac.  Leading up to a
   minor release (x.y), say 1.17, pretests should be numbered from
@@ -552,18 +554,17 @@
   checks valid and invalid version strings.
 
 * If making a minor or major release (1.x), also update APIVERSION in
-  configure.ac. But not micro. Don't change APIVERSION for pretests,
-  e.g., APIVERSION=1.17 for the pretest 1.17.90, even though it's
-  leading up to 1.18.
+  configure.ac. But don't change APIVERSION for micro releases (1.x.y)
+  or pretests. E.g., APIVERSION=1.17 for the pretest 1.17.90, even
+  though it's leading up to 1.18.
 
 * grep $newversion NEWS # ensure that the NEWS file has the new version.
 
-* Create an announcement message with "make announcement".  Edit the
-  generated 'announcement' file appropriately, in particularly filling
-  in by hand any "TODO" left in there.  In particular, thank people who
-  should be thanked (read through the ChangeLog).  It's useful to do
-  this early, because carefully writing the announcement can easily
-  bring to light things that still need to be worked on.
+* Create an announcement message with "make announcement".  It's useful
+  to do this early, because carefully reading the list of NEWS can
+  easily bring to light things that still need to be worked on. But
+  don't worry about every detail, because the below invocation of
+  announce-gen will create another announcement to be merged with this.
 
 * Run these commands, in this order (as mentioned, adjust -j as desired):
     make bootstrap
@@ -579,19 +580,23 @@
   because that command will remove *all* the files that are not tracked
   by git!  Run git status first to ensure all removals are ok.
 
+* git push all changed files.
+
 * Run "make git-tag-release".
   This will run the maintainer checks, verify that the local git
   repository and working tree are clean and up-to-date, and create
-  a proper signed git tag for the release (based on the contents
-  of $(VERSION)).
+  a proper signed git tag for the release, based on the contents
+  of $(VERSION). It's highly undesirable (at least) to change anything
+  after the tag is made, so don't run this until everything is committed
+  and pushed and you're ready to release. For stable releases, check 
 
 * Create additional info for the announcement with the announce-gen
   script that is part of gnulib.  It requires the new release tarball,
-  and the repository to be tagged
+  and the already-tagged repository.
     pkg=automake
-    prever=1.16.92
-    newver=1.16.94
-    reltype=alpha # or beta or stable
+    prever=1.16    # 1.17
+    newver=1.16.94 # 1.18
+    reltype=alpha  # stable (possibly also beta)
     host=`if test $reltype = stable; then echo ftp; else echo alpha; fi`
     gpgkey=0x... #  gpg --fingerprint
     $gnulib/build-aux/announce-gen \
@@ -611,10 +616,11 @@
   and that the local git repository and working tree are clean and
   up-to-date, and will then run "make dist" to create the tarballs,
   and invoke the 'gnupload' script sign and upload them to the correct
-  locations.  If you need to sign with a non-default key, you can
-  use "make GNUPLOADFLAGS='--user KEY' git-upload-release".
-  There can be a delay of up to several minutes before the new files
-  appear on the server.  
+  locations. 
+  
+  If you need to sign with a non-default key, you can use "make
+  GNUPLOADFLAGS='--user KEY' git-upload-release".  There can be a delay
+  of up to several minutes before the new files appear on the server.
 
 * For stable releases you also need to update the manuals on www.gnu.org.
 
@@ -640,10 +646,7 @@
       make web-manual-update CVS_USER=slattarini
 
 * Update version number in configure.ac to next alpha number.
-  Rerun ./bootstrap and commit.
-
-* Don't forget to "git push" your changes so they appear in the public
-  git tree.
+  Rerun ./bootstrap and commit and push.
 
 * Send the announcement generated in the earlier steps at least to
   <autotools-announce@gnu.org> and <automake@gnu.org>.  If the release
