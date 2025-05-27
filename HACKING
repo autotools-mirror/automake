@@ -540,11 +540,12 @@
 
 * Update the AC_INIT version number in configure.ac.  Leading up to a
   minor release (x.y), say 1.17, pretests should be numbered from
-  1.16.90. Even numbers (1.16.90, 1.16.92, ...) should be pretest
-  releases; odd numbers (1.16.91, 1.16.93, ...) should be only
-  development versions.  Leading up to a micro release (x.y.z), say
-  1.17.1, we would have 1.17.0.91 for the initial post-release
-  development version, 1.17.0.92 for the first pretest, etc.
+  1.16.92. Odd numbers (1.16.91, 1.16.93, ...) should be for
+  between-release development versions, and even numbers (1.16.92,
+  1.16.92, ...) should be pretest releases.  Leading up to a micro
+  release (x.y.z), say 1.17.1, we would have 1.17.0.91 for the initial
+  post-release development version, 1.17.0.92 for the first pretest,
+  etc.
   
   Before 1.17 (July 2024), we used suffixed letters for pretests, as is
   traditional, but deficient sorting algorithms did not like that. The
@@ -566,7 +567,7 @@
   don't worry about every detail, because the below invocation of
   announce-gen will create another announcement to be merged with this.
 
-* Run these commands, in this order (as mentioned, adjust -j as desired):
+* Run these commands, in this order (adjust -j as desired as usual):
     make bootstrap
     make -j12 check keep_testdirs=yes
     make maintainer-check
@@ -574,8 +575,6 @@
     make -j12 check-cc-no-c-o
     make -j12 distcheck                                # regular distcheck
     make -j12 distcheck AM_TESTSUITE_MAKE="make -j12"  # parallelize makes
-
-  The resulting automake-$VERSION.tar.* files are what will be the release.
 
   You can run "git clean -fdx" before invoking the bootstrap, to ensure
   a completely clean rebuild.  However, it must be done carefully,
@@ -594,8 +593,8 @@
   locally because you ran it too soon: git tag --delete v$VERSION.)
 
 * Create additional info for the announcement with the announce-gen
-  script that is part of gnulib.  It requires the new release tarball,
-  and the already-tagged repository.
+  script that is part of gnulib.  It requires the release tarball made
+  above, and the repository to be tagged with the new release tag.
     pkg=automake
     prever=1.16    # 1.17
     newver=1.16.94 # 1.18
@@ -617,17 +616,22 @@
 
   This will first verify that you are releasing from a tagged version
   and that the local git repository and working tree are clean and
-  up-to-date, and will then run "make dist" to create the tarballs,
-  and invoke the 'gnupload' script sign and upload them to the correct
-  locations. 
+  up-to-date. Then it will run "make dist" to create the release
+  tarballs (again, so hopefully no changes have been made in the
+  meantime), and invoke the 'gnupload' script sign and upload them to
+  the correct locations.
   
   If you need to sign with a non-default key, you can use "make
   GNUPLOADFLAGS='--user KEY' git-upload-release".  There can be a delay
   of up to several minutes before the new files appear on the server.
 
+* Push the new release tag: git push origin master tag v$(VERSION).
+  You can view unpushed local-only tags with git push --tags --dry-run
+  (and push them by omitting the --dry-run, if there are no extras).
+
 * For stable releases you also need to update the manuals on www.gnu.org.
 
-  - Check links:
+  - Check links (except do this before the release):
        make html
        make checklinkx # various perl prerequisites, see contrib/checklinkx
     or use:
@@ -648,10 +652,10 @@
     for example:
       make web-manual-update CVS_USER=slattarini
 
-* Update version number in configure.ac to next alpha number.
-  Rerun ./bootstrap and commit and push.
+* Update version number in configure.ac to development version number
+  (see above).  Rerun ./bootstrap and commit and push.
 
-* Send the announcement generated in the earlier steps at least to
+* Send the announcement created in the earlier steps at least to
   <autotools-announce@gnu.org> and <automake@gnu.org>.  If the release
   is a stable one, the announcement also goes to <info-gnu@gnu.org>;
   if it is an alpha or beta release, announcement should be sent also
