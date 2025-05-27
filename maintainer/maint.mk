@@ -182,11 +182,11 @@ print-release-type:
 git-tag-release: maintainer-check
 	@set -e -u; \
 	case '$(AM_TAG_DRYRUN)' in \
-	  ""|[nN]|[nN]o|NO) run="set -x;";; \
+	  ""|[nN]|[nN]o|NO) run=;; \
 	  *) run="echo Would run:";; \
 	esac; \
 	$(git_must_have_clean_workdir); \
-	$$run $(GIT) tag -s "v$(VERSION)" -m "$(PACKAGE) $(VERSION)"
+	set -x; $$run $(GIT) tag -s "v$(VERSION)" -m "$(PACKAGE) $(VERSION)"
 
 git-upload-release:
 	@# Check this is a version we can cut a release (either test
