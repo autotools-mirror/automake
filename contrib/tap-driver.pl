@@ -32,7 +32,7 @@ use Getopt::Long ();
 
 use TAP::Parser;
 
-my $VERSION = '2025-01-31.17'; # UTC
+my $VERSION = '2025-06-18.21'; # UTC
 
 my $ME = "tap-driver.pl";
 
@@ -558,7 +558,7 @@ main @ARGV;
 # eval: (add-hook 'before-save-hook 'time-stamp nil t)
 # time-stamp-line-limit: 50
 # time-stamp-start: "my $VERSION = "
-# time-stamp-format: "'%:y-%02m-%02d.%02H'"
+# time-stamp-format: "'%Y-%02m-%02d.%02H'"
 # time-stamp-time-zone: "UTC0"
 # time-stamp-end: "; # UTC"
 # End:
