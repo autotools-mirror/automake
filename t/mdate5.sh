@@ -29,16 +29,22 @@ echo "$*" # For debugging.
 test $# = 3
 case $1$3 in *[!0-9]*) exit 1;; esac
 test $1 -lt 32
-# Hopefully automake will be obsolete in 80 years ;-)
-case $3 in 20[0-9][0-9]) :;; *) exit 1;; esac
+case $3 in
+  19[0-9][0-9]) :;; # for old SOURCE_DATE_EPOCH.
+  20[0-9][0-9]) :;; # Hopefully automake will be obsolete in 80 years ;-)
+  *) exit 1;;
+esac
 case $2 in
   January|February|March|April|May|June|July|August) ;;
   September|October|November|December) ;;
   *) exit 1
 esac
 
-# Stricter checks on the year required a POSIX date(1) command.
-if year=$(date +%Y) && test $year -gt 2010; then
+# Stricter checks on the year required a POSIX date(1) command,
+# and that SOURCE_DATE_EPOCH is not set.
+if year=$(date +%Y) \
+   && test -z "$SOURCE_DATE_EPOCH" \
+   && test $year -gt 2010; then
   test $year = $3 || exit 1
 fi
 

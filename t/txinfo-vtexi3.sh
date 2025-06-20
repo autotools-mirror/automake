@@ -73,7 +73,9 @@ $AUTOMAKE
 
 day='([1-9]|1[0-9]|2[0-9]|3[01])'
 month='(January|February|March|April|May|June|July|August|September|October|November|December)'
-year='20[0-9][0-9]' # Hopefully automake will be obsolete in 80 years ;-)
+year='(20|19)[0-9][0-9]' # Hopefully automake will be obsolete in 80 years ;-)
+                         # Allow 19xx for SOURCE_DATE_EPOCH possibilities.
+#
 date="$day $month $year"
 
 do_check ()
