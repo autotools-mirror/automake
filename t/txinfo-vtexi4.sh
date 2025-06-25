@@ -28,21 +28,11 @@ required='makeinfo tex texi2dvi grep-nonprint'
 # differ depending on local time.
 TZ=UTC0; export TZ
 
-if test -n "$SOURCE_DATE_EPOCH"; then
-  # use mdate-sh to parse SOURCE_DATE_EPOCH.
-  get_shell_script mdate-sh
-  result=`mdate-sh /irrelevant`
-  echo "result of mdate-sh: $result"
-  day=`echo $result | awk '{print $1}'`
-  month=`echo $result | awk '{print $2}'`
-  year=`echo $result | awk '{print $3}'`
-else
-  test $(LC_ALL=C date '+%u') -gt 0 && test $(LC_ALL=C date '+%u') -lt 8 \
-    && day=$(LC_ALL=C date '+%d')   && test -n "$day" \
-    && month=$(LC_ALL=C date '+%B') && test -n "$month" \
-    && year=$(LC_ALL=C date '+%Y')  && test -n "$year" \
-    || skip_ "'date' is not POSIX-compliant enough"
-fi
+test $(LC_ALL=C date '+%u') -gt 0 && test $(LC_ALL=C date '+%u') -lt 8 \
+  && day=$(LC_ALL=C date '+%d')   && test -n "$day" \
+  && month=$(LC_ALL=C date '+%B') && test -n "$month" \
+  && year=$(LC_ALL=C date '+%Y')  && test -n "$year" \
+  || skip_ "'date' is not POSIX-compliant enough"
 #
 day=$(echo "$day" | sed 's/^0//')
 

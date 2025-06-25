@@ -30,7 +30,7 @@ test $# = 3
 case $1$3 in *[!0-9]*) exit 1;; esac
 test $1 -lt 32
 case $3 in
-  19[0-9][0-9]) :;; # for old SOURCE_DATE_EPOCH.
+  19[0-9][0-9]) :;; # just in case.
   20[0-9][0-9]) :;; # Hopefully automake will be obsolete in 80 years ;-)
   *) exit 1;;
 esac
@@ -40,26 +40,9 @@ case $2 in
   *) exit 1
 esac
 
-# Stricter checks on the year required a POSIX date(1) command,
-# and that SOURCE_DATE_EPOCH is not set.
-if year=$(date +%Y) \
-   && test -z "$SOURCE_DATE_EPOCH" \
-   && test $year -gt 2010; then
+# Stricter checks on the year require a POSIX date(1) command.
+if year=$(date +%Y) && test $year -gt 2010; then
   test $year = $3 || exit 1
 fi
-
-# 
-# Also check that mdate-sh respects SOURCE_DATE_EPOCH.
-SOURCE_DATE_EPOCH=123456 # into January 2, 1970, for no particular reason.
-export SOURCE_DATE_EPOCH
-set x $(./mdate-sh mdate-sh)
-shift
-echo "$*" # For debugging.
-
-# Check that mdate output is the expected day (1 January 1970):
-test $# = 3
-test x$1 = x2
-test x$2 = xJanuary
-test x$3 = x1970
 
 :
