@@ -16,13 +16,13 @@
 # $tardir.
 #     tardir=directory && $(am__tar) > result.tar
 #
-# Substitute a variable $(am__untar) that extract such
+# Substitute a variable $(am__untar) that extracts such
 # a tarball read from stdin.
 #     $(am__untar) < result.tar
 #
 AC_DEFUN([_AM_PROG_TAR],
-[# Always define AMTAR for backward compatibility.  Yes, it's still used
-# in the wild :-(  We should find a proper way to deprecate it ...
+[# Always define AMTAR for backward compatibility.  It's still used
+# in the wild, let's not break things.
 AC_SUBST([AMTAR], ['$${TAR-tar}'])
 
 # We'll loop over all known methods to create a tar archive until one works.
