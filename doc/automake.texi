@@ -539,7 +539,7 @@ package, run @code{./configure && make && make install}, and repeat
 with the next package to install.
 
 We call this build system the @dfn{GNU Build System}, since it was
-grown out of the GNU project.  However it is used by a vast number of
+grown out of the GNU project.  However, it is used by a vast number of
 other packages: following any existing convention has its advantages.
 
 @cindex Autotools, introduction
@@ -547,9 +547,9 @@ other packages: following any existing convention has its advantages.
 The Autotools are tools that will create a GNU Build System for your
 package.  Autoconf mostly focuses on @file{configure} and Automake on
 @file{Makefile}s.  It is entirely possible to create a GNU Build
-System without the help of these tools.  However it is rather
-burdensome and error-prone.  We will discuss this again after some
-illustration of the GNU Build System in action.
+System without the help of these tools, but it is rather burdensome
+and error-prone.  We will discuss this again after some illustration
+of the GNU Build System in action.
 
 @node Use Cases
 @section Use Cases for the GNU Build System
@@ -7638,8 +7638,10 @@ To emphasize, @code{BUILT_SOURCES} is honored only by @samp{make all},
 @samp{make check}, @samp{make install}, and @code{make install-exec}
 (and @samp{make dist}).  This means you cannot build an arbitrary
 target (e.g., @samp{make foo}) in a clean tree if it depends on a
-built source.  However it will succeed if you have run @samp{make all}
-earlier, because accurate dependencies are already available.
+built source (unless you explicitly create a dependency for @code{foo}
+on @code{$(BUILT_SOURCES)}).  It will succeed if you have run
+@samp{make all} earlier, though, because accurate dependencies are
+already available.
 
 The next section illustrates and discusses the handling of built sources
 on a toy example.
@@ -7658,7 +7660,7 @@ value of the @command{make} variable @code{bindir} (inherited from
 @file{configure}).
 
 We suggest several implementations below.  It's not meant to be an
-exhaustive listing of all ways to handle built sources, but it will give
+exhaustive listing of all ways to handle built sources, but to give
 you a few ideas if you encounter this issue.
 
 @subsubheading First Try
@@ -7695,16 +7697,17 @@ make: *** [foo.o] Error 1
 @end example
 
 In this example @file{bindir.h} is not distributed nor installed, and
-it is not even being built on-time.  One may wonder if the
-@samp{nodist_foo_SOURCES = bindir.h} line has any use at all.  This
-line simply states that @file{bindir.h} is a source of @code{foo}, so
-for instance, it should be inspected while generating tags
-(@pxref{Tags}).  In other words, it does not help our present problem,
-and the build would fail identically without it.
+it is not even being built on-time.
+
+One may wonder if the @samp{nodist_foo_SOURCES = bindir.h} line has
+any use at all.  This line merely declares that @file{bindir.h} is a
+source of @code{foo}, so for instance, it should be inspected while
+generating tags (@pxref{Tags}).  In other words, it does not help our
+present problem, and the build would fail identically without it.
 
 @subsubheading Using @code{BUILT_SOURCES}
 
-A solution is to require @file{bindir.h} to be built before anything
+One solution is to require @file{bindir.h} to be built before anything
 else.  This is what @code{BUILT_SOURCES} is meant for (@pxref{Sources}).
 
 @example
@@ -7772,19 +7775,20 @@ bindir.h: Makefile
 You don't have to list @emph{all} the dependencies of @file{foo.o}
 explicitly, only those that might need to be built.  If a dependency
 already exists, it will not hinder the first compilation and will be
-recorded by the normal dependency tracking code.  (After this first
+recorded by the normal dependency tracking code.  After this first
 compilation, the dependency tracking code will also have recorded the
 dependency between @file{foo.o} and @file{bindir.h}, so our explicit
-dependency is only useful to the first build.)
+dependency is useful only to the first build, but does no harm.
 
-Adding explicit dependencies like this can be a bit dangerous if you are
-not careful enough.  This is due to the way Automake tries not to
-overwrite your rules (it assumes you know better than it).
-@samp{foo.$(OBJEXT): bindir.h} supersedes any rule Automake may want to
-output to build @samp{foo.$(OBJEXT)}.  It happens to work in this case
-because Automake doesn't have to output any @samp{foo.$(OBJEXT):}
-target: it relies on a suffix rule instead (i.e., @samp{.c.$(OBJEXT):}).
-Always check the generated @file{Makefile.in} if you do this.
+Adding explicit dependencies like this can be dangerous, because
+Automake does not overwrite your own rules (it assumes you know better
+than it).  Thus, @samp{foo.$(OBJEXT): bindir.h} supersedes any rule
+Automake may want to output to build @samp{foo.$(OBJEXT)}.  It works
+in this case because Automake doesn't output any @samp{foo.$(OBJEXT):}
+target: it relies on a suffix rule instead (i.e.,
+@samp{.c.$(OBJEXT):}).  So, in this approach, you should always check
+the generated @file{Makefile.in} for Automake-generated rules with the
+same target.
 
 @subsubheading Build @file{bindir.h} from @file{configure}
 
@@ -7833,16 +7837,15 @@ first.
 
 @subsubheading Which is best?
 
-There is no panacea, of course.  Each solution has its merits and
-drawbacks.
+There is no panacea.  Each solution has its merits and drawbacks.
 
 You cannot use @code{BUILT_SOURCES} if the ability to run @samp{make
-foo} on a clean tree is important to you.
+foo} for any @code{foo} on a clean tree is important to you.
 
-You won't add explicit dependencies if you are leery of overriding
-an Automake rule by mistake.
+You won't want to define explicit dependencies if you are leery of
+overriding an Automake rule by mistake.
 
-Building files from @file{./configure} is not always possible, neither
+Building files from @file{./configure} is not always possible; neither
 is converting @file{.h} files into @file{.c} files.
 
 
@@ -10998,15 +11001,15 @@ Beware not to mistake @code{CONFIGURE_DEPENDENCIES} for
 
 @c Keep in sync with remake-configure-dependencies.sh
 @code{CONFIGURE_DEPENDENCIES} adds dependencies to the
-@file{configure} rule, whose effect is to run @command{autoconf}.  This
-variable should be seldom used, because @command{automake} already tracks
-@code{m4_include}d files.  However it can be useful when playing
-tricky games with @code{m4_esyscmd} or similar non-recommendable
-macros with side effects.  Be also aware that interactions of this
-variable with the @ref{Autom4te Cache, , autom4te cache, autoconf,
-The Autoconf Manual} are quite problematic and can cause subtle
-breakage, so you might want to disable the cache if you want to use
-@code{CONFIGURE_DEPENDENCIES}.
+@file{configure} rule, whose effect is to run @command{autoconf}.
+This variable should be seldom used, because @command{automake}
+already tracks @code{m4_include}d files, but it can be useful when
+playing tricky games with @code{m4_esyscmd} or similar
+non-recommendable macros with side effects.  Also be aware that
+interactions of this variable with the @ref{Autom4te Cache, , autom4te
+cache, autoconf, The Autoconf Manual} are quite problematic and can
+cause subtle breakage, so you might want to disable the cache if you
+want to use @code{CONFIGURE_DEPENDENCIES}.
 
 @code{CONFIG_STATUS_DEPENDENCIES} adds dependencies to the
 @file{config.status} rule, whose effect is to run @file{configure}.
@@ -12734,8 +12737,8 @@ in @file{Makefile.in} and the supporting M4 macros copied to
 
 Presently @command{automake} is able to diagnose situations where
 @file{aclocal.m4} has been generated with another version of
-@command{aclocal}.  However it never checks whether auxiliary scripts
-are up-to-date.  In other words, @command{automake} will tell you when
+@command{aclocal}, but it never checks whether auxiliary scripts are
+up-to-date.  In other words, @command{automake} will tell you when
 @command{aclocal} needs to be rerun, but it will never diagnose a
 missing @option{--force-missing}.
 
