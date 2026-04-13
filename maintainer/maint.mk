@@ -486,9 +486,9 @@ clean-local: clean-web-manual
 
 EXTRA_DIST += lib/gendocs.sh lib/gendocs_template
 
-# ------------------------------------------------ #
-#  Update copyright years of all committed files.  #
-# ------------------------------------------------ #
+# --------------------------------------------------------- #
+#  Update copyright years of (almost) all committed files.  #
+# --------------------------------------------------------- #
 
 EXTRA_DIST += lib/update-copyright
 
@@ -497,7 +497,8 @@ update_copyright_env = \
   UPDATE_COPYRIGHT_USE_INTERVALS=2
 
 # In addition to the several README files, these as well are
-# not expected to have a copyright notice.
+# not expected to have a copyright notice. help2man should be handled in
+# make fetch, but currently isn't (fixme).
 files_without_copyright = \
   .autom4te.cfg \
   .dir-locals.el \
@@ -508,6 +509,7 @@ files_without_copyright = \
   COPYING \
   AUTHORS \
   THANKS \
+  lib/help2man \
   lib/INSTALL \
   lib/COPYING
 
