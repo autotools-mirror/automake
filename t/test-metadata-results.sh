@@ -94,12 +94,12 @@ mk_check
 count_test_results total=0 pass=0 fail=0 xpass=0 xfail=0 skip=0 error=0
 
 cat > foo.test <<END
-:test-global-result: PASS
+:global-test-result: PASS
 :test-result: FAIL
 END
 cat > bar.test <<END
 :test-result: SKIP
-:test-global-result: ERROR
+:global-test-result: ERROR
 END
 mk_check -e FAIL
 count_test_results total=2 pass=0 fail=1 xpass=0 xfail=0 skip=1 error=0
@@ -107,18 +107,18 @@ count_test_results total=2 pass=0 fail=1 xpass=0 xfail=0 skip=1 error=0
 cat > foo.test <<END
 FAIL: foo.test
 :test-result: PASS
-:test-global-result: XPASS
+:global-test-result: XPASS
 END
 echo ERROR: bar.test > bar.test
 mk_check
 count_test_results total=1 pass=1 fail=0 xpass=0 xfail=0 skip=0 error=0
 
 cat > foo.test <<END
-:test-global-result: SKIP
+:global-test-result: SKIP
 :test-result: FAIL
 END
 cat > bar.test <<END
-:test-global-result: PASS
+:global-test-result: PASS
 END
 mk_check -e FAIL
 count_test_results total=1 pass=0 fail=1 xpass=0 xfail=0 skip=0 error=0
