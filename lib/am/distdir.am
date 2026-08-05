@@ -33,7 +33,9 @@ am__remove_distdir = \
 ## See automake bug#10470.
       || { sleep 5 && rm -rf "$(distdir)"; }; \
   else :; fi
-am__post_remove_distdir = $(am__remove_distdir)
+am__post_remove_distdir = \
+  rm -f $(distdir).tar; \
+  $(am__remove_distdir)
 endif %?TOPDIR_P%
 
 if %?SUBDIRS%
@@ -330,51 +332,73 @@ endif %?TOPDIR_P%
 
 if %?TOPDIR_P%
 
+## Build the tarball here instead of piping tar into the compressor.
+## A pipeline reports only its last exit status, and 'pipefail' is not
+## portable, so a failing tar would go unnoticed and ship a truncated
+## archive (automake bug#19614).  This also runs tar once for all
+## formats.
+##
+## Some tar implementations only warn about what they cannot archive
+## and still exit 0, so anything on tar's standard error counts as a
+## failure.  configure exempts archivers that write there when all is
+## well, cpio for one.
+
+# Exists only to be overridden by the user if desired.
+AM_DIST_TAR_IGNORE_STDERR = $(am__tar_ignore_stderr)
+
+$(distdir).tar: distdir
+	am__tar_msg=`tardir=$(distdir) && $(am__tar) 2>&1 >$(distdir).tar`; \
+	am__tar_rc=$$?; \
+	test -z "$$am__tar_msg" || { printf '%s\n' "$$am__tar_msg" >&2; \
+	  test x"$(AM_DIST_TAR_IGNORE_STDERR)" = xyes || am__tar_rc=1; }; \
+	test $$am__tar_rc -eq 0 || { rm -f $(distdir).tar; \
+	  echo "$(distdir).tar: cannot create the distribution archive" >&2; exit 1; }
+
 ?GZIP?DIST_ARCHIVES += $(distdir).tar.gz
 GZIP_ENV = -9
 .PHONY: dist-gzip
-dist-gzip: distdir
-	tardir=$(distdir) && $(am__tar) | eval GZIP= gzip $(GZIP_ENV) -c >$(distdir).tar.gz
+dist-gzip: $(distdir).tar
+	eval GZIP= gzip $(GZIP_ENV) -c <$(distdir).tar >$(distdir).tar.gz
 	$(am__post_remove_distdir)
 
 ?BZIP2?DIST_ARCHIVES += $(distdir).tar.bz2
 .PHONY: dist-bzip2
-dist-bzip2: distdir
-	tardir=$(distdir) && $(am__tar) | BZIP2=$${BZIP2--9} bzip2 -c >$(distdir).tar.bz2
+dist-bzip2: $(distdir).tar
+	BZIP2=$${BZIP2--9} bzip2 -c <$(distdir).tar >$(distdir).tar.bz2
 	$(am__post_remove_distdir)
 
 ?BZIP3?DIST_ARCHIVES += $(distdir).tar.bz3
 .PHONY: dist-bzip3
 ## bzip3 does not read any envvars.
-dist-bzip3: distdir
-	tardir=$(distdir) && $(am__tar) | bzip3 -c >$(distdir).tar.bz3
+dist-bzip3: $(distdir).tar
+	bzip3 -c <$(distdir).tar >$(distdir).tar.bz3
 	$(am__post_remove_distdir)
 
 ?LZIP?DIST_ARCHIVES += $(distdir).tar.lz
 .PHONY: dist-lzip
-dist-lzip: distdir
-	tardir=$(distdir) && $(am__tar) | lzip -c $${LZIP_OPT--9} >$(distdir).tar.lz
+dist-lzip: $(distdir).tar
+	lzip -c $${LZIP_OPT--9} <$(distdir).tar >$(distdir).tar.lz
 	$(am__post_remove_distdir)
 
 ?XZ?DIST_ARCHIVES += $(distdir).tar.xz
 .PHONY: dist-xz
-dist-xz: distdir
-	tardir=$(distdir) && $(am__tar) | XZ_OPT=$${XZ_OPT--e} xz -c >$(distdir).tar.xz
+dist-xz: $(distdir).tar
+	XZ_OPT=$${XZ_OPT--e} xz -c <$(distdir).tar >$(distdir).tar.xz
 	$(am__post_remove_distdir)
 
 ?ZSTD?DIST_ARCHIVES += $(distdir).tar.zst
 .PHONY: dist-zstd
-dist-zstd: distdir
-	tardir=$(distdir) && $(am__tar) | zstd -c $${ZSTD_CLEVEL-$${ZSTD_OPT--19}} >$(distdir).tar.zst
+dist-zstd: $(distdir).tar
+	zstd -c $${ZSTD_CLEVEL-$${ZSTD_OPT--19}} <$(distdir).tar >$(distdir).tar.zst
 	$(am__post_remove_distdir)
 
 ?COMPRESS?DIST_ARCHIVES += $(distdir).tar.Z
 .PHONY: dist-tarZ
-dist-tarZ: distdir
+dist-tarZ: $(distdir).tar
 	@echo WARNING: "Support for distribution archives compressed with" \
 		       "legacy program 'compress' is deprecated." >&2
 	@echo WARNING: "It will be removed altogether in Automake 2.0" >&2
-	tardir=$(distdir) && $(am__tar) | compress -c >$(distdir).tar.Z
+	compress -c <$(distdir).tar >$(distdir).tar.Z
 	$(am__post_remove_distdir)
 
 ?SHAR?DIST_ARCHIVES += $(distdir).shar.gz
@@ -383,7 +407,10 @@ dist-shar: distdir
 	@echo WARNING: "Support for shar distribution archives is" \
 	               "deprecated." >&2
 	@echo WARNING: "It will be removed altogether in Automake 2.0" >&2
-	shar $(distdir) | eval GZIP= gzip $(GZIP_ENV) -c >$(distdir).shar.gz
+## shar is expected to be chatty on its standard error, so only its exit
+## status is checked here.
+	shar $(distdir) >$(distdir).shar || { rm -f $(distdir).shar; exit 1; }
+	eval GZIP= gzip $(GZIP_ENV) -f $(distdir).shar
 	$(am__post_remove_distdir)
 
 ?ZIP?DIST_ARCHIVES += $(distdir).zip

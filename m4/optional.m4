@@ -15,7 +15,7 @@
 # dist' builds each archive when its tool is present and skips it
 # otherwise, without failing.  Unknown OPTION warns at autoreconf; a
 # tool absent at configure appends no rule; a tool lost afterwards
-# fails the pipeline, which the recipe catches.  See bug#81040.
+# fails, which the recipe catches.  See bug#81040.
 AC_DEFUN([AM_OPTIONAL_AUTOMAKE],
 [m4_foreach_w([_am_opt_o], [$1],
    [_AM_OPTIONAL_AUTOMAKE_ONE(_m4_defn([_am_opt_o]))])dnl
@@ -80,13 +80,13 @@ fi
 
 # _AM_OPTIONAL_TAR(TOOL, VAR-TAG, EXT, FLAGS)
 # -------------------------------------------
-# Single-tool tar pipe; TOOL is last, so its failure is what's caught.
+# Compress the shared $(distdir).tar, whose rule catches tar's own
+# failures (bug#19614); only TOOL failing is tolerated here.
 AC_DEFUN([_AM_OPTIONAL_TAR],
 [_AM_OPTIONAL_RULE([$1], [$2],
-[am--optional-dist-$1: distdir
+[am--optional-dist-$1: $(distdir).tar
 	@if test -n "$(am__optional_$2)"; then \
-	  { tardir=$(distdir) \
-	    && $(am__tar) | "$(am__optional_$2)" $4 > $(distdir).tar.$3; } \
+	  "$(am__optional_$2)" $4 < $(distdir).tar > $(distdir).tar.$3 \
 	  || { rm -f $(distdir).tar.$3; \
 	       echo "am-optional: dist-$1 failed; archive not built" >&2; }; \
 	else \

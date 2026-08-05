@@ -25,6 +25,11 @@ AC_DEFUN([_AM_PROG_TAR],
 # in the wild, let's not break things.
 AC_SUBST([AMTAR], ['$${TAR-tar}'])
 
+# The dist rules treat anything $(am__tar) writes to standard error as
+# a failure (automake bug#19614).  Set this to "yes" for archivers that
+# write there when all is well; cpio reports a block count.
+am__tar_ignore_stderr=no
+
 # We'll loop over all known methods to create a tar archive until one works.
 _am_tools='gnutar m4_if([$1], [ustar], [plaintar]) pax cpio none'
 
@@ -76,6 +81,7 @@ m4_if([$1], [v7],
   _am_tools=${am_cv_prog_tar_$1-$_am_tools}
 
   for _am_tool in $_am_tools; do
+    am__tar_ignore_stderr=no
     case $_am_tool in
     gnutar)
       for _am_tar in tar gnutar gtar; do
@@ -102,6 +108,7 @@ m4_if([$1], [v7],
       am__tar='find "$$tardir" -print | cpio -o -H $1 -L'
       am__tar_='find "$tardir" -print | cpio -o -H $1 -L'
       am__untar='cpio -i -H $1 -d'
+      am__tar_ignore_stderr=yes
       ;;
     none)
       am__tar=false
@@ -133,4 +140,5 @@ m4_if([$1], [v7],
 
 AC_SUBST([am__tar])
 AC_SUBST([am__untar])
+AC_SUBST([am__tar_ignore_stderr])
 ]) # _AM_PROG_TAR
