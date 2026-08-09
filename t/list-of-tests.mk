@@ -494,6 +494,7 @@ t/extra-sources-no-spurious.sh \
 t/extra-sources.sh \
 t/extra.sh \
 t/f90only.sh \
+t/filename-length-max.sh \
 t/flavor.sh \
 t/flibs.sh \
 t/fn99.sh \
