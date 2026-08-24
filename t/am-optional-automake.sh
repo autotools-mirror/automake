@@ -132,14 +132,14 @@ $AUTOMAKE --add-missing
 # catch the failure, clean up the partial archive, print a warning,
 # leave the rest of `make dist' running, and exit 0.
 mkdir stub-bin
-cat > stub-bin/bzip3 <<'EOS'
+cat > stub-bin/bzip3 <<'END'
 #! /bin/sh
 exit 1
-EOS
+END
 chmod +x stub-bin/bzip3
 
 saved_PATH=$PATH
-PATH=`pwd`/stub-bin:$PATH
+PATH=$(pwd)/stub-bin:$PATH
 $MAKE dist 2>stderr
 PATH=$saved_PATH
 
