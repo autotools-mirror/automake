@@ -139,9 +139,9 @@ END
 chmod +x stub-bin/bzip3
 
 saved_PATH=$PATH
-PATH=$(pwd)/stub-bin:$PATH
-$MAKE dist 2>stderr
-PATH=$saved_PATH
+PATH=$(pwd)/stub-bin$PATH_SEPARATOR$PATH; export PATH
+run_make -E dist
+PATH=$saved_PATH; export PATH
 
 test -s am-optional-automake-1.0.tar.gz
 test ! -e am-optional-automake-1.0.tar.bz3

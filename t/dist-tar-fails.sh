@@ -73,8 +73,7 @@ $AUTOMAKE
 ./configure
 
 for fake_tar in tar-fails tar-warns; do
-  $MAKE dist am__tar=./$fake_tar > output 2>&1 && { cat output; exit 1; }
-  cat output
+  run_make -M -e FAIL dist am__tar=./$fake_tar
   grep 'cannot archive that' output
   grep "$distdir\.tar: cannot create the distribution archive" output
   # No archive, and no leftovers, must have been created.
@@ -85,9 +84,7 @@ for fake_tar in tar-fails tar-warns; do
 done
 
 # Diagnostics from tar can be declared harmless by the user.
-$MAKE dist am__tar=./tar-warns AM_DIST_TAR_IGNORE_STDERR=yes > output 2>&1 \
-  || { cat output; exit 1; }
-cat output
+run_make -M dist am__tar=./tar-warns AM_DIST_TAR_IGNORE_STDERR=yes
 grep 'cannot archive that' output
 test ! -e $distdir.tar
 test -s $distdir.tar.gz
@@ -97,7 +94,7 @@ test -s $distdir.tar.bz2
 rm -f $distdir.tar.*
 
 # Three formats, but a single run of the archiver.
-$MAKE dist am__tar=./tar-counts
+run_make dist am__tar=./tar-counts
 cat tar-runs # For debugging.
 test "$(cat tar-runs)" = x
 test ! -e $distdir.tar

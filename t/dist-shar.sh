@@ -55,10 +55,9 @@ chmod a+x bin/shar
 rm -f $distdir.shar.gz
 saved_PATH=$PATH
 PATH=$(pwd)/bin$PATH_SEPARATOR$PATH; export PATH
-$MAKE dist-shar > output 2>&1 && { cat output; exit 1; }
+run_make -M -e FAIL dist-shar
 PATH=$saved_PATH; export PATH
 
-cat output
 grep 'cannot do that' output
 test ! -e $distdir.shar
 test ! -e $distdir.shar.gz
