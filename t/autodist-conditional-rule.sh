@@ -46,12 +46,12 @@ grep '^am__DIST_COMMON.*ChangeLog' Makefile.in && exit 1
 ./configure
 $MAKE dist
 $MAKE distdir
-test ! -f foo-1.0/ChangeLog
+test ! -f foobar-1.0/ChangeLog
 
 # With the condition true, ChangeLog is built and distributed.
 ./configure want_changelog=yes
 $MAKE distdir
-test -f foo-1.0/ChangeLog
-grep generated foo-1.0/ChangeLog
+test -f foobar-1.0/ChangeLog
+grep generated foobar-1.0/ChangeLog
 
 :
