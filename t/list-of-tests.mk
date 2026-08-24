@@ -174,6 +174,7 @@ t/asm3.sh \
 t/autodist-acconfig-no-subdir.sh \
 t/autodist-acconfig.sh \
 t/autodist-aclocal-m4.sh \
+t/autodist-conditional-rule.sh \
 t/autodist-config-headers.sh \
 t/autodist-configure-no-subdir.sh \
 t/autodist-no-duplicate.sh \

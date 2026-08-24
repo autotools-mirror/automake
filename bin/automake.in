@@ -552,6 +552,10 @@ my %lang_specific_files;
 # List of distributed files to be put in DIST_COMMON.
 my @dist_common;
 
+# List of files to be put in DIST_COMMON only under some conditions,
+# as [$DISJCONDITIONS, $FILE] pairs.
+my @dist_common_cond;
+
 # This is set when 'handle_dist' has finished.  Once this happens,
 # we should no longer push on dist_common.
 my $handle_dist_run;
@@ -650,6 +654,7 @@ sub initialize_per_input ()
     @dist_targets = ();
 
     @dist_common = ();
+    @dist_common_cond = ();
     $handle_dist_run = 0;
 
     @proglist = ();
@@ -3893,20 +3898,29 @@ sub handle_dist ()
     }
   foreach my $cfile (@toplevelmd_ok, @common_files)
     {
-      if (dir_has_case_matching_file ($relative_dir, $cfile)
-	  # The file might be absent, but if it can be built it's ok.
-	  || rule $cfile)
+      if (dir_has_case_matching_file ($relative_dir, $cfile))
 	{
 	  push_dist_common ($cfile);
+	}
+      # The file might be absent, but if it can be built it's ok.  Only
+      # put it in the dist tarball it in the conditions where its rule is 
+      # defined, otherwise 'make dist' could require a file that cannot be
+      # built (bug#79049).
+      elsif (my $crule = rule $cfile)
+	{
+	  push_dist_common_cond ($crule->conditions, $cfile);
 	}
       elsif (grep { $_ eq $cfile } @toplevelmd_ok)
         { # Irritatingly, have to repeat the checks, now for .md files;
           # we want to prefer non-.md, so do this second, and only "elsif".
-          if (dir_has_case_matching_file ($relative_dir, "$cfile.md")
-	      || rule "$cfile.md")
+          if (dir_has_case_matching_file ($relative_dir, "$cfile.md"))
   	    {
 	      push_dist_common ("$cfile.md");
 	    }
+          elsif (my $mdrule = rule "$cfile.md")
+            {
+	      push_dist_common_cond ($mdrule->conditions, "$cfile.md");
+            }
         }
 
       # Don't use 'elsif' here because a file might meaningfully
@@ -3917,11 +3931,14 @@ sub handle_dist ()
 	}
       elsif ($check_aux && grep { $_ eq $cfile } @toplevelmd_ok)
         {
-          if (dir_has_case_matching_file ($config_aux_dir, "$cfile.md")
-	      || rule "$cfile.md")
+          if (dir_has_case_matching_file ($config_aux_dir, "$cfile.md"))
   	    {
 	      push_dist_common ("$cfile.md");
 	    }
+          elsif (my $mdrule = rule "$cfile.md")
+            {
+	      push_dist_common_cond ($mdrule->conditions, "$cfile.md");
+            }
         }
     }
 
@@ -3947,13 +3964,38 @@ sub handle_dist ()
       @configure_dist_common = ();
     }
 
+  # Files conditionally distributed are gathered into per-condition helper
+  # variables, so that they do not become prerequisites of 'distdir' in
+  # the conditions where their rule does not exist (see bug#79049).
+  my @cond_common;
+  my %cond_files;
+  foreach my $pair (@dist_common_cond)
+    {
+      my ($conds, $file) = @$pair;
+      push @{$cond_files{$conds->string}}, $file;
+    }
+  my $helper_count = 0;
+  foreach my $pair (@dist_common_cond)
+    {
+      my ($conds) = @$pair;
+      my $files = delete $cond_files{$conds->string};
+      next unless defined $files;
+      my $helper = 'am__DIST_COMMON_' . ++$helper_count;
+      foreach my $cond ($conds->conds)
+	{
+	  define_pretty_variable ($helper, $cond, INTERNAL,
+				  uniq (sort @$files));
+	}
+      push @cond_common, "\$($helper)";
+    }
+
   # $(am__DIST_COMMON): files to be distributed automatically.  Will be
   # appended to $(DIST_COMMON) in the generated Makefile.
   # Use 'sort' so that the expansion of $(DIST_COMMON) in the generated
   # Makefile is deterministic, in face of m4 and/or perl randomizations
   # (see automake bug#17908).
   define_pretty_variable ('am__DIST_COMMON', TRUE, INTERNAL,
-                          uniq (sort @dist_common));
+                          uniq (sort @dist_common), @cond_common);
 
   # Now that we've processed @dist_common, disallow further attempts
   # to modify it.
@@ -7991,6 +8033,22 @@ sub push_dist_common
   prog_error "push_dist_common run after handle_dist"
     if $handle_dist_run;
   push @dist_common, @_;
+}
+
+# push_dist_common_cond ($CONDS, @FILES)
+# --------------------------------------
+# Like 'push_dist_common', but distribute @FILES only in the conditions
+# described by the Automake::DisjConditions $CONDS.
+sub push_dist_common_cond
+{
+  my ($conds, @files) = @_;
+  prog_error "push_dist_common_cond run after handle_dist"
+    if $handle_dist_run;
+  # Short circuit if always true.
+  return push_dist_common (@files)
+    if $conds->true;
+  push @dist_common_cond, [$conds, $_]
+    foreach @files;
 }
 
 
