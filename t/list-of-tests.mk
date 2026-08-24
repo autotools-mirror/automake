@@ -415,6 +415,7 @@ t/dist-auxdir-many-subdirs.sh \
 t/dist-auxfile-2.sh \
 t/dist-auxfile.sh \
 t/dist-bzip3.sh \
+t/dist-compressor-fails.sh \
 t/dist-formats.tap \
 t/dist-included-parent-dir.sh \
 t/dist-install-sh.sh \
@@ -422,6 +423,7 @@ t/dist-lzma.sh \
 t/dist-missing-am.sh \
 t/dist-missing-included-m4.sh \
 t/dist-missing-m4.sh \
+t/dist-multiple-formats.sh \
 t/dist-no-built-sources.sh \
 t/dist-pr109765.sh \
 t/dist-readonly.sh \

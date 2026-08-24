@@ -34,8 +34,12 @@ am__remove_distdir = \
       || { sleep 5 && rm -rf "$(distdir)"; }; \
   else :; fi
 am__post_remove_distdir = \
-  rm -f $(distdir).tar; \
+  $(am__is_gnu_make) || rm -f $(distdir).tar; \
   $(am__remove_distdir)
+am__ensure_distdir_tar = \
+  test -f $(distdir).tar || $(MAKE) $(AM_MAKEFLAGS) $(distdir).tar
+am__dist_compress_failed = \
+  am__rc=$$?; rm -f $$am__archive $(distdir).tar; exit $$am__rc
 endif %?TOPDIR_P%
 
 if %?SUBDIRS%
@@ -357,51 +361,74 @@ $(distdir).tar: distdir
 	test $$am__tar_rc -eq 0 || { rm -f $(distdir).tar; \
 	  echo "$(distdir).tar: cannot create the distribution archive" >&2; exit 1; }
 
+.INTERMEDIATE: $(distdir).tar
+
 ?GZIP?DIST_ARCHIVES += $(distdir).tar.gz
 GZIP_ENV = -9
 .PHONY: dist-gzip
 dist-gzip: $(distdir).tar
-	eval GZIP= gzip $(GZIP_ENV) -c <$(distdir).tar >$(distdir).tar.gz
+	@$(am__ensure_distdir_tar)
+	am__archive=$(distdir).tar.gz; \
+	eval GZIP= gzip $(GZIP_ENV) -c <$(distdir).tar >$$am__archive \
+	  || { $(am__dist_compress_failed); }
 	$(am__post_remove_distdir)
 
 ?BZIP2?DIST_ARCHIVES += $(distdir).tar.bz2
 .PHONY: dist-bzip2
 dist-bzip2: $(distdir).tar
-	BZIP2=$${BZIP2--9} bzip2 -c <$(distdir).tar >$(distdir).tar.bz2
+	@$(am__ensure_distdir_tar)
+	am__archive=$(distdir).tar.bz2; \
+	BZIP2=$${BZIP2--9} bzip2 -c <$(distdir).tar >$$am__archive \
+	  || { $(am__dist_compress_failed); }
 	$(am__post_remove_distdir)
 
 ?BZIP3?DIST_ARCHIVES += $(distdir).tar.bz3
 .PHONY: dist-bzip3
 ## bzip3 does not read any envvars.
 dist-bzip3: $(distdir).tar
-	bzip3 -c <$(distdir).tar >$(distdir).tar.bz3
+	@$(am__ensure_distdir_tar)
+	am__archive=$(distdir).tar.bz3; \
+	bzip3 -c <$(distdir).tar >$$am__archive \
+	  || { $(am__dist_compress_failed); }
 	$(am__post_remove_distdir)
 
 ?LZIP?DIST_ARCHIVES += $(distdir).tar.lz
 .PHONY: dist-lzip
 dist-lzip: $(distdir).tar
-	lzip -c $${LZIP_OPT--9} <$(distdir).tar >$(distdir).tar.lz
+	@$(am__ensure_distdir_tar)
+	am__archive=$(distdir).tar.lz; \
+	lzip -c $${LZIP_OPT--9} <$(distdir).tar >$$am__archive \
+	  || { $(am__dist_compress_failed); }
 	$(am__post_remove_distdir)
 
 ?XZ?DIST_ARCHIVES += $(distdir).tar.xz
 .PHONY: dist-xz
 dist-xz: $(distdir).tar
-	XZ_OPT=$${XZ_OPT--e} xz -c <$(distdir).tar >$(distdir).tar.xz
+	@$(am__ensure_distdir_tar)
+	am__archive=$(distdir).tar.xz; \
+	XZ_OPT=$${XZ_OPT--e} xz -c <$(distdir).tar >$$am__archive \
+	  || { $(am__dist_compress_failed); }
 	$(am__post_remove_distdir)
 
 ?ZSTD?DIST_ARCHIVES += $(distdir).tar.zst
 .PHONY: dist-zstd
 dist-zstd: $(distdir).tar
-	zstd -c $${ZSTD_CLEVEL-$${ZSTD_OPT--19}} <$(distdir).tar >$(distdir).tar.zst
+	@$(am__ensure_distdir_tar)
+	am__archive=$(distdir).tar.zst; \
+	zstd -c $${ZSTD_CLEVEL-$${ZSTD_OPT--19}} <$(distdir).tar >$$am__archive \
+	  || { $(am__dist_compress_failed); }
 	$(am__post_remove_distdir)
 
 ?COMPRESS?DIST_ARCHIVES += $(distdir).tar.Z
 .PHONY: dist-tarZ
 dist-tarZ: $(distdir).tar
+	@$(am__ensure_distdir_tar)
 	@echo WARNING: "Support for distribution archives compressed with" \
 		       "legacy program 'compress' is deprecated." >&2
 	@echo WARNING: "It will be removed altogether in Automake 2.0" >&2
-	compress -c <$(distdir).tar >$(distdir).tar.Z
+	am__archive=$(distdir).tar.Z; \
+	compress -c <$(distdir).tar >$$am__archive \
+	  || { $(am__dist_compress_failed); }
 	$(am__post_remove_distdir)
 
 ?SHAR?DIST_ARCHIVES += $(distdir).shar.gz
