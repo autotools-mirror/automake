@@ -761,6 +761,7 @@ t/number.sh \
 t/objc-basic.sh \
 t/objc-deps.sh \
 t/objc-flags.sh \
+t/objc-libtool-tag.sh \
 t/objc-megademo.sh \
 t/objc-minidemo.sh \
 t/objcxx-basic.sh \
