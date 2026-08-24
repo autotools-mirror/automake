@@ -381,6 +381,7 @@ t/defun.sh \
 t/defun2.sh \
 t/dejagnu-absolute-builddir.sh \
 t/dejagnu-relative-srcdir.sh \
+t/dejagnu-silent.sh \
 t/dejagnu-siteexp-append.sh \
 t/dejagnu-siteexp-extend.sh \
 t/dejagnu-siteexp-useredit.sh \
