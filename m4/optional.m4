@@ -24,7 +24,7 @@ AC_DEFUN([AM_OPTIONAL_AUTOMAKE],
 
 # _AM_OPTIONAL_AUTOMAKE_ONE(OPT)
 # ------------------------------
-# Dispatch on OPT; unrecognised OPT warns and is ignored.
+# Dispatch on OPT; unrecognized OPT warns and is ignored.
 AC_DEFUN([_AM_OPTIONAL_AUTOMAKE_ONE],
 [m4_case([$1],
   [dist-bzip2], [_AM_OPTIONAL_TAR([bzip2], [bzip2], [bz2], [-c])],

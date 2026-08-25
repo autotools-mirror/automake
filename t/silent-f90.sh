@@ -33,7 +33,7 @@ cat > Makefile.am <<'EOF'
 bin_PROGRAMS = foo1 foo2
 foo1_SOURCES = foo.f90
 foo2_SOURCES = $(foo1_SOURCES)
-foo2_FCFLAGS = $(AM_FCLAGS)
+foo2_FCFLAGS = $(AM_FCFLAGS)
 SUBDIRS = sub
 EOF
 
@@ -43,7 +43,7 @@ AUTOMAKE_OPTIONS = subdir-objects
 bin_PROGRAMS = bar1 bar2
 bar1_SOURCES = bar.f90
 bar2_SOURCES = $(bar1_SOURCES)
-bar2_FCFLAGS = $(AM_FCLAGS)
+bar2_FCFLAGS = $(AM_FCFLAGS)
 EOF
 
 cat > foo.f90 <<'EOF'
