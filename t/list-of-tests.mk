@@ -664,6 +664,7 @@ t/libtool8.sh \
 t/libtool9.sh \
 t/license.sh \
 t/license2.sh \
+t/license-gnulib-names.sh \
 t/link_c_cxx.sh \
 t/link_cond.sh \
 t/link_dist.sh \
