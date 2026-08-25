@@ -108,6 +108,7 @@ clean-local: clean-coverage
 GIT = git
 
 EXTRA_DIST += lib/gnupload
+EXTRA_DIST += lib/announce-gen
 
 # First component of a version number (mandatory).
 rx-0 = ^[1-9][0-9]*
@@ -367,6 +368,7 @@ SV_GIT_GL = https://$(git-sv-host)/gnulib.git/plain/
 FETCHFILES = \
   $(SV_GIT_CF)config.guess \
   $(SV_GIT_CF)config.sub \
+  $(SV_GIT_GL)build-aux/announce-gen \
   $(SV_GIT_GL)build-aux/texinfo.tex \
   $(SV_GIT_GL)build-aux/gendocs.sh \
   $(SV_GIT_GL)build-aux/gitlog-to-changelog \
