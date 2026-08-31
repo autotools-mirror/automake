@@ -80,13 +80,14 @@ fi
 
 # _AM_OPTIONAL_TAR(TOOL, VAR-TAG, EXT, FLAGS)
 # -------------------------------------------
-# Compress the shared $(distdir).tar, whose rule catches tar's own
+# Compress the shared intermediate tarball, whose rule catches tar's own
 # failures (bug#19614); only TOOL failing is tolerated here.
 AC_DEFUN([_AM_OPTIONAL_TAR],
 [_AM_OPTIONAL_RULE([$1], [$2],
-[am--optional-dist-$1: $(distdir).tar
+[am--optional-dist-$1: am__distdir.tar
 	@if test -n "$(am__optional_$2)"; then \
-	  "$(am__optional_$2)" $4 < $(distdir).tar > $(distdir).tar.$3 \
+	  $(am__ensure_distdir_tar) || exit 1; \
+	  "$(am__optional_$2)" $4 < am__distdir.tar > $(distdir).tar.$3 \
 	  || { rm -f $(distdir).tar.$3; \
 	       echo "am-optional: dist-$1 failed; archive not built" >&2; }; \
 	else \

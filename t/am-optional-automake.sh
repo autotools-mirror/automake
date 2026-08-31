@@ -40,7 +40,7 @@ AM_OPTIONAL_AUTOMAKE([dist-bzip3])
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT
 END
-: > Makefile.am
+echo 'VERSION = `echo 1.0`' > Makefile.am
 
 $ACLOCAL
 $AUTOCONF

@@ -14,51 +14,35 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-# Regression test for bug#10975
+# Check that VERSION can be defined as a shell command substitution.
+# dviljk, ICU, and Gregorio in TeX Live define it this way.
 
-required='xz'
 . test-init.sh
 
-cat > configure.ac << END
+echo '#define VERSION "execversion (version 1.0)"' > execversion.c
+mkdir sub
+: > sub/nested
+cat > Makefile.am <<'END'
+VERSION = `grep 'define VERSION' $(srcdir)/execversion.c | sed -e 's/^.*version //' -e 's/).*//'`
+EXTRA_DIST = execversion.c sub/nested
+END
+
+# The two -e arguments to sed provoke a duplicate-target warning when
+# VERSION is expanded in make syntax instead of only in shell recipes.
+cat > configure.ac <<END
 AC_INIT([$me], [1.0])
-AM_INIT_AUTOMAKE([foreign dist-xz])
+AM_INIT_AUTOMAKE([])
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT
 END
 
-echo 'VERSION = `echo 1.0`' > Makefile.am
-
 $ACLOCAL
 $AUTOCONF
-$AUTOMAKE -a
+$AUTOMAKE
 ./configure
+$MAKE distcheck
 
-run_make -O dist-gzip dist-xz
-test -f $distdir.tar.gz
-test -f $distdir.tar.xz
-xz -t $distdir.tar.xz
-test ! -e $distdir.tar
-test ! -d $distdir
-
-tar_runs=$(grep -c '^am__tar_msg=' stdout) || tar_runs=0
-echo "tar runs: $tar_runs" # For debugging.
-if using_gmake; then
-  test $tar_runs -eq 1
-else
-  test $tar_runs -ge 1
-fi
-
-rm -f $distdir.tar.*
-run_make -O dist-xz
-test -f $distdir.tar.xz
-test ! -e $distdir.tar
-test ! -d $distdir
-
-rm -f $distdir.tar.*
-run_make -O dist
-test -f $distdir.tar.gz
-test -f $distdir.tar.xz
-test ! -e $distdir.tar
-test ! -d $distdir
+test -s "$distdir".tar.gz
+test ! -e am__distdir.tar
 
 :

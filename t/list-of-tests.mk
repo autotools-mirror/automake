@@ -431,6 +431,7 @@ t/dist-repeated.sh \
 t/dist-shar.sh \
 t/dist-tar-fails.sh \
 t/dist-tarZ.sh \
+t/dist-version-exec.sh \
 t/dist-vs-built-sources.sh \
 t/dist-with-unreadable-makefile-fails.sh \
 t/distcheck-configure-flags-am.sh \
