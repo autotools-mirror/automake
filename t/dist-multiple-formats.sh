@@ -40,7 +40,7 @@ xz -t $distdir.tar.xz
 test ! -e $distdir.tar
 test ! -d $distdir
 
-tar_runs=$(grep -c '^am__tar_msg=' stdout) || tar_runs=0
+tar_runs=$(grep -c 'am__tar_msg=' stdout) || tar_runs=0
 echo "tar runs: $tar_runs" # For debugging.
 if using_gmake; then
   test $tar_runs -eq 1
