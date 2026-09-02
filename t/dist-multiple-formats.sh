@@ -14,7 +14,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-# Regression test for bug#10975
+# Regression tests for multiple distribution formats and for isolation of
+# internal cleanup controls from recursive makes run while building distdir.
 
 required='xz'
 . test-init.sh
@@ -26,7 +27,19 @@ AC_CONFIG_FILES([Makefile])
 AC_OUTPUT
 END
 
-echo 'VERSION = `echo 1.0`' > Makefile.am
+cat > Makefile.am <<'END'
+VERSION = `echo 1.0`
+EXTRA_DIST = child.mk recursive-result
+
+recursive-result:
+	$(MAKE) -f $(srcdir)/child.mk $@
+END
+
+cat > child.mk <<'END'
+recursive-result:
+	test -z '$(am__post_remove_distdir)'
+	echo made >$@
+END
 
 $ACLOCAL
 $AUTOCONF
@@ -55,6 +68,7 @@ test ! -e $distdir.tar
 test ! -d $distdir
 
 rm -f $distdir.tar.*
+rm -f recursive-result
 run_make -O dist
 test -f $distdir.tar.gz
 test -f $distdir.tar.xz
