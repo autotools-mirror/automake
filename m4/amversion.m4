@@ -15,7 +15,7 @@ AC_DEFUN([AM_AUTOMAKE_VERSION],
 [am__api_version='1.19'
 dnl Some users find AM_AUTOMAKE_VERSION and mistake it for a way to
 dnl require some minimum version.  Point them to the right macro.
-m4_if([$1], [1.18.95], [],
+m4_if([$1], [1.19], [],
       [AC_FATAL([Do not call $0, use AM_INIT_AUTOMAKE([$1]).])])dnl
 ])
 
