@@ -392,6 +392,7 @@ t/dejagnu4.sh \
 t/dejagnu5.sh \
 t/dejagnu6.sh \
 t/dejagnu7.sh \
+t/delete-on-error.sh \
 t/deleted-am.sh \
 t/deleted-m4.sh \
 t/depacl2.sh \

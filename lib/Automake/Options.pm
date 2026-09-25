@@ -271,6 +271,7 @@ sub _is_valid_easy_option ($)
     check-news
     color-tests
     dejagnu
+    delete-on-error
     dist-bzip2
     dist-bzip3
     dist-lzip
