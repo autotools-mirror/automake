@@ -164,7 +164,11 @@ AC_DEFUN([AM_SANITY_CHECK],
 # different projects.
 AC_MSG_CHECKING([whether build environment is sane])
 # Reject unsafe characters in $srcdir or the absolute working directory
-# name.  Accept space and tab only in the latter.
+# name.  Accept space and tab only in the latter.  Also reject ':', ';'
+# and '|' in $srcdir (`make' defect). '|' separates order-only prerequisites,
+# ';' breaks the dependency-tracking setup in config.status, and ':' separates
+# VPATH entries.  (Autoconf's search for auxiliary files usually fails on
+# ':' before we get here, though.)
 am_lf='
 '
 case `pwd` in
@@ -173,7 +177,7 @@ case `pwd` in
     AC_MSG_ERROR([unsafe absolute working directory name]);;
 esac
 case $srcdir in
-  *[[\\\"\#\$\&\'\`$am_lf\ \	]]*)
+  *[[\\\"\#\$\&\'\`$am_lf\ \	:\;\|]]*)
     AC_MSG_RESULT([no])
     AC_MSG_ERROR([unsafe srcdir value: '$srcdir']);;
 esac
