@@ -11289,24 +11289,39 @@ Cause @command{dejagnu}-specific rules to be generated.  @xref{DejaGnu Tests}.
 @cindex Option, @option{delete-on-error}
 @opindex delete-on-error
 @cindex @code{.DELETE_ON_ERROR}
+@cindex failing rules, removing stray files from
+@cindex leftover files, deleting
 Emit the special target @code{.DELETE_ON_ERROR} in the generated
-@file{Makefile.in}.  This way, @command{make} deletes the target if
-a failing recipe had already modified it.  Without it, rules such as
+@file{Makefile.in}.  With this, some versions of @command{make} delete
+the target if a failing recipe had already modified it.  By default,
+rules such as
 
 @example
 foo.h: gen.sh
-        ./gen.sh > $@@
+        ./gen.sh >$@@
 @end example
 
 @noindent
-leave a truncated file @file{foo.h} behind when @file{gen.sh} fails, and
-the next @command{make} run treats it as up to date.  Targets listed
-as prerequisites of @code{.PRECIOUS} are never deleted.  GNU
-@command{make} and NetBSD @command{make} (also known as
-@command{bmake}) honor this special target.  POSIX does not recognise
-it, and other @command{make} implementations, such as those of
-OpenBSD and Solaris, do not document it; with those, a failed recipe
-may still leave a partial target behind.
+leave a truncated file @file{foo.h} behind when @file{gen.sh} fails,
+and the next @command{make} run treats it as up to date.  Targets
+listed as prerequisites of @code{.DELETE_ON_ERROR} are never deleted.
+GNU @command{make} and NetBSD @command{make} (also known as
+@command{bmake}) honor this special target.  POSIX does not recognize
+it, and other @command{make} implementations, such as those of OpenBSD
+and Solaris, do not implement it; with those, such a failing recipe
+will still leave a partial target behind.
+
+A more portable way to handle the problem is to remove the file in the
+recipe if the command failed:
+
+@example
+foo.h: gen.sh
+        ./gen.sh >$@@ || @{ rm -f $@@; exit 1; @}
+@end example
+
+If the bad exit status of the failing program needs to be preserved,
+extending the shell code to be @code{status=$$?; rm -f $@@; exit
+$$status;} can do that, but often any bad status will do.
 
 @item @option{dist-bzip2}
 @cindex Option, @option{dist-bzip2}
