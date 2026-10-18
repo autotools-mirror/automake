@@ -43,7 +43,6 @@ t/instdir-ltlib.sh \
 t/java-nobase.sh \
 t/objext-pr10128.sh \
 t/remake-timing-bug-pr8365.sh \
-t/lex-subobj-nodep.sh \
 t/remake-am-pr10111.sh \
 t/remake-m4-pr10111.sh \
 $(perl_fake_XFAIL_TESTS)
@@ -1350,6 +1349,7 @@ t/yacc-mix-c-cxx.sh \
 t/yacc-nodist.sh \
 t/yacc-pr204.sh \
 t/yacc-subdir.sh \
+t/yacc-subobj-nodep.sh \
 t/yacc-vpath.sh \
 t/yacc-weirdnames.sh \
 t/yflags-cmdline-override.sh \

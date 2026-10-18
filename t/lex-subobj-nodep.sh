@@ -16,12 +16,15 @@
 
 # Ensure subdirs for subdir scanners are generated when subdir-objects
 # are used, even when dependency tracking is disabled.
+# Cover C and C++ output, including an explicit rule for a nodist_ source.
+# https://bugs.gnu.org/27188; https://bugs.debian.org/807050
 
-required='cc lex'
+required='cc c++ lex'
 . test-init.sh
 
 cat >>configure.ac <<\END
 AC_PROG_CC
+AC_PROG_CXX
 AC_PROG_LEX
 AC_OUTPUT
 END
@@ -30,13 +33,15 @@ cat >Makefile.am <<\END
 AUTOMAKE_OPTIONS = subdir-objects
 AM_LFLAGS = --never-interactive
 
-bin_PROGRAMS = p1 p2
+bin_PROGRAMS = p1 p2 p3
 p1_SOURCES = sub1/s1.l
 p2_SOURCES = sub2/s2.l
 p2_CPPFLAGS = -DWHATEVER
+p3_SOURCES =
+nodist_p3_SOURCES = sub3/s3.ll
 END
 
-mkdir sub1 sub2
+mkdir sub1 sub2 sub3
 
 cat >sub1/s1.l <<\END
 %%
@@ -57,6 +62,7 @@ int yywrap(void)
 END
 
 cp sub1/s1.l sub2/s2.l
+cp sub1/s1.l sub3/s3.ll
 
 $ACLOCAL
 $AUTOCONF
@@ -66,7 +72,8 @@ cd build
 ../configure --disable-dependency-tracking
 $MAKE sub1/s1.c
 $MAKE sub2/s2.c
-rm -rf sub1 sub2
+$MAKE sub3/s3.cc
+rm -rf sub1 sub2 sub3
 $MAKE
 
 :
