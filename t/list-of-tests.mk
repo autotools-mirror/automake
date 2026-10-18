@@ -460,6 +460,7 @@ t/disthook.sh \
 t/distlinks.sh \
 t/distlinksbrk.sh \
 t/distname.sh \
+t/distuninstallcheck-symlink.sh \
 t/dmalloc.sh \
 t/doc-parsing-buglets-colneq-subst.sh \
 t/doc-parsing-buglets-tabs.sh \
