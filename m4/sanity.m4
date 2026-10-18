@@ -169,6 +169,9 @@ AC_MSG_CHECKING([whether build environment is sane])
 # ';' breaks the dependency-tracking setup in config.status, and ':' separates
 # VPATH entries.  (Autoconf's search for auxiliary files usually fails on
 # ':' before we get here, though.)
+# Reject '<' and '>' in $srcdir as well: unquoted source paths in compiler
+# commands would be interpreted as shell redirections, possibly clobbering
+# files in the build directory.
 am_lf='
 '
 case `pwd` in
@@ -177,7 +180,7 @@ case `pwd` in
     AC_MSG_ERROR([unsafe absolute working directory name]);;
 esac
 case $srcdir in
-  *[[\\\"\#\$\&\'\`$am_lf\ \	:\;\|]]*)
+  *[[\\\"\#\$\&\'\`$am_lf\ \	:\;\|\<\>]]*)
     AC_MSG_RESULT([no])
     AC_MSG_ERROR([unsafe srcdir value: '$srcdir']);;
 esac

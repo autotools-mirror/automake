@@ -24,6 +24,7 @@ cd 'unsafe$'
 mv ../configure.ac .
 mv ../install-sh ../missing .
 
+echo AC_OUTPUT >>configure.ac
 : > Makefile.am
 
 $ACLOCAL
@@ -39,5 +40,21 @@ cd build
 ../unsafe$/configure 2>stderr && { cat stderr >&2; exit 1; }
 cat stderr >&2
 grep 'unsafe srcdir' stderr
+
+# Shell redirections in unquoted source paths can clobber files during
+# compilation.  Reject them before generating a Makefile.
+cp -R '../unsafe$' ../safe
+for char in '<' '>'; do
+  dir="../unsafe${char}dir"
+  cp -R ../safe "$dir"
+  "$dir/configure" 2>stderr && { cat stderr >&2; exit 1; }
+  cat stderr >&2
+  grep 'unsafe srcdir' stderr
+  test ! -f Makefile
+
+  # The absolute build directory need not have the same restrictions.
+  mkdir "build${char}dir"
+  (cd "build${char}dir" && ../../safe/configure && $MAKE)
+done
 
 :
