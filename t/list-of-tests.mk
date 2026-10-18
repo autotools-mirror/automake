@@ -152,6 +152,7 @@ t/amopts-location.sh \
 t/amopts-variable-expansion.sh \
 t/amsubst.sh \
 t/ansi2knr-no-more.sh \
+t/ar-dependencies.sh \
 t/ar-lib.sh \
 t/ar-lib2.sh \
 t/ar-lib3.sh \

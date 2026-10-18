@@ -99,6 +99,7 @@ sub handle_java ();
 sub handle_languages ();
 sub handle_libraries ();
 sub handle_libtool ();
+sub handle_link_dependencies ();
 sub handle_ltlibraries ();
 sub handle_makefiles_serial ();
 sub handle_man_pages ();
@@ -2277,17 +2278,15 @@ sub handle_source_transform
 }
 
 
-# handle_lib_objects ($XNAME, $VAR)
-# ---------------------------------
+# handle_lib_objects ($VAR)
+# -------------------------
 # Special-case ALLOCA and LIBOBJS substitutions in _LDADD or _LIBADD variables.
-# Also, generate _DEPENDENCIES variable if appropriate.
 # Arguments are:
-#   transformed name of object being built, or empty string if no object
 #   name of _LDADD/_LIBADD-type variable to examine
 # Returns 1 if LIBOBJS seen, 0 otherwise.
 sub handle_lib_objects
 {
-  my ($xname, $varname) = @_;
+  my ($varname) = @_;
 
   my $var = var ($varname);
   prog_error "'$varname' undefined"
@@ -2299,11 +2298,8 @@ sub handle_lib_objects
   my $seen_libobjs = 0;
   my $flagvar = 0;
 
-  transform_variable_recursively
-    ($varname, $xname . '_DEPENDENCIES', 'am__DEPENDENCIES',
-     ! $xname, INTERNAL,
-     # Transformation function, run on each filename.
-     sub {
+  $var->traverse_recursively
+    (sub {
        my ($subvar, $val, $cond, $full_cond) = @_;
 
        if ($val =~ /^-/)
@@ -2329,34 +2325,59 @@ sub handle_lib_objects
 	     }
 	   return ();
 	 }
-       elsif ($val !~ /^\@.*\@$/)
-	 {
-	   # Assume we have a file of some sort, and output it into the
-	   # dependency variable.  Autoconf substitutions are not output;
-	   # rarely is a new dependency substituted into e.g. foo_LDADD
-	   # -- but bad things (e.g. -lX11) are routinely substituted.
-	   # Note that LIBOBJS and ALLOCA are exceptions to this rule,
-	   # and handled specially below.
-	   return $val;
-	 }
        elsif ($val =~ /^\@(LT)?LIBOBJS\@$/)
 	 {
 	   handle_LIBOBJS ($subvar, $cond, $1);
 	   $seen_libobjs = 1;
-	   return $val;
+	   return ();
 	 }
        elsif ($val =~ /^\@(LT)?ALLOCA\@$/)
 	 {
 	   handle_ALLOCA ($subvar, $cond, $1);
-	   return $val;
+	   return ();
 	 }
        else
 	 {
 	   return ();
 	 }
-     });
+     }, undef);
 
   return $seen_libobjs;
+}
+
+# Generate link dependencies after all target _OBJECTS variables have been
+# defined, so references to other targets do not depend on processing order.
+sub handle_link_dependencies ()
+{
+  foreach my $primary (['LIBADD', @liblist, @ltliblist],
+                      ['LDADD', @proglist])
+    {
+      my ($suffix, @targets) = @$primary;
+      foreach my $pair (@targets)
+        {
+          my $xname = canonicalize ($pair->[1]);
+          my $varname = $xname . '_' . $suffix;
+          my $def = rvar ($varname)->def (TRUE);
+          if ($def && $def->owner == VAR_AUTOMAKE)
+            {
+              # Libraries default to empty LIBADD; programs to LDADD.
+              next if $suffix eq 'LIBADD' || ! var ('LDADD');
+              $varname = 'LDADD';
+            }
+          transform_variable_recursively
+            ($varname, $xname . '_DEPENDENCIES',
+             'am__DEPENDENCIES', 0, INTERNAL,
+             sub {
+               my ($subvar, $val) = @_;
+               # Omit linker flags and configure substitutions, except
+               # for the object lists handled by handle_lib_objects.
+               return () if $val =~ /^-/;
+               return () if $val =~ /^\@.*\@$/
+                            && $val !~ /^\@(LT)?(LIBOBJS|ALLOCA)\@$/;
+               return $val;
+             });
+        }
+    }
 }
 
 # handle_LIBOBJS_or_ALLOCA ($VAR, $BASE)
@@ -2603,7 +2624,7 @@ sub handle_programs ()
   $must_handle_compiled_objects = 1;
 
   my $seen_global_libobjs =
-    var ('LDADD') && handle_lib_objects ('', 'LDADD');
+    var ('LDADD') && handle_lib_objects ('LDADD');
 
   foreach my $pair (@proglist)
     {
@@ -2627,18 +2648,17 @@ sub handle_programs ()
 
       if (var ($xname . "_LDADD"))
 	{
-	  $seen_libobjs = handle_lib_objects ($xname, $xname . '_LDADD');
+	  $seen_libobjs = handle_lib_objects ($xname . '_LDADD');
 	}
       else
 	{
 	  # User didn't define prog_LDADD override.  So do it.
 	  define_variable ($xname . '_LDADD', '$(LDADD)', $where);
 
-	  # This does a bit too much work.  But we need it to
-	  # generate _DEPENDENCIES when appropriate.
+	  # Check the default LDADD for replacement objects.
 	  if (var ('LDADD'))
 	    {
-	      $seen_libobjs = handle_lib_objects ($xname, 'LDADD');
+	      $seen_libobjs = handle_lib_objects ('LDADD');
 	    }
 	}
 
@@ -2743,7 +2763,7 @@ sub handle_libraries ()
       # libraries.
       if (var ($xlib . '_LIBADD'))
 	{
-	  if (handle_lib_objects ($xlib, $xlib . '_LIBADD'))
+	  if (handle_lib_objects ($xlib . '_LIBADD'))
 	    {
 	      $seen_libobjs = 1;
 	    }
@@ -2947,7 +2967,7 @@ sub handle_ltlibraries ()
       # libraries.
       if (var ($xlib . '_LIBADD'))
 	{
-	  if (handle_lib_objects ($xlib, $xlib . '_LIBADD'))
+	  if (handle_lib_objects ($xlib . '_LIBADD'))
 	    {
 	      $seen_libobjs = 1;
 	    }
@@ -8136,6 +8156,7 @@ sub generate_makefile
   handle_libraries;
   handle_ltlibraries;
   handle_programs;
+  handle_link_dependencies;
   handle_scripts;
 
   handle_silent;
