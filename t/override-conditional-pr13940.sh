@@ -108,24 +108,74 @@ for foo in yes no; do
   diff expected.sorted seen.sorted
 done
 
-# Only actual recipes conflict.  A semicolon in a comment, an escaped
-# filename, or a variable reference must not turn prerequisites into one.
+# Only actual recipes conflict.  A semicolon in a comment or a variable
+# reference must not turn prerequisites into one, nor must the body of
+# a GNU make 'define'.
 cat > Makefile.am << 'END'
 if FOO
 comment: dep # ; not a recipe
-escaped: dep\;name
+commented: dep # \
+  ; not a recipe either
 reference: $(subst ;,x,dep)
 short: $;
 continued: \
   dep
 endif
 comment: ; :
-escaped: ; :
+commented: ; :
 reference: ; :
 short: ; :
 continued: ; :
+defined: ; :
+defined: dep
+if FOO
+define CMD
+	echo not a recipe
+endef
+endif
 END
 $AUTOMAKE -Werror -Wno-portability
+
+# GNU make starts a recipe at an escaped semicolon, too.
+cat > Makefile.am << 'END'
+if FOO
+escaped: dep\;:
+endif
+escaped: ; :
+END
+AUTOMAKE_fails -Wno-portability
+grep 'escaped was already defined in condition' stderr
+
+# A recipe belongs to the rule it follows, even in another condition.
+cat > Makefile.am << 'END'
+if FOO
+split: ; :
+endif
+split:
+if FOO
+	:
+endif
+END
+AUTOMAKE_fails
+grep 'split multiply defined in condition FOO' stderr
+
+# Double-colon rules may have independent recipes, but must not be
+# mixed with single-colon ones.
+for order in single-first double-first; do
+  if test $order = single-first; then
+    first=':' second='::'
+  else
+    first='::' second=':'
+  fi
+  cat > Makefile.am << END
+mixed$first ; :
+if FOO
+mixed$second ; :
+endif
+END
+  AUTOMAKE_fails
+  grep "mixed was already defined in condition TRUE.*both ':' and '::'" stderr
+done
 
 # Diagnose real conditional recipe overrides in either declaration order.
 # Include empty inline recipes and recipes on continued dependency lines.

@@ -116,7 +116,7 @@ sub handle_tests ();
 sub handle_tests_dejagnu ();
 sub handle_texinfo ();
 sub handle_user_recursion ();
-sub has_inline_recipe ($);
+sub has_inline_recipe ($$);
 sub initialize_per_input ();
 sub lang_lex_finish ();
 sub lang_sub_obj ();
@@ -6628,33 +6628,45 @@ sub check_trailing_slash ($\$)
 }
 
 
-sub has_inline_recipe ($)
+# has_inline_recipe (\%STATE, $TEXT)
+# ---------------------------------
+# Scan $TEXT, the next piece of a rule's prerequisite list, and return
+# true if it starts an inline recipe with ';'.  %STATE carries the scan
+# state over the continuation lines of the list, so that each one is
+# scanned only once.  As in GNU make, '\;' still starts a recipe.
+sub has_inline_recipe ($$)
 {
-  my ($text) = @_;
-  my @closing;
-  while (length $text)
+  my ($state, $text) = @_;
+  return 0 if $state->{'comment'};
+  my $closing = $state->{'closing'} ||= [];
+  pos ($text) = 0;
+  while (pos ($text) < length $text)
     {
-      if ($text =~ s/^\\.//s || $text =~ s/^\$\$//)
-        { next; }
-      if ($text =~ s/^\$([({])//)
+      next if $text =~ /\G(?:\\[^;]|\$\$)/gcs;
+      if ($text =~ /\G\$([({])/gc)
         {
-          push @closing, $1 eq '(' ? ')' : '}';
+          push @$closing, $1 eq '(' ? ')' : '}';
           next;
         }
-      next if $text =~ s/^\$.//s;
-      my $char = substr ($text, 0, 1, '');
-      if (@closing)
+      next if $text =~ /\G\$./gcs;
+      $text =~ /\G(.)/gcs;
+      my $char = $1;
+      if (@$closing)
         {
-          if ($char eq $closing[-1])
-            { pop @closing; }
-          elsif (($char eq '(' && $closing[-1] eq ')')
-                 || ($char eq '{' && $closing[-1] eq '}'))
-            { push @closing, $closing[-1]; }
+          if ($char eq $closing->[-1])
+            { pop @$closing; }
+          elsif (($char eq '(' && $closing->[-1] eq ')')
+                 || ($char eq '{' && $closing->[-1] eq '}'))
+            { push @$closing, $closing->[-1]; }
         }
-      else
+      elsif ($char eq '#')
         {
-          return 0 if $char eq '#';
-          return 1 if $char eq ';';
+          $state->{'comment'} = 1;
+          return 0;
+        }
+      elsif ($char eq ';')
+        {
+          return 1;
         }
     }
   return 0;
@@ -6798,16 +6810,13 @@ sub read_am_file
 	    if ($prev_state == IN_RULE_DEF)
 	    {
               if (exists $recipe->{'targets'} && !$recipe->{'double_colon'}
-                  && !$recipe->{'commands'})
+                  && !$recipe->{'commands'}
+                  && has_inline_recipe ($recipe->{'scan'}, $_))
                 {
-                  $recipe->{'prerequisites'} .= $_;
-                  if (has_inline_recipe ($recipe->{'prerequisites'}))
-                    {
-                      Automake::Rule::register_recipe
-                        ($recipe->{'targets'}, $cond, $recipe->{'where'},
-                         $recipe->{'where'});
-                      $recipe->{'commands'} = 1;
-                    }
+                  Automake::Rule::register_recipe
+                    ($recipe->{'targets'}, $cond, $recipe->{'where'},
+                     $recipe->{'where'}, $recipe->{'cond'});
+                  $recipe->{'commands'} = 1;
                 }
 	      my $cond = new Automake::Condition @cond_stack;
 	      $output_trailer .= $cond->subst_string;
@@ -6867,14 +6876,18 @@ sub read_am_file
             my ($targets, $prerequisites) = ($1, $2);
             %$recipe = (targets => $targets,
                         double_colon => scalar ($prerequisites =~ /^:/),
-                        prerequisites => $prerequisites . "\n",
+                        scan => {},
+                        cond => $cond,
                         where => $where->clone);
             Automake::Rule::define ($targets, $amfile, RULE_USER, $cond, $where);
+            Automake::Rule::register_declaration
+              ($targets, $cond, $where, $recipe->{'double_colon'});
             if (!$recipe->{'double_colon'}
-                && has_inline_recipe ($prerequisites))
+                && has_inline_recipe ($recipe->{'scan'},
+                                      $prerequisites . "\n"))
               {
                 Automake::Rule::register_recipe
-                  ($targets, $cond, $where, $recipe->{'where'});
+                  ($targets, $cond, $where, $recipe->{'where'}, $cond);
                 $recipe->{'commands'} = 1;
               }
 
@@ -6963,12 +6976,17 @@ sub read_am_file
 	}
 	else
 	{
-            if (/^\t/ && exists $recipe->{'targets'}
-                && !$recipe->{'double_colon'})
+            if (!/^\t/)
+              {
+                # Not a recipe line (e.g., a GNU make 'define'): what
+                # follows no longer belongs to the last rule.
+                %$recipe = ();
+              }
+            elsif (exists $recipe->{'targets'} && !$recipe->{'double_colon'})
               {
                 Automake::Rule::register_recipe
                   ($recipe->{'targets'}, $cond, $recipe->{'where'},
-                   $recipe->{'where'});
+                   $recipe->{'where'}, $recipe->{'cond'});
                 $recipe->{'commands'} = 1;
               }
 	    # This isn't an error; it is probably a continued rule.

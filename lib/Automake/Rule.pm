@@ -681,9 +681,16 @@ sub _maybe_warn_about_duplicated_target ($$$$$$)
     }
 }
 
-sub register_recipe ($$$$)
+# register_recipe ($TARGET, $COND, $WHERE, $DECLARATION, $DECLCOND)
+# ----------------------------------------------------------------
+# Record that the rule declared at $DECLARATION in condition $DECLCOND
+# has commands for $TARGET in condition $COND, at $WHERE.  Diagnose
+# commands for $TARGET from another declaration in an overlapping
+# condition.  As before, declarations in the very same condition are
+# not diagnosed.
+sub register_recipe ($$$$$)
 {
-  my ($target, $cond, $where, $declaration) = @_;
+  my ($target, $cond, $where, $declaration, $declcond) = @_;
   return if $cond == FALSE;
 
   my $rule = _crule $target;
@@ -691,10 +698,10 @@ sub register_recipe ($$$$)
   return if grep { $_->[0] == $cond && $_->[2] == $declaration } @$recipes;
   for my $old (@$recipes)
     {
-      my ($oldcond, $oldwhere, $olddeclaration) = @$old;
+      my ($oldcond, $oldwhere, $olddeclaration, $olddeclcond) = @$old;
       next if $olddeclaration == $declaration;
 
-      next if $oldcond == $cond || $target =~ /^[^%]*%[^%]*$/;
+      next if $olddeclcond == $declcond || $target =~ /^[^%]*%[^%]*$/;
       my ($message) =
         (new Automake::DisjConditions ($oldcond))->ambiguous_p ($target, $cond);
       if ($message)
@@ -704,7 +711,37 @@ sub register_recipe ($$$$)
           last;
         }
     }
-  push @$recipes, [$cond, $where->clone, $declaration];
+  push @$recipes, [$cond, $where->clone, $declaration, $declcond];
+}
+
+# register_declaration ($TARGET, $COND, $WHERE, $DOUBLE_COLON)
+# ------------------------------------------------------------
+# Record a user declaration of $TARGET in condition $COND, and diagnose
+# mixing it with declarations using the other kind of colon in an
+# overlapping condition, which make rejects.  Double-colon declarations
+# are otherwise independent of each other.
+sub register_declaration ($$$$)
+{
+  my ($target, $cond, $where, $double_colon) = @_;
+  return if $cond == FALSE;
+
+  my $rule = _crule $target;
+  my $decls = $rule->{'declarations'} ||= [];
+  for my $old (@$decls)
+    {
+      my ($oldcond, $oldwhere, $olddouble) = @$old;
+      next if $olddouble == $double_colon;
+      my ($message) =
+        (new Automake::DisjConditions ($oldcond))->ambiguous_p ($target, $cond);
+      if ($message)
+        {
+          msg 'syntax', $where,
+              "$message, with both ':' and '::' ...", partial => 1;
+          msg 'syntax', $oldwhere, "... '$target' previously defined here";
+          last;
+        }
+    }
+  push @$decls, [$cond, $where->clone, $double_colon ? 1 : 0];
 }
 
 # Return the list of conditionals in which the rule was defined.  In case
