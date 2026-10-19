@@ -419,6 +419,7 @@ t/dist-compressor-fails.sh \
 t/dist-formats.tap \
 t/dist-included-parent-dir.sh \
 t/dist-install-sh.sh \
+t/dist-intermediate-kept.sh \
 t/dist-lzma.sh \
 t/dist-missing-am.sh \
 t/dist-missing-included-m4.sh \
