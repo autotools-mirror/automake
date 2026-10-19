@@ -603,6 +603,7 @@ t/javadir-undefined.sh \
 t/javaflags.sh \
 t/javaprim.sh \
 t/javasubst.sh \
+t/jobserver.sh \
 t/ldadd.sh \
 t/ldflags.sh \
 t/lex-args.sh \

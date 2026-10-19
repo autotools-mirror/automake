@@ -35,6 +35,7 @@ dist_automake_ac_DATA = \
   %D%/gcj.m4 \
   %D%/init.m4 \
   %D%/install-sh.m4 \
+  %D%/jobserver.m4 \
   %D%/lead-dot.m4 \
   %D%/lex.m4 \
   %D%/lispdir.m4 \
