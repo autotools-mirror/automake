@@ -1289,6 +1289,7 @@ t/unused.sh \
 t/upc.sh \
 t/upc2.sh \
 t/upc3.sh \
+t/vala-basename.sh \
 t/vala-configure.sh \
 t/vala-grepping.sh \
 t/vala-headers.sh \
