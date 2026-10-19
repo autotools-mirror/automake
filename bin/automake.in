@@ -116,6 +116,7 @@ sub handle_tests ();
 sub handle_tests_dejagnu ();
 sub handle_texinfo ();
 sub handle_user_recursion ();
+sub has_inline_recipe ($);
 sub initialize_per_input ();
 sub lang_lex_finish ();
 sub lang_sub_obj ();
@@ -6588,6 +6589,38 @@ sub check_trailing_slash ($\$)
 }
 
 
+sub has_inline_recipe ($)
+{
+  my ($text) = @_;
+  my @closing;
+  while (length $text)
+    {
+      if ($text =~ s/^\\.//s || $text =~ s/^\$\$//)
+        { next; }
+      if ($text =~ s/^\$([({])//)
+        {
+          push @closing, $1 eq '(' ? ')' : '}';
+          next;
+        }
+      next if $text =~ s/^\$.//s;
+      my $char = substr ($text, 0, 1, '');
+      if (@closing)
+        {
+          if ($char eq $closing[-1])
+            { pop @closing; }
+          elsif (($char eq '(' && $closing[-1] eq ')')
+                 || ($char eq '{' && $closing[-1] eq '}'))
+            { push @closing, $closing[-1]; }
+        }
+      else
+        {
+          return 0 if $char eq '#';
+          return 1 if $char eq ';';
+        }
+    }
+  return 0;
+}
+
 # read_am_file ($AMFILE, $WHERE, $RELDIR)
 # ---------------------------------------
 # Read $AMFILE file name which is located in $RELDIR, and set up
@@ -6599,7 +6632,8 @@ sub check_trailing_slash ($\$)
 # come after our generated stuff.
 sub read_am_file
 {
-    my ($amfile, $where, $reldir) = @_;
+    my ($amfile, $where, $reldir, $recipe) = @_;
+    $recipe ||= {};
     my $canon_reldir = &canonicalize ($reldir);
 
     my $am_file = new Automake::XFile ("< $amfile");
@@ -6724,6 +6758,17 @@ sub read_am_file
 	{
 	    if ($prev_state == IN_RULE_DEF)
 	    {
+              if (exists $recipe->{'targets'} && !$recipe->{'commands'})
+                {
+                  $recipe->{'prerequisites'} .= $_;
+                  if (has_inline_recipe ($recipe->{'prerequisites'}))
+                    {
+                      Automake::Rule::register_recipe
+                        ($recipe->{'targets'}, $cond, $recipe->{'where'},
+                         $recipe->{'where'});
+                      $recipe->{'commands'} = 1;
+                    }
+                }
 	      my $cond = new Automake::Condition @cond_stack;
 	      $output_trailer .= $cond->subst_string;
 	      $output_trailer .= $_;
@@ -6779,7 +6824,17 @@ sub read_am_file
 	    # For now we have to output all definitions of user rules
 	    # and can't diagnose duplicates (see the comment in
 	    # Automake::Rule::define). So we go on and ignore the return value.
-	    Automake::Rule::define ($1, $amfile, RULE_USER, $cond, $where);
+            my ($targets, $prerequisites) = ($1, $2);
+            %$recipe = (targets => $targets,
+                        prerequisites => $prerequisites . "\n",
+                        where => $where->clone);
+            Automake::Rule::define ($targets, $amfile, RULE_USER, $cond, $where);
+            if (has_inline_recipe ($prerequisites))
+              {
+                Automake::Rule::register_recipe
+                  ($targets, $cond, $where, $recipe->{'where'});
+                $recipe->{'commands'} = 1;
+              }
 
 	    check_variable_expansions ($_, $where);
 
@@ -6792,6 +6847,7 @@ sub read_am_file
 	elsif (/$ASSIGNMENT_PATTERN/o)
 	{
 	    # Found a macro definition.
+            %$recipe = ();
 	    $prev_state = IN_VAR_DEF;
 	    $last_var_name = $1;
 	    $last_var_type = $2;
@@ -6860,11 +6916,18 @@ sub read_am_file
 	    my $new_reldir = File::Spec->abs2rel ($path, $relative_dir);
 	    $new_reldir = '.' if $new_reldir !~ s,/[^/]*$,,;
 	    $where->push_context ("'$path' included from here");
-	    read_am_file ($path, $where, $new_reldir);
+	    read_am_file ($path, $where, $new_reldir, $recipe);
 	    $where->pop_context;
 	}
 	else
 	{
+            if (/^\t/ && exists $recipe->{'targets'})
+              {
+                Automake::Rule::register_recipe
+                  ($recipe->{'targets'}, $cond, $recipe->{'where'},
+                   $recipe->{'where'});
+                $recipe->{'commands'} = 1;
+              }
 	    # This isn't an error; it is probably a continued rule.
 	    # In fact, this is what we assume.
 	    $prev_state = IN_RULE_DEF;

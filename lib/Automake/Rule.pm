@@ -681,6 +681,32 @@ sub _maybe_warn_about_duplicated_target ($$$$$$)
     }
 }
 
+sub register_recipe ($$$$)
+{
+  my ($target, $cond, $where, $declaration) = @_;
+  return if $cond == FALSE;
+
+  my $rule = _crule $target;
+  my $recipes = $rule->{'recipes'} ||= [];
+  return if grep { $_->[0] == $cond && $_->[2] == $declaration } @$recipes;
+  for my $old (@$recipes)
+    {
+      my ($oldcond, $oldwhere, $olddeclaration) = @$old;
+      next if $olddeclaration == $declaration;
+
+      next if $oldcond == $cond || $target =~ /^[^%]*%[^%]*$/;
+      my ($message) =
+        (new Automake::DisjConditions ($oldcond))->ambiguous_p ($target, $cond);
+      if ($message)
+        {
+          msg 'syntax', $where, "$message ...", partial => 1;
+          msg 'syntax', $oldwhere, "... '$target' previously defined here";
+          last;
+        }
+    }
+  push @$recipes, [$cond, $where->clone, $declaration];
+}
+
 # Return the list of conditionals in which the rule was defined.  In case
 # an ambiguous conditional definition is detected, return the empty list.
 sub _conditionals_for_rule ($$$$)
@@ -695,14 +721,7 @@ sub _conditionals_for_rule ($$$$)
   # Don't coalesce the several pattern rules from footer.am into a single one.
   return $cond if $target eq "%:" && $where->get =~ /\/am\/footer\.am$/;
 
-  if ($owner == RULE_USER)
-    {
-      # For user rules, just diagnose the ambiguity.
-      msg 'syntax', $where, "$message ...", partial => 1;
-      msg_cond_rule ('syntax', $ambig_cond, $target,
-                     "... '$target' previously defined here");
-      return ();
-    }
+  return () if $owner == RULE_USER;
 
   # FIXME: for Automake rules, we can't diagnose ambiguities yet.
   # The point is that Automake doesn't propagate conditions

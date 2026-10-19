@@ -14,31 +14,160 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-# Expose automake bug#1394: automake erroneously think that a .PHONY
-# target's rule is overridden only because we declare dependencies
-# to such targets twice: one in an Automake conditional, and once
-# unconditionally.
+# Repeated target declarations may add prerequisites in overlapping
+# conditions, in either order (bug#13940).
 
 . test-init.sh
 
 cat >> configure.ac << 'END'
-AM_CONDITIONAL([FOO], [true])
+AM_CONDITIONAL([FOO], [test "$foo" = yes])
+AM_CONDITIONAL([BAR], [test "$bar" = yes])
 AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
-# The conditional here is important: Automake only appears to warn
-# when one of the all-local rules is inside a conditional and the
-# other is not.
 if FOO
-all-local: bar
-bar: ; @echo bar
+all-local: conditional
+forward: conditional
+.PHONY: conditional
+if BAR
+nested: both
 endif
-all-local: baz
-baz: ; @echo baz
+endif
+all-local: always forward reverse nested overlap
+forward: always
+reverse: always
+nested: always
+overlap: always
+.PHONY: always forward reverse nested overlap both
+if FOO
+reverse: conditional
+overlap: conditional
+endif
+if BAR
+overlap: other
+endif
+always conditional both other:
+	@echo $@ >> seen
 END
 
 $ACLOCAL
-$AUTOMAKE -a
+$AUTOMAKE -a -Werror
+$AUTOCONF
+
+for foo in yes no; do
+  for bar in yes no; do
+    ./configure foo=$foo bar=$bar
+    rm -f seen
+    $MAKE all
+    echo always > expected
+    if test "$foo" = yes; then
+      echo conditional >> expected
+      if test "$bar" = yes; then
+        echo both >> expected
+      fi
+    fi
+    if test "$bar" = yes; then
+      echo other >> expected
+    fi
+    sort seen > seen.sorted
+    sort expected > expected.sorted
+    diff expected.sorted seen.sorted
+  done
+done
+
+# Adding prerequisites before or after a recipe is also legitimate.
+cat > Makefile.am << 'END'
+if FOO
+first: conditional
+last:
+	@echo last >> seen
+endif
+first:
+	@echo first >> seen
+last: always
+all-local: first last
+always conditional:
+	@echo $@ >> seen
+.PHONY: first last always conditional
+END
+
+$AUTOMAKE -Werror
+for foo in yes no; do
+  ./configure foo=$foo bar=no
+  rm -f seen
+  $MAKE all
+  echo always > expected
+  echo first >> expected
+  if test "$foo" = yes; then
+    echo conditional >> expected
+    echo last >> expected
+  fi
+  sort seen > seen.sorted
+  sort expected > expected.sorted
+  diff expected.sorted seen.sorted
+done
+
+# Only actual recipes conflict.  A semicolon in a comment, an escaped
+# filename, or a variable reference must not turn prerequisites into one.
+cat > Makefile.am << 'END'
+if FOO
+comment: dep # ; not a recipe
+escaped: dep\;name
+reference: $(subst ;,x,dep)
+short: $;
+continued: \
+  dep
+endif
+comment: ; :
+escaped: ; :
+reference: ; :
+short: ; :
+continued: ; :
+END
+$AUTOMAKE -Werror -Wno-portability
+
+# Diagnose real conditional recipe overrides in either declaration order.
+# Include empty inline recipes and recipes on continued dependency lines.
+for style in tab inline empty continued included; do
+  case $style in
+    tab) printf 'clash:\n\t:\n\t:\n' > recipe ;;
+    inline) echo 'clash: ; :' > recipe ;;
+    empty) echo 'clash: ;' > recipe ;;
+    continued) printf 'clash: \\\n; :\n' > recipe ;;
+    included)
+      printf 'clash:\ninclude commands.am\n' > recipe
+      printf '\t:\n' > commands.am
+      ;;
+  esac
+  for order in before after; do
+    echo 'clash: ; :' > unconditional
+    {
+      if test "$order" = before; then
+        cat unconditional
+      fi
+      echo 'if FOO'
+      cat recipe
+      echo endif
+      if test "$order" = after; then
+        cat unconditional
+      fi
+    } > Makefile.am
+    AUTOMAKE_fails
+    test $(grep -c 'clash was already defined in condition' stderr) -eq 1
+    grep "'clash' previously defined here" stderr
+  done
+done
+
+# Separate conditional pieces of the same recipe are not overrides.
+cat > Makefile.am << 'END'
+whole:
+	:
+if FOO
+	:
+endif
+	:
+END
+$AUTOMAKE -Werror
 
 :
