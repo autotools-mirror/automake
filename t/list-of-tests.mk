@@ -556,6 +556,7 @@ t/install-info-dir.sh \
 t/install-sh-option-C.sh \
 t/install-sh-option-S.sh \
 t/install-sh-unittests.sh \
+t/installcheck-errexit.sh \
 t/installdir.sh \
 t/instdat.sh \
 t/instdat2.sh \
