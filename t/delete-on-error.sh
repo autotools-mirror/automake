@@ -56,7 +56,8 @@ cat > probe.mk << 'END'
 probe.out:
 	echo x > $@; exit 1
 END
-if $MAKE -f probe.mk >/dev/null 2>&1 || test -f probe.out; then
+run_make -M -e IGNORE -f probe.mk
+if test "$am_make_rc" -eq 0 || test -f probe.out; then
   echo "$me: make does not honor .DELETE_ON_ERROR, skipping runtime check"
 else
   cd sub
