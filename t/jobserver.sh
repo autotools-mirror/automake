@@ -124,6 +124,28 @@ for option in '' --disable-jobserver; do
   run_make -M -e FAIL -j2 $jobserver_style CC="$SHELL ./cc-wrapper $CC"
 done
 
+# Under .ONESHELL, only the first recipe line controls jobserver access.
+echo '.ONESHELL:' >> Makefile.am
+$AUTOMAKE
+./configure --enable-jobserver
+run_make clean
+run_make -M -j2 $jobserver_style CC="$SHELL ./cc-wrapper $CC" \
+  LIBTOOL="$SHELL ./lt-wrapper $SHELL ./libtool"
+run_make clean
+for mode in -n -q -t; do
+  rm -f compiler.log libtool.log
+  run_make -M -e IGNORE -j2 $jobserver_style $mode \
+    CC="$SHELL ./cc-wrapper $CC" \
+    LIBTOOL="$SHELL ./lt-wrapper $SHELL ./libtool"
+  case $mode in
+    -q) test "$am_make_rc" -eq 1;;
+    *) test "$am_make_rc" -eq 0;;
+  esac
+  test ! -e libtool.log
+  test ! -e compiler.log
+  run_make clean
+done
+
 ./configure --enable-jobserver=invalid && exit 1
 
 :
