@@ -430,6 +430,7 @@ t/dist-pr109765.sh \
 t/dist-readonly.sh \
 t/dist-repeated.sh \
 t/dist-shar.sh \
+t/dist-tar-errexit.sh \
 t/dist-tar-fails.sh \
 t/dist-tarZ.sh \
 t/dist-zstd.sh \
