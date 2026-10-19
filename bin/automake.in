@@ -5891,6 +5891,7 @@ sub lang_vala_finish_target
   # For automake bug#11229.
   return unless @vala_sources;
 
+  my $move_c_files = '';
   foreach my $vala_file (@vala_sources)
     {
       my $c_file = $vala_file;
@@ -5899,6 +5900,17 @@ sub lang_vala_finish_target
           my $built_c_file = "\$(builddir)/$c_file";
           my $built_dir = dirname $built_c_file;
           my $base_c_file = basename $c_file;
+          # Vala puts C files for sources outside the build tree in the
+          # current directory.  Move all of them when compiling, even
+          # if make finds their distributed counterparts through VPATH.
+          if (dirname ($c_file) ne '.')
+            {
+              $move_c_files .=
+                "\t\@if test -f $base_c_file; then \\\n"
+                . "\t  \$(MKDIR_P) $built_dir && \\\n"
+                . "\t  mv -f $base_c_file $built_c_file; \\\n"
+                . "\tfi\n";
+            }
           #
           # The -newer test here is checking "C file not older than Vala
           # file", rather than "C file newer than Vala file"; see
@@ -5910,7 +5922,6 @@ sub lang_vala_finish_target
             . "\t\@if test -f \$@; then :; else rm -f \$(builddir)/${derived}_vala.stamp; fi\n"
             . "\t\@if test -f \$@; then :; else \\\n"
             . "\t  \$(MAKE) \$(AM_MAKEFLAGS) \$(builddir)/${derived}_vala.stamp; \\\n"
-            . "\t  if test $built_dir != .; then mv $base_c_file $built_dir/; fi \\\n"
             . "\tfi\n";
 	  $clean_files{$built_c_file} = DIST_CLEAN;
 	  $clean_files{"\$(srcdir)/$c_file"} = MAINTAINER_CLEAN;
@@ -5989,11 +6000,13 @@ sub lang_vala_finish_target
 # move it to its final location only after valac has been invoked.
     "\t${silent}rm -f \$\@ && echo stamp > \$\@-t\n".
     "\t${verbose}$compile \$^\n".
+    $move_c_files.
     "\t${silent}mv -f \$\@-t \$\@\n";
 
   push_dist_common ($stampfile);
 
-  $clean_files{$stampfile} = MAINTAINER_CLEAN;
+  $clean_files{$stampfile} = DIST_CLEAN;
+  $clean_files{"\$(srcdir)/${derived}_vala.stamp"} = MAINTAINER_CLEAN;
 }
 
 # Add output rules to invoke valac and create stamp file as a witness

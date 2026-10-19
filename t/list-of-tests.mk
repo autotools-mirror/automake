@@ -1292,6 +1292,7 @@ t/vala-libs-vpath.sh \
 t/vala-libs.sh \
 t/vala-mix.sh \
 t/vala-mix2.sh \
+t/vala-non-recursive-multiple.sh \
 t/vala-non-recursive-setup.sh \
 t/vala-parallel.sh \
 t/vala-per-target-flags.sh \
