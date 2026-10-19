@@ -559,6 +559,10 @@ my @dist_common;
 # as [$DISJCONDITIONS, $FILE] pairs.
 my @dist_common_cond;
 
+# List of files to be distributed only if they exist at 'make dist' time,
+# in some conditions, as [$DISJCONDITIONS, $FILE] pairs.
+my @dist_common_if_present;
+
 # This is set when 'handle_dist' has finished.  Once this happens,
 # we should no longer push on dist_common.
 my $handle_dist_run;
@@ -658,6 +662,7 @@ sub initialize_per_input ()
 
     @dist_common = ();
     @dist_common_cond = ();
+    @dist_common_if_present = ();
     $handle_dist_run = 0;
 
     @proglist = ();
@@ -3942,6 +3947,12 @@ sub handle_dist ()
       elsif (my $crule = rule $cfile)
 	{
 	  push_dist_common_cond ($crule->conditions, $cfile);
+	  my @fallback = ($cfile);
+	  push @fallback, "$cfile.md"
+	    if (grep { $_ eq $cfile } @toplevelmd_ok)
+	       && dir_has_case_matching_file ($relative_dir, "$cfile.md");
+	  push @dist_common_if_present, [$crule->conditions->invert, $_]
+	    foreach @fallback;
 	}
       elsif (grep { $_ eq $cfile } @toplevelmd_ok)
         { # Irritatingly, have to repeat the checks, now for .md files;
@@ -4021,6 +4032,31 @@ sub handle_dist ()
 	}
       push @cond_common, "\$($helper)";
     }
+
+  my @if_present;
+  foreach my $pair (@dist_common_if_present)
+    {
+      my ($conds, $file) = @$pair;
+      next if $conds->false;
+      push @{$cond_files{$conds->string}}, $file;
+    }
+  foreach my $pair (@dist_common_if_present)
+    {
+      my ($conds) = @$pair;
+      my $files = delete $cond_files{$conds->string};
+      next unless defined $files;
+      my $helper = 'am__DIST_COMMON_' . ++$helper_count;
+      foreach my $cond ($conds->conds)
+	{
+	  define_pretty_variable ($helper, $cond, INTERNAL,
+				  uniq (sort @$files));
+	}
+      push @if_present, "\$($helper)";
+    }
+  define_pretty_variable ('am__DIST_COMMON_IF_PRESENT', TRUE, INTERNAL,
+			  @if_present)
+    if @if_present;
+  $transform{'DIST-IF-PRESENT'} = !!@if_present;
 
   # $(am__DIST_COMMON): files to be distributed automatically.  Will be
   # appended to $(DIST_COMMON) in the generated Makefile.

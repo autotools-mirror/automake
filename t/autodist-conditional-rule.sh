@@ -54,4 +54,33 @@ $MAKE distdir
 test -f foobar-1.0/ChangeLog
 grep generated foobar-1.0/ChangeLog
 
+# With the condition false, a ChangeLog that exists anyway (for example,
+# in a tarball) is still distributed.
+rm -rf foobar-1.0
+./configure
+$MAKE dist
+$MAKE distdir
+grep generated foobar-1.0/ChangeLog
+rm -rf foobar-1.0 ChangeLog
+
+# Without a rule, README falls back on README.md; this must also hold
+# where a conditional README rule does not apply.
+cat >> Makefile.am << 'END'
+if GEN_CL
+README:
+	echo generated-readme > $@
+endif
+END
+echo markdown > README.md
+$AUTOMAKE
+./configure
+$MAKE distdir
+test ! -f foobar-1.0/README
+grep markdown foobar-1.0/README.md
+rm -rf foobar-1.0
+./configure want_changelog=yes
+$MAKE distdir
+grep generated-readme foobar-1.0/README
+test ! -f foobar-1.0/README.md
+
 :
