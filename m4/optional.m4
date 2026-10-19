@@ -14,7 +14,7 @@
 # spellings) for dist-bzip2/bzip3/xz/lzip/zstd/zip/shar/tarZ.  `make
 # dist' builds each archive when its tool is present and skips it
 # otherwise, without failing.  Unknown OPTION warns at autoreconf; a
-# tool absent at configure appends no rule; a tool lost afterwards
+# tool absent at configure contributes no rule; a tool lost afterwards
 # fails, which the recipe catches.  See bug#81040.
 AC_DEFUN([AM_OPTIONAL_AUTOMAKE],
 [m4_foreach_w([_am_opt_o], [$1],
@@ -40,30 +40,31 @@ AC_DEFUN([_AM_OPTIONAL_AUTOMAKE_ONE],
 ])
 
 
+# _AM_OPTIONAL_RULES_INIT
+# -----------------------
+# Expanded once, even when AM_OPTIONAL_AUTOMAKE is called repeatedly.
+AC_DEFUN([_AM_OPTIONAL_RULES_INIT],
+[AC_SUBST([am__optional_rules])
+_AM_SUBST_NOTMAKE([am__optional_rules])
+am__optional_rules=
+])
+
 # _AM_OPTIONAL_RULE(TAG, VAR, RECIPE, ARTIFACTS)
 # ----------------------------------------------
-# AC_CHECK_PROG for TAG, then once append RECIPE to the top Makefile
-# via AC_CONFIG_COMMANDS (survives config.status reruns) iff configure
-# found the tool.  Hooked into dist/dist-all as an extra prerequisite.
+# Substitute RECIPE into the top-level Makefile iff configure found TAG.
+# Keeping the rules in a substitution makes all config.status invocations
+# idempotent, including selective Makefile regeneration.
 # ARTIFACTS stay out of $(DIST_ARCHIVES), so distcleancheck must remove
 # the copies that the in-tree `make dist' run by `make distcheck' leaves.
 AC_DEFUN([_AM_OPTIONAL_RULE],
 [m4_ifdef([_AM_OPTIONAL_DONE_$1], [],
  [m4_define([_AM_OPTIONAL_DONE_$1])dnl
+AC_REQUIRE([_AM_OPTIONAL_RULES_INIT])dnl
 AC_CHECK_PROG([am__optional_$2], [$1], [$1])
 AC_SUBST([am__optional_$2])dnl
-AC_CONFIG_COMMANDS([am--optional-rule-$1],
-[am__optional_mf=
-for am__optional_cand in Makefile GNUmakefile makefile; do
-  if test -f "$am__optional_cand"; then
-    am__optional_mf=$am__optional_cand
-    break
-  fi
-done
-if test -n "$am__optional_mf" && test -n "$am__optional_$2"; then
-  cat >>"$am__optional_mf" <<'_am_opt_rule_eof_'
-
-# Appended by am-optional for dist-$1.
+if test -n "$am__optional_$2"; then
+  am__optional_rule=`cat <<'_am_opt_rule_eof_'
+# Optional distribution format dist-$1.
 dist dist-all: am--optional-dist-$1
 distcleancheck: am--optional-rm-$1
 .PHONY: am--optional-dist-$1 am--optional-rm-$1
@@ -71,10 +72,11 @@ $3
 am--optional-rm-$1:
 	-rm -f $4
 _am_opt_rule_eof_
+`
+  am__optional_rules="$am__optional_rules
+$am__optional_rule"
 fi
-],
-[am__optional_$2="$am__optional_$2"
-])])dnl
+])dnl
 ])
 
 

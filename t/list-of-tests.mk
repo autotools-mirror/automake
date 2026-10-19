@@ -782,6 +782,7 @@ t/objcxx-minidemo.sh \
 t/objext-pr10128.sh \
 t/oldvars.sh \
 t/order.sh \
+t/optional-remake.sh \
 t/output-order.sh \
 t/output.sh \
 t/output10.sh \
