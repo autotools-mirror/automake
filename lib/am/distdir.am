@@ -34,8 +34,10 @@ am__remove_distdir = \
       || { sleep 5 && rm -rf "$(distdir)"; }; \
   else :; fi
 am__post_remove_distdir = \
-  $(am__is_gnu_make) || rm -f am__distdir.tar; \
-  $(am__remove_distdir)
+  if test "$${am__dist_keep_dir-}" != "$(abs_builddir)"; then \
+    $(am__is_gnu_make) || rm -f am__distdir.tar; \
+    $(am__remove_distdir); \
+  fi
 am__ensure_distdir_tar = \
   test -f am__distdir.tar || $(MAKE) $(AM_MAKEFLAGS) am__distdir.tar
 am__dist_compress_failed = \
@@ -464,15 +466,15 @@ am--dist-zip: distdir
 	-rm -f $(distdir).zip
 	zip -rq $(distdir).zip $(distdir)
 
-?LZIP?DIST_TARGETS += am--dist-lzip
-?XZ?DIST_TARGETS += am--dist-xz
-?SHAR?DIST_TARGETS += am--dist-shar
-?BZIP2?DIST_TARGETS += am--dist-bzip2
-?BZIP3?DIST_TARGETS += am--dist-bzip3
-?GZIP?DIST_TARGETS += am--dist-gzip
-?ZIP?DIST_TARGETS += am--dist-zip
-?ZSTD?DIST_TARGETS += am--dist-zstd
-?COMPRESS?DIST_TARGETS += am--dist-tarZ
+?LZIP?DIST_TARGETS += dist-lzip
+?XZ?DIST_TARGETS += dist-xz
+?SHAR?DIST_TARGETS += dist-shar
+?BZIP2?DIST_TARGETS += dist-bzip2
+?BZIP3?DIST_TARGETS += dist-bzip3
+?GZIP?DIST_TARGETS += dist-gzip
+?ZIP?DIST_TARGETS += dist-zip
+?ZSTD?DIST_TARGETS += dist-zstd
+?COMPRESS?DIST_TARGETS += dist-tarZ
 
 endif %?TOPDIR_P%
 
@@ -493,7 +495,7 @@ AM_RECURSIVE_TARGETS += dist dist-all
 endif %?SUBDIRS%
 
 dist dist-all:
-	$(MAKE) $(AM_MAKEFLAGS) $(DIST_TARGETS)
+	am__dist_keep_dir="$(abs_builddir)" $(MAKE) $(AM_MAKEFLAGS) $(DIST_TARGETS)
 	$(am__post_remove_distdir)
 
 endif %?TOPDIR_P%
