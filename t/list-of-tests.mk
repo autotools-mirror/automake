@@ -1199,6 +1199,7 @@ t/tap-unplanned.sh \
 t/tap-whitespace-normalization.sh \
 t/tap-with-and-without-number.sh \
 t/tap-xfail-tests.sh \
+t/tar-non-gnu.sh \
 t/tar-opts-errors.sh \
 t/tar-override.sh \
 t/tar-pax.sh \
