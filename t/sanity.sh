@@ -42,9 +42,9 @@ cat stderr >&2
 grep 'unsafe srcdir' stderr
 
 # Shell redirections in unquoted source paths can clobber files during
-# compilation.  Reject them before generating a Makefile.
+# compilation, and parentheses are syntax errors there.  Reject them before generating a Makefile.
 cp -R '../unsafe$' ../safe
-for char in '<' '>'; do
+for char in '<' '>' '(' ')'; do
   dir="../unsafe${char}dir"
   cp -R ../safe "$dir"
   "$dir/configure" 2>stderr && { cat stderr >&2; exit 1; }
