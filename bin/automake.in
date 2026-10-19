@@ -6758,7 +6758,8 @@ sub read_am_file
 	{
 	    if ($prev_state == IN_RULE_DEF)
 	    {
-              if (exists $recipe->{'targets'} && !$recipe->{'commands'})
+              if (exists $recipe->{'targets'} && !$recipe->{'double_colon'}
+                  && !$recipe->{'commands'})
                 {
                   $recipe->{'prerequisites'} .= $_;
                   if (has_inline_recipe ($recipe->{'prerequisites'}))
@@ -6826,10 +6827,12 @@ sub read_am_file
 	    # Automake::Rule::define). So we go on and ignore the return value.
             my ($targets, $prerequisites) = ($1, $2);
             %$recipe = (targets => $targets,
+                        double_colon => scalar ($prerequisites =~ /^:/),
                         prerequisites => $prerequisites . "\n",
                         where => $where->clone);
             Automake::Rule::define ($targets, $amfile, RULE_USER, $cond, $where);
-            if (has_inline_recipe ($prerequisites))
+            if (!$recipe->{'double_colon'}
+                && has_inline_recipe ($prerequisites))
               {
                 Automake::Rule::register_recipe
                   ($targets, $cond, $where, $recipe->{'where'});
@@ -6921,7 +6924,8 @@ sub read_am_file
 	}
 	else
 	{
-            if (/^\t/ && exists $recipe->{'targets'})
+            if (/^\t/ && exists $recipe->{'targets'}
+                && !$recipe->{'double_colon'})
               {
                 Automake::Rule::register_recipe
                   ($recipe->{'targets'}, $cond, $recipe->{'where'},

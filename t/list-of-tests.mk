@@ -798,6 +798,7 @@ t/output8.sh \
 t/output9.sh \
 t/override-conditional-1.sh \
 t/override-conditional-2.sh \
+t/override-conditional-double-colon.sh \
 t/override-conditional-pr13940.sh \
 t/override-conditional-pr13940-link.sh \
 t/override-html.sh \
