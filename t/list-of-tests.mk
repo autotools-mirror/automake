@@ -136,6 +136,7 @@ t/am-default-source-ext.sh \
 t/am-include-only-one-generated-fragment.sh \
 t/am-macro-not-found.sh \
 t/am-missing-prog.sh \
+t/am-optional-automake-once.sh \
 t/am-optional-automake.sh \
 t/am-prog-cc-c-o.sh \
 t/am-prog-cc-stdc.sh \

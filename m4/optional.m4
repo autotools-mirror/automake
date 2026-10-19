@@ -27,11 +27,17 @@ AC_DEFUN([AM_OPTIONAL_AUTOMAKE],
 # Dispatch on OPT; unrecognized OPT warns and is ignored.
 AC_DEFUN([_AM_OPTIONAL_AUTOMAKE_ONE],
 [m4_case([$1],
-  [dist-bzip2], [_AM_OPTIONAL_TAR([bzip2], [bzip2], [bz2], [-c])],
+  [dist-bzip2], [_AM_OPTIONAL_TAR([bzip2], [bzip2], [bz2], [-c],
+                                  [BZIP2=$${BZIP2--9}])],
   [dist-bzip3], [_AM_OPTIONAL_TAR([bzip3], [bzip3], [bz3], [-c])],
-  [dist-xz],    [_AM_OPTIONAL_TAR([xz],    [xz],    [xz],  [-c])],
-  [dist-lzip],  [_AM_OPTIONAL_TAR([lzip],  [lzip],  [lz],  [-c])],
-  [dist-zstd],  [_AM_OPTIONAL_TAR([zstd],  [zstd],  [zst], [-c -q])],
+  [dist-xz],    [_AM_OPTIONAL_TAR([xz],    [xz],    [xz],  [-c],
+                                  [XZ_OPT=$${XZ_OPT--e}])],
+  [dist-lzip],  [_AM_OPTIONAL_TAR([lzip],  [lzip],  [lz],
+                                  [-c $${LZIP_OPT--9}])],
+  [dist-zstd],  [_AM_OPTIONAL_TAR([zstd],  [zstd],  [zst],
+                                  [-c -q $$am__zstd_opts], [],
+                                  [am__zstd_opts=$${ZSTD_OPT--19}; test \
+"$${ZSTD_CLEVEL+set}" != set || am__zstd_opts=;])],
   [dist-tarZ],  [_AM_OPTIONAL_TAR([compress], [compress], [Z], [-c])],
   [dist-zip],   [_AM_OPTIONAL_ZIP()],
   [dist-shar],  [_AM_OPTIONAL_SHAR()],
@@ -47,6 +53,8 @@ AC_DEFUN([_AM_OPTIONAL_RULES_INIT],
 [AC_SUBST([am__optional_rules])
 _AM_SUBST_NOTMAKE([am__optional_rules])
 am__optional_rules=
+AC_SUBST([am__optional_dist_targets])
+am__optional_dist_targets=
 ])
 
 # _AM_OPTIONAL_RULE(TAG, VAR, RECIPE, ARTIFACTS)
@@ -54,6 +62,8 @@ am__optional_rules=
 # Substitute RECIPE into the top-level Makefile iff configure found TAG.
 # Keeping the rules in a substitution makes all config.status invocations
 # idempotent, including selective Makefile regeneration.
+# The `dist' rule builds the target in the same sub-make as $(DIST_TARGETS),
+# so that the distdir, its dist-hook and the tarball are made only once.
 # ARTIFACTS stay out of $(DIST_ARCHIVES), so distcleancheck must remove
 # the copies that the in-tree `make dist' run by `make distcheck' leaves.
 AC_DEFUN([_AM_OPTIONAL_RULE],
@@ -65,7 +75,6 @@ AC_SUBST([am__optional_$2])dnl
 if test -n "$am__optional_$2"; then
   am__optional_rule=`cat <<'_am_opt_rule_eof_'
 # Optional distribution format dist-$1.
-dist dist-all: am--optional-dist-$1
 distcleancheck: am--optional-rm-$1
 .PHONY: am--optional-dist-$1 am--optional-rm-$1
 $3
@@ -75,21 +84,25 @@ _am_opt_rule_eof_
 `
   am__optional_rules="$am__optional_rules
 $am__optional_rule"
+  am__optional_dist_targets="$am__optional_dist_targets am--optional-dist-$1"
 fi
 ])dnl
 ])
 
 
-# _AM_OPTIONAL_TAR(TOOL, VAR-TAG, EXT, FLAGS)
-# -------------------------------------------
+# _AM_OPTIONAL_TAR(TOOL, VAR-TAG, EXT, FLAGS, [ENV], [SETUP])
+# ---------------------------------------------------------
 # Compress the shared intermediate tarball, whose rule catches tar's own
-# failures (bug#19614); only TOOL failing is tolerated here.
+# failures (bug#19614); only TOOL failing is tolerated here.  Run TOOL
+# with FLAGS and the ENV assignments after the SETUP commands, honoring
+# the same variables as the corresponding mandatory dist-XXX rule.
 AC_DEFUN([_AM_OPTIONAL_TAR],
 [_AM_OPTIONAL_RULE([$1], [$2],
 [am--optional-dist-$1: am__distdir.tar
 	@if test -n "$(am__optional_$2)"; then \
 	  $(am__ensure_distdir_tar) || exit 1; \
-	  "$(am__optional_$2)" $4 < am__distdir.tar > $(distdir).tar.$3 \
+	  m4_ifval([$6], [$6 \
+	  ])$5 "$(am__optional_$2)" $4 < am__distdir.tar > $(distdir).tar.$3 \
 	  || { rm -f $(distdir).tar.$3; \
 	       echo "am-optional: dist-$1 failed; archive not built" >&2; }; \
 	else \
