@@ -1357,6 +1357,7 @@ t/yacc-dry.sh \
 t/yacc-grepping.sh \
 t/yacc-grepping2.sh \
 t/yacc-headers-and-dist-pr47.sh \
+t/yacc-lex-vpath-dist-line.sh \
 t/yacc-line.sh \
 t/yacc-misc.sh \
 t/yacc-mix-c-cxx.sh \

@@ -563,6 +563,8 @@ my @dist_common_cond;
 # in some conditions, as [$DISJCONDITIONS, $FILE] pairs.
 my @dist_common_if_present;
 
+my %ylwrap_dist_files;
+
 # This is set when 'handle_dist' has finished.  Once this happens,
 # we should no longer push on dist_common.
 my $handle_dist_run;
@@ -663,6 +665,7 @@ sub initialize_per_input ()
     @dist_common = ();
     @dist_common_cond = ();
     @dist_common_if_present = ();
+    %ylwrap_dist_files = ();
     $handle_dist_run = 0;
 
     @proglist = ();
@@ -4058,6 +4061,11 @@ sub handle_dist ()
     if @if_present;
   $transform{'DIST-IF-PRESENT'} = !!@if_present;
 
+  define_pretty_variable ('am__ylwrap_dist_files', TRUE, INTERNAL,
+			  sort keys %ylwrap_dist_files)
+    if %ylwrap_dist_files;
+  $transform{'YLWRAP-DIST'} = !!%ylwrap_dist_files;
+
   # $(am__DIST_COMMON): files to be distributed automatically.  Will be
   # appended to $(DIST_COMMON) in the generated Makefile.
   # Use 'sort' so that the expansion of $(DIST_COMMON) in the generated
@@ -6156,8 +6164,11 @@ sub lang_yacc_target_hook
 	# Distribute the generated file, unless its .y source was
 	# listed in a nodist_ variable.  (handle_source_transform()
 	# will set DIST_SOURCE.)
-	push_dist_common ($header)
-	  if $transform{'DIST_SOURCE'};
+	if ($transform{'DIST_SOURCE'})
+	  {
+	    push_dist_common ($header);
+	    $ylwrap_dist_files{$header} = 1;
+	  }
 
 	# The GNU rules say that yacc/lex output files should be removed
 	# by maintainer-clean.  However, if the files are not distributed,
@@ -6167,6 +6178,8 @@ sub lang_yacc_target_hook
       }
     # See the comment above for $HEADER.
     $clean_files{$output} = $transform{'DIST_SOURCE'} ? MAINTAINER_CLEAN : CLEAN;
+    $ylwrap_dist_files{$output} = 1
+      if $transform{'DIST_SOURCE'};
 }
 
 # This is a lex helper which is called whenever we have decided to
@@ -6179,6 +6192,8 @@ sub lang_lex_target_hook
     # then we want to remove them with "make clean"; otherwise,
     # "make distcheck" will fail.
     $clean_files{$output} = $transform{'DIST_SOURCE'} ? MAINTAINER_CLEAN : CLEAN;
+    $ylwrap_dist_files{$output} = 1
+      if $transform{'DIST_SOURCE'};
 }
 
 # This is a helper for both lex and yacc.
