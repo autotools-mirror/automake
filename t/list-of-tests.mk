@@ -447,6 +447,7 @@ t/distcheck-hook2.sh \
 t/distcheck-missing-m4.sh \
 t/distcheck-no-prefix-or-srcdir-override.sh \
 t/distcheck-outdated-m4.sh \
+t/distcheck-no-dvi.sh \
 t/distcheck-override-dvi.sh \
 t/distcheck-override-infodir.sh \
 t/distcheck-pr10470.sh \

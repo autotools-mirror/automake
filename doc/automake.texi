@@ -326,7 +326,7 @@ Checking the Distribution
 
 * DISTCHECK_CONFIGURE_FLAGS::  Overriding configure flags in distcheck.
 * distcheck-hook::             Running commands after distcheck.
-* dvi and distcheck::          Overriding the distcheck doc target.
+* dvi and distcheck::          Testing documentation in distcheck.
 * distcleancheck::             Handling files not cleaned.
 * distuninstallcheck::         Overriding the uninstall check.
 * Errors with distclean::
@@ -1255,7 +1255,7 @@ work:
 @item
 It attempts a full compilation of the package (@pxref{Basic
 Installation}): unpacking the newly constructed tarball, running
-@code{make}, @code{make dvi}, @code{make check}, @code{make install},
+@code{make}, @code{make check}, @code{make install},
 as well as @code{make installcheck}, and even @code{make dist},
 @item
 it tests VPATH builds with a read-only source tree (@pxref{VPATH Builds}),
@@ -2444,8 +2444,9 @@ When Texinfo sources are in the package, this file is required for
 version can be downloaded from
 @url{https://www.gnu.org/software/texinfo/}.  A working @TeX{}
 distribution, or at least a @file{tex} program, is also required.
-Furthermore, @samp{make dist} invokes @samp{make dvi}, so these become
-requirements for making a distribution with Texinfo sources.
+These are not needed by @samp{make distcheck} unless
+@code{AM_DISTCHECK_DVI_TARGET} asks for printable output
+(@pxref{dvi and distcheck}).
 
 @item ylwrap
 @cmindex ylwrap
@@ -9168,7 +9169,8 @@ a bit, we can say this rule first makes a distribution, and then,
 does a @code{VPATH} build (@pxref{VPATH Builds}), with the
 @code{srcdir} and all its content made @emph{read-only};
 @item
-makes the printable documentation (with @command{make dvi}), if any,
+builds the documentation target named by
+@code{AM_DISTCHECK_DVI_TARGET}, if any (@pxref{dvi and distcheck});
 @item
 runs the test suite (with @command{make check}) on this fresh build;
 @item
@@ -9193,7 +9195,7 @@ please do not rely on it.
 @menu
 * DISTCHECK_CONFIGURE_FLAGS::  Overriding configure flags in distcheck.
 * distcheck-hook::             Running commands after distcheck.
-* dvi and distcheck::          Overriding the distcheck doc target.
+* dvi and distcheck::          Testing documentation in distcheck.
 * distcleancheck::             Handling files not cleaned.
 * distuninstallcheck::         Overriding the uninstall check.
 * Errors with distclean::
@@ -9255,19 +9257,19 @@ and @code{DISTCHECK_CONFIGURE_FLAGS}, are not honored in a subpackage
 @subsection @code{dvi} and @code{distcheck}
 @trindex dvi
 
-Ordinarily, @command{make distcheck} runs @command{make dvi}.  It does
-nothing if the distribution contains no Texinfo sources.  If the
-distribution does contain a Texinfo manual, by default the @code{dvi}
-target will run @TeX{} to make sure it can be successfully processed
-(@pxref{Texinfo}).
+By default, @command{make distcheck} does not build any documentation
+beyond what @command{make} itself builds; in particular, it no longer
+runs @command{make dvi}, so @TeX{} is not needed to check a
+distribution.
 
 @vindex AM_DISTCHECK_DVI_TARGET
 @cindex @code{eps} images, and @code{distcheck}
-However, you may wish to test the manual by producing @code{pdf}
-(e.g., if your manual uses images in formats other than @code{eps}),
-@code{html} (if you don't have @TeX{} at all), some other format, or
-just skip the test entirely (not recommended).  You can change the
-target that is run by setting the variable
+However, you may wish to test that your Texinfo manual
+(@pxref{Texinfo}) can be successfully processed, by producing
+@code{dvi}, @code{pdf} (e.g., if your manual uses images in formats
+other than @code{eps}), @code{html}, or some other format.  You can
+name the target to run, after the build and before
+@command{make check}, by setting the variable
 @code{AM_DISTCHECK_DVI_TARGET} in your @code{Makefile.am}; for
 example,
 
@@ -9275,8 +9277,8 @@ example,
 AM_DISTCHECK_DVI_TARGET = pdf
 @end example
 
-To make @code{dvi} into a do-nothing target, see the example for
-@code{EMPTY_AUTOMAKE_TARGETS} in @ref{Third-Party Makefiles}.
+Setting it to @code{dvi} restores the behavior of Automake 1.19 and
+earlier.
 
 @node distcleancheck
 @subsection @code{distcleancheck}
