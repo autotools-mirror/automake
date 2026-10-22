@@ -832,6 +832,7 @@ t/parallel-tests-interrupt.tap \
 t/parallel-tests-log-compiler-1.sh \
 t/parallel-tests-log-compiler-2.sh \
 t/parallel-tests-log-compiler-example.sh \
+t/parallel-tests-log-dos-names.sh \
 t/parallel-tests-log-override-1.sh \
 t/parallel-tests-log-override-2.sh \
 t/parallel-tests-log-override-recheck.sh \
