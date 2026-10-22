@@ -17,7 +17,7 @@
 ## You should have received a copy of the GNU General Public License
 ## along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-# FIXME: These "expected failures" are a kludge used to
+# FIXME: These "expected failures" are a kludge used
 # FIXME: to verify that some incorrect usages of our perl libraries
 # FIXME: raise an error.  We should find a cleaner way to check that.
 perl_fake_XFAIL_TESTS = \

@@ -15,7 +15,7 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 # Test to make sure texinfo.tex is correctly installed and disted by
-# -a when we're using AC_CONFIG_AUX_DIR.  Bug report by by Per
+# -a when we're using AC_CONFIG_AUX_DIR.  Bug report by Per
 # Cederqvist.
 
 . test-init.sh

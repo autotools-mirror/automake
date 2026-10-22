@@ -91,7 +91,7 @@ test -f $distdir/bar-parse.c
 # Note that, for this to succeed, bar-parse.output must either not
 # be distributed, or properly cleaned by automake-generated rules.
 # We don't want to set the exact semantics yet, but want to ensure
-# they are are consistent.
+# they are consistent.
 yl_distcheck
 
 # Make sure that the Yacc-derived C sources are erased by
