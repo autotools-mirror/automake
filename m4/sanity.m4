@@ -221,7 +221,7 @@ fi
 # If we didn't sleep, we still need to ensure time stamps of config.status and
 # generated files are strictly newer.
 am_sleep_pid=
-AS_IF([test -e conftest.file || grep 'slept: no' conftest.file >/dev/null 2>&1],, [dnl
+AS_IF([grep 'slept: no' conftest.file >/dev/null 2>&1], [dnl
   ( sleep "$am_cv_filesystem_timestamp_resolution" ) &
   am_sleep_pid=$!
 ])
