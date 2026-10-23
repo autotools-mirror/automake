@@ -909,6 +909,7 @@ t/primary-prefix-valid-couples.sh \
 t/primary.sh \
 t/primary2.sh \
 t/primary3.sh \
+t/print-distfiles.sh \
 t/print-libdir.sh \
 t/proginst.sh \
 t/programs-primary-rewritten.sh \

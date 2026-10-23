@@ -335,6 +335,75 @@ endif %?TOPDIR_P%
 
 
 
+## ------------------------------------- ##
+## Listing the files of the distribution.  ##
+## ------------------------------------- ##
+## Sub-makes may print "Entering directory" on stdout...
+am__distfiles_out =
+am__distfiles_prefix =
+.PHONY: print-distfiles print-distfiles-am
+if %?SUBDIRS%
+AM_RECURSIVE_TARGETS += print-distfiles print-distfiles-am
+endif %?SUBDIRS%
+print-distfiles:
+	@out=`pwd`/am-dlist.tmp; rm -f "$$out"; \
+	$(MAKE) $(AM_MAKEFLAGS) am__distfiles_out="$$out" \
+	  am__distfiles_prefix= print-distfiles-am >/dev/null \
+	  || { rm -f "$$out"; exit 1; }; \
+	if test -f "$$out"; then LC_ALL=C sort -u "$$out"; fi; \
+	rm -f "$$out"
+print-distfiles-am:
+	@if test -z "$(am__distfiles_out)"; then \
+	  echo 'print-distfiles-am: am__distfiles_out is not set;' \
+	       'use print-distfiles instead' 1>&2; \
+	  exit 1; \
+	fi; \
+	srcdirstrip=`echo "$(srcdir)" | sed 's/[].[^$$\\*]/\\\\&/g'`; \
+	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's/[].[^$$\\*]/\\\\&/g'`; \
+	{ \
+	  list='$(DISTFILES)'; for file in $$list; do echo "$$file"; done; \
+	  list='$(am__DIST_COMMON_IF_PRESENT)'; for file in $$list; do \
+	    if test -f $$file || test -f $(srcdir)/$$file; then \
+	      echo "$$file"; \
+	    fi; \
+	  done; \
+	} | sed -e "s|^$$srcdirstrip/||;t" \
+	        -e "s|^$$topsrcdirstrip/|$(top_builddir)/|;t" | \
+	while read file; do \
+	  if test -d $$file || test -d $(srcdir)/$$file; then \
+	    for d in $(srcdir) .; do \
+	      test -d $$d/$$file || continue; \
+	      ($(am__cd) $$d && find "$$file" ! -type d -print) || exit 1; \
+	    done; \
+	  else \
+	    echo "$$file"; \
+	  fi; \
+	done | \
+	sed -e 's|^|$(am__distfiles_prefix)|' \
+	    -e ':a' -e 's|^\./||' -e 's|/\./|/|' -e 's|//*$$||' \
+	    -e 's|^[^./][^/]*/\.\./||' -e 's|/[^./][^/]*/\.\./|/|' -e 'ta' \
+	    >> "$(am__distfiles_out)"
+if %?SUBDIRS%
+	@list='$(DIST_SUBDIRS)'; for subdir in $$list; do \
+	  if test "$$subdir" = .; then continue; fi; \
+	  if test -f $$subdir/Makefile \
+	     && grep '^print-distfiles-am[	 ]*:' $$subdir/Makefile >/dev/null; \
+	  then \
+	    ($(am__cd) $$subdir && \
+	      $(MAKE) $(AM_MAKEFLAGS) \
+	        am__distfiles_out="$(am__distfiles_out)" \
+	        am__distfiles_prefix="$(am__distfiles_prefix)$$subdir/" \
+	        print-distfiles-am) \
+	      || exit 1; \
+	  else \
+	    echo "print-distfiles: cannot list the files in '$$subdir'" 1>&2; \
+	    echo "$(am__distfiles_prefix)$$subdir" >> "$(am__distfiles_out)"; \
+	  fi; \
+	done
+endif %?SUBDIRS%
+
+
+
 ## --------------------------------------- ##
 ## Building various distribution flavors.  ##
 ## --------------------------------------- ##
