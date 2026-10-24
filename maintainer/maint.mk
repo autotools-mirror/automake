@@ -354,9 +354,9 @@ CLEANFILES += announcement
 # ------------------------------- #
 #  Synchronize third-party files  #
 # ------------------------------- #
-git-sv-host = git.savannah.gnu.org
-SV_GIT_CF = $(git-sv-host):/srv/git/config.git
-SV_GIT_GL = $(git-sv-host):/srv/git/gnulib.git
+git_sv_host = git.savannah.gnu.org
+SV_GIT_CF = $(git_sv_host):/srv/git/config.git
+SV_GIT_GL = $(git_sv_host):/srv/git/gnulib.git
 
 FETCHFILES_CF = config.guess config.sub
 FETCHFILES_GL = \
@@ -369,11 +369,11 @@ FETCHFILES_GL = \
   doc/INSTALL
 
 # texinfo.tex is released independently of the Texinfo package.
-TEXINFO_TEX_URL = $(gnu-ftp)/texinfo/texinfo.tex
+TEXINFO_TEX_URL = $(gnu_ftp)/texinfo/texinfo.tex
 
 # Generate help2man from a released version without optional gettext support.
 HELP2MAN_VERSION = 1.49.3
-HELP2MAN_RELEASES_URL = $(gnu-ftp)/help2man/
+HELP2MAN_RELEASES_URL = $(gnu_ftp)/help2man/
 HELP2MAN_URL = $(HELP2MAN_RELEASES_URL)help2man-$(HELP2MAN_VERSION).tar.xz
 
 # Local files maintained by fetch, also excluded from update-copyright.
@@ -580,7 +580,7 @@ update-copyright:
 #  Run the testsuite with the least supported autoconf version.  #
 # -------------------------------------------------------------- #
 
-gnu-ftp = https://ftp.gnu.org/gnu
+gnu_ftp = https://ftp.gnu.org/gnu
 
 # Various shorthands: version, name, package name, tarball name,
 # tarball location, installation directory.
@@ -595,7 +595,7 @@ fetch-minimal-autoconf: o = $(ac-l)
 fetch-minimal-autoconf:
 	$(AM_V_at)$(MKDIR_P) $(dir $o)
 	$(AM_V_at)rm -f $o $o-t
-	$(AM_V_GEN)$(WGET) -O $o-t $(gnu-ftp)/$(ac-n)/$(ac-t)
+	$(AM_V_GEN)$(WGET) -O $o-t $(gnu_ftp)/$(ac-n)/$(ac-t)
 	$(AM_V_at)chmod a-w $o-t && mv -f $o-t $o && ls -l $o
 .PHONY: fetch-minimal-autoconf
 
@@ -703,7 +703,7 @@ ttp-check ttp-check-all: t/pkg-config-macros.log
 	    echo ========  BEGIN TTP $$p  =========; \
 	    echo; \
 	    set -x; \
-	    $(do-clone) git://$(git-sv-host)/$$p.git || exit 1; \
+	    $(do-clone) git://$(git_sv_host)/$$p.git || exit 1; \
 	    ( \
 	      cd $$p \
 	        && ls -l \
