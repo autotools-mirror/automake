@@ -41,11 +41,8 @@ CLEANFILES += $(man1_MANS)
 #
 # See the "Errors with distclean" node in the manual for more info.
 
-# XXX: The help2man script we include in the Automake distribution
-# should be updated with 'fetch' target, but isn't. Instead, you must
-# build help2man normally and copy it in manually. Keep the first line as:
-#   #!/usr/bin/perl -w
-# whatever it might have ended up as on your system.
+# Updated by "make fetch" from the pinned GNU help2man release, without
+# optional gettext support and with a portable /usr/bin/perl shebang.
 EXTRA_DIST += %D%/help2man
 
 update_mans = \

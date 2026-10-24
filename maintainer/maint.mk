@@ -351,58 +351,65 @@ announcement: NEWS
 .PHONY: announcement
 CLEANFILES += announcement
 
-# --------------------------------------------------------------------- #
-#  Synchronize third-party files that are committed in our repository.  #
-# --------------------------------------------------------------------- #
+# ------------------------------- #
+#  Synchronize third-party files  #
+# ------------------------------- #
+git-sv-host = git.savannah.gnu.org
+SV_GIT_CF = $(git-sv-host):/srv/git/config.git
+SV_GIT_GL = $(git-sv-host):/srv/git/gnulib.git
 
-# Git repositories on Savannah.
-# In May 2025, we switched away from https://git.savannah.gnu.org/gitweb
-# because it has become unreliable, often returning 502 Bad Gateway
-# due to endless crawler bombardment of Savannah. The new
-# https://cgi.git.savannah.gnu.org url is an experimental read-only
-# mirror. It would probably be better to just switch to assuming local
-# checkouts instead of retrieving via a web interface. See thread around
-# https://lists.gnu.org/archive/html/savannah-hackers-public/2025-05/msg00040.html
+FETCHFILES_CF = config.guess config.sub
+FETCHFILES_GL = \
+  build-aux/announce-gen \
+  build-aux/gendocs.sh \
+  build-aux/gitlog-to-changelog \
+  build-aux/gnupload \
+  build-aux/update-copyright \
+  doc/gendocs_template \
+  doc/INSTALL
 
-git-sv-host = cgit.git.savannah.gnu.org/cgit
+# texinfo.tex is released independently of the Texinfo package.
+TEXINFO_TEX_URL = $(gnu-ftp)/texinfo/texinfo.tex
 
-# Some repositories we sync files from.
-SV_GIT_CF = https://$(git-sv-host)/config.git/plain/
-SV_GIT_GL = https://$(git-sv-host)/gnulib.git/plain/
+# Generate help2man from a released version without optional gettext support.
+HELP2MAN_VERSION = 1.49.3
+HELP2MAN_URL = $(gnu-ftp)/help2man/help2man-$(HELP2MAN_VERSION).tar.xz
 
-# Files that we fetch and which we compare against.
-# Note that the 'lib/COPYING' file and help2man must still be synced by hand.
-FETCHFILES = \
-  $(SV_GIT_CF)config.guess \
-  $(SV_GIT_CF)config.sub \
-  $(SV_GIT_GL)build-aux/announce-gen \
-  $(SV_GIT_GL)build-aux/texinfo.tex \
-  $(SV_GIT_GL)build-aux/gendocs.sh \
-  $(SV_GIT_GL)build-aux/gitlog-to-changelog \
-  $(SV_GIT_GL)build-aux/gnupload \
-  $(SV_GIT_GL)build-aux/update-copyright \
-  $(SV_GIT_GL)doc/gendocs_template \
-  $(SV_GIT_GL)doc/INSTALL
+# Local files maintained by fetch, also excluded from update-copyright.
+FETCHFILES = $(addprefix lib/,$(notdir $(FETCHFILES_CF) $(FETCHFILES_GL))) \
+  lib/texinfo.tex doc/help2man
 
-# Fetch the latest versions of few scripts and files we care about.
-# A retrieval or copying failure usually means serious problems,
-# so we'll just bail out if 'wget' or 'cp' fail.
-# Update the top-level INSTALL in sync with lib/INSTALL as a special case.
+# xxx: Update the top-level INSTALL in sync with lib/INSTALL as a special case.
 fetch:
 	$(AM_V_at)rm -rf Fetchdir
-	$(AM_V_at)mkdir Fetchdir
+	$(AM_V_at)mkdir -p Fetchdir/upstream Fetchdir/lib Fetchdir/doc
 	$(AM_V_GEN)set -ex; \
+	$(GIT) archive --remote="$(SV_GIT_CF)" HEAD $(FETCHFILES_CF) \
+	  > Fetchdir/config.tar; \
+	$(GIT) archive --remote="$(SV_GIT_GL)" HEAD $(FETCHFILES_GL) \
+	  > Fetchdir/gnulib.tar; \
+	(cd Fetchdir/upstream && tar xf ../config.tar && tar xf ../gnulib.tar); \
 	if $(AM_V_P); then wget_opts=; else wget_opts=-nv; fi; \
-	for url in $(FETCHFILES); do \
-	   file=`printf '%s\n' "$$url" | sed 's|^.*/||; s|^.*=||'`; \
-	   $(WGET) $$wget_opts "$$url" -O Fetchdir/$$file || exit 1; \
-	   if cmp Fetchdir/$$file $(srcdir)/lib/$$file >/dev/null; then \
+	$(WGET) $$wget_opts "$(TEXINFO_TEX_URL)" -O Fetchdir/lib/texinfo.tex; \
+	$(WGET) $$wget_opts "$(HELP2MAN_URL)" -O Fetchdir/help2man.tar.xz; \
+	(cd Fetchdir && xz -dc help2man.tar.xz > help2man.tar \
+	  && tar xf help2man.tar help2man-$(HELP2MAN_VERSION)/help2man.PL); \
+	$(PERL) Fetchdir/help2man-$(HELP2MAN_VERSION)/help2man.PL --stdout \
+	  > Fetchdir/help2man.tmp; \
+	sed '1s|.*|#!/usr/bin/perl -w|' Fetchdir/help2man.tmp \
+	  > Fetchdir/doc/help2man; \
+	chmod +x Fetchdir/doc/help2man; \
+	for path in $(FETCHFILES_CF) $(FETCHFILES_GL); do \
+	   cp Fetchdir/upstream/$$path Fetchdir/lib/`basename "$$path"`; \
+	done; \
+	for file in $(FETCHFILES); do \
+	   if cmp Fetchdir/$$file $(srcdir)/$$file >/dev/null; then \
 	     : Nothing to do; \
 	   else \
 	     echo "$@: updating file $$file"; \
-	     cp Fetchdir/$$file $(srcdir)/lib/$$file || exit 1; \
-	     test "$$file" != INSTALL || cp Fetchdir/$$file ../$$file; \
+	     cp Fetchdir/$$file $(srcdir)/$$file; \
 	   fi; \
+	   test "$$file" != lib/INSTALL || cp Fetchdir/$$file $(srcdir)/INSTALL; \
 	done
 	$(AM_V_at)rm -rf Fetchdir
 .PHONY: fetch
@@ -506,8 +513,7 @@ update_copyright_env = \
   UPDATE_COPYRIGHT_USE_INTERVALS=2
 
 # In addition to the several README files, these as well are
-# not expected to have a copyright notice. help2man should be handled in
-# make fetch, but currently isn't (fixme).
+# not expected to have a copyright notice.
 files_without_copyright = \
   .autom4te.cfg \
   .dir-locals.el \
@@ -518,7 +524,6 @@ files_without_copyright = \
   COPYING \
   AUTHORS \
   THANKS \
-  lib/help2man \
   lib/INSTALL \
   lib/COPYING
 
@@ -542,9 +547,7 @@ update-copyright:
 	sed -i "/^RELEASE_YEAR=/s/=.*$$/=$$current_year/" \
 	  bootstrap configure.ac; \
 	excluded_re=`( \
-	  for url in $(FETCHFILES); do echo "$$url"; done \
-	    | sed -e 's!^.*/!!' -e 's!^.*=!!' -e 's!^!lib/!' \
-	  && for f in $(files_without_copyright); do echo $$f; done \
+	  for f in $(FETCHFILES) $(files_without_copyright); do echo $$f; done \
 	) | sed -e '$$!s,$$,|,' | tr -d '\012\015'`; \
 	$(GIT) ls-files \
 	  | grep -Ev '(^|/)README$$' \
