@@ -373,7 +373,8 @@ TEXINFO_TEX_URL = $(gnu-ftp)/texinfo/texinfo.tex
 
 # Generate help2man from a released version without optional gettext support.
 HELP2MAN_VERSION = 1.49.3
-HELP2MAN_URL = $(gnu-ftp)/help2man/help2man-$(HELP2MAN_VERSION).tar.xz
+HELP2MAN_RELEASES_URL = $(gnu-ftp)/help2man/
+HELP2MAN_URL = $(HELP2MAN_RELEASES_URL)help2man-$(HELP2MAN_VERSION).tar.xz
 
 # Local files maintained by fetch, also excluded from update-copyright.
 FETCHFILES = $(addprefix lib/,$(notdir $(FETCHFILES_CF) $(FETCHFILES_GL))) \
@@ -411,6 +412,26 @@ fetch:
 	   fi; \
 	   test "$$file" != lib/INSTALL || cp Fetchdir/$$file $(srcdir)/INSTALL; \
 	done
+	$(AM_V_at)if $(WGET) -q --timeout=15 --tries=1 \
+	  "$(HELP2MAN_RELEASES_URL)" -O Fetchdir/help2man-index.html; then \
+	  if latest=`$(PERL) -Mversion -e ' \
+	    my $$pinned = version->parse("v" . shift); \
+	    local $$/; my $$index = <>; \
+	    my @versions = $$index =~ /href="help2man-([0-9]+(?:\.[0-9]+)+)\.tar\.xz"/g; \
+	    die "No help2man releases found\n" unless @versions; \
+	    my ($$latest) = sort { version->parse("v$$b") <=> version->parse("v$$a") } @versions; \
+	    print $$latest if version->parse("v$$latest") > $$pinned; \
+	  ' "$(HELP2MAN_VERSION)" Fetchdir/help2man-index.html`; then \
+	    if test -n "$$latest"; then \
+	      echo "$@: help2man $$latest is available (pinned: $(HELP2MAN_VERSION))."; \
+	      echo "Consider bumping HELP2MAN_VERSION in maintainer/maint.mk to $$latest."; \
+	    fi; \
+	  else \
+	    echo "$@: warning: could not determine the latest help2man release" >&2; \
+	  fi; \
+	else \
+	  echo "$@: warning: could not check for new help2man releases" >&2; \
+	fi
 	$(AM_V_at)rm -rf Fetchdir
 .PHONY: fetch
 
