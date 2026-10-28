@@ -31,8 +31,8 @@ cat
 END
   chmod a+x bin/$prog
 done
-PATH=`pwd`/bin$PATH_SEPARATOR$PATH; export PATH
-stub_log=`pwd`/stub.log; export stub_log
+PATH=$(pwd)/bin$PATH_SEPARATOR$PATH; export PATH
+stub_log=$(pwd)/stub.log; export stub_log
 
 cat > configure.ac <<END
 AC_INIT([$me], [1.0])
@@ -58,8 +58,8 @@ check_dist ()
   rm -f hook.log stub.log $distdir.tar.*
   run_make -O -- "$@" dist
   cat stub.log
-  test `wc -l <hook.log` -eq 1
-  tar_runs=`grep -c 'am__tar_msg=' stdout` || tar_runs=0
+  test $(wc -l <hook.log) -eq 1
+  tar_runs=$(grep -c 'am__tar_msg=' stdout) || tar_runs=0
   if using_gmake; then
     test $tar_runs -eq 1
   else

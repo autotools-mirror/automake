@@ -20,8 +20,8 @@
 
 . test-init.sh
 
-real_tar=`command -v tar` || skip_ "tar not found"
-case `"$real_tar" --version 2>/dev/null` in
+real_tar=$(command -v tar) || skip_ "tar not found"
+case $("$real_tar" --version 2>/dev/null) in
   *GNU*) ;;
   *) skip_ "the real tar is not GNU tar";;
 esac
@@ -49,7 +49,7 @@ exec '$real_tar' "\$@"
 END
 chmod a+x bsd/tar busybox/tar both/tar both/gtar
 for d in bsd busybox both; do
-  eval "path_$d=\`pwd\`/$d\$PATH_SEPARATOR\$PATH"
+  eval "path_$d=\$(pwd)/$d\$PATH_SEPARATOR\$PATH"
 done
 
 cat > configure.ac <<END
