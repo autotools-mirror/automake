@@ -125,7 +125,16 @@ for option in '' --disable-jobserver; do
 done
 
 # Under .ONESHELL, only the first recipe line controls jobserver access.
-echo '.ONESHELL:' >> Makefile.am
+# GNU make must recognize SHELL as a POSIX shell to remove internal
+# recipe prefixes.  Preserve CONFIG_SHELL's checks (in particular those
+# of shell-no-trail-bslash), but give it a recognized basename.
+mkdir test-shell
+cp "${CONFIG_SHELL:-$SHELL}" test-shell/sh
+chmod +x test-shell/sh
+cat >> Makefile.am <<'END'
+.ONESHELL:
+SHELL = $(abs_builddir)/test-shell/sh
+END
 $AUTOMAKE
 ./configure --enable-jobserver
 run_make clean
