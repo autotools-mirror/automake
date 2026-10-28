@@ -28,18 +28,21 @@ AC_OUTPUT
 END
 
 cat > Makefile.am <<'END'
+# Keep configure's compile wrapper for compilers without -c -o support.
+configured_CC = @CC@
 bin_PROGRAMS = foo bar
 foo_SOURCES = foo.c
-bar_SOURCES = foo.c
+bar_SOURCES = bar.c
 bar_CFLAGS = $(AM_CFLAGS)
 noinst_LTLIBRARIES = libfoo.la
-libfoo_la_SOURCES = foo.c
+libfoo_la_SOURCES = libfoo.c
 libfoo_la_CFLAGS = $(AM_CFLAGS)
 END
 
 echo 'int main (void) { return 0; }' > foo.c
+cp foo.c bar.c
+cp foo.c libfoo.c
 
-# Check the descriptors themselves, independently of compiler LTO support.
 cat > check-jobserver.c <<'END'
 #include <stdlib.h>
 #include <string.h>
@@ -80,7 +83,6 @@ $AUTOCONF
 $AUTOMAKE -a
 
 # GNU make 4.4 defaults to a FIFO, which does not need inherited fds.
-# Force the pipe jobserver there; older versions already use pipes.
 run_make -O -- --help
 jobserver_style=
 if grep 'jobserver-style' stdout; then
@@ -96,7 +98,8 @@ for deps in none fast slow; do
   esac
   for verbosity in 0 1; do
     rm -f compiler.log libtool.log
-    run_make -M -j2 $jobserver_style V=$verbosity CC="$SHELL ./cc-wrapper $CC" \
+    run_make -M -j2 $jobserver_style V=$verbosity \
+      CC="$SHELL ./cc-wrapper \$(configured_CC)" \
       LIBTOOL="$SHELL ./lt-wrapper $SHELL ./libtool"
     test $(wc -l < compiler.log) -ge 5
     test $(wc -l < libtool.log) -eq 4
@@ -105,7 +108,7 @@ for deps in none fast slow; do
     for mode in -n -q -t -kn -kq -kt; do
       rm -f compiler.log libtool.log
       run_make -M -e IGNORE -j2 $jobserver_style $mode V=$verbosity \
-        CC="$SHELL ./cc-wrapper $CC" \
+        CC="$SHELL ./cc-wrapper \$(configured_CC)" \
         LIBTOOL="$SHELL ./lt-wrapper $SHELL ./libtool"
       case $mode in
         *q) test "$am_make_rc" -eq 1;;
@@ -121,7 +124,8 @@ done
 for option in '' --disable-jobserver; do
   ./configure $option
   # Default configuration leaves compiler recipes non-recursive.
-  run_make -M -e FAIL -j2 $jobserver_style CC="$SHELL ./cc-wrapper $CC"
+  run_make -M -e FAIL -j2 $jobserver_style \
+    CC="$SHELL ./cc-wrapper \$(configured_CC)"
 done
 
 # Under .ONESHELL, only the first recipe line controls jobserver access.
@@ -138,13 +142,14 @@ END
 $AUTOMAKE
 ./configure --enable-jobserver
 run_make clean
-run_make -M -j2 $jobserver_style CC="$SHELL ./cc-wrapper $CC" \
+run_make -M -j2 $jobserver_style \
+  CC="$SHELL ./cc-wrapper \$(configured_CC)" \
   LIBTOOL="$SHELL ./lt-wrapper $SHELL ./libtool"
 run_make clean
 for mode in -n -q -t; do
   rm -f compiler.log libtool.log
   run_make -M -e IGNORE -j2 $jobserver_style $mode \
-    CC="$SHELL ./cc-wrapper $CC" \
+    CC="$SHELL ./cc-wrapper \$(configured_CC)" \
     LIBTOOL="$SHELL ./lt-wrapper $SHELL ./libtool"
   case $mode in
     -q) test "$am_make_rc" -eq 1;;
