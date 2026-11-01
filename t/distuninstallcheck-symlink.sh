@@ -27,6 +27,8 @@ dist_pkgdata_DATA = payload
 install-data-hook:
 	ln -s payload "$(DESTDIR)$(pkgdatadir)/shortcut"
 	ln -s . "$(DESTDIR)$(pkgdatadir)/directory-shortcut"
+	$(MKDIR_P) "$(DESTDIR)$(infodir)"
+	echo '* Menu:' > "$(DESTDIR)$(infodir)/dir"
 END
 echo 'installed data' > payload
 
@@ -40,6 +42,8 @@ run_make -E -e FAIL distcheck
 grep 'ERROR: files left after uninstall:' stderr
 grep '/shortcut$' stderr
 grep '/directory-shortcut$' stderr
+test -f "$distdir/_inst/share/info/dir"
+grep '/share/info/dir$' stderr && exit 1
 
 cat >> Makefile.am <<'END'
 uninstall-local:
