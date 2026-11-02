@@ -27,6 +27,13 @@ case $("$real_tar" --version 2>/dev/null) in
 esac
 
 mkdir bsd busybox both
+# Do not let GNU tar aliases from the host affect the simulated tools.
+for d in bsd busybox both; do
+  for tool in gnutar gtar; do
+    printf '%s\n' '#! /bin/sh' 'exit 1' > $d/$tool
+    chmod a+x $d/$tool
+  done
+done
 # A bsdtar look-alike: identifies itself differently, but supports --format=.
 cat > bsd/tar <<END
 #! /bin/sh
