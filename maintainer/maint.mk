@@ -207,11 +207,13 @@ git-upload-release:
 	       exit 1; }
 	@# Build the distribution tarball(s).
 	$(MAKE) dist
-	@# Upload it to the correct FTP repository.
+	@# Upload it to the correct FTP repository.  Only stable releases
+	@# update the -latest archive and signature links.
 	@$(determine_release_type) \
+	  && { case $$dest in ftp) latest=--symlink-regex;; *) latest=;; esac; } \
 	  && dest=$$dest.gnu.org:automake \
 	  && echo "Uploading to $$dest: $(DIST_ARCHIVES)" \
-	  && set -x && $(srcdir)/lib/gnupload $(GNUPLOADFLAGS) --to $$dest \
+	  && set -x && $(srcdir)/lib/gnupload $(GNUPLOADFLAGS) $$latest --to $$dest \
 	                            $(DIST_ARCHIVES)
 
 .PHONY: print-release-type git-upload-release git-tag-release
