@@ -69,7 +69,7 @@ update_mans = \
 ## as a dependency, as it seems more convenient to have its regeneration
 ## under manual control. See https://debbugs.gnu.org/10371.
 ##
-checklinkx = $(top_srcdir)/contrib/checklinkx
+checklinkx = $(top_srcdir)/maintainer/checklinkx
 # that particular sleep seems to be what gnu.org likes.
 chlx_args = -v --sleep 8 #--exclude-url-file=/tmp/xf
 # Explanation of excludes:

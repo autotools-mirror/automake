@@ -35,9 +35,7 @@ nodist_noinst_SCRIPTS =
 EXTRA_DIST += \
   bootstrap \
   GNUmakefile \
-  HACKING \
-  NEWS-future \
-  PLANS
+  HACKING
 
 # We want a handful of substitutions to be fully-expanded by make;
 # then use config.status to substitute the remainder where a single
@@ -90,11 +88,9 @@ maintainer-clean-local:
 # (as it is maintainer-specific).
 ChangeLog:
 
-# Third-party, obsolescent or experimental stuff.
+# Contributed extensions with regression tests.
 EXTRA_DIST += \
-  contrib/tap-driver.pl \
   contrib/check-html.am \
-  contrib/checklinkx \
   contrib/multilib/README \
   contrib/multilib/config-ml.in \
   contrib/multilib/symlink-tree \
@@ -102,22 +98,30 @@ EXTRA_DIST += \
   contrib/multilib/multi.m4 \
   contrib/README
 
-# Older files, kept mostly for historical interest.
+# Historical material, listed explicitly to avoid distributing stray files.
 EXTRA_DIST += \
-  old/ChangeLog-tests \
-  old/ChangeLog.96 \
-  old/ChangeLog.98 \
-  old/ChangeLog.00 \
-  old/ChangeLog.01 \
-  old/ChangeLog.02 \
-  old/ChangeLog.03 \
-  old/ChangeLog.04 \
-  old/ChangeLog.09 \
-  old/ChangeLog.11 \
-  old/TODO
+  attic/README \
+  attic/changelog/ChangeLog-tests \
+  attic/changelog/ChangeLog.00 \
+  attic/changelog/ChangeLog.01 \
+  attic/changelog/ChangeLog.02 \
+  attic/changelog/ChangeLog.03 \
+  attic/changelog/ChangeLog.04 \
+  attic/changelog/ChangeLog.09 \
+  attic/changelog/ChangeLog.11 \
+  attic/changelog/ChangeLog.96 \
+  attic/changelog/ChangeLog.98 \
+  attic/plans/TODO \
+  attic/plans/am-prog-mkdir-p.txt \
+  attic/plans/automake-2.0.txt \
+  attic/plans/configure.in.txt \
+  attic/plans/drop-split-info-files.txt \
+  attic/plans/subdir-objects.txt \
+  attic/testing/tap-driver.pl
 
 # Maintainer-specific files and scripts.
 EXTRA_DIST += \
+  maintainer/checklinkx \
   maintainer/am-ft \
   maintainer/am-xft \
   maintainer/rename-tests \
