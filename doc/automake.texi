@@ -4172,7 +4172,8 @@ tools, such as minimal container or CI images, where installing
 
 This macro uses Automake's distribution rules and must be used with
 the matching version of @command{automake}; copying it to an older
-Automake installation is not supported.
+Automake installation is not supported.  To use it conditionally while
+supporting older Automake releases, @pxref{Compatible Feature Adoption}.
 
 @example
 AM_INIT_AUTOMAKE([-Wall foreign dist-bzip2 dist-xz dist-zip])
@@ -12881,6 +12882,10 @@ package, regardless of the licensing you choose.
 @node API Versioning
 @chapter Automake API Versioning
 
+@menu
+* Compatible Feature Adoption:: Using new features with older Automake releases
+@end menu
+
 New Automake releases usually include bug fixes and new features.
 Unfortunately they may also introduce new bugs and incompatibility.
 This makes four reasons why a package may require a particular Automake
@@ -12944,6 +12949,42 @@ bug).
 If it turns out you need to use such an undocumented feature, contact
 @email{automake@@gnu.org} and try to get it documented and exercised by
 the test-suite.
+
+@node Compatible Feature Adoption
+@section Adopting Features Compatibly
+@cindex compatibility, adopting new features
+@cindex feature detection
+@cindex optional macros
+@acindex m4_ifdef
+@acindex m4_indir
+
+To use a new macro while supporting older Automake releases, check
+whether it is defined and call it through @code{m4_indir}:
+
+@example
+AM_INIT_AUTOMAKE([foreign])
+m4_ifdef([AM_OPTIONAL_AUTOMAKE],
+  [m4_indir([AM_OPTIONAL_AUTOMAKE], [dist-zstd])])
+@end example
+
+This snippet requests an optional Zstandard archive when
+@code{AM_OPTIONAL_AUTOMAKE} is available.  Otherwise, it does nothing;
+the default gzip archive remains available.  A fallback can be supplied
+as the third argument to @code{m4_ifdef}.
+
+The indirect call is recommended because @command{aclocal} scans macro
+references before M4 evaluates conditionals.  A direct call to an
+unavailable macro, even inside @code{m4_ifdef}, can therefore produce:
+
+@example
+warning: macro 'AM_OPTIONAL_AUTOMAKE' not found in library
+@end example
+
+@noindent
+Using @code{m4_indir} as above avoids this warning.
+
+If the feature is required, specify a minimum version in
+@code{AM_INIT_AUTOMAKE} instead (@pxref{API Versioning}).
 
 @node Upgrading
 @chapter Upgrading a Package to a Newer Automake Version
