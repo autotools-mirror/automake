@@ -121,6 +121,7 @@ EXTRA_DIST += \
 
 # Maintainer-specific files and scripts.
 EXTRA_DIST += \
+  maintainer/announcement.pl \
   maintainer/check-perl-protos \
   maintainer/checklinkx \
   maintainer/am-ft \

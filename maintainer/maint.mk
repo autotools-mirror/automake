@@ -105,7 +105,6 @@ clean-local: clean-coverage
 GIT = git
 
 EXTRA_DIST += lib/gnupload
-EXTRA_DIST += lib/announce-gen
 
 # First component of a version number (mandatory).
 rx-0 = ^[1-9][0-9]*
@@ -297,56 +296,26 @@ compare-autodiffs: autodiffs
 #  Help writing the announcement for a release.  #
 # ---------------------------------------------- #
 
-PACKAGE_MAILINGLIST = automake@gnu.org
-
-announcement: DEVEL_SNAPSHOT = yes
-announcement: NEWS
-	$(AM_V_GEN): \
-	  && rm -f $@ $@-t \
-	  && $(determine_release_type) \
-	  && ftp_base="https://$$dest.gnu.org/gnu/$(PACKAGE)" \
-	  && X () { printf '%s\n' "$$*" >> $@-t; } \
-	  && AO () { if test "$$dest" = alpha; then X "$$*"; else :; fi; } \
-	  && X "We are pleased to announce the $(PACKAGE_NAME) $(VERSION)" \
-	       "$$announcement_type." \
-	  && X \
-	  && X "**TODO** Brief description of the release here." \
-	  && X \
-	  && X "**TODO** This description can span multiple paragraphs." \
-	  && X \
-	  && X "See below for the detailed list of changes since the" \
-	  && X "previous version, as summarized by the NEWS file." \
-	  && X \
-	  && X "Download here:" \
-	  && X \
-	  && X "  $$ftp_base/$(PACKAGE)-$(VERSION).tar.gz" \
-	  && X "  $$ftp_base/$(PACKAGE)-$(VERSION).tar.xz" \
-	  && X \
-	  && X "Please report bugs and problems to" \
-	       "<$(PACKAGE_BUGREPORT)>" \
-	  && X "(instead of replying to this mail)," \
-	  && X "and send general comments and feedback to" \
-	       "<$(PACKAGE_MAILINGLIST)>," \
-	  && X "and patches to" \
-	       "<automake-patches@gnu.org>." \
-	  && X \
-	  && X "Thanks to everyone who has reported problems, contributed" \
-	  && X "patches, and helped test Automake!" \
-	  && X \
-	  && X "-*-*-*-" \
-	  && X \
-  && AO "If you install this test release in its own prefix (recommended)" \
-  && AO "and you use libtool, you'll need to arrange for the libtool m4 files"\
-  && AO "to be found by aclocal. For info on this, see:" \
-  && AO "  https://gnu.org/s/automake/manual/automake.html#Libtool-library-used-but-LIBTOOL-is-undefined" \
-  && AO \
-	  && $(AWK) '\
-	        ($$0 ~ /^New in .*:/) { wait_for_end=1; } \
-		(/^~~~/ && wait_for_end) { print; exit(0) } \
-		{ print } \
-	     ' <$(srcdir)/NEWS >> $@-t \
-	  && mv -f $@-t $@ \
-	  && ls -l ./$@
+# Generate a complete announcement from the tagged release and its archives.
+# These variables are exported rather than interpolated into shell commands.
+GPG ?= gpg
+OPENSSL ?= openssl
+# Use the source version even if the configured Makefile is out of date.
+announcement: override VERSION = $(shell sed -n '/^AC_INIT/s/^[^[]*\[[^[]*\[\([^]]*\)\].*/\1/p' $(srcdir)/configure.ac)
+announcement: export AM_ANNOUNCE_PREVIOUS = $(PREVIOUS_VERSION)
+announcement: export AM_ANNOUNCE_VERSION = $(VERSION)
+announcement: export AM_ANNOUNCE_KEY = $(GPG_KEY_ID)
+announcement: export AM_ANNOUNCE_INTRO = $(ANNOUNCEMENT_INTRO)
+announcement: export AM_ANNOUNCE_SRCDIR = $(srcdir)
+announcement: export AM_ANNOUNCE_ARCHIVES = $(DIST_ARCHIVES)
+announcement: export AM_ANNOUNCE_GIT = $(GIT)
+announcement: export AM_ANNOUNCE_GPG = $(GPG)
+announcement: export AM_ANNOUNCE_OPENSSL = $(OPENSSL)
+announcement: $(srcdir)/NEWS $(srcdir)/maintainer/announcement.pl
+	$(AM_V_GEN)$(determine_release_type) \
+	  && AM_ANNOUNCE_TYPE="$$announcement_type" \
+	     AM_ANNOUNCE_HOST="$$dest" \
+	     $(PERL) $(srcdir)/maintainer/announcement.pl
 .PHONY: announcement
 CLEANFILES += announcement
 
@@ -359,7 +328,6 @@ SV_GIT_GL = $(git_sv_host):/srv/git/gnulib.git
 
 FETCHFILES_CF = config.guess config.sub
 FETCHFILES_GL = \
-  build-aux/announce-gen \
   build-aux/gendocs.sh \
   build-aux/gitlog-to-changelog \
   build-aux/gnupload \
