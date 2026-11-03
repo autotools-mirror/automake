@@ -69,6 +69,8 @@ grep "option 'subdir-objects' is disabled" stderr
 
 sed 's/^AM_INIT_AUTOMAKE/&([subdir-objects])/' configure.ac > configure.tmp
 mv -f configure.tmp configure.ac
+# Autoconf can reuse stale traces if the inputs change within one second.
+rm -rf autom4te.cache
 $ACLOCAL --force
 $AUTOMAKE
 
