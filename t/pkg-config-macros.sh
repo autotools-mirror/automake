@@ -35,7 +35,9 @@ END
 
 have_pkg_config_macros ()
 {
-  $AUTOCONF && ! $FGREP PKG_CHECK_MODULES configure
+  # aclocal.m4 may have been created within the same timestamp second
+  # as the first probe, hence we use --force.
+  $AUTOCONF --force && ! $FGREP PKG_CHECK_MODULES configure
 }
 
 if have_pkg_config_macros; then
