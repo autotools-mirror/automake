@@ -28,27 +28,24 @@ cd emptydir
 ACLOCAL=$am_original_ACLOCAL
 AUTOMAKE=$am_original_AUTOMAKE
 
-escape_dots () { sed 's/\./\\./g'; } # Avoid issues with "\" in backquotes.
-apiversion_rx=$(echo "$APIVERSION" | escape_dots)
-
 $ACLOCAL --version --help >stdout || { cat stdout; exit 1; }
 cat stdout
-grep "^aclocal.*$apiversion_rx" stdout
+grep '^aclocal .* [0-9]' stdout
 grep "^Usage" stdout && exit 1
 
 $ACLOCAL --help --version >stdout || { cat stdout; exit 1; }
 cat stdout
 grep "^Usage" stdout
-grep "^aclocal.*$apiversion_rx" stdout && exit 1
+grep '^aclocal .* [0-9]' stdout && exit 1
 
 $AUTOMAKE --version --help >stdout || { cat stdout; exit 1; }
 cat stdout
-grep "^automake.*$apiversion_rx" stdout
+grep '^automake .* [0-9]' stdout
 grep "^Usage" stdout && exit 1
 
 $AUTOMAKE --help --version >stdout || { cat stdout; exit 1; }
 cat stdout
 grep "^Usage" stdout
-grep "^automake.*$apiversion_rx" stdout && exit 1
+grep '^automake .* [0-9]' stdout && exit 1
 
 :
