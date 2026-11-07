@@ -48,6 +48,9 @@ echo 1..00 > e.test
 echo '1..000 # SKIP' > f.test
 
 run_make -O TESTS='a.test b.test c.test d.test e.test f.test' check
+mv stdout stdout.raw
+sed -n '/^# TOTAL:/,$p' stdout.raw > summary
+cat a.log b.log c.log d.log e.log f.log summary > stdout
 count_test_results total=115 pass=113 xfail=0 skip=2 fail=0 xpass=0 error=0
 
 :
