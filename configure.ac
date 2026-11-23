@@ -19,6 +19,14 @@ AC_PREREQ([2.69])
 AC_INIT([GNU Automake], [1.20], [bug-automake@gnu.org])
 
 AC_CONFIG_SRCDIR([bin/automake.in])
+
+# Automake cannot be bootstrapped with 'autoreconf'
+m4_syscmd([test -f t/testsuite-part.am])dnl
+m4_if(m4_sysval, [0], [],
+  [m4_fatal([t/testsuite-part.am is missing.
+Run './bootstrap' instead of 'autoreconf' to set up an Automake checkout;
+see the Automake HACKING file.])])
+
 AC_CONFIG_AUX_DIR([lib])
 
 AM_SILENT_RULES([yes])
